@@ -147,6 +147,7 @@
     "test": "jest",
     "cy:test": "sh scripts/run_cypress.sh",
     "cp:cname": "sh ./scripts/cp_cname.sh",
+    "cp:posts": "sh ./scripts/get_posts.sh",
     "deploy:coding": "sh ./scripts/deploy_to_coding.sh",
     "deploy": "gh-pages -d public -r https://$GH_TOKEN@github.com/gongbaodd/gongbaodd.github.io.git -b master",
     "es:check": "es-check",
