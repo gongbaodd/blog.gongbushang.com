@@ -7,7 +7,7 @@ script:
   - yarn es:check
   # - yarn cy:test
   - yarn cp:cname
-  - if [ "$TRAVIS_BRANCH" = "prd" ]; then yarn deploy && yarn deploy:coding; fi
+  - yarn deploy && yarn deploy:coding
 cache:
   npm: true
   directories:
