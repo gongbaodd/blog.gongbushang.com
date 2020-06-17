@@ -13,7 +13,9 @@ const BlogIndex: FC<PageProps> = ({ location }) => {
       <SEO title="All posts" />
       <Bio />
       <GroupLink />
-      <Posts />
+      <article>
+        <Posts />
+      </article>
     </Layout>
   );
 };
