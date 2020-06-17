@@ -5,7 +5,7 @@ script:
   - yarn cp:posts
   - yarn build
   - yarn es:check
-  - yarn cy:test
+  # - yarn cy:test
   - yarn cp:cname
   - if [ "$TRAVIS_BRANCH" = "prd" ]; then yarn deploy && yarn deploy:coding; fi
 cache:
