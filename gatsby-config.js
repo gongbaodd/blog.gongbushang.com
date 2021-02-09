@@ -11,6 +11,7 @@ const robotsTxt = require("./config/plugins/robots_txt");
 const nodeFields = require("./config/plugins/node_fields");
 const jsonOutput = require("./config/plugins/json_output");
 const siteMetadata = require("./config/meta/site.js");
+const katex = require("./config/plugins/katex");
 
 module.exports = {
   siteMetadata,
@@ -38,5 +39,6 @@ module.exports = {
     ...pageProgress,
     ...sourcemap,
     ...jsonOutput,
+    ...katex,
   ],
 };
