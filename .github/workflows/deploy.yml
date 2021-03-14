@@ -17,12 +17,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Use Node.js 12.16.1
+    - name: Use Node.js 12.16.1 🧩
       uses: actions/setup-node@v1
       with:
         node-version: 12.16.1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: npm install -g yarn
     - run: npm install -g gatsby-cli
     - run: yarn install
@@ -30,4 +28,12 @@ jobs:
     - run: yarn build
     - run: yarn es:check
     - run: yarn cp:cname
-    - run: yarn deploy
+    - name: Deploy 🚀
+      uses: crazy-max/ghaction-github-pages@v2
+      with:
+        repo: https://github.com/gongbaodd/gongbaodd.github.io.git
+        target_branch: gh-pages
+        build_dir: public
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
