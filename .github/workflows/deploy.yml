@@ -23,6 +23,7 @@ jobs:
         node-version: 12.16.1
     - run: npm install -g yarn
     - run: npm install -g gatsby-cli
+    - run: yarn install
     - run: yarn cp:posts
     - run: yarn build
     - run: yarn es:check
