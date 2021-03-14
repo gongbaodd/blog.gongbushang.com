@@ -21,6 +21,8 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.16.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - run: npm install -g yarn
     - run: npm install -g gatsby-cli
     - run: yarn install
@@ -28,4 +30,4 @@ jobs:
     - run: yarn build
     - run: yarn es:check
     - run: yarn cp:cname
-    - run: GITHUB_TOKEN=${{secrets.GITHUB_TOKEN}} yarn deploy
+    - run: yarn deploy
