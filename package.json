@@ -22,7 +22,7 @@
     "gatsby-plugin-github-ribbon": "1.2.0",
     "gatsby-plugin-json-output": "1.2.0",
     "gatsby-plugin-page-progress": "2.2.0",
-    "gatsby-plugin-robots-txt": "1.5.0",
+    "gatsby-plugin-robots-txt": "1.5.5",
     "gatsby-plugin-sentry": "1.0.1",
     "gatsby-plugin-sharp": "2.14.3",
     "gatsby-plugin-sitemap": "2.12.0",
