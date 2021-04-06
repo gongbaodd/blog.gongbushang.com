@@ -98,7 +98,7 @@
     "gh-pages": "2.2.0",
     "husky": "4.2.3",
     "jest": "25.5.4",
-    "lint-staged": "10.1.1",
+    "lint-staged": "10.5.4",
     "prettier": "2.0.2",
     "storybook-addon-designs": "5.2.1",
     "ts-jest": "25.2.1",
