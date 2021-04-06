@@ -18,7 +18,7 @@
     "gatsby-plugin-node-fields": "3.1.0",
     "gatsby-plugin-offline": "3.10.2",
     "gatsby-plugin-react-helmet": "3.10.0",
-    "gatsby-plugin-feed": "2.4.1",
+    "gatsby-plugin-feed": "2.13.1",
     "gatsby-plugin-github-ribbon": "1.2.0",
     "gatsby-plugin-json-output": "1.2.0",
     "gatsby-plugin-page-progress": "2.2.0",
