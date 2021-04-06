@@ -21346,10 +21346,10 @@ store2@^2.7.1:
   resolved "https://registry.npm.taobao.org/store2/download/store2-2.11.1.tgz#118645f1b5e38d20604852362183955e360a5893"
   integrity sha1-EYZF8bXjjSBgSFI2IYOVXjYKWJM=
 
-storybook-addon-designs@5.2.1:
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/storybook-addon-designs/-/storybook-addon-designs-5.2.1.tgz#398e264d1ac2ff65d47640c5e46433ddac6f30f7"
-  integrity sha512-6nsNRpoJXZRVZL3vr5qLfrn4hly5v4u/BNNZ/et5KdKT/6jGSgDNgZgmoNZcPp/jpRM2iaQeXGeIOXTscwMORA==
+storybook-addon-designs@5.4.5:
+  version "5.4.5"
+  resolved "https://registry.yarnpkg.com/storybook-addon-designs/-/storybook-addon-designs-5.4.5.tgz#28ae0070f0783a699af6b115051cfa73f38cd582"
+  integrity sha512-IYzY/LNuQA62dJ6/au3/4sC+lOIrlPuIiQJv3co3mkvokd3sjqy8LqMXu7lqD/XXbdVreJQ3WNJ2NuFHJhRasA==
   dependencies:
     react-pdf "^4.0.5"
 
