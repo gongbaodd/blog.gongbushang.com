@@ -35,6 +35,12 @@ jobs:
 
     - run: npm install -g yarn
     - run: npm install -g gatsby-cli
+
+    - uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+
     - run: yarn install
     - run: yarn cp:posts
 
