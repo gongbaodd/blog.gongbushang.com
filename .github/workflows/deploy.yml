@@ -1,0 +1,39 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 12.16.1 🧩
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12.16.1
+    - run: npm install -g yarn
+    - run: npm install -g gatsby-cli
+    - run: yarn install
+    - run: yarn cp:posts
+    - run: yarn build
+    - run: yarn es:check
+    - run: yarn cp:cname
+    - name: Deploy 🚀
+      uses: crazy-max/ghaction-github-pages@v2
+      with:
+        repo: gongbaodd/gongbaodd.github.io
+        target_branch: master
+        build_dir: public
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAGES_TOKEN }}
+
