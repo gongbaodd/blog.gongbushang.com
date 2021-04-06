@@ -61,7 +61,7 @@
     "xss": "1.0.6"
   },
   "devDependencies": {
-    "@babel/core": "7.9.6",
+    "@babel/core": "7.13.14",
     "@storybook/addon-actions": "5.3.18",
     "@storybook/addon-links": "5.3.18",
     "@storybook/addons": "5.3.18",
@@ -78,7 +78,7 @@
     "@types/theme-ui": "0.3.7",
     "@typescript-eslint/parser": "2.26.0",
     "audit-ci": "2.5.1",
-    "babel-loader": "8.1.0",
+    "babel-loader": "8.2.2",
     "commitizen": "4.0.3",
     "emoji-cz": "0.3.1",
     "enzyme": "3.11.0",
