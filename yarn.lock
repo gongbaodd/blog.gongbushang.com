@@ -65,10 +65,10 @@
     semver "^5.4.1"
     source-map "^0.5.0"
 
-"@babel/core@^7.1.6", "@babel/core@^7.4.5", "@babel/core@^7.9.6":
+"@babel/core@7.9.6", "@babel/core@^7.1.6", "@babel/core@^7.4.5":
   version "7.9.6"
-  resolved "https://registry.npm.taobao.org/@babel/core/download/@babel/core-7.9.6.tgz#d9aa1f580abf3b2286ef40b6904d390904c63376"
-  integrity sha1-2aofWAq/OyKG70C2kE05CQTGM3Y=
+  resolved "https://registry.yarnpkg.com/@babel/core/-/core-7.9.6.tgz#d9aa1f580abf3b2286ef40b6904d390904c63376"
+  integrity sha512-nD3deLvbsApbHAHttzIssYqgb883yU/d9roe4RZymBCDaZryMJDbptVpEpeQuRh4BJ+SYI8le9YGxKvFEvl1Wg==
   dependencies:
     "@babel/code-frame" "^7.8.3"
     "@babel/generator" "^7.9.6"
@@ -2543,10 +2543,10 @@
   dependencies:
     type-detect "4.0.8"
 
-"@storybook/addon-actions@^5.3.18":
+"@storybook/addon-actions@5.3.18":
   version "5.3.18"
-  resolved "https://registry.npm.taobao.org/@storybook/addon-actions/download/@storybook/addon-actions-5.3.18.tgz#e3e3b1475cebc9bdd2d563822fba9ac662b2601a"
-  integrity sha1-4+OxR1zryb3S1WOCL7qaxmKyYBo=
+  resolved "https://registry.yarnpkg.com/@storybook/addon-actions/-/addon-actions-5.3.18.tgz#e3e3b1475cebc9bdd2d563822fba9ac662b2601a"
+  integrity sha512-jdBVCcfyWin274Lkwg5cL+1fJ651NCuIWxuJVsmHQtIl2xTjf2MyoMoKQZNdt4xtE+W9w+rS4bYt04elrizThg==
   dependencies:
     "@storybook/addons" "5.3.18"
     "@storybook/api" "5.3.18"
@@ -2563,10 +2563,10 @@
     react-inspector "^4.0.0"
     uuid "^3.3.2"
 
-"@storybook/addon-links@^5.3.18":
+"@storybook/addon-links@5.3.18":
   version "5.3.18"
-  resolved "https://registry.npm.taobao.org/@storybook/addon-links/download/@storybook/addon-links-5.3.18.tgz#6b4aec83e158c000221bfe1f43e4a473f0727193"
-  integrity sha1-a0rsg+FYwAAiG/4fQ+Skc/BycZM=
+  resolved "https://registry.yarnpkg.com/@storybook/addon-links/-/addon-links-5.3.18.tgz#6b4aec83e158c000221bfe1f43e4a473f0727193"
+  integrity sha512-rDpsAQUr60BEM83TBh7mwKjaZvqTR+CAAMLAxXN+J8DMoOjymjd2sjq4UVJsOQVTnw3wjIc4+xpAL/eYqkJAIQ==
   dependencies:
     "@storybook/addons" "5.3.18"
     "@storybook/client-logger" "5.3.18"
@@ -2579,7 +2579,7 @@
     qs "^6.6.0"
     ts-dedent "^1.1.0"
 
-"@storybook/addons@5.3.18", "@storybook/addons@^5.3.18":
+"@storybook/addons@5.3.18":
   version "5.3.18"
   resolved "https://registry.npm.taobao.org/@storybook/addons/download/@storybook/addons-5.3.18.tgz#5cbba6407ef7a802041c5ee831473bc3bed61f64"
   integrity sha1-XLumQH73qAIEHF7oMUc7w77WH2Q=
@@ -2636,10 +2636,10 @@
   dependencies:
     core-js "^3.0.1"
 
-"@storybook/cli@^5.3.18":
+"@storybook/cli@5.3.18":
   version "5.3.18"
-  resolved "https://registry.npm.taobao.org/@storybook/cli/download/@storybook/cli-5.3.18.tgz#adba3ed36df35b344b3e48cdb2de0c4400b18852"
-  integrity sha1-rbo+023zWzRLPkjNst4MRACxiFI=
+  resolved "https://registry.yarnpkg.com/@storybook/cli/-/cli-5.3.18.tgz#adba3ed36df35b344b3e48cdb2de0c4400b18852"
+  integrity sha512-FiAWpjJqm417CZjLUpn8tw0CrPwk/fx3L7ciL9bYkAkCQNOcau5No02vrpVSZiZPgZ7P7q2gR249RzMu1DRVTA==
   dependencies:
     "@babel/core" "^7.4.5"
     "@babel/preset-env" "^7.4.5"
@@ -2842,10 +2842,10 @@
     pretty-hrtime "^1.0.3"
     regenerator-runtime "^0.13.3"
 
-"@storybook/react@^5.3.18":
+"@storybook/react@5.3.18":
   version "5.3.18"
-  resolved "https://registry.npm.taobao.org/@storybook/react/download/@storybook/react-5.3.18.tgz#c057b680924e188d44149c3d67dd31aead88b28a"
-  integrity sha1-wFe2gJJOGI1EFJw9Z90xrq2Isoo=
+  resolved "https://registry.yarnpkg.com/@storybook/react/-/react-5.3.18.tgz#c057b680924e188d44149c3d67dd31aead88b28a"
+  integrity sha512-6yNg+phcrEqEjC2NOiu0mJuxbTwX7yzbkcusIn0S7N/KTXNO7CGvYjAkdjfw0gTLjfuVDZIjDQfoosslvfsj3w==
   dependencies:
     "@babel/plugin-transform-react-constant-elements" "^7.6.3"
     "@babel/preset-flow" "^7.0.0"
@@ -4826,17 +4826,7 @@ babel-jest@^25.2.4:
     chalk "^3.0.0"
     slash "^3.0.0"
 
-babel-loader@^8.0.6:
-  version "8.0.6"
-  resolved "https://registry.yarnpkg.com/babel-loader/-/babel-loader-8.0.6.tgz#e33bdb6f362b03f4bb141a0c21ab87c501b70dfb"
-  integrity sha512-4BmWKtBOBm13uoUwd08UwjZlaw3O9GWf456R9j+5YykFZ6LUIjIKLc0zEZf+hauxPOJs96C8k6FvYD09vWzhYw==
-  dependencies:
-    find-cache-dir "^2.0.0"
-    loader-utils "^1.0.2"
-    mkdirp "^0.5.1"
-    pify "^4.0.1"
-
-babel-loader@^8.1.0:
+babel-loader@8.1.0, babel-loader@^8.1.0:
   version "8.1.0"
   resolved "https://registry.npm.taobao.org/babel-loader/download/babel-loader-8.1.0.tgz?cache=0&sync_timestamp=1584715910722&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fbabel-loader%2Fdownload%2Fbabel-loader-8.1.0.tgz#c611d5112bd5209abe8b9fa84c3e4da25275f1c3"
   integrity sha1-xhHVESvVIJq+i5+oTD5NolJ18cM=
@@ -4846,6 +4836,16 @@ babel-loader@^8.1.0:
     mkdirp "^0.5.3"
     pify "^4.0.1"
     schema-utils "^2.6.5"
+
+babel-loader@^8.0.6:
+  version "8.0.6"
+  resolved "https://registry.yarnpkg.com/babel-loader/-/babel-loader-8.0.6.tgz#e33bdb6f362b03f4bb141a0c21ab87c501b70dfb"
+  integrity sha512-4BmWKtBOBm13uoUwd08UwjZlaw3O9GWf456R9j+5YykFZ6LUIjIKLc0zEZf+hauxPOJs96C8k6FvYD09vWzhYw==
+  dependencies:
+    find-cache-dir "^2.0.0"
+    loader-utils "^1.0.2"
+    mkdirp "^0.5.1"
+    pify "^4.0.1"
 
 babel-plugin-add-module-exports@^0.3.3:
   version "0.3.3"
@@ -9650,6 +9650,55 @@ fuse.js@^3.4.6:
   resolved "https://registry.npm.taobao.org/fuse.js/download/fuse.js-3.6.1.tgz#7de85fdd6e1b3377c23ce010892656385fd9b10c"
   integrity sha1-fehf3W4bM3fCPOAQiSZWOF/ZsQw=
 
+gatsby-cli@2.12.1:
+  version "2.12.1"
+  resolved "https://registry.yarnpkg.com/gatsby-cli/-/gatsby-cli-2.12.1.tgz#fdf32b7a47d64f814e39e911b9d4865654679902"
+  integrity sha512-ZD3keYu0dtMQvssFREejyB3qA277rZQqzZnPAua7Gy6ExILseNXjbOewz9M9CymfqFZjAovpBmoIrcGe5lge4Q==
+  dependencies:
+    "@babel/code-frame" "^7.8.3"
+    "@babel/runtime" "^7.9.2"
+    "@hapi/joi" "^15.1.1"
+    better-opn "^1.0.0"
+    bluebird "^3.7.2"
+    chalk "^2.4.2"
+    clipboardy "^2.3.0"
+    common-tags "^1.8.0"
+    configstore "^5.0.1"
+    convert-hrtime "^3.0.0"
+    core-js "^2.6.11"
+    envinfo "^7.5.1"
+    execa "^3.4.0"
+    fs-exists-cached "^1.0.0"
+    fs-extra "^8.1.0"
+    gatsby-core-utils "^1.2.0"
+    gatsby-recipes "^0.1.1"
+    gatsby-telemetry "^1.3.0"
+    hosted-git-info "^3.0.4"
+    is-valid-path "^0.1.1"
+    lodash "^4.17.15"
+    meant "^1.0.1"
+    node-fetch "^2.6.0"
+    object.entries "^1.1.1"
+    opentracing "^0.14.4"
+    pretty-error "^2.1.1"
+    progress "^2.0.3"
+    prompts "^2.3.2"
+    react "^16.8.0"
+    redux "^4.0.5"
+    resolve-cwd "^2.0.0"
+    semver "^6.3.0"
+    signal-exit "^3.0.3"
+    source-map "0.7.3"
+    stack-trace "^0.0.10"
+    strip-ansi "^5.2.0"
+    update-notifier "^3.0.1"
+    uuid "3.4.0"
+    yargs "^12.0.5"
+    yurnalist "^1.1.2"
+  optionalDependencies:
+    ink "^2.7.1"
+    ink-spinner "^3.0.1"
+
 gatsby-cli@^2.11.3:
   version "2.11.3"
   resolved "https://registry.yarnpkg.com/gatsby-cli/-/gatsby-cli-2.11.3.tgz#c445a1791f9920ff4ebbb9349a9313a24e459e9f"
@@ -9687,55 +9736,6 @@ gatsby-cli@^2.11.3:
     resolve-cwd "^2.0.0"
     semver "^6.3.0"
     signal-exit "^3.0.2"
-    source-map "0.7.3"
-    stack-trace "^0.0.10"
-    strip-ansi "^5.2.0"
-    update-notifier "^3.0.1"
-    uuid "3.4.0"
-    yargs "^12.0.5"
-    yurnalist "^1.1.2"
-  optionalDependencies:
-    ink "^2.7.1"
-    ink-spinner "^3.0.1"
-
-gatsby-cli@^2.12.1:
-  version "2.12.1"
-  resolved "https://registry.npm.taobao.org/gatsby-cli/download/gatsby-cli-2.12.1.tgz#fdf32b7a47d64f814e39e911b9d4865654679902"
-  integrity sha1-/fMrekfWT4FOOekRudSGVlRnmQI=
-  dependencies:
-    "@babel/code-frame" "^7.8.3"
-    "@babel/runtime" "^7.9.2"
-    "@hapi/joi" "^15.1.1"
-    better-opn "^1.0.0"
-    bluebird "^3.7.2"
-    chalk "^2.4.2"
-    clipboardy "^2.3.0"
-    common-tags "^1.8.0"
-    configstore "^5.0.1"
-    convert-hrtime "^3.0.0"
-    core-js "^2.6.11"
-    envinfo "^7.5.1"
-    execa "^3.4.0"
-    fs-exists-cached "^1.0.0"
-    fs-extra "^8.1.0"
-    gatsby-core-utils "^1.2.0"
-    gatsby-recipes "^0.1.1"
-    gatsby-telemetry "^1.3.0"
-    hosted-git-info "^3.0.4"
-    is-valid-path "^0.1.1"
-    lodash "^4.17.15"
-    meant "^1.0.1"
-    node-fetch "^2.6.0"
-    object.entries "^1.1.1"
-    opentracing "^0.14.4"
-    pretty-error "^2.1.1"
-    progress "^2.0.3"
-    prompts "^2.3.2"
-    react "^16.8.0"
-    redux "^4.0.5"
-    resolve-cwd "^2.0.0"
-    semver "^6.3.0"
-    signal-exit "^3.0.3"
     source-map "0.7.3"
     stack-trace "^0.0.10"
     strip-ansi "^5.2.0"
@@ -9857,10 +9857,10 @@ gatsby-plugin-google-analytics@2.2.2:
     "@babel/runtime" "^7.8.7"
     minimatch "3.0.4"
 
-gatsby-plugin-json-output@^1.1.3:
+gatsby-plugin-json-output@1.1.3:
   version "1.1.3"
-  resolved "https://registry.npm.taobao.org/gatsby-plugin-json-output/download/gatsby-plugin-json-output-1.1.3.tgz#7d0f2ad0fccb14a299fd2deda5d502909f6ae82b"
-  integrity sha1-fQ8q0PzLFKKZ/S3tpdUCkJ9q6Cs=
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-json-output/-/gatsby-plugin-json-output-1.1.3.tgz#7d0f2ad0fccb14a299fd2deda5d502909f6ae82b"
+  integrity sha512-tTW2O1zipTLrZNPXZhH9oNh9nq5GPheznqcBzvrcGUZjS+6KlDnzDwrjI2k/t+7HsEfYDZh0cye3UiGZ7Ow28w==
   dependencies:
     colors "^1.4.0"
 
@@ -9879,10 +9879,10 @@ gatsby-plugin-no-sourcemaps@2.2.0:
   resolved "https://registry.yarnpkg.com/gatsby-plugin-no-sourcemaps/-/gatsby-plugin-no-sourcemaps-2.2.0.tgz#3803380c9d9c412e70168c47c9fb85926cc29a48"
   integrity sha512-0mSstYfw7p2fHh5zHa1mWxfAEqHHNHOwV9n8iHy+yoJb6n7+cLyfXRsQbbpEEhMLn8+N/in2WKdKdapm+65dZw==
 
-gatsby-plugin-node-fields@^3.1.0:
+gatsby-plugin-node-fields@3.1.0:
   version "3.1.0"
-  resolved "https://registry.npm.taobao.org/gatsby-plugin-node-fields/download/gatsby-plugin-node-fields-3.1.0.tgz#f29c26e5e3b690aebd408494d357822ae3ae8c73"
-  integrity sha1-8pwm5eO2kK69QISU01eCKuOujHM=
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-node-fields/-/gatsby-plugin-node-fields-3.1.0.tgz#f29c26e5e3b690aebd408494d357822ae3ae8c73"
+  integrity sha512-4qw8oOsxCRWxdQ8uhQxu7UxjDrkGEdq+cvxHkOlhPsLX+wLQBbiE0KpooeleNZv40T0xVcqFYnzsf/6vOEIhXQ==
   dependencies:
     "@hapi/joi" "^16.1.7"
     ramda "^0.26.1"
@@ -10125,10 +10125,10 @@ gatsby-remark-images@3.2.1:
     unist-util-select "^1.5.0"
     unist-util-visit-parents "^2.1.2"
 
-gatsby-remark-katex@^3.10.0:
+gatsby-remark-katex@3.10.0:
   version "3.10.0"
-  resolved "https://registry.npm.taobao.org/gatsby-remark-katex/download/gatsby-remark-katex-3.10.0.tgz#b5fb988ffb3190328a6dd3bd6e3c8fe56ba75847"
-  integrity sha1-tfuYj/sxkDKKbdO9bjyP5WunWEc=
+  resolved "https://registry.yarnpkg.com/gatsby-remark-katex/-/gatsby-remark-katex-3.10.0.tgz#b5fb988ffb3190328a6dd3bd6e3c8fe56ba75847"
+  integrity sha512-4jaBOz0g2Ge4Co/ZUklBkPMbCLkCn42GsJ3m/fvb2T4poC7sXAZ3fAAYlWrJrfEuEQ622veZNNL+2xtyPiUwUw==
   dependencies:
     "@babel/runtime" "^7.12.5"
     remark-math "^1.0.6"
@@ -10231,10 +10231,10 @@ gatsby-telemetry@^1.3.0:
     stack-utils "1.0.2"
     uuid "3.4.0"
 
-gatsby-transformer-remark@^2.16.0:
+gatsby-transformer-remark@2.16.0:
   version "2.16.0"
-  resolved "https://registry.npm.taobao.org/gatsby-transformer-remark/download/gatsby-transformer-remark-2.16.0.tgz#dd9ef9d6b0a9154c7ab9c7f7a189f8e1dc645b7c"
-  integrity sha1-3Z751rCpFUx6ucf3oYn44dxkW3w=
+  resolved "https://registry.yarnpkg.com/gatsby-transformer-remark/-/gatsby-transformer-remark-2.16.0.tgz#dd9ef9d6b0a9154c7ab9c7f7a189f8e1dc645b7c"
+  integrity sha512-zphmbrW1HOAgAjZdmyEZQDfbrVeQT+Q6BKaF+x76Vwk7KV2TGqhGfwyU4wg7Kv3tOGMDSwr73hxQvKqtrAqZPw==
   dependencies:
     "@babel/runtime" "^7.12.5"
     bluebird "^3.7.2"
@@ -13488,10 +13488,10 @@ jsx-ast-utils@^2.2.1, jsx-ast-utils@^2.2.3:
     array-includes "^3.0.3"
     object.assign "^4.1.0"
 
-katex@^0.12.0:
+katex@0.12.0:
   version "0.12.0"
-  resolved "https://registry.npm.taobao.org/katex/download/katex-0.12.0.tgz#2fb1c665dbd2b043edcf8a1f5c555f46beaa0cb9"
-  integrity sha1-L7HGZdvSsEPtz4ofXFVfRr6qDLk=
+  resolved "https://registry.yarnpkg.com/katex/-/katex-0.12.0.tgz#2fb1c665dbd2b043edcf8a1f5c555f46beaa0cb9"
+  integrity sha512-y+8btoc/CK70XqcHqjxiGWBOeIL8upbS0peTPXTvgrh21n1RiWWcIpSWM+4uXq+IAgNh9YYQWdc7LVDPDAEEAg==
   dependencies:
     commander "^2.19.0"
 
@@ -19783,10 +19783,10 @@ store2@^2.7.1:
   resolved "https://registry.npm.taobao.org/store2/download/store2-2.11.1.tgz#118645f1b5e38d20604852362183955e360a5893"
   integrity sha1-EYZF8bXjjSBgSFI2IYOVXjYKWJM=
 
-storybook-addon-designs@^5.2.1:
+storybook-addon-designs@5.2.1:
   version "5.2.1"
-  resolved "https://registry.npm.taobao.org/storybook-addon-designs/download/storybook-addon-designs-5.2.1.tgz#398e264d1ac2ff65d47640c5e46433ddac6f30f7"
-  integrity sha1-OY4mTRrC/2XUdkDF5GQz3axvMPc=
+  resolved "https://registry.yarnpkg.com/storybook-addon-designs/-/storybook-addon-designs-5.2.1.tgz#398e264d1ac2ff65d47640c5e46433ddac6f30f7"
+  integrity sha512-6nsNRpoJXZRVZL3vr5qLfrn4hly5v4u/BNNZ/et5KdKT/6jGSgDNgZgmoNZcPp/jpRM2iaQeXGeIOXTscwMORA==
   dependencies:
     react-pdf "^4.0.5"
 
