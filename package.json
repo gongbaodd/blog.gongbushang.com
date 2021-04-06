@@ -46,7 +46,7 @@
     "prismjs": "1.23.0",
     "react": "16.13.1",
     "react-dom": "16.13.1",
-    "react-github-corner": "2.3.0",
+    "react-github-corner": "2.5.0",
     "react-helmet": "5.2.1",
     "react-typography": "0.16.19",
     "source-map-support": "0.5.19",
