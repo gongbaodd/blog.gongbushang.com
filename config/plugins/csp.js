@@ -1,3 +1,5 @@
+const _ = require('lodash/fp');
+
 module.exports = [
   {
     resolve: "gatsby-plugin-csp",
@@ -7,8 +9,11 @@ module.exports = [
       mergeScriptHashes: false,
       mergeStyleHashes: false,
       mergeDefaultDirectives: true,
-      directives: {
-        "script-src": [
+      directives: _.compose(
+        _.mapKeys(k => `${k}-src`),
+        _.mapValues(v => v.join(' '))
+      )({
+        "script": [
           "'self'",
           "www.google-analytics.com",
           "*.sentry.io",
@@ -16,22 +21,22 @@ module.exports = [
           "utteranc.es",
           "*.utteranc.es",
           "*.cloudflareinsights.com",
-        ].join(" "),
-        "style-src": [
+        ],
+        "style": [
           "'self'",
           "'unsafe-inline'",
           "utteranc.es",
           "*.utteranc.es",
-        ].join(" "),
-        "img-src": ["*", "data:", "*.cloudflareinsights.com"].join(" "),
-        "default-src": [
+        ],
+        "img": ["*", "data:", "*.cloudflareinsights.com"],
+        "default": [
           "'self'",
           "utteranc.es",
           "*.utteranc.es",
           "fonts.gstatic.com",
-        ].join(" "),
-        "connect-src": ["'self'", "www.google-analytics.com"].join(" "),
-      },
+        ],
+        "connect": ["'self'", "www.google-analytics.com", "stats.g.doubleclick.net"]
+      }),
     },
   },
 ];
