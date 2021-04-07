@@ -51,7 +51,7 @@
     "react-typography": "0.16.19",
     "source-map-support": "0.5.19",
     "theme-ui": "0.6.2",
-    "ts-node": "8.10.2",
+    "ts-node": "9.1.1",
     "typeface-merriweather": "1.1.13",
     "typeface-montserrat": "1.1.13",
     "typeface-roboto": "1.1.13",
