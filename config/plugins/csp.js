@@ -1,4 +1,4 @@
-const _ = require('lodash/fp');
+const _ = require("lodash/fp");
 
 module.exports = [
   {
@@ -10,10 +10,10 @@ module.exports = [
       mergeStyleHashes: false,
       mergeDefaultDirectives: true,
       directives: _.compose(
-        _.mapKeys(k => `${k}-src`),
-        _.mapValues(v => v.join(' '))
+        _.mapKeys((k) => `${k}-src`),
+        _.mapValues((v) => v.join(" "))
       )({
-        "script": [
+        script: [
           "'self'",
           "www.google-analytics.com",
           "*.sentry.io",
@@ -22,20 +22,19 @@ module.exports = [
           "*.utteranc.es",
           "*.cloudflareinsights.com",
         ],
-        "style": [
-          "'self'",
-          "'unsafe-inline'",
-          "utteranc.es",
-          "*.utteranc.es",
-        ],
-        "img": ["*", "data:", "*.cloudflareinsights.com"],
-        "default": [
+        style: ["'self'", "'unsafe-inline'", "utteranc.es", "*.utteranc.es"],
+        img: ["*", "data:", "*.cloudflareinsights.com"],
+        default: [
           "'self'",
           "utteranc.es",
           "*.utteranc.es",
           "fonts.gstatic.com",
         ],
-        "connect": ["'self'", "www.google-analytics.com", "stats.g.doubleclick.net"]
+        connect: [
+          "'self'",
+          "www.google-analytics.com",
+          "stats.g.doubleclick.net",
+        ],
       }),
     },
   },
