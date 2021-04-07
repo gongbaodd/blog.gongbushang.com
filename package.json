@@ -40,7 +40,7 @@
     "gatsby-source-filesystem": "2.11.1",
     "gatsby-transformer-remark": "2.16.1",
     "gatsby-transformer-sharp": "2.12.1",
-    "katex": "0.13.1",
+    "katex": "0.13.2",
     "moment": "2.29.1",
     "lodash": "4.17.21",
     "prismjs": "1.23.0",
