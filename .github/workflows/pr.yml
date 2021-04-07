@@ -48,12 +48,5 @@ jobs:
     - run: yarn build
     - run: yarn es:check
     - run: yarn cp:cname
-    - name: Deploy 🚀
-      uses: crazy-max/ghaction-github-pages@v2
-      with:
-        repo: gongbaodd/gongbaodd.github.io
-        target_branch: master
-        build_dir: public
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAGES_TOKEN }}
+
 
