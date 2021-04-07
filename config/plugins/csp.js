@@ -30,6 +30,7 @@ module.exports = [
           "*.utteranc.es",
           "fonts.gstatic.com",
         ].join(" "),
+        "connect-src": ["'self'", "www.google-analytics.com"]
       },
     },
   },
