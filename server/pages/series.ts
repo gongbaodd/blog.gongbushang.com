@@ -4,7 +4,7 @@ import { PageContext } from "../../src/templates/series";
 
 const query = `
 {
-  allMarkdownRemark(sort: {fields: [fields___date, frontmatter___series___number], order: ASC}) {
+  allMarkdownRemark(sort: {fields: [fields___date, fields___series_number], order: ASC}) {
     group(field: frontmatter___series___slug) {
       fieldValue
       edges {

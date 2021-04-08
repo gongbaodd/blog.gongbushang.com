@@ -7,6 +7,11 @@ interface MdNode extends Node {
   frontmatter: {
     category: string | null;
     tag: string[] | null;
+    series: {
+      name: string;
+      slug: string;
+      number: number;
+    } | null;
   };
 }
 
@@ -16,7 +21,7 @@ const createMdNodeFields = (
   createNodeField: CreateNodeArgs["actions"]["createNodeField"]
 ) => {
   const value = createFilePath({ node, getNode });
-  const { category, tag } = node.frontmatter;
+  const { category, tag, series } = node.frontmatter;
   const { path, year, month, day, title } = slug2path(value, category || "");
 
   createNodeField({
@@ -60,6 +65,21 @@ const createMdNodeFields = (
     node,
     value: _.map<string>(tag, (t: string) => t.toLowerCase()),
   });
+
+  if (series !== null) {
+    createNodeField({
+      name: "series",
+      node,
+      value: series.slug
+    });
+
+    createNodeField({
+      name: "series_number",
+      node,
+      value: series.number || 0
+    });
+  
+  }
 };
 
 const onCreateNode = ({ node, actions, getNode }: CreateNodeArgs<MdNode>) => {

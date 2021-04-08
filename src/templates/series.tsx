@@ -13,7 +13,7 @@ export const pageQuery = graphql`
       filter: { frontmatter: { series: { name: { eq: $seriesName } } } }
       sort: {
         order: ASC
-        fields: [fields___date, frontmatter___series___number]
+        fields: [fields___date, fields___series_number]
       }
     ) {
       edges {
