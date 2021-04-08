@@ -9,7 +9,6 @@ const images = [
       showCaptions: true,
       withWebp: true,
       linkImagesToOriginal: true,
-      tracedSVG: true,
       wrapperStyle: "margin:0;",
     },
   },
