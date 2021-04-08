@@ -66,7 +66,7 @@ const createMdNodeFields = (
     value: _.map<string>(tag, (t: string) => t.toLowerCase()),
   });
 
-  if (series !== null) {
+  if (series) {
     createNodeField({
       name: "series",
       node,
