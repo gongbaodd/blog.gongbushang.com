@@ -11,14 +11,12 @@ const robotsTxt = require("./config/plugins/robots_txt");
 const nodeFields = require("./config/plugins/node_fields");
 const jsonOutput = require("./config/plugins/json_output");
 const siteMetadata = require("./config/meta/site.js");
-const katex = require("./config/plugins/katex");
 
-module.exports = {
+const config = {
   siteMetadata,
   plugins: [
     "gatsby-plugin-typescript",
     "gatsby-transformer-sharp",
-    "gatsby-plugin-sharp",
     "gatsby-plugin-react-helmet",
     "gatsby-plugin-offline",
     "gatsby-plugin-page-progress",
@@ -27,10 +25,10 @@ module.exports = {
     "gatsby-plugin-typography",
     "gatsby-plugin-sitemap",
     "gatsby-plugin-catch-links",
+    "gatsby-plugin-sharp",
     ...nodeFields,
     ...robotsTxt,
     ...sourceFilesystems,
-    ...transformerRemark,
     ...googleAnalytics,
     ...feed,
     ...manifest,
@@ -39,6 +37,10 @@ module.exports = {
     ...pageProgress,
     ...sourcemap,
     ...jsonOutput,
-    ...katex,
+    ...transformerRemark,
   ],
 };
+
+console.log(config);
+
+module.exports = config;
