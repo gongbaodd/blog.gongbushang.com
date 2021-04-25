@@ -62,7 +62,7 @@
     "xss": "1.0.8"
   },
   "devDependencies": {
-    "@babel/core": "7.13.14",
+    "@babel/core": "7.13.16",
     "@storybook/addon-actions": "6.2.5",
     "@storybook/addon-links": "6.2.5",
     "@storybook/addons": "6.2.5",
