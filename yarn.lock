@@ -11165,10 +11165,10 @@ gatsby-plugin-sitemap@3.3.0:
     pify "^3.0.0"
     sitemap "^1.13.0"
 
-gatsby-plugin-theme-ui@0.6.2:
-  version "0.6.2"
-  resolved "https://registry.yarnpkg.com/gatsby-plugin-theme-ui/-/gatsby-plugin-theme-ui-0.6.2.tgz#8a8336dfd9286e70e2a4627f5662992fa8b82911"
-  integrity sha512-4PiGxHmaLSAybfYtEj6A8vWGti2zJvTNhjrs63fK8eMjk3PCnuhdcs08SLaLnJhV4pd+9EEA0pgJ9jSmd2392Q==
+gatsby-plugin-theme-ui@0.7.5:
+  version "0.7.5"
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-theme-ui/-/gatsby-plugin-theme-ui-0.7.5.tgz#14453a97562cc88927ade6ff3a229bc01f5f9ec0"
+  integrity sha512-BF3PLdYIGK54VGfNcNS8CWGZDIc5AbxasKZW4RkkiZekBa/LOaTxBTWEzbMJbFQ+HxBXKZ4iBBqsErUhCZs9HA==
 
 gatsby-plugin-tidy@1.0.1:
   version "1.0.1"
