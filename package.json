@@ -78,7 +78,7 @@
     "@types/react-dom": "17.0.3",
     "@types/theme-ui": "0.3.7",
     "@typescript-eslint/parser": "4.22.0",
-    "audit-ci": "3.2.0",
+    "audit-ci": "4.2.0",
     "babel-loader": "8.2.2",
     "commitizen": "4.2.4",
     "emoji-cz": "0.3.1",
