@@ -6,6 +6,7 @@ tag:
 series:
   name: 测试
   slug: test
+  number: 0
 ---
 
 # This is a test

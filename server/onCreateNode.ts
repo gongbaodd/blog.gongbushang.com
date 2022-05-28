@@ -10,7 +10,7 @@ interface MdNode extends Node {
     series: {
       name: string;
       slug: string;
-      number: number;
+      number?: number;
     } | null;
   };
 }
@@ -78,7 +78,7 @@ const createMdNodeFields = (
       node,
       value: series.number || 0
     });
-  
+
   }
 };
 
