@@ -56,7 +56,7 @@ jobs:
       # - run: yarn cp:cname
 
       - name: Deploy 🚀
-        uses: crazy-max/ghaction-github-pages@v2
+        uses: crazy-max/ghaction-github-pages@v3
         with:
           repo: gongbaodd/gongbaodd.github.io
           target_branch: master
