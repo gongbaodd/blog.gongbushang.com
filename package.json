@@ -80,7 +80,7 @@
     "@typescript-eslint/parser": "4.22.0",
     "audit-ci": "3.2.0",
     "babel-loader": "8.2.2",
-    "commitizen": "4.2.3",
+    "commitizen": "4.2.4",
     "emoji-cz": "0.3.1",
     "enzyme": "3.11.0",
     "enzyme-adapter-react-16": "1.15.6",
