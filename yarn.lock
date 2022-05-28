@@ -11066,10 +11066,12 @@ gatsby-plugin-feed@3.4.0:
     lodash.merge "^4.6.2"
     rss "^1.2.2"
 
-gatsby-plugin-github-ribbon@1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/gatsby-plugin-github-ribbon/-/gatsby-plugin-github-ribbon-1.2.0.tgz#9d116162fe679dbbcdc09ea0858c1d48b26f1da4"
-  integrity sha512-n9oMjrmcNwH3oilyRb5GoCmERCY5mEG5pvK5M7k58XR0vIMfHek9END+HW/W+nGAZ513p304ebB713OWdPnyxw==
+gatsby-plugin-github-ribbon@1.3.5:
+  version "1.3.5"
+  resolved "https://registry.yarnpkg.com/gatsby-plugin-github-ribbon/-/gatsby-plugin-github-ribbon-1.3.5.tgz#6092454ca6262868ea5134f1f9d7464ac7d8330e"
+  integrity sha512-8zX9B9Emv9Prn2sk2w+/JQFkgN3Fa2VTiJhrgc0dct0Ggwjvb6r/H1KTuLh4HcGBMkPbJl3zZM+zxjVAOrlZNQ==
+  dependencies:
+    request "^2.88.2"
 
 gatsby-plugin-google-analytics@3.4.0:
   version "3.4.0"
