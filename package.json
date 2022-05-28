@@ -59,7 +59,7 @@
     "typography": "0.16.21",
     "typography-theme-doelger": "0.16.19",
     "with-utterances": "1.5.0",
-    "xss": "1.0.8"
+    "xss": "1.0.11"
   },
   "devDependencies": {
     "@storybook/addon-actions": "6.5.5",
