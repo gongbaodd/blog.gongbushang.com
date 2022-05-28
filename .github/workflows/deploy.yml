@@ -15,14 +15,14 @@ jobs:
 
     steps:
       # checkout files & install node
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Use Node.js 16.15.0 🧩
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: 16.15.0
 
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: cache-node-modules
         with:
@@ -37,7 +37,7 @@ jobs:
       - run: npm install -g yarn
       - run: npm install -g gatsby-cli
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
@@ -45,7 +45,7 @@ jobs:
       - run: yarn install
       - run: yarn cp:posts
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
@@ -56,7 +56,7 @@ jobs:
       # - run: yarn cp:cname
 
       - name: Deploy 🚀
-        uses: crazy-max/ghaction-github-pages@v2
+        uses: crazy-max/ghaction-github-pages@v3
         with:
           repo: gongbaodd/gongbaodd.github.io
           target_branch: master
