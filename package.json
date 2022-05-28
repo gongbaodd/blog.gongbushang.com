@@ -62,11 +62,11 @@
     "xss": "1.0.8"
   },
   "devDependencies": {
-    "@storybook/addon-actions": "6.2.9",
-    "@storybook/addon-links": "6.2.9",
-    "@storybook/addons": "6.2.9",
-    "@storybook/cli": "6.2.9",
-    "@storybook/react": "6.2.9",
+    "@storybook/addon-actions": "6.5.5",
+    "@storybook/addon-links": "6.5.5",
+    "@storybook/addons": "6.5.5",
+    "@storybook/cli": "6.5.5",
+    "@storybook/react": "6.5.5",
     "@babel/core": "7.14.0",
     "@theme-ui/preset-deep": "0.7.5",
     "@types/dompurify": "2.3.3",
