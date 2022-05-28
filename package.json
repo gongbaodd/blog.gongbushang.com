@@ -63,6 +63,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.18.2",
+    "@emotion/react": "^11.9.0",
     "@storybook/addon-actions": "6.5.5",
     "@storybook/addon-links": "6.5.5",
     "@storybook/addons": "6.5.5",
