@@ -21,7 +21,7 @@ jobs:
           node-version: 16.15.0
 
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: cache-node-modules
         with:
@@ -36,7 +36,7 @@ jobs:
       - run: npm install -g yarn
       - run: npm install -g gatsby-cli
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
