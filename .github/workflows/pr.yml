@@ -45,6 +45,7 @@ jobs:
       - run: yarn cp:posts
 
       - run: yarn build
-      - run: yarn es:check
-        # domain is deprecated
-        # - run: yarn cp:cname
+      # temperary stopping escheck
+      # - run: yarn es:check
+      # domain is deprecated
+      # - run: yarn cp:cname

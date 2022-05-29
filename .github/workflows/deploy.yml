@@ -51,7 +51,8 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - run: yarn build
-      - run: yarn es:check
+      # temperary stopping escheck
+      # - run: yarn es:check
       # domain is deprecated
       # - run: yarn cp:cname
 
