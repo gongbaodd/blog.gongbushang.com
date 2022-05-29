@@ -80,6 +80,7 @@
     "@types/react": "18.0.9",
     "@types/react-dom": "18.0.5",
     "@types/theme-ui": "0.3.7",
+    "@typescript-eslint/eslint-plugin": "^5.26.0",
     "@typescript-eslint/parser": "5.26.0",
     "audit-ci": "6.3.0",
     "babel-loader": "8.2.5",
