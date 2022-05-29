@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, PropsWithChildren } from "react";
 import { Link, PageProps, StaticQuery, graphql } from "gatsby";
 import { rhythm, scale } from "../utils/typography";
 
@@ -29,12 +29,12 @@ interface TitleQuery {
   };
 }
 
-export interface HeaderProps {
+export type HeaderProps = PropsWithChildren<{
   location: PageProps["location"];
   category?: string;
   tag?: string;
   series?: string;
-}
+}>;
 
 const FilterOption: FC<{
   name: Exclude<keyof HeaderProps, "location">;
@@ -57,13 +57,13 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
   const isRoot = location.pathname === rootPath;
   const style = isRoot
     ? {
-        ...scale(1.5),
-        marginBottom: rhythm(1.5),
-        marginTop: 0,
-      }
+      ...scale(1.5),
+      marginBottom: rhythm(1.5),
+      marginTop: 0,
+    }
     : {
-        marginTop: 0,
-      };
+      marginTop: 0,
+    };
 
   return (
     <h1 style={style}>
