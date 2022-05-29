@@ -2178,7 +2178,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.13.10", "@babel/runtime@^7.14.6", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.8", "@babel/runtime@^7.18.0", "@babel/runtime@^7.9.2":
+"@babel/runtime@^7.13.10", "@babel/runtime@^7.15.4", "@babel/runtime@^7.16.3", "@babel/runtime@^7.16.7", "@babel/runtime@^7.17.8", "@babel/runtime@^7.18.0", "@babel/runtime@^7.9.2":
   version "7.18.3"
   resolved "https://registry.npmmirror.com/@babel/runtime/-/runtime-7.18.3.tgz#c7b654b57f6f63cf7f8b418ac9ca04408c4579f4"
   integrity sha512-38Y8f7YUhce/K7RMwTp7m0uCumpv9hZkitCbBClqQIow1qSbCvGkcegKOXpEWCQLfWmevgRiWokZ1GkpfhbZug==
@@ -6990,6 +6990,11 @@ babel-jest@^28.1.0:
     graceful-fs "^4.2.9"
     slash "^3.0.0"
 
+babel-jsx-utils@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmmirror.com/babel-jsx-utils/-/babel-jsx-utils-1.1.0.tgz#304ce4fce0c86cbeee849551a45eb4ed1036381a"
+  integrity sha512-Mh1j/rw4xM9T3YICkw22aBQ78FhsHdsmlb9NEk4uVAFBOg+Ez9ZgXXHugoBPCZui3XLomk/7/JBBH4daJqTkQQ==
+
 babel-loader@8.2.5, babel-loader@^8.0.0, babel-loader@^8.2.3:
   version "8.2.5"
   resolved "https://registry.yarnpkg.com/babel-loader/-/babel-loader-8.2.5.tgz#d45f585e654d5a5d90f5350a779d7647c5ed512e"
@@ -11727,15 +11732,6 @@ gatsby-graphiql-explorer@^2.15.0:
   dependencies:
     "@babel/runtime" "^7.15.4"
 
-gatsby-image@3.11.0:
-  version "3.11.0"
-  resolved "https://registry.yarnpkg.com/gatsby-image/-/gatsby-image-3.11.0.tgz#9070ffd1e656b801052acfa9e470c34427c099e0"
-  integrity sha512-vRMhGLrgyQRH2RYs8leyZ1UyWYIew+NOZEsKur1w6gnWDf0U9UVmYFa9OIE1Vedlo1W+on3AuZ3/KwM+cI69VQ==
-  dependencies:
-    "@babel/runtime" "^7.14.6"
-    object-fit-images "^3.2.4"
-    prop-types "^15.7.2"
-
 gatsby-legacy-polyfills@^2.15.0:
   version "2.15.0"
   resolved "https://registry.yarnpkg.com/gatsby-legacy-polyfills/-/gatsby-legacy-polyfills-2.15.0.tgz#bb9d838c4c57fd9a37572942cac556eca219a2bd"
@@ -11836,6 +11832,26 @@ gatsby-plugin-google-analytics@4.15.0:
     minimatch "3.0.4"
     web-vitals "^1.1.2"
 
+gatsby-plugin-image@^2.15.0:
+  version "2.15.0"
+  resolved "https://registry.npmmirror.com/gatsby-plugin-image/-/gatsby-plugin-image-2.15.0.tgz#5c2f2de7bf053518295da4b2dafee5fddbf23897"
+  integrity sha512-+r9gR9vz1W9RCQ+yANcHCE1tvbJNwKw4pV6A5B7ca5r9fU62ycWvGIOfAkVZntxOSh/oCBAzwnLI/TD+oBmdEA==
+  dependencies:
+    "@babel/code-frame" "^7.14.0"
+    "@babel/parser" "^7.15.5"
+    "@babel/runtime" "^7.15.4"
+    "@babel/traverse" "^7.15.4"
+    babel-jsx-utils "^1.1.0"
+    babel-plugin-remove-graphql-queries "^4.15.0"
+    camelcase "^5.3.1"
+    chokidar "^3.5.2"
+    common-tags "^1.8.2"
+    fs-extra "^10.1.0"
+    gatsby-core-utils "^3.15.0"
+    gatsby-plugin-utils "^3.9.0"
+    objectFitPolyfill "^2.3.5"
+    prop-types "^15.8.1"
+
 gatsby-plugin-json-output@1.2.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/gatsby-plugin-json-output/-/gatsby-plugin-json-output-1.2.0.tgz#6c82edf9879ca6cf159424adc251f3eb8374e6dd"
@@ -11927,9 +11943,9 @@ gatsby-plugin-sentry@1.0.1:
   dependencies:
     "@sentry/browser" latest
 
-gatsby-plugin-sharp@4.15.0:
+gatsby-plugin-sharp@^4.15.0:
   version "4.15.0"
-  resolved "https://registry.yarnpkg.com/gatsby-plugin-sharp/-/gatsby-plugin-sharp-4.15.0.tgz#7acc1ecf8dbdf22c170a4eef439e9f28e9b3d343"
+  resolved "https://registry.npmmirror.com/gatsby-plugin-sharp/-/gatsby-plugin-sharp-4.15.0.tgz#7acc1ecf8dbdf22c170a4eef439e9f28e9b3d343"
   integrity sha512-jnzFbQBuuKG3AxFgaxCgn9r3R3vToSsgpq/HzRvIxK1o1gh7z2gHCTnvquz1RhMGr3qjZGXlZe8mlAfhk3a/rQ==
   dependencies:
     "@babel/runtime" "^7.15.4"
@@ -16980,11 +16996,6 @@ object-copy@^0.1.0:
     define-property "^0.2.5"
     kind-of "^3.0.3"
 
-object-fit-images@^3.2.4:
-  version "3.2.4"
-  resolved "https://registry.yarnpkg.com/object-fit-images/-/object-fit-images-3.2.4.tgz#6c299d38fdf207746e5d2d46c2877f6f25d15b52"
-  integrity sha512-G+7LzpYfTfqUyrZlfrou/PLLLAPNC52FTy5y1CBywX+1/FkxIloOyQXBmZ3Zxa2AWO+lMF0JTuvqbr7G5e5CWg==
-
 object-inspect@^1.12.0:
   version "1.12.2"
   resolved "https://registry.yarnpkg.com/object-inspect/-/object-inspect-1.12.2.tgz#c0641f26394532f28ab8d796ab954e43c009a8ea"
@@ -17159,6 +17170,11 @@ object.values@^1.1.5:
     call-bind "^1.0.2"
     define-properties "^1.1.3"
     es-abstract "^1.19.1"
+
+objectFitPolyfill@^2.3.5:
+  version "2.3.5"
+  resolved "https://registry.npmmirror.com/objectFitPolyfill/-/objectFitPolyfill-2.3.5.tgz#be8c83064aabfa4e88780f776c2013c48ce1f745"
+  integrity sha512-8Quz071ZmGi0QWEG4xB3Bv5Lpw6K0Uca87FLoLMKMWjB6qIq9IyBegP3b/VLNxv2WYvIMGoeUQ+c6ibUkNa8TA==
 
 objectorarray@^1.0.4:
   version "1.0.4"

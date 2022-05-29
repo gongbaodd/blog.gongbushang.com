@@ -7,37 +7,34 @@
 
 import React, { FC } from "react";
 import { useStaticQuery, graphql } from "gatsby";
-import Image, { FixedObject } from "gatsby-image";
+import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image";
 
 import { rhythm } from "../../utils/typography";
 
-const query = graphql`
-  query BioQuery {
-    avatar: file(absolutePath: { regex: "/profile.jpg/" }) {
-      childImageSharp {
-        fixed(width: 50, height: 50) {
-          ...GatsbyImageSharpFixed
-        }
-      }
+const query = graphql`query BioQuery {
+  avatar: file(absolutePath: {regex: "/profile.jpg/"}) {
+    childImageSharp {
+      gatsbyImageData(width: 50, height: 50, layout: FIXED)
     }
-    site {
-      siteMetadata {
-        author {
-          name
-          summary
-        }
-        social {
-          twitter
-        }
+  }
+  site {
+    siteMetadata {
+      author {
+        name
+        summary
+      }
+      social {
+        twitter
       }
     }
   }
+}
 `;
 
 interface Data {
   avatar: {
     childImageSharp: {
-      fixed: FixedObject;
+      gatsbyImageData: IGatsbyImageData;
     };
   };
 
@@ -55,12 +52,12 @@ interface Data {
 }
 
 const Avatar: FC<{
-  fixed: Data["avatar"]["childImageSharp"]["fixed"];
+  fixed: Data["avatar"]["childImageSharp"]["gatsbyImageData"];
   author: Data["site"]["siteMetadata"]["author"];
 }> = ({ fixed, author }) => {
   return (
-    <Image
-      fixed={fixed}
+    <GatsbyImage
+      image={fixed}
       alt={author.name}
       style={{
         marginRight: rhythm(1 / 2),
@@ -70,8 +67,7 @@ const Avatar: FC<{
       }}
       imgStyle={{
         borderRadius: "50%",
-      }}
-    />
+      }} />
   );
 };
 
@@ -101,7 +97,7 @@ const Bio: FC<{}> = () => {
   const { author, social } = data.site.siteMetadata;
   return (
     <div style={{ display: "flex" }}>
-      <Avatar author={author} fixed={data.avatar.childImageSharp.fixed} />
+      <Avatar author={author} fixed={data.avatar.childImageSharp.gatsbyImageData} />
       <Description author={author} social={social} />
     </div>
   );
