@@ -30,23 +30,7 @@ export const pageQuery = graphql`
   }
 `;
 
-interface PageData {
-  allMarkdownRemark: {
-    edges: Array<{
-      node: {
-        excerpt: string;
-        frontmatter: {
-          category: string;
-        };
-        fields: {
-          slug: string;
-          title: string;
-          date: string;
-        };
-      };
-    }>;
-  };
-}
+type PageData = Queries.BlogPostsByCategoryQuery;
 
 export interface PageContext {
   category: string;

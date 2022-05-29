@@ -5,7 +5,7 @@ module.exports = {
     summary: "JJ向上的中华田园仔",
   },
   description: "宫不上的诗书年华",
-  siteUrl: "https://blog.gongbushang.com",
+  siteUrl: "https://gongbaodd.github.io",
   social: {
     twitter: "gongbaodd",
   },

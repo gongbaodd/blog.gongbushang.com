@@ -11,8 +11,8 @@ const TOKEN_PUNC = "token punctuation";
 const TOKEN_STR = "token string";
 const TOKEN_OP = "token operator";
 
-const titleQuery = graphql`
-  query {
+export const titleQuery = graphql`
+  query title {
     site {
       siteMetadata {
         title
@@ -21,13 +21,8 @@ const titleQuery = graphql`
   }
 `;
 
-interface TitleQuery {
-  site: {
-    siteMetadata: {
-      title: string;
-    };
-  };
-}
+
+type TitleQuery = Queries.titleQuery;
 
 export type HeaderProps = PropsWithChildren<{
   location: PageProps["location"];
@@ -73,11 +68,7 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
         <small>{quote}</small>
         <StaticQuery<TitleQuery>
           query={titleQuery}
-          render={({
-            site: {
-              siteMetadata: { title },
-            },
-          }) => title}
+          render={data => data.site?.siteMetadata?.title}
         />
         <small>{quote}</small>
       </Link>

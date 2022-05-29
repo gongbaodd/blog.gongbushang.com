@@ -2,8 +2,8 @@ import { graphql, useStaticQuery } from "gatsby";
 import React from "react";
 import CountLink from "./CountLink";
 
-const categoryQuery = graphql`
-  query {
+export const categoryQuery = graphql`
+  query Categories {
     allMarkdownRemark {
       group(field: frontmatter___category) {
         fieldValue
@@ -13,14 +13,7 @@ const categoryQuery = graphql`
   }
 `;
 
-interface Query {
-  allMarkdownRemark: {
-    group: Array<{
-      fieldValue: string;
-      totalCount: number;
-    }>;
-  };
-}
+type Query = Queries.CategoriesQuery;
 
 export const CategoryLinks = () => {
   const {
@@ -33,7 +26,7 @@ export const CategoryLinks = () => {
         <CountLink
           to={`/categories/${fieldValue}`}
           key={fieldValue}
-          fieldValue={fieldValue}
+          fieldValue={fieldValue || ""}
           totalCount={totalCount}
         />
       ))}

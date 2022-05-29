@@ -31,34 +31,18 @@ const query = graphql`query BioQuery {
 }
 `;
 
-interface Data {
-  avatar: {
-    childImageSharp: {
-      gatsbyImageData: IGatsbyImageData;
-    };
-  };
-
-  site: {
-    siteMetadata: {
-      author: {
-        name: string;
-        summary: string;
-      };
-      social: {
-        twitter: string;
-      };
-    };
-  };
-}
+type Data = Queries.BioQueryQuery;
+type AvatarImg = NonNullable<NonNullable<Data["avatar"]>["childImageSharp"]>["gatsbyImageData"];
+type AvatarAlt = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["author"];
 
 const Avatar: FC<{
-  fixed: Data["avatar"]["childImageSharp"]["gatsbyImageData"];
-  author: Data["site"]["siteMetadata"]["author"];
+  fixed: AvatarImg;
+  author: AvatarAlt;
 }> = ({ fixed, author }) => {
   return (
     <GatsbyImage
       image={fixed}
-      alt={author.name}
+      alt={author?.name || ""}
       style={{
         marginRight: rhythm(1 / 2),
         marginBottom: 0,
@@ -71,16 +55,19 @@ const Avatar: FC<{
   );
 };
 
+type DesAuthor = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["author"];
+type DesSocial = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["social"];
+
 const Description: FC<{
-  author: Data["site"]["siteMetadata"]["author"];
-  social: Data["site"]["siteMetadata"]["social"];
+  author: DesAuthor;
+  social: DesSocial;
 }> = ({ author }) => {
   return (
     <p>
       <>Written by</>
-      <strong>{author.name}</strong>
+      <strong>{author?.name}</strong>
       <br />
-      <>{`${author.summary} `}</>
+      <>{`${author?.summary} `}</>
       <a
         href="https://gongbushang.com/contact"
         target="_blank"
@@ -92,12 +79,22 @@ const Description: FC<{
   );
 };
 
+const errMeta: NonNullable<Data["site"]>["siteMetadata"] = {
+  author: {
+    name: "",
+    summary: ""
+  },
+  social: {
+    twitter: ""
+  }
+};
+
 const Bio: FC<{}> = () => {
   const data = useStaticQuery<Data>(query);
-  const { author, social } = data.site.siteMetadata;
+  const { author, social } = data?.site?.siteMetadata || errMeta;
   return (
     <div style={{ display: "flex" }}>
-      <Avatar author={author} fixed={data.avatar.childImageSharp.gatsbyImageData} />
+      <Avatar author={author} fixed={data?.avatar?.childImageSharp?.gatsbyImageData as IGatsbyImageData} />
       <Description author={author} social={social} />
     </div>
   );

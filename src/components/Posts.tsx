@@ -2,8 +2,8 @@ import React, { FC } from "react";
 import { graphql, useStaticQuery } from "gatsby";
 import BlogLink from "../components/BlogLink";
 
-const pageQuery = graphql`
-  query {
+export const pageQuery = graphql`
+  query Pages {
     allMarkdownRemark(sort: { fields: fields___date, order: DESC }) {
       edges {
         node {
@@ -22,25 +22,7 @@ const pageQuery = graphql`
   }
 `;
 
-interface Query {
-  allMarkdownRemark: {
-    edges: Array<{
-      node: {
-        excerpt: string;
-        frontmatter: {
-          category?: string;
-          tag?: string[];
-        };
-        fields: {
-          slug: string;
-          title: string;
-          date: string;
-          tag?: string[];
-        };
-      };
-    }>;
-  };
-}
+type Query = Queries.PagesQuery;
 
 interface Props {
   data?: Query;
@@ -54,17 +36,17 @@ const Posts: FC<Props> = ({ data }) => {
   return (
     <>
       {edges.map(({ node }) => {
-        const { title, date, slug } = node.fields;
-        const { category: cate } = node.frontmatter;
+        const { title, date, slug } = node.fields || {};
+        const { category: cate } = node.frontmatter || {};
 
         return (
           <BlogLink
-            slug={slug}
-            date={date}
+            slug={slug || ""}
+            date={date || ""}
             category={cate || ""}
-            title={title}
+            title={title || ""}
             key={slug}
-            excerpt={node.excerpt}
+            excerpt={node.excerpt || ""}
           />
         );
       })}

@@ -14,6 +14,7 @@ const siteMetadata = require("./config/meta/site.js");
 
 const config = {
   siteMetadata,
+  graphqlTypegen: true,
   plugins: [
     "gatsby-plugin-typescript",
     "gatsby-transformer-sharp",
