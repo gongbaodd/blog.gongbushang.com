@@ -1,0 +1,23 @@
+{
+    "presets": [
+        [
+            "babel-preset-gatsby",
+            {
+                "targets": {
+                    "browsers": [
+                        "cover 99.5%",
+                        "dead"
+                    ]
+                }
+            }
+        ]
+    ],
+    "plugins": [
+        [
+            "@babel/plugin-transform-spread"
+        ],
+        [
+            "@babel/plugin-proposal-object-rest-spread"
+        ]
+    ]
+}

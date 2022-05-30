@@ -63,6 +63,8 @@
   },
   "devDependencies": {
     "@babel/core": "7.18.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.18.0",
+    "@babel/plugin-transform-spread": "^7.17.12",
     "@emotion/react": "11.9.0",
     "@graphql-eslint/eslint-plugin": "^3.10.3",
     "@mdx-js/react": "2.1.1",
@@ -84,6 +86,7 @@
     "@typescript-eslint/parser": "5.26.0",
     "audit-ci": "6.3.0",
     "babel-loader": "8.2.5",
+    "babel-preset-gatsby": "^2.15.0",
     "commitizen": "4.2.4",
     "emoji-cz": "0.3.1",
     "enzyme": "3.11.0",
