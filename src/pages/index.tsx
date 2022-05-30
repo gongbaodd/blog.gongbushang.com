@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { PageProps, graphql } from "gatsby";
+import { PageProps } from "gatsby";
 
 import Bio from "../components/bio";
 import Layout from "../components/Layout";

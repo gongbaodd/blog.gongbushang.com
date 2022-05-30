@@ -42,6 +42,7 @@ module.exports = {
         wrapperName: ["sanitize"],
       },
     ],
+    "react/function-component-definition": ["off"],
   },
   overrides: [
     {
@@ -66,7 +67,6 @@ module.exports = {
     },
     {
       files: ["*.ts", "*.tsx"],
-      processor: "@graphql-eslint/graphql",
       parser: "@typescript-eslint/parser",
       extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
       env: {

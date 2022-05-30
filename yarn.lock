@@ -2764,9 +2764,9 @@
     parse-filepath "^1.0.2"
     tslib "~2.4.0"
 
-"@graphql-eslint/eslint-plugin@3.10.3":
+"@graphql-eslint/eslint-plugin@^3.10.3":
   version "3.10.3"
-  resolved "https://registry.yarnpkg.com/@graphql-eslint/eslint-plugin/-/eslint-plugin-3.10.3.tgz#5e77f18b18769fe68565a76cc33a094576809b5c"
+  resolved "https://registry.npmmirror.com/@graphql-eslint/eslint-plugin/-/eslint-plugin-3.10.3.tgz#5e77f18b18769fe68565a76cc33a094576809b5c"
   integrity sha512-QQiTBw5T28INXayJHHp8lsfiJoanJIYuTqqA0axKlSyDMtNlbfsL3Kc+a+hth29Fw7zyi9XMGAhTDmIOkpskhg==
   dependencies:
     "@babel/code-frame" "^7.16.7"

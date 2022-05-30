@@ -4,7 +4,7 @@ import { PageProps } from "gatsby";
 import Layout from "../components/Layout";
 import SEO from "../components/seo";
 
-const NotFoundPage: FC<PageProps<{}>> = ({ location }) => {
+const NotFoundPage: FC<PageProps> = ({ location }) => {
   return (
     <Layout location={location}>
       <SEO title="404: Not Found" />

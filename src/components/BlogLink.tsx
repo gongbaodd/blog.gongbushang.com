@@ -61,7 +61,7 @@ const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
         </h3>
       </header>
       <section>
-        <span className={TOKEN_COMMENT}>/**</span>
+        <span className={TOKEN_COMMENT}>{"/**"}</span>
         <p
           className={TOKEN_COMMENT}
           dangerouslySetInnerHTML={{

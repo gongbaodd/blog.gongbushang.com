@@ -37,9 +37,7 @@ export const SeriesLinks = () => {
           totalCount,
           edges: [
             {
-              node: {
-                frontmatter,
-              },
+              node: { frontmatter },
             },
           ],
         }) => {

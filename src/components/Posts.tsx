@@ -25,6 +25,7 @@ export const pageQuery = graphql`
 type Query = Queries.PagesQuery;
 
 interface Props {
+  // eslint-disable-next-line react/require-default-props
   data?: Query;
 }
 

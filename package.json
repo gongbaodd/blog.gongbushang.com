@@ -64,7 +64,7 @@
   "devDependencies": {
     "@babel/core": "7.18.2",
     "@emotion/react": "11.9.0",
-    "@graphql-eslint/eslint-plugin": "3.10.3",
+    "@graphql-eslint/eslint-plugin": "^3.10.3",
     "@mdx-js/react": "2.1.1",
     "@storybook/addon-actions": "6.5.5",
     "@storybook/addon-links": "6.5.5",
@@ -128,7 +128,9 @@
   },
   "lint-staged": {
     "*.js(x)|*.json|*.ts(x)|*.markdown|*.md": [
-      "prettier --write"
+      "prettier --write",
+      "eslint --fix",
+      "git add"
     ]
   },
   "config": {

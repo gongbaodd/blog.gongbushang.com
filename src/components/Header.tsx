@@ -21,15 +21,25 @@ export const titleQuery = graphql`
   }
 `;
 
-
 type TitleQuery = Queries.titleQuery;
 
-export type HeaderProps = PropsWithChildren<{
-  location: PageProps["location"];
+type Props = {
   category?: string;
   tag?: string;
   series?: string;
-}>;
+};
+
+const defaultProps: Props = {
+  category: "",
+  tag: "",
+  series: "",
+};
+
+export type HeaderProps = PropsWithChildren<
+  Props & {
+    location: PageProps["location"];
+  }
+>;
 
 const FilterOption: FC<{
   name: Exclude<keyof HeaderProps, "location">;
@@ -52,13 +62,13 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
   const isRoot = location.pathname === rootPath;
   const style = isRoot
     ? {
-      ...scale(1.5),
-      marginBottom: rhythm(1.5),
-      marginTop: 0,
-    }
+        ...scale(1.5),
+        marginBottom: rhythm(1.5),
+        marginTop: 0,
+      }
     : {
-      marginTop: 0,
-    };
+        marginTop: 0,
+      };
 
   return (
     <h1 style={style}>
@@ -68,7 +78,7 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
         <small>{quote}</small>
         <StaticQuery<TitleQuery>
           query={titleQuery}
-          render={data => data.site?.siteMetadata?.title}
+          render={(data) => data.site?.siteMetadata?.title}
         />
         <small>{quote}</small>
       </Link>
@@ -79,5 +89,7 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
     </h1>
   );
 };
+
+Header.defaultProps = defaultProps;
 
 export default Header;

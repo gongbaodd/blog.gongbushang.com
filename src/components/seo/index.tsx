@@ -6,28 +6,74 @@
  */
 
 import React from "react";
-import PropTypes from "prop-types";
 import Helmet from "react-helmet";
 import { useStaticQuery, graphql } from "gatsby";
 
 export const SeoQuery = graphql`
-query SEO {
-  site {
-    siteMetadata {
-      title
-      description
-      social {
-        twitter
+  query SEO {
+    site {
+      siteMetadata {
+        title
+        description
+        social {
+          twitter
+        }
       }
     }
   }
-}
-`
+`;
 
-const SEO = ({ description, lang, meta, title }) => {
+interface SeoProps {
+  description?: string;
+  lang?: string;
+  meta?: Record<string, string | null | undefined>[];
+  title: string;
+}
+
+function SEO({ description, lang, meta = [], title }: SeoProps) {
   const { site } = useStaticQuery<Queries.SEOQuery>(SeoQuery);
 
   const metaDescription = description || site?.siteMetadata?.description;
+
+  const newMeta = [
+    ...meta,
+    {
+      name: "description",
+      content: metaDescription,
+    },
+    {
+      property: "og:title",
+      content: title,
+    },
+    {
+      property: "og:description",
+      content: metaDescription,
+    },
+    {
+      property: "og:type",
+      content: "website",
+    },
+    {
+      name: "twitter:card",
+      content: "summary",
+    },
+    {
+      name: "twitter:creator",
+      content: site?.siteMetadata?.social?.twitter,
+    },
+    {
+      name: "twitter:title",
+      content: title,
+    },
+    {
+      name: "twitter:description",
+      content: metaDescription,
+    },
+    {
+      name: "referrer",
+      content: "no-referrer",
+    },
+  ];
 
   return (
     <Helmet
@@ -36,59 +82,15 @@ const SEO = ({ description, lang, meta, title }) => {
       }}
       title={title}
       titleTemplate={`%s | ${site?.siteMetadata?.title}`}
-      meta={[
-        {
-          name: "description",
-          content: metaDescription,
-        },
-        {
-          property: "og:title",
-          content: title,
-        },
-        {
-          property: "og:description",
-          content: metaDescription,
-        },
-        {
-          property: "og:type",
-          content: "website",
-        },
-        {
-          name: "twitter:card",
-          content: "summary",
-        },
-        {
-          name: "twitter:creator",
-          content: site?.siteMetadata?.social?.twitter,
-        },
-        {
-          name: "twitter:title",
-          content: title,
-        },
-        {
-          name: "twitter:description",
-          content: metaDescription,
-        },
-        {
-          name: "referrer",
-          content: "no-referrer",
-        },
-      ].concat(meta)}
+      meta={newMeta}
     />
   );
-};
+}
 
 SEO.defaultProps = {
   lang: "en",
   meta: [],
   description: "",
-};
-
-SEO.propTypes = {
-  description: PropTypes.string,
-  lang: PropTypes.string,
-  meta: PropTypes.arrayOf(PropTypes.object),
-  title: PropTypes.string.isRequired,
 };
 
 export default SEO;

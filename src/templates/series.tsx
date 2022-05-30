@@ -11,10 +11,7 @@ export const pageQuery = graphql`
   query BlogPostsBySeries($seriesName: String!) {
     allMarkdownRemark(
       filter: { frontmatter: { series: { name: { eq: $seriesName } } } }
-      sort: {
-        order: ASC
-        fields: [fields___date, fields___series_number]
-      }
+      sort: { order: ASC, fields: [fields___date, fields___series_number] }
     ) {
       edges {
         node {

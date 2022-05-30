@@ -11,29 +11,34 @@ import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image";
 
 import { rhythm } from "../../utils/typography";
 
-const query = graphql`query BioQuery {
-  avatar: file(absolutePath: {regex: "/profile.jpg/"}) {
-    childImageSharp {
-      gatsbyImageData(width: 50, height: 50, layout: FIXED)
-    }
-  }
-  site {
-    siteMetadata {
-      author {
-        name
-        summary
-      }
-      social {
-        twitter
+const query = graphql`
+  query BioQuery {
+    avatar: file(absolutePath: { regex: "/profile.jpg/" }) {
+      childImageSharp {
+        gatsbyImageData(width: 50, height: 50, layout: FIXED)
       }
     }
+    site {
+      siteMetadata {
+        author {
+          name
+          summary
+        }
+        social {
+          twitter
+        }
+      }
+    }
   }
-}
 `;
 
 type Data = Queries.BioQueryQuery;
-type AvatarImg = NonNullable<NonNullable<Data["avatar"]>["childImageSharp"]>["gatsbyImageData"];
-type AvatarAlt = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["author"];
+type AvatarImg = NonNullable<
+  NonNullable<Data["avatar"]>["childImageSharp"]
+>["gatsbyImageData"];
+type AvatarAlt = NonNullable<
+  NonNullable<Data["site"]>["siteMetadata"]
+>["author"];
 
 const Avatar: FC<{
   fixed: AvatarImg;
@@ -51,23 +56,24 @@ const Avatar: FC<{
       }}
       imgStyle={{
         borderRadius: "50%",
-      }} />
+      }}
+    />
   );
 };
 
-type DesAuthor = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["author"];
-type DesSocial = NonNullable<NonNullable<Data["site"]>["siteMetadata"]>["social"];
+type DesAuthor = NonNullable<
+  NonNullable<Data["site"]>["siteMetadata"]
+>["author"];
 
 const Description: FC<{
   author: DesAuthor;
-  social: DesSocial;
 }> = ({ author }) => {
   return (
     <p>
-      <>Written by</>
+      Written by
       <strong>{author?.name}</strong>
       <br />
-      <>{`${author?.summary} `}</>
+      {`${author?.summary} `}
       <a
         href="https://gongbushang.com/contact"
         target="_blank"
@@ -82,20 +88,25 @@ const Description: FC<{
 const errMeta: NonNullable<Data["site"]>["siteMetadata"] = {
   author: {
     name: "",
-    summary: ""
+    summary: "",
   },
   social: {
-    twitter: ""
-  }
+    twitter: "",
+  },
 };
 
-const Bio: FC<{}> = () => {
+const Bio: FC = () => {
   const data = useStaticQuery<Data>(query);
-  const { author, social } = data?.site?.siteMetadata || errMeta;
+  const { author } = data?.site?.siteMetadata || errMeta;
   return (
     <div style={{ display: "flex" }}>
-      <Avatar author={author} fixed={data?.avatar?.childImageSharp?.gatsbyImageData as IGatsbyImageData} />
-      <Description author={author} social={social} />
+      <Avatar
+        author={author}
+        fixed={
+          data?.avatar?.childImageSharp?.gatsbyImageData as IGatsbyImageData
+        }
+      />
+      <Description author={author} />
     </div>
   );
 };

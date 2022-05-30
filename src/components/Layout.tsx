@@ -3,7 +3,7 @@ import Github from "./github";
 import { rhythm } from "../utils/typography";
 import Header, { HeaderProps } from "../components/Header";
 
-const Footer: FC<{}> = () => {
+const Footer: FC = () => {
   return (
     <footer>
       {`© ${new Date().getFullYear()}, Built with `}
@@ -16,7 +16,7 @@ const Layout: FC<HeaderProps> = ({ children, location, ...options }) => {
   return (
     <div className="parallex">
       <div className="parallex_group">
-        <div className="back"></div>
+        <div className="back" />
         <div className="front">
           <div
             style={{
@@ -27,7 +27,12 @@ const Layout: FC<HeaderProps> = ({ children, location, ...options }) => {
             }}
           >
             <Github />
-            <Header location={location} {...options} />
+            <Header
+              location={location}
+              category={options.category}
+              tag={options.tag}
+              series={options.series}
+            />
             <main>{children}</main>
             <Footer />
           </div>
