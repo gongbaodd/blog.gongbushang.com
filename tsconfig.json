@@ -13,5 +13,5 @@
     "resolveJsonModule": true
   },
   "exclude": ["node_modules", "public", ".cache"],
-  "include": ["./src/**/*"]
+  "include": ["./src/**/*", "./node_modules.d.ts"]
 }
