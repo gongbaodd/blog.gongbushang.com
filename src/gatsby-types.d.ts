@@ -2028,7 +2028,6 @@ type Query = {
   readonly allSiteFunction: SiteFunctionConnection;
   readonly allSitePage: SitePageConnection;
   readonly allSitePlugin: SitePluginConnection;
-  readonly allThemeUiConfig: ThemeUiConfigConnection;
   readonly directory: Maybe<Directory>;
   readonly file: Maybe<File>;
   readonly imageSharp: Maybe<ImageSharp>;
@@ -2038,7 +2037,6 @@ type Query = {
   readonly siteFunction: Maybe<SiteFunction>;
   readonly sitePage: Maybe<SitePage>;
   readonly sitePlugin: Maybe<SitePlugin>;
-  readonly themeUiConfig: Maybe<ThemeUiConfig>;
 };
 
 
@@ -2111,14 +2109,6 @@ type Query_allSitePluginArgs = {
   limit: InputMaybe<Scalars['Int']>;
   skip: InputMaybe<Scalars['Int']>;
   sort: InputMaybe<SitePluginSortInput>;
-};
-
-
-type Query_allThemeUiConfigArgs = {
-  filter: InputMaybe<ThemeUiConfigFilterInput>;
-  limit: InputMaybe<Scalars['Int']>;
-  skip: InputMaybe<Scalars['Int']>;
-  sort: InputMaybe<ThemeUiConfigSortInput>;
 };
 
 
@@ -2310,16 +2300,6 @@ type Query_sitePluginArgs = {
   resolve: InputMaybe<StringQueryOperatorInput>;
   ssrAPIs: InputMaybe<StringQueryOperatorInput>;
   version: InputMaybe<StringQueryOperatorInput>;
-};
-
-
-type Query_themeUiConfigArgs = {
-  children: InputMaybe<NodeFilterListInput>;
-  id: InputMaybe<StringQueryOperatorInput>;
-  internal: InputMaybe<InternalFilterInput>;
-  parent: InputMaybe<NodeFilterInput>;
-  preset: InputMaybe<JSONQueryOperatorInput>;
-  prismPreset: InputMaybe<JSONQueryOperatorInput>;
 };
 
 type Site = Node & {
@@ -3500,205 +3480,6 @@ type StringQueryOperatorInput = {
   readonly regex: InputMaybe<Scalars['String']>;
 };
 
-type ThemeUiConfig = Node & {
-  readonly children: ReadonlyArray<Node>;
-  readonly id: Scalars['ID'];
-  readonly internal: Internal;
-  readonly parent: Maybe<Node>;
-  readonly preset: Maybe<Scalars['JSON']>;
-  readonly prismPreset: Maybe<Scalars['JSON']>;
-};
-
-type ThemeUiConfigConnection = {
-  readonly distinct: ReadonlyArray<Scalars['String']>;
-  readonly edges: ReadonlyArray<ThemeUiConfigEdge>;
-  readonly group: ReadonlyArray<ThemeUiConfigGroupConnection>;
-  readonly max: Maybe<Scalars['Float']>;
-  readonly min: Maybe<Scalars['Float']>;
-  readonly nodes: ReadonlyArray<ThemeUiConfig>;
-  readonly pageInfo: PageInfo;
-  readonly sum: Maybe<Scalars['Float']>;
-  readonly totalCount: Scalars['Int'];
-};
-
-
-type ThemeUiConfigConnection_distinctArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigConnection_groupArgs = {
-  field: ThemeUiConfigFieldsEnum;
-  limit: InputMaybe<Scalars['Int']>;
-  skip: InputMaybe<Scalars['Int']>;
-};
-
-
-type ThemeUiConfigConnection_maxArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigConnection_minArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigConnection_sumArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-type ThemeUiConfigEdge = {
-  readonly next: Maybe<ThemeUiConfig>;
-  readonly node: ThemeUiConfig;
-  readonly previous: Maybe<ThemeUiConfig>;
-};
-
-type ThemeUiConfigFieldsEnum =
-  | 'children'
-  | 'children.children'
-  | 'children.children.children'
-  | 'children.children.children.children'
-  | 'children.children.children.id'
-  | 'children.children.id'
-  | 'children.children.internal.content'
-  | 'children.children.internal.contentDigest'
-  | 'children.children.internal.description'
-  | 'children.children.internal.fieldOwners'
-  | 'children.children.internal.ignoreType'
-  | 'children.children.internal.mediaType'
-  | 'children.children.internal.owner'
-  | 'children.children.internal.type'
-  | 'children.children.parent.children'
-  | 'children.children.parent.id'
-  | 'children.id'
-  | 'children.internal.content'
-  | 'children.internal.contentDigest'
-  | 'children.internal.description'
-  | 'children.internal.fieldOwners'
-  | 'children.internal.ignoreType'
-  | 'children.internal.mediaType'
-  | 'children.internal.owner'
-  | 'children.internal.type'
-  | 'children.parent.children'
-  | 'children.parent.children.children'
-  | 'children.parent.children.id'
-  | 'children.parent.id'
-  | 'children.parent.internal.content'
-  | 'children.parent.internal.contentDigest'
-  | 'children.parent.internal.description'
-  | 'children.parent.internal.fieldOwners'
-  | 'children.parent.internal.ignoreType'
-  | 'children.parent.internal.mediaType'
-  | 'children.parent.internal.owner'
-  | 'children.parent.internal.type'
-  | 'children.parent.parent.children'
-  | 'children.parent.parent.id'
-  | 'id'
-  | 'internal.content'
-  | 'internal.contentDigest'
-  | 'internal.description'
-  | 'internal.fieldOwners'
-  | 'internal.ignoreType'
-  | 'internal.mediaType'
-  | 'internal.owner'
-  | 'internal.type'
-  | 'parent.children'
-  | 'parent.children.children'
-  | 'parent.children.children.children'
-  | 'parent.children.children.id'
-  | 'parent.children.id'
-  | 'parent.children.internal.content'
-  | 'parent.children.internal.contentDigest'
-  | 'parent.children.internal.description'
-  | 'parent.children.internal.fieldOwners'
-  | 'parent.children.internal.ignoreType'
-  | 'parent.children.internal.mediaType'
-  | 'parent.children.internal.owner'
-  | 'parent.children.internal.type'
-  | 'parent.children.parent.children'
-  | 'parent.children.parent.id'
-  | 'parent.id'
-  | 'parent.internal.content'
-  | 'parent.internal.contentDigest'
-  | 'parent.internal.description'
-  | 'parent.internal.fieldOwners'
-  | 'parent.internal.ignoreType'
-  | 'parent.internal.mediaType'
-  | 'parent.internal.owner'
-  | 'parent.internal.type'
-  | 'parent.parent.children'
-  | 'parent.parent.children.children'
-  | 'parent.parent.children.id'
-  | 'parent.parent.id'
-  | 'parent.parent.internal.content'
-  | 'parent.parent.internal.contentDigest'
-  | 'parent.parent.internal.description'
-  | 'parent.parent.internal.fieldOwners'
-  | 'parent.parent.internal.ignoreType'
-  | 'parent.parent.internal.mediaType'
-  | 'parent.parent.internal.owner'
-  | 'parent.parent.internal.type'
-  | 'parent.parent.parent.children'
-  | 'parent.parent.parent.id'
-  | 'preset'
-  | 'prismPreset';
-
-type ThemeUiConfigFilterInput = {
-  readonly children: InputMaybe<NodeFilterListInput>;
-  readonly id: InputMaybe<StringQueryOperatorInput>;
-  readonly internal: InputMaybe<InternalFilterInput>;
-  readonly parent: InputMaybe<NodeFilterInput>;
-  readonly preset: InputMaybe<JSONQueryOperatorInput>;
-  readonly prismPreset: InputMaybe<JSONQueryOperatorInput>;
-};
-
-type ThemeUiConfigGroupConnection = {
-  readonly distinct: ReadonlyArray<Scalars['String']>;
-  readonly edges: ReadonlyArray<ThemeUiConfigEdge>;
-  readonly field: Scalars['String'];
-  readonly fieldValue: Maybe<Scalars['String']>;
-  readonly group: ReadonlyArray<ThemeUiConfigGroupConnection>;
-  readonly max: Maybe<Scalars['Float']>;
-  readonly min: Maybe<Scalars['Float']>;
-  readonly nodes: ReadonlyArray<ThemeUiConfig>;
-  readonly pageInfo: PageInfo;
-  readonly sum: Maybe<Scalars['Float']>;
-  readonly totalCount: Scalars['Int'];
-};
-
-
-type ThemeUiConfigGroupConnection_distinctArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigGroupConnection_groupArgs = {
-  field: ThemeUiConfigFieldsEnum;
-  limit: InputMaybe<Scalars['Int']>;
-  skip: InputMaybe<Scalars['Int']>;
-};
-
-
-type ThemeUiConfigGroupConnection_maxArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigGroupConnection_minArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-
-type ThemeUiConfigGroupConnection_sumArgs = {
-  field: ThemeUiConfigFieldsEnum;
-};
-
-type ThemeUiConfigSortInput = {
-  readonly fields: InputMaybe<ReadonlyArray<InputMaybe<ThemeUiConfigFieldsEnum>>>;
-  readonly order: InputMaybe<ReadonlyArray<InputMaybe<SortOrderEnum>>>;
-};
-
 type TransformOptions = {
   readonly cropFocus: InputMaybe<ImageCropFocus>;
   readonly duotone: InputMaybe<DuotoneGradient>;
@@ -3737,15 +3518,22 @@ type SEOQueryVariables = Exact<{ [key: string]: never; }>;
 
 type SEOQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null, readonly description: string | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
 
+type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
+
 type TagQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
 
-type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
+type BlogPostBySlugQueryVariables = Exact<{
+  slug: Scalars['String'];
+}>;
 
 
-type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
+type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
 
 type BlogPostsByCategoryQueryVariables = Exact<{
   category: Scalars['String'];
@@ -3767,13 +3555,6 @@ type BlogPostsByTagsQueryVariables = Exact<{
 
 
 type BlogPostsByTagsQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null, readonly tag: ReadonlyArray<string | null> | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
-
-type BlogPostBySlugQueryVariables = Exact<{
-  slug: Scalars['String'];
-}>;
-
-
-type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
 
 type GatsbyImageSharpFixedFragment = { readonly base64: string | null, readonly width: number, readonly height: number, readonly src: string, readonly srcSet: string };
 

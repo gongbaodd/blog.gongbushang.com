@@ -22,7 +22,6 @@ const config = {
     "gatsby-plugin-offline",
     "gatsby-plugin-page-progress",
     "gatsby-plugin-tidy",
-    "gatsby-plugin-theme-ui",
     "gatsby-plugin-typography",
     "gatsby-plugin-sitemap",
     "gatsby-plugin-catch-links",

@@ -1,5 +1,5 @@
 import { Link } from "gatsby";
-import { Badge } from "theme-ui";
+// import { Badge } from "theme-ui";
 import React, { FC } from "react";
 
 interface Props {
@@ -12,7 +12,7 @@ const CountLink: FC<Props> = ({ fieldValue, totalCount, to }) => {
   return (
     <Link to={to} style={{ marginRight: ".5em", display: "inline-block" }}>
       {fieldValue}
-      <Badge variant="circle">{totalCount}</Badge>
+      <div>{totalCount}</div>
     </Link>
   );
 };

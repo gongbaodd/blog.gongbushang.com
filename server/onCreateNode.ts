@@ -70,15 +70,14 @@ const createMdNodeFields = (
     createNodeField({
       name: "series",
       node,
-      value: series.slug
+      value: series.slug,
     });
 
     createNodeField({
       name: "series_number",
       node,
-      value: series.number || 0
+      value: series.number || 0,
     });
-
   }
 };
 
