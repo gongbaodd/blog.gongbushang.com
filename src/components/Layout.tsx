@@ -12,10 +12,18 @@ const Footer: FC = () => {
   );
 };
 
-const Layout: FC<PropsWithChildren<{}>> = ({ children }) => {
+const Layout: FC<
+  PropsWithChildren<{
+    category?: string;
+    series?: string;
+    tag?: string;
+  }>
+> = ({ children }) => {
   return (
     <Box as="main">
-      <Flex hAlign="center">{children}</Flex>
+      <Flex hAlign="center" style={{ minHeight: "90vh" }}>
+        {children}
+      </Flex>
       <Divider />
       <Box style={{ height: "3.6rem" }}>
         <Footer />

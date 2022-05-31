@@ -2,6 +2,7 @@ import React, { FC } from "react";
 import { useStaticQuery, graphql } from "gatsby";
 import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image";
 import { Flex, Box, Divider, Text } from "@fluentui/react-northstar";
+import Header from "../Header";
 
 const query = graphql`
   query BioQuery {
@@ -57,7 +58,7 @@ const Description: FC<{
   return (
     <Flex column gap="gap.medium">
       <Divider content="Written by" />
-      <Text content={author?.name} size="larger" align="center" />
+      <Header />
       <Text content={author?.summary} align="center" />
     </Flex>
   );

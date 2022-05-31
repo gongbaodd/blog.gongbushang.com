@@ -25,7 +25,7 @@ const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
         reactionGroup={[
           {
             key: category,
-            content: <Link to={`/categories/${category}`}>category</Link>,
+            content: <Link to={`/categories/${category}`}>{category}</Link>,
             icon: <BookmarkIcon />,
           },
         ]}

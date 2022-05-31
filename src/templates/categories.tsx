@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import { PageProps, graphql } from "gatsby";
+import { Flex, FlexItem, Box } from "@fluentui/react-northstar";
 
 import Layout from "../components/Layout";
 import SEO from "../components/seo";
@@ -42,12 +43,22 @@ const CategoryTemplate: FC<PageProps<PageData, PageContext>> = ({
   pageContext: { category },
 }) => {
   return (
-    <Layout location={location} category={category}>
+    <>
       <SEO title={category} />
-      <Bio />
-      <GroupLinks />
-      <Posts data={data} />
-    </Layout>
+
+      <Layout category={category}>
+        <Flex gap="gap.large">
+          <Bio />
+          <FlexItem grow>
+            <Box as="article" style={{ paddingTop: "6.8rem" }}>
+              <Posts />
+            </Box>
+          </FlexItem>
+
+          <GroupLinks />
+        </Flex>
+      </Layout>
+    </>
   );
 };
 

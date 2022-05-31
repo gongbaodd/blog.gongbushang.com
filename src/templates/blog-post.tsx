@@ -1,6 +1,18 @@
 import React, { FC } from "react";
 import { Link, graphql, PageProps } from "gatsby";
 import withUtterances from "with-utterances";
+import {
+  Card,
+  Flex,
+  Box,
+  CardHeader,
+  CardBody,
+  Text,
+  Button,
+  FlexItem,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+} from "@fluentui/react-northstar";
 
 import Bio from "../components/bio";
 import Layout from "../components/Layout";
@@ -56,57 +68,55 @@ const BlogPostTemplate: FC<
   const { title, date } = post.fields;
 
   return (
-    <Layout location={location}>
+    <>
       <SEO title={title} description={post.excerpt} />
-      <article>
-        <header>
-          <p
-            style={{
-              display: "block",
-            }}
-          >
-            {date}
-          </p>
-        </header>
-        <section
-          className="blog_post"
-          dangerouslySetInnerHTML={{
-            __html: sanitize(post.html),
-          }}
-        />
-        <hr style={{}} />
-        <footer>
-          <Bio />
-        </footer>
-      </article>
 
-      <nav>
-        <ul
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            listStyle: "none",
-            padding: 0,
-          }}
-        >
-          <li>
-            {previous && (
-              <Link to={previous.fields.slug} rel="prev">
-                {`← ${previous.fields.title}`}
-              </Link>
-            )}
-          </li>
-          <li>
-            {next && (
-              <Link to={next.fields.slug} rel="next">
-                {`${next.fields.title} →`}
-              </Link>
-            )}
-          </li>
-        </ul>
-      </nav>
-    </Layout>
+      <Layout>
+        <Flex gap="gap.large">
+          <Bio />
+          <Box style={{ padding: "2.4rem" }}>
+            <Flex column gap="gap.large">
+              <Card fluid>
+                <CardHeader>
+                  <Text content={date} />
+                </CardHeader>
+                <CardBody>
+                  <section
+                    className="blog_post"
+                    dangerouslySetInnerHTML={{
+                      __html: sanitize(post.html),
+                    }}
+                  />
+                </CardBody>
+              </Card>
+
+              <FlexItem>
+                <Flex space="between">
+                  <Link to={previous.fields.slug} rel="prev">
+                    <Button
+                      icon={<ArrowLeftIcon />}
+                      iconPosition="before"
+                      primary
+                    >
+                      {previous.fields.title}
+                    </Button>
+                  </Link>
+                  <Link to={next.fields.slug} rel="next">
+                    <Button
+                      icon={<ArrowRightIcon />}
+                      iconPosition="after"
+                      primary
+                    >
+                      {next.fields.title}
+                    </Button>
+                  </Link>
+                </Flex>
+              </FlexItem>
+            </Flex>
+          </Box>
+        </Flex>
+      </Layout>
+    </>
   );
 };
 

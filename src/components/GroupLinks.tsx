@@ -1,16 +1,24 @@
 import React from "react";
-// import { Container } from "theme-ui";
+import { Flex, FlexItem, Box } from "@fluentui/react-northstar";
+
 import { CategoryLinks } from "../components/CategoryLink";
 import { TagLinks } from "../components/TagLink";
 import { SeriesLinks } from "../components/SeriesLink";
 
 const GroupLinks = () => {
   return (
-    <>
-      <CategoryLinks />
-      <TagLinks />
-      <SeriesLinks />
-    </>
+    <FlexItem size="size.half">
+      <Box
+        as="section"
+        style={{
+          paddingTop: "6.8rem",
+        }}
+      >
+        <CategoryLinks />
+        <TagLinks />
+        <SeriesLinks />
+      </Box>
+    </FlexItem>
   );
 };
 
