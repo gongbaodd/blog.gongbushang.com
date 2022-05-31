@@ -13,33 +13,7 @@ const Footer: FC = () => {
 };
 
 const Layout: FC<HeaderProps> = ({ children, location, ...options }) => {
-  return (
-    <div className="parallex">
-      <div className="parallex_group">
-        <div className="back" />
-        <div className="front">
-          <div
-            style={{
-              marginLeft: "auto",
-              marginRight: "auto",
-              maxWidth: rhythm(42),
-              padding: `${rhythm(1.5)} ${rhythm(3 / 4)}`,
-            }}
-          >
-            <Github />
-            <Header
-              location={location}
-              category={options.category}
-              tag={options.tag}
-              series={options.series}
-            />
-            <main>{children}</main>
-            <Footer />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <main>{children}</main>;
 };
 
 export default Layout;

@@ -1,6 +1,6 @@
 import React from "react";
-import { FluentProvider, teamsLightTheme } from "@fluentui/react-components";
+import { Provider, teamsTheme } from "@fluentui/react-northstar";
 
 export function wrapPageElement({ element }) {
-  return <FluentProvider theme={teamsLightTheme}>{element}</FluentProvider>;
+  return <Provider theme={teamsTheme}>{element}</Provider>;
 }

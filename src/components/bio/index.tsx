@@ -1,21 +1,14 @@
-/**
- * Bio component that queries for data
- * with Gatsby's useStaticQuery component
- *
- * See: https://www.gatsbyjs.org/docs/use-static-query/
- */
-
 import React, { FC } from "react";
 import { useStaticQuery, graphql } from "gatsby";
 import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image";
-
+import { Flex, Image } from "@fluentui/react-northstar";
 import { rhythm } from "../../utils/typography";
 
 const query = graphql`
   query BioQuery {
     avatar: file(absolutePath: { regex: "/profile.jpg/" }) {
       childImageSharp {
-        gatsbyImageData(width: 50, height: 50, layout: FIXED)
+        gatsbyImageData(width: 260, height: 260, layout: FIXED)
       }
     }
     site {
@@ -48,15 +41,7 @@ const Avatar: FC<{
     <GatsbyImage
       image={fixed}
       alt={author?.name || ""}
-      style={{
-        marginRight: rhythm(1 / 2),
-        marginBottom: 0,
-        minWidth: 50,
-        borderRadius: "100%",
-      }}
-      imgStyle={{
-        borderRadius: "50%",
-      }}
+      imgStyle={{ borderRadius: "50%" }}
     />
   );
 };
@@ -68,21 +53,22 @@ type DesAuthor = NonNullable<
 const Description: FC<{
   author: DesAuthor;
 }> = ({ author }) => {
-  return (
-    <p>
-      Written by
-      <strong>{author?.name}</strong>
-      <br />
-      {`${author?.summary} `}
-      <a
-        href="https://gongbushang.com/contact"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        找我玩呀
-      </a>
-    </p>
-  );
+  // return (
+  //   <p>
+  //     Written by
+  //     <strong>{author?.name}</strong>
+  //     <br />
+  //     {`${author?.summary} `}
+  //     <a
+  //       href="https://gongbushang.com/contact"
+  //       target="_blank"
+  //       rel="noopener noreferrer"
+  //     >
+  //       找我玩呀
+  //     </a>
+  //   </p>
+  // );
+  return <></>;
 };
 
 const errMeta: NonNullable<Data["site"]>["siteMetadata"] = {
