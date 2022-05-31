@@ -5,7 +5,6 @@ import withUtterances from "with-utterances";
 import Bio from "../components/bio";
 import Layout from "../components/Layout";
 import SEO from "../components/seo";
-import { rhythm, scale } from "../utils/typography";
 
 const sanitize = (html: string) => html;
 
@@ -63,9 +62,7 @@ const BlogPostTemplate: FC<
         <header>
           <p
             style={{
-              ...scale(-1 / 5),
               display: "block",
-              marginBottom: rhythm(1),
             }}
           >
             {date}
@@ -77,11 +74,7 @@ const BlogPostTemplate: FC<
             __html: sanitize(post.html),
           }}
         />
-        <hr
-          style={{
-            marginBottom: rhythm(1),
-          }}
-        />
+        <hr style={{}} />
         <footer>
           <Bio />
         </footer>

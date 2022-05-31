@@ -1,8 +1,6 @@
 import React, { FC } from "react";
 import { Link } from "gatsby";
 // import { Container } from "theme-ui";
-
-import { rhythm } from "../utils/typography";
 import { sanitize } from "../utils/sanitize";
 
 // eslint-disable-next-line quotes
@@ -26,11 +24,7 @@ const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
     <>
       <header>
         <small className={TOKEN_COMMENT}>{`/** ${date} **/`}</small>
-        <h3
-          style={{
-            marginBottom: rhythm(1 / 4),
-          }}
-        >
+        <h3 style={{}}>
           <small className={TOKEN_FUNC}>post</small>
           <small className={TOKEN_OP}>
             {category && (

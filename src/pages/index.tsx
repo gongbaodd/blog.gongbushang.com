@@ -9,25 +9,22 @@ import GroupLink from "../components/GroupLinks";
 import Posts from "../components/Posts";
 
 const BlogIndex: FC<PageProps> = ({ location }) => {
-  // return (
-  //   <Layout location={location}>
-  //     <SEO title="All posts" />
-  //     <Bio />
-  //     <GroupLink />
-  //     <article>
-  //       <Posts />
-  //     </article>
-  //   </Layout>
-  // );
   return (
-    <Flex gap="gap.smaller" fill>
-      <Bio />
-      <FlexItem>
-        <article>
-          <Posts />
-        </article>
-      </FlexItem>
-    </Flex>
+    <>
+      <SEO title="All posts" />
+
+      <Layout location={location}>
+        <Flex gap="gap.large">
+          <Bio />
+          <FlexItem>
+            <article>
+              <GroupLink />
+              <Posts />
+            </article>
+          </FlexItem>
+        </Flex>
+      </Layout>
+    </>
   );
 };
 

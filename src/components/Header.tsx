@@ -1,6 +1,5 @@
 import React, { FC, PropsWithChildren } from "react";
 import { Link, PageProps, StaticQuery, graphql } from "gatsby";
-import { rhythm, scale } from "../utils/typography";
 
 // eslint-disable-next-line no-undef
 const rootPath = `${__PATH_PREFIX__}/`;
@@ -62,8 +61,6 @@ const Header: FC<HeaderProps> = ({ location, category, tag, series }) => {
   const isRoot = location.pathname === rootPath;
   const style = isRoot
     ? {
-        ...scale(1.5),
-        marginBottom: rhythm(1.5),
         marginTop: 0,
       }
     : {

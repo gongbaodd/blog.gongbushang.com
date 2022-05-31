@@ -1,8 +1,7 @@
 import React, { FC } from "react";
 import { useStaticQuery, graphql } from "gatsby";
 import { GatsbyImage, IGatsbyImageData } from "gatsby-plugin-image";
-import { Flex, Image } from "@fluentui/react-northstar";
-import { rhythm } from "../../utils/typography";
+import { Flex, Box, Divider, Text } from "@fluentui/react-northstar";
 
 const query = graphql`
   query BioQuery {
@@ -38,11 +37,13 @@ const Avatar: FC<{
   author: AvatarAlt;
 }> = ({ fixed, author }) => {
   return (
-    <GatsbyImage
-      image={fixed}
-      alt={author?.name || ""}
-      imgStyle={{ borderRadius: "50%" }}
-    />
+    <Box style={{ padding: "1.2rem", paddingTop: "3.6em" }}>
+      <GatsbyImage
+        image={fixed}
+        alt={author?.name || ""}
+        imgStyle={{ borderRadius: "50%" }}
+      />
+    </Box>
   );
 };
 
@@ -53,22 +54,13 @@ type DesAuthor = NonNullable<
 const Description: FC<{
   author: DesAuthor;
 }> = ({ author }) => {
-  // return (
-  //   <p>
-  //     Written by
-  //     <strong>{author?.name}</strong>
-  //     <br />
-  //     {`${author?.summary} `}
-  //     <a
-  //       href="https://gongbushang.com/contact"
-  //       target="_blank"
-  //       rel="noopener noreferrer"
-  //     >
-  //       找我玩呀
-  //     </a>
-  //   </p>
-  // );
-  return <></>;
+  return (
+    <Flex column gap="gap.medium">
+      <Divider content="Written by" />
+      <Text content={author?.name} size="larger" align="center" />
+      <Text content={author?.summary} align="center" />
+    </Flex>
+  );
 };
 
 const errMeta: NonNullable<Data["site"]>["siteMetadata"] = {
@@ -85,7 +77,7 @@ const Bio: FC = () => {
   const data = useStaticQuery<Data>(query);
   const { author } = data?.site?.siteMetadata || errMeta;
   return (
-    <div style={{ display: "flex" }}>
+    <Flex column>
       <Avatar
         author={author}
         fixed={
@@ -93,7 +85,7 @@ const Bio: FC = () => {
         }
       />
       <Description author={author} />
-    </div>
+    </Flex>
   );
 };
 

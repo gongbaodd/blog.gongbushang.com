@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import Github from "./github";
-import { rhythm } from "../utils/typography";
 import Header, { HeaderProps } from "../components/Header";
+import { Flex } from "@fluentui/react-northstar";
 
 const Footer: FC = () => {
   return (
@@ -13,7 +13,11 @@ const Footer: FC = () => {
 };
 
 const Layout: FC<HeaderProps> = ({ children, location, ...options }) => {
-  return <main>{children}</main>;
+  return (
+    <Flex fill as="main" hAlign="center">
+      {children}
+    </Flex>
+  );
 };
 
 export default Layout;
