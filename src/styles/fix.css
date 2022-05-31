@@ -1,3 +1,9 @@
 .ui-provider {
     height: 100vh;
 }
+
+a {
+    color: inherit;
+    display: inline-flex;
+    text-decoration: none;
+}

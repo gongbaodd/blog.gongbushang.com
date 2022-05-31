@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { PageProps } from "gatsby";
 
-import { Flex, FlexItem, Grid, Segment } from "@fluentui/react-northstar";
+import { Flex, FlexItem, Box } from "@fluentui/react-northstar";
 import Bio from "../components/bio";
 import Layout from "../components/Layout";
 import SEO from "../components/seo";
@@ -16,12 +16,14 @@ const BlogIndex: FC<PageProps> = ({ location }) => {
       <Layout location={location}>
         <Flex gap="gap.large">
           <Bio />
-          <FlexItem>
-            <article>
-              <GroupLink />
+
+          <FlexItem push>
+            <Box as="article" style={{ width: "540px", paddingTop: "6.8rem" }}>
               <Posts />
-            </article>
+            </Box>
           </FlexItem>
+
+          <GroupLink />
         </Flex>
       </Layout>
     </>

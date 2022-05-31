@@ -1,15 +1,12 @@
 import React, { FC } from "react";
 import { Link } from "gatsby";
-// import { Container } from "theme-ui";
 import { sanitize } from "../utils/sanitize";
-
-// eslint-disable-next-line quotes
-const quote = '"';
-const TOKEN_FUNC = "token function";
-const TOKEN_PUNC = "token punctuation";
-const TOKEN_STR = "token string";
-const TOKEN_OP = "token operator";
-const TOKEN_COMMENT = "token comment";
+import {
+  ChatMessage,
+  BookmarkIcon,
+  ArrowRightIcon,
+  Button,
+} from "@fluentui/react-northstar";
 
 interface Props {
   date: string;
@@ -21,54 +18,25 @@ interface Props {
 
 const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
   return (
-    <>
-      <header>
-        <small className={TOKEN_COMMENT}>{`/** ${date} **/`}</small>
-        <h3 style={{}}>
-          <small className={TOKEN_FUNC}>post</small>
-          <small className={TOKEN_OP}>
-            {category && (
-              <Link
-                className={TOKEN_OP}
-                to={`/categories/${category}`}
-                style={{ textDecoration: "none" }}
-              >
-                {`<${category}>`}
-              </Link>
-            )}
-            {!category && "<{}>"}
-          </small>
-          <small className={TOKEN_PUNC}>(</small>
-          <br />
-          <Link
-            className={TOKEN_STR}
-            style={{ paddingLeft: "1em", textDecoration: "none" }}
-            to={slug}
-          >
-            <small>{quote}</small>
-            {title}
-            <small>{quote}</small>
+    <ChatMessage
+      author={title}
+      content={excerpt}
+      timestamp={date}
+      reactionGroup={[
+        {
+          key: category,
+          content: <Link to={`/categories/${category}`}>category</Link>,
+          icon: <BookmarkIcon />,
+        },
+      ]}
+      badge={{
+        icon: (
+          <Link to={slug}>
+            <ArrowRightIcon />
           </Link>
-          <br />
-          <small className={TOKEN_PUNC}>)</small>
-          <small className={TOKEN_PUNC}>;</small>
-        </h3>
-      </header>
-      <section>
-        <span className={TOKEN_COMMENT}>{"/**"}</span>
-        <p
-          className={TOKEN_COMMENT}
-          dangerouslySetInnerHTML={{
-            __html: sanitize(excerpt),
-          }}
-          style={{
-            marginBottom: 0,
-            paddingLeft: "1em",
-          }}
-        />
-        <span className={TOKEN_COMMENT}>**/</span>
-      </section>
-    </>
+        ),
+      }}
+    />
   );
 };
 

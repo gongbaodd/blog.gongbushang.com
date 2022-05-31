@@ -3498,6 +3498,11 @@ type BioQueryQueryVariables = Exact<{ [key: string]: never; }>;
 
 type BioQueryQuery = { readonly avatar: { readonly childImageSharp: { readonly gatsbyImageData: import('gatsby-plugin-image').IGatsbyImageData } | null } | null, readonly site: { readonly siteMetadata: { readonly author: { readonly name: string | null, readonly summary: string | null } | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
 
+type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type CategoriesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
+
 type titleQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -3508,20 +3513,15 @@ type PagesQueryVariables = Exact<{ [key: string]: never; }>;
 
 type PagesQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
 
-type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
-
 type SEOQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type SEOQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null, readonly description: string | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
 
-type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
+type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-type CategoriesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
+type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
 
 type TagQueryVariables = Exact<{ [key: string]: never; }>;
 
