@@ -1,7 +1,7 @@
 import React, { FC } from "react";
 import { PageProps } from "gatsby";
 
-import { Flex, FlexItem } from "@fluentui/react-northstar";
+import { Flex, FlexItem, Grid, Segment } from "@fluentui/react-northstar";
 import Bio from "../components/bio";
 import Layout from "../components/Layout";
 import SEO from "../components/seo";
@@ -20,7 +20,7 @@ const BlogIndex: FC<PageProps> = ({ location }) => {
   //   </Layout>
   // );
   return (
-    <Flex gap="gap.smaller">
+    <Flex gap="gap.smaller" fill>
       <Bio />
       <FlexItem>
         <article>
