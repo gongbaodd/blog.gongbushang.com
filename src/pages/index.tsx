@@ -18,12 +18,19 @@ const BlogIndex: FC<PageProps> = ({ location }) => {
           <Bio />
 
           <FlexItem push>
-            <Box as="article" style={{ width: "540px", paddingTop: "6.8rem" }}>
+            <Box as="article" style={{ width: "26rem", paddingTop: "6.8rem" }}>
               <Posts />
             </Box>
           </FlexItem>
 
-          <GroupLink />
+          <FlexItem>
+            <Box
+              as="section"
+              style={{ paddingTop: "6.8rem", paddingRight: "1.2rem" }}
+            >
+              <GroupLink />
+            </Box>
+          </FlexItem>
         </Flex>
       </Layout>
     </>
