@@ -1,11 +1,10 @@
 import React, { FC } from "react";
 import { Link } from "gatsby";
-import { sanitize } from "../utils/sanitize";
 import {
   ChatMessage,
   BookmarkIcon,
   ArrowRightIcon,
-  Button,
+  Box,
 } from "@fluentui/react-northstar";
 
 interface Props {
@@ -18,25 +17,27 @@ interface Props {
 
 const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
   return (
-    <ChatMessage
-      author={title}
-      content={excerpt}
-      timestamp={date}
-      reactionGroup={[
-        {
-          key: category,
-          content: <Link to={`/categories/${category}`}>category</Link>,
-          icon: <BookmarkIcon />,
-        },
-      ]}
-      badge={{
-        icon: (
-          <Link to={slug}>
-            <ArrowRightIcon />
-          </Link>
-        ),
-      }}
-    />
+    <Box style={{ paddingBottom: "2.4rem" }}>
+      <ChatMessage
+        author={title}
+        content={excerpt}
+        timestamp={date}
+        reactionGroup={[
+          {
+            key: category,
+            content: <Link to={`/categories/${category}`}>category</Link>,
+            icon: <BookmarkIcon />,
+          },
+        ]}
+        badge={{
+          icon: (
+            <Link to={slug}>
+              <ArrowRightIcon />
+            </Link>
+          ),
+        }}
+      />
+    </Box>
   );
 };
 

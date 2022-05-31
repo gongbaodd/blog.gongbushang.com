@@ -1,22 +1,26 @@
-import React, { FC } from "react";
-import Github from "./github";
-import Header, { HeaderProps } from "../components/Header";
-import { Flex } from "@fluentui/react-northstar";
+import React, { FC, PropsWithChildren } from "react";
+import { Flex, FlexItem, Box, Divider, Text } from "@fluentui/react-northstar";
 
 const Footer: FC = () => {
   return (
     <footer>
-      {`© ${new Date().getFullYear()}, Built with `}
-      <a href="https://www.gatsbyjs.org">Gatsby</a>
+      <Text align="center">
+        {`© ${new Date().getFullYear()}, Built with `}
+        <a href="https://www.gatsbyjs.org">Gatsby</a>
+      </Text>
     </footer>
   );
 };
 
-const Layout: FC<HeaderProps> = ({ children, location, ...options }) => {
+const Layout: FC<PropsWithChildren<{}>> = ({ children }) => {
   return (
-    <Flex fill as="main" hAlign="center">
-      {children}
-    </Flex>
+    <Box as="main">
+      <Flex hAlign="center">{children}</Flex>
+      <Divider />
+      <Box style={{ height: "3.6rem" }}>
+        <Footer />
+      </Box>
+    </Box>
   );
 };
 

@@ -672,6 +672,8 @@ type FileFieldsEnum =
   | 'childMarkdownRemark.fields.year'
   | 'childMarkdownRemark.fileAbsolutePath'
   | 'childMarkdownRemark.frontmatter.category'
+  | 'childMarkdownRemark.frontmatter.layout'
+  | 'childMarkdownRemark.frontmatter.post'
   | 'childMarkdownRemark.frontmatter.series.name'
   | 'childMarkdownRemark.frontmatter.series.number'
   | 'childMarkdownRemark.frontmatter.series.slug'
@@ -814,6 +816,8 @@ type FileFieldsEnum =
   | 'childrenMarkdownRemark.fields.year'
   | 'childrenMarkdownRemark.fileAbsolutePath'
   | 'childrenMarkdownRemark.frontmatter.category'
+  | 'childrenMarkdownRemark.frontmatter.layout'
+  | 'childrenMarkdownRemark.frontmatter.post'
   | 'childrenMarkdownRemark.frontmatter.series.name'
   | 'childrenMarkdownRemark.frontmatter.series.number'
   | 'childrenMarkdownRemark.frontmatter.series.slug'
@@ -1777,6 +1781,8 @@ type MarkdownRemarkFieldsEnum =
   | 'fields.year'
   | 'fileAbsolutePath'
   | 'frontmatter.category'
+  | 'frontmatter.layout'
+  | 'frontmatter.post'
   | 'frontmatter.series.name'
   | 'frontmatter.series.number'
   | 'frontmatter.series.slug'
@@ -1880,6 +1886,8 @@ type MarkdownRemarkFilterListInput = {
 
 type MarkdownRemarkFrontmatter = {
   readonly category: Maybe<Scalars['String']>;
+  readonly layout: Maybe<Scalars['String']>;
+  readonly post: Maybe<Scalars['String']>;
   readonly series: Maybe<MarkdownRemarkFrontmatterSeries>;
   readonly tag: Maybe<ReadonlyArray<Maybe<Scalars['String']>>>;
   readonly title: Maybe<Scalars['String']>;
@@ -1888,6 +1896,8 @@ type MarkdownRemarkFrontmatter = {
 
 type MarkdownRemarkFrontmatterFilterInput = {
   readonly category: InputMaybe<StringQueryOperatorInput>;
+  readonly layout: InputMaybe<StringQueryOperatorInput>;
+  readonly post: InputMaybe<StringQueryOperatorInput>;
   readonly series: InputMaybe<MarkdownRemarkFrontmatterSeriesFilterInput>;
   readonly tag: InputMaybe<StringQueryOperatorInput>;
   readonly title: InputMaybe<StringQueryOperatorInput>;
@@ -3508,11 +3518,6 @@ type titleQueryVariables = Exact<{ [key: string]: never; }>;
 
 type titleQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null } | null } | null };
 
-type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
-
 type SEOQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -3522,6 +3527,11 @@ type TagQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
+
+type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
 
 type PagesQueryVariables = Exact<{ [key: string]: never; }>;
 
