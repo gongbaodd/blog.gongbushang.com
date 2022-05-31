@@ -8,6 +8,7 @@
     "url": "https://github.com/gongbaodd/gongbaodd.github.io/issues"
   },
   "dependencies": {
+    "@fluentui/react-components": "^9.0.0-rc.13",
     "gatsby": "4.15.1",
     "gatsby-cli": "4.15.0",
     "gatsby-plugin-catch-links": "4.15.0",

@@ -43,6 +43,7 @@ module.exports = {
       },
     ],
     "react/function-component-definition": ["off"],
+    indent: ["error", 2],
   },
   overrides: [
     {
