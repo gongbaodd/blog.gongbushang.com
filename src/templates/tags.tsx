@@ -39,15 +39,13 @@ export interface PageContext {
 }
 
 const CategoryTemplate: FC<PageProps<PageData, PageContext>> = ({
-  data,
-  location,
   pageContext: { tag },
 }) => {
   return (
     <>
       <SEO title={tag} />
 
-      <Layout tag={tag}>
+      <Layout>
         <Flex gap="gap.large">
           <Bio />
           <FlexItem grow>

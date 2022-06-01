@@ -8,7 +8,7 @@ import SEO from "../components/seo";
 import GroupLink from "../components/GroupLinks";
 import Posts from "../components/Posts";
 
-const BlogIndex: FC<PageProps> = ({ location }) => {
+const BlogIndex: FC<PageProps> = () => {
   return (
     <>
       <SEO title="All posts" />

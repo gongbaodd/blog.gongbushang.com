@@ -1,5 +1,5 @@
 import React from "react";
-import { Flex, FlexItem, Box } from "@fluentui/react-northstar";
+import { FlexItem, Box } from "@fluentui/react-northstar";
 
 import { CategoryLinks } from "../components/CategoryLink";
 import { TagLinks } from "../components/TagLink";

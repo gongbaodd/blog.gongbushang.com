@@ -1,5 +1,5 @@
 import React, { FC, PropsWithChildren } from "react";
-import { Link, PageProps, StaticQuery, graphql } from "gatsby";
+import { Link, StaticQuery, graphql } from "gatsby";
 import { Text } from "@fluentui/react-northstar";
 
 export const titleQuery = graphql`
@@ -28,7 +28,7 @@ const defaultProps: Props = {
 
 export type HeaderProps = PropsWithChildren<Props>;
 
-const Header: FC<HeaderProps> = ({ category, tag, series }) => {
+const Header: FC<HeaderProps> = () => {
   return (
     <Link to="/">
       <Text align="center" size="largest" style={{ width: "100%" }}>

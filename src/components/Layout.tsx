@@ -1,5 +1,5 @@
 import React, { FC, PropsWithChildren } from "react";
-import { Flex, FlexItem, Box, Divider, Text } from "@fluentui/react-northstar";
+import { Flex, Box, Divider, Text } from "@fluentui/react-northstar";
 
 const Footer: FC = () => {
   return (
@@ -12,13 +12,7 @@ const Footer: FC = () => {
   );
 };
 
-const Layout: FC<
-  PropsWithChildren<{
-    category?: string;
-    series?: string;
-    tag?: string;
-  }>
-> = ({ children }) => {
+const Layout: FC<PropsWithChildren<Record<string, never>>> = ({ children }) => {
   return (
     <Box as="main">
       <Flex hAlign="center" style={{ minHeight: "90vh" }}>

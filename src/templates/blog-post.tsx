@@ -62,7 +62,7 @@ type RefPageData = PageData["markdownRemark"] & {
 
 const BlogPostTemplate: FC<
   PageProps<PageData, { previous: RefPageData; next: RefPageData }>
-> = ({ data, pageContext, location }) => {
+> = ({ data, pageContext }) => {
   const post = data.markdownRemark;
   const { previous, next } = pageContext;
   const { title, date } = post.fields;
