@@ -92,24 +92,29 @@ const BlogPostTemplate: FC<
 
               <FlexItem>
                 <Flex space="between">
-                  <Link to={previous.fields.slug} rel="prev">
-                    <Button
-                      icon={<ArrowLeftIcon />}
-                      iconPosition="before"
-                      primary
-                    >
-                      {previous.fields.title}
-                    </Button>
-                  </Link>
-                  <Link to={next.fields.slug} rel="next">
-                    <Button
-                      icon={<ArrowRightIcon />}
-                      iconPosition="after"
-                      primary
-                    >
-                      {next.fields.title}
-                    </Button>
-                  </Link>
+                  {previous && (
+                    <Link to={previous.fields.slug} rel="prev">
+                      <Button
+                        icon={<ArrowLeftIcon />}
+                        iconPosition="before"
+                        primary
+                      >
+                        {previous.fields.title}
+                      </Button>
+                    </Link>
+                  )}
+
+                  {next && (
+                    <Link to={next.fields.slug} rel="next">
+                      <Button
+                        icon={<ArrowRightIcon />}
+                        iconPosition="after"
+                        primary
+                      >
+                        {next.fields.title}
+                      </Button>
+                    </Link>
+                  )}
                 </Flex>
               </FlexItem>
             </Flex>
