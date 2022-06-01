@@ -72,8 +72,9 @@ const BlogPostTemplate: FC<
       <SEO title={title} description={post.excerpt} />
 
       <Layout>
-        <Flex gap="gap.large">
-          <Bio />
+        <Bio />
+
+        <FlexItem grow={2}>
           <Box style={{ padding: "2.4rem" }}>
             <Flex column gap="gap.large">
               <Card fluid>
@@ -119,7 +120,7 @@ const BlogPostTemplate: FC<
               </FlexItem>
             </Flex>
           </Box>
-        </Flex>
+        </FlexItem>
       </Layout>
     </>
   );
