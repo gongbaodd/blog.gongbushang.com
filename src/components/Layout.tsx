@@ -12,7 +12,9 @@ const Footer: FC = () => {
   );
 };
 
-const Layout: FC<PropsWithChildren<Record<string, never>>> = ({ children }) => {
+const Layout: FC<PropsWithChildren<Record<string, unknown>>> = ({
+  children,
+}) => {
   return (
     <Box as="main">
       <Flex hAlign="center" style={{ minHeight: "90vh" }}>
