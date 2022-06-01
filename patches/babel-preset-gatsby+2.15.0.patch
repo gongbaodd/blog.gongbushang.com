@@ -1,0 +1,14 @@
+diff --git a/node_modules/babel-preset-gatsby/dependencies.js b/node_modules/babel-preset-gatsby/dependencies.js
+index 136b2c7..2a2caf2 100644
+--- a/node_modules/babel-preset-gatsby/dependencies.js
++++ b/node_modules/babel-preset-gatsby/dependencies.js
+@@ -59,7 +59,8 @@ var _default = (_, options = {}) => {
+     }], // Adds syntax support for import()
+     require.resolve(`@babel/plugin-syntax-dynamic-import`), stage === `build-javascript` && [// Remove PropTypes from production build
+     require.resolve(`babel-plugin-transform-react-remove-prop-types`), {
+-      removeImport: true
++      removeImport: true,
++      ignoreFilenames: ['@fluentui/react-northstar'],
+     }]].filter(Boolean)
+   };
+ };
