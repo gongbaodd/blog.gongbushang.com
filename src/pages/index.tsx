@@ -23,16 +23,7 @@ const BlogIndex: FC<PageProps> = () => {
             </Box>
           </FlexItem>
 
-          <FlexItem size="size.half">
-            <Box
-              as="section"
-              style={{
-                paddingTop: "6.8rem",
-              }}
-            >
-              <GroupLink />
-            </Box>
-          </FlexItem>
+          <GroupLink />
         </Flex>
       </Layout>
     </>
