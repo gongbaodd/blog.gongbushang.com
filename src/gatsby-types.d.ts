@@ -3518,15 +3518,15 @@ type SEOQueryVariables = Exact<{ [key: string]: never; }>;
 
 type SEOQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null, readonly description: string | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
 
-type TagQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
-
 type SeriesesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type SeriesesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number, readonly edges: ReadonlyArray<{ readonly node: { readonly frontmatter: { readonly series: { readonly name: string | null } | null } | null } }> }> } };
+
+type TagQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
 
 type BlogPostBySlugQueryVariables = Exact<{
   slug: Scalars['String'];
@@ -3542,19 +3542,19 @@ type BlogPostsByCategoryQueryVariables = Exact<{
 
 type BlogPostsByCategoryQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
 
-type BlogPostsBySeriesQueryVariables = Exact<{
-  seriesName: Scalars['String'];
-}>;
-
-
-type BlogPostsBySeriesQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly frontmatter: { readonly category: string | null, readonly series: { readonly name: string | null, readonly number: number | null } | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } }> } };
-
 type BlogPostsByTagsQueryVariables = Exact<{
   tag: Scalars['String'];
 }>;
 
 
 type BlogPostsByTagsQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null, readonly tag: ReadonlyArray<string | null> | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
+
+type BlogPostsBySeriesQueryVariables = Exact<{
+  seriesName: Scalars['String'];
+}>;
+
+
+type BlogPostsBySeriesQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly frontmatter: { readonly category: string | null, readonly series: { readonly name: string | null, readonly number: number | null } | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } }> } };
 
 type GatsbyImageSharpFixedFragment = { readonly base64: string | null, readonly width: number, readonly height: number, readonly src: string, readonly srcSet: string };
 

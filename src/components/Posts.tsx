@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import { graphql, useStaticQuery } from "gatsby";
+import { Box } from "@fluentui/react-northstar";
 import BlogLink from "../components/BlogLink";
 
 export const pageQuery = graphql`
@@ -35,7 +36,7 @@ const Posts: FC<Props> = ({ data }) => {
   } = data || useStaticQuery<Query>(pageQuery);
 
   return (
-    <>
+    <Box as="article" style={{ padding: "6.8rem 1.2rem 1.2rem 1.2rem" }}>
       {edges.map(({ node }) => {
         const { title, date, slug } = node.fields || {};
         const { category: cate } = node.frontmatter || {};
@@ -51,7 +52,7 @@ const Posts: FC<Props> = ({ data }) => {
           />
         );
       })}
-    </>
+    </Box>
   );
 };
 

@@ -13,15 +13,7 @@ const BlogIndex: FC<PageProps> = () => {
     <>
       <SEO title="All posts" />
 
-      <Layout
-        Profile={<Bio />}
-        Article={
-          <Box as="article" style={{ paddingTop: "6.8rem" }}>
-            <Posts />
-          </Box>
-        }
-        Filter={<GroupLink />}
-      />
+      <Layout Profile={<Bio />} Article={<Posts />} Filter={<GroupLink />} />
     </>
   );
 };

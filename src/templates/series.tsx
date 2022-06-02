@@ -51,11 +51,7 @@ const CategoryTemplate: FC<PageProps<PageData, PageContext>> = ({
 
       <Layout
         Profile={<Bio />}
-        Article={
-          <Box as="article" style={{ paddingTop: "6.8rem" }}>
-            <Posts data={data} />
-          </Box>
-        }
+        Article={<Posts data={data} />}
         Filter={<GroupLinks />}
       ></Layout>
     </>
