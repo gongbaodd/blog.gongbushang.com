@@ -56,11 +56,13 @@ const Description: FC<{
   author: DesAuthor;
 }> = ({ author }) => {
   return (
-    <Flex column gap="gap.medium">
-      <Divider content="Written by" />
-      <Header />
-      <Text content={author?.summary} align="center" />
-    </Flex>
+    <Box style={{ padding: "1.2rem" }}>
+      <Flex column gap="gap.medium">
+        <Divider content="Written by" />
+        <Header />
+        <Text content={author?.summary} align="center" />
+      </Flex>
+    </Box>
   );
 };
 
@@ -78,7 +80,7 @@ const Bio: FC = () => {
   const data = useStaticQuery<Data>(query);
   const { author } = data?.site?.siteMetadata || errMeta;
   return (
-    <Flex column>
+    <Flex column hAlign="center">
       <Avatar
         author={author}
         fixed={

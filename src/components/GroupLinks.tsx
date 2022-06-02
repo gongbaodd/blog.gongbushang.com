@@ -11,7 +11,7 @@ const GroupLinks = () => {
       <Box
         as="section"
         style={{
-          paddingTop: "6.8rem",
+          padding: "1.2rem 1.2rem 1.2rem 1.2rem",
         }}
       >
         <CategoryLinks />

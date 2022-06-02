@@ -49,6 +49,7 @@
     "react-dom": "18.1.0",
     "react-github-corner": "2.5.0",
     "react-helmet": "6.1.0",
+    "react-responsive": "^9.0.0-beta.8",
     "react-typography": "0.16.20",
     "source-map-support": "0.5.21",
     "ts-node": "10.8.0",

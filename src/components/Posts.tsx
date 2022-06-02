@@ -36,7 +36,7 @@ const Posts: FC<Props> = ({ data }) => {
   } = data || useStaticQuery<Query>(pageQuery);
 
   return (
-    <Box as="article" style={{ padding: "6.8rem 1.2rem 1.2rem 1.2rem" }}>
+    <Box as="article" style={{ padding: "1.2rem 1.2rem 1.2rem 1.2rem" }}>
       {edges.map(({ node }) => {
         const { title, date, slug } = node.fields || {};
         const { category: cate } = node.frontmatter || {};
