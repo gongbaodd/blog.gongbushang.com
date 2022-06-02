@@ -2,7 +2,7 @@
 type: post
 category: category1
 tag:
-  - tag1
+  - tag2
 series:
   name: 系列一
   slug: series1

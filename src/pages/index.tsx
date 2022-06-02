@@ -13,19 +13,15 @@ const BlogIndex: FC<PageProps> = () => {
     <>
       <SEO title="All posts" />
 
-      <Layout>
-        <Flex gap="gap.large">
-          <Bio />
-
-          <FlexItem grow>
-            <Box as="article" style={{ paddingTop: "6.8rem" }}>
-              <Posts />
-            </Box>
-          </FlexItem>
-
-          <GroupLink />
-        </Flex>
-      </Layout>
+      <Layout
+        Profile={<Bio />}
+        Article={
+          <Box as="article" style={{ paddingTop: "6.8rem" }}>
+            <Posts />
+          </Box>
+        }
+        Filter={<GroupLink />}
+      />
     </>
   );
 };

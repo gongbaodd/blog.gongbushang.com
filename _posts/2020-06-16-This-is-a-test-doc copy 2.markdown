@@ -1,6 +1,6 @@
 ---
 type: post
-category: category1
+category: category2
 tag:
   - tag1
 series:

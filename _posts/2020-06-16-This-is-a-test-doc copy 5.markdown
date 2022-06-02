@@ -4,8 +4,8 @@ category: category1
 tag:
   - tag1
 series:
-  name: 系列一
-  slug: series1
+  name: 系列二
+  slug: series2
   number: 0
 ---
 

@@ -3493,15 +3493,15 @@ type WebPOptions = {
   readonly quality: InputMaybe<Scalars['Int']>;
 };
 
-type BioQueryQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type BioQueryQuery = { readonly avatar: { readonly childImageSharp: { readonly gatsbyImageData: import('gatsby-plugin-image').IGatsbyImageData } | null } | null, readonly site: { readonly siteMetadata: { readonly author: { readonly name: string | null, readonly summary: string | null } | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
-
 type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type CategoriesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
+
+type BioQueryQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type BioQueryQuery = { readonly avatar: { readonly childImageSharp: { readonly gatsbyImageData: import('gatsby-plugin-image').IGatsbyImageData } | null } | null, readonly site: { readonly siteMetadata: { readonly author: { readonly name: string | null, readonly summary: string | null } | null, readonly social: { readonly twitter: string | null } | null } | null } | null };
 
 type titleQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3528,19 +3528,19 @@ type TagQueryVariables = Exact<{ [key: string]: never; }>;
 
 type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
 
-type BlogPostBySlugQueryVariables = Exact<{
-  slug: Scalars['String'];
-}>;
-
-
-type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
-
 type BlogPostsByCategoryQueryVariables = Exact<{
   category: Scalars['String'];
 }>;
 
 
 type BlogPostsByCategoryQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
+
+type BlogPostBySlugQueryVariables = Exact<{
+  slug: Scalars['String'];
+}>;
+
+
+type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
 
 type BlogPostsBySeriesQueryVariables = Exact<{
   seriesName: Scalars['String'];

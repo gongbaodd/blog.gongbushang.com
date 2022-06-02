@@ -1,5 +1,12 @@
-import React, { FC, PropsWithChildren } from "react";
-import { Flex, Box, Divider, Text } from "@fluentui/react-northstar";
+import React, { FC, ReactNode } from "react";
+import {
+  Flex,
+  Box,
+  Divider,
+  Text,
+  Grid,
+  Segment,
+} from "@fluentui/react-northstar";
 
 const Footer: FC = () => {
   return (
@@ -12,19 +19,24 @@ const Footer: FC = () => {
   );
 };
 
-const Layout: FC<PropsWithChildren<Record<string, unknown>>> = ({
-  children,
-}) => {
+const Layout: FC<{
+  Profile: ReactNode;
+  Article: ReactNode;
+  Filter: ReactNode;
+}> = ({ Profile, Article, Filter }) => {
   return (
-    <Box as="main">
-      <Flex hAlign="center" style={{ minHeight: "90vh" }}>
-        {children}
-      </Flex>
-      <Divider />
-      <Box style={{ height: "3.6rem" }}>
+    <Grid
+      as="main"
+      columns="min-content 1fr minmax(min,auto)"
+      rows="1fr min-content"
+    >
+      {Profile}
+      {Article}
+      {Filter}
+      <Box style={{ gridColumn: "span 3" }}>
         <Footer />
       </Box>
-    </Box>
+    </Grid>
   );
 };
 
