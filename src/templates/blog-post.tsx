@@ -71,57 +71,58 @@ const BlogPostTemplate: FC<
     <>
       <SEO title={title} description={post.excerpt} />
 
-      <Layout>
-        <Bio />
+      <Layout
+        Profile={<Bio />}
+        Article={
+          <FlexItem grow={2}>
+            <Box style={{ padding: "2.4rem" }}>
+              <Flex column gap="gap.large">
+                <Card fluid>
+                  <CardHeader>
+                    <Text content={date} />
+                  </CardHeader>
+                  <CardBody>
+                    <section
+                      className="blog_post"
+                      dangerouslySetInnerHTML={{
+                        __html: sanitize(post.html),
+                      }}
+                    />
+                  </CardBody>
+                </Card>
 
-        <FlexItem grow={2}>
-          <Box style={{ padding: "2.4rem" }}>
-            <Flex column gap="gap.large">
-              <Card fluid>
-                <CardHeader>
-                  <Text content={date} />
-                </CardHeader>
-                <CardBody>
-                  <section
-                    className="blog_post"
-                    dangerouslySetInnerHTML={{
-                      __html: sanitize(post.html),
-                    }}
-                  />
-                </CardBody>
-              </Card>
+                <FlexItem>
+                  <Flex space="between">
+                    {previous && (
+                      <Link to={previous.fields.slug} rel="prev">
+                        <Button
+                          icon={<ArrowLeftIcon />}
+                          iconPosition="before"
+                          primary
+                        >
+                          {previous.fields.title}
+                        </Button>
+                      </Link>
+                    )}
 
-              <FlexItem>
-                <Flex space="between">
-                  {previous && (
-                    <Link to={previous.fields.slug} rel="prev">
-                      <Button
-                        icon={<ArrowLeftIcon />}
-                        iconPosition="before"
-                        primary
-                      >
-                        {previous.fields.title}
-                      </Button>
-                    </Link>
-                  )}
-
-                  {next && (
-                    <Link to={next.fields.slug} rel="next">
-                      <Button
-                        icon={<ArrowRightIcon />}
-                        iconPosition="after"
-                        primary
-                      >
-                        {next.fields.title}
-                      </Button>
-                    </Link>
-                  )}
-                </Flex>
-              </FlexItem>
-            </Flex>
-          </Box>
-        </FlexItem>
-      </Layout>
+                    {next && (
+                      <Link to={next.fields.slug} rel="next">
+                        <Button
+                          icon={<ArrowRightIcon />}
+                          iconPosition="after"
+                          primary
+                        >
+                          {next.fields.title}
+                        </Button>
+                      </Link>
+                    )}
+                  </Flex>
+                </FlexItem>
+              </Flex>
+            </Box>
+          </FlexItem>
+        }
+      />
     </>
   );
 };

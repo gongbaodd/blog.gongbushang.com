@@ -22,14 +22,14 @@ const Footer: FC = () => {
 const Layout: FC<{
   Profile: ReactNode;
   Article: ReactNode;
-  Filter: ReactNode;
+  Filter?: ReactNode;
 }> = ({ Profile, Article, Filter }) => {
+  const columns = Filter
+    ? "min-content 1fr minmax(min-content,1fr)"
+    : "min-content 1fr ";
+
   return (
-    <Grid
-      as="main"
-      columns="min-content 1fr minmax(min,auto)"
-      rows="1fr min-content"
-    >
+    <Grid as="main" columns={columns} rows="1fr min-content">
       {Profile}
       {Article}
       {Filter}

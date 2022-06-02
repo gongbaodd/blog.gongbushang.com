@@ -40,23 +40,21 @@ export interface PageContext {
 
 const CategoryTemplate: FC<PageProps<PageData, PageContext>> = ({
   pageContext: { tag },
+  data,
 }) => {
   return (
     <>
       <SEO title={tag} />
 
-      <Layout>
-        <Flex gap="gap.large">
-          <Bio />
-          <FlexItem grow>
-            <Box as="article" style={{ paddingTop: "6.8rem" }}>
-              <Posts />
-            </Box>
-          </FlexItem>
-
-          <GroupLinks />
-        </Flex>
-      </Layout>
+      <Layout
+        Profile={<Bio />}
+        Article={
+          <Box as="article" style={{ paddingTop: "6.8rem" }}>
+            <Posts data={data} />
+          </Box>
+        }
+        Filter={<GroupLinks />}
+      ></Layout>
     </>
   );
 };

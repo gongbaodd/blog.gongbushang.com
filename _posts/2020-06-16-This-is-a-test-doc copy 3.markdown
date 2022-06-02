@@ -6,7 +6,7 @@ tag:
 series:
   name: 系列一
   slug: series1
-  number: 0
+  number: 1
 ---
 
 # This is a test
