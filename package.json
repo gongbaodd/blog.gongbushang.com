@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@fluentui/react-northstar": "0.63.0",
+    "@sindresorhus/slugify": "^2.1.0",
     "gatsby": "4.15.2",
     "gatsby-cli": "4.15.1",
     "gatsby-plugin-catch-links": "4.15.0",

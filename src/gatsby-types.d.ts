@@ -678,6 +678,7 @@ type FileFieldsEnum =
   | 'childMarkdownRemark.frontmatter.tag'
   | 'childMarkdownRemark.frontmatter.title'
   | 'childMarkdownRemark.frontmatter.type'
+  | 'childMarkdownRemark.gatsbyPath'
   | 'childMarkdownRemark.headings'
   | 'childMarkdownRemark.headings.depth'
   | 'childMarkdownRemark.headings.id'
@@ -820,6 +821,7 @@ type FileFieldsEnum =
   | 'childrenMarkdownRemark.frontmatter.tag'
   | 'childrenMarkdownRemark.frontmatter.title'
   | 'childrenMarkdownRemark.frontmatter.type'
+  | 'childrenMarkdownRemark.gatsbyPath'
   | 'childrenMarkdownRemark.headings'
   | 'childrenMarkdownRemark.headings.depth'
   | 'childrenMarkdownRemark.headings.id'
@@ -1613,6 +1615,7 @@ type MarkdownRemark = Node & {
   readonly fields: Maybe<MarkdownRemarkFields>;
   readonly fileAbsolutePath: Maybe<Scalars['String']>;
   readonly frontmatter: Maybe<MarkdownRemarkFrontmatter>;
+  readonly gatsbyPath: Maybe<Scalars['String']>;
   readonly headings: Maybe<ReadonlyArray<Maybe<MarkdownHeading>>>;
   readonly html: Maybe<Scalars['String']>;
   readonly htmlAst: Maybe<Scalars['JSON']>;
@@ -1636,6 +1639,11 @@ type MarkdownRemark_excerptArgs = {
 type MarkdownRemark_excerptAstArgs = {
   pruneLength?: InputMaybe<Scalars['Int']>;
   truncate?: InputMaybe<Scalars['Boolean']>;
+};
+
+
+type MarkdownRemark_gatsbyPathArgs = {
+  filePath: InputMaybe<Scalars['String']>;
 };
 
 
@@ -1783,6 +1791,7 @@ type MarkdownRemarkFieldsEnum =
   | 'frontmatter.tag'
   | 'frontmatter.title'
   | 'frontmatter.type'
+  | 'gatsbyPath'
   | 'headings'
   | 'headings.depth'
   | 'headings.id'
@@ -1862,6 +1871,7 @@ type MarkdownRemarkFilterInput = {
   readonly fields: InputMaybe<MarkdownRemarkFieldsFilterInput>;
   readonly fileAbsolutePath: InputMaybe<StringQueryOperatorInput>;
   readonly frontmatter: InputMaybe<MarkdownRemarkFrontmatterFilterInput>;
+  readonly gatsbyPath: InputMaybe<StringQueryOperatorInput>;
   readonly headings: InputMaybe<MarkdownHeadingFilterListInput>;
   readonly html: InputMaybe<StringQueryOperatorInput>;
   readonly htmlAst: InputMaybe<JSONQueryOperatorInput>;
@@ -2217,6 +2227,7 @@ type Query_markdownRemarkArgs = {
   fields: InputMaybe<MarkdownRemarkFieldsFilterInput>;
   fileAbsolutePath: InputMaybe<StringQueryOperatorInput>;
   frontmatter: InputMaybe<MarkdownRemarkFrontmatterFilterInput>;
+  gatsbyPath: InputMaybe<StringQueryOperatorInput>;
   headings: InputMaybe<MarkdownHeadingFilterListInput>;
   html: InputMaybe<StringQueryOperatorInput>;
   htmlAst: InputMaybe<JSONQueryOperatorInput>;
@@ -3503,15 +3514,15 @@ type CategoriesQueryVariables = Exact<{ [key: string]: never; }>;
 
 type CategoriesQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
 
-type PagesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-type PagesQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
-
 type titleQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 type titleQuery = { readonly site: { readonly siteMetadata: { readonly title: string | null } | null } | null };
+
+type PagesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+type PagesQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
 
 type SEOQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -3528,19 +3539,19 @@ type TagQueryVariables = Exact<{ [key: string]: never; }>;
 
 type TagQuery = { readonly allMarkdownRemark: { readonly group: ReadonlyArray<{ readonly fieldValue: string | null, readonly totalCount: number }> } };
 
+type BlogPostBySlugQueryVariables = Exact<{
+  id: Scalars['String'];
+}>;
+
+
+type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
+
 type BlogPostsByCategoryQueryVariables = Exact<{
   category: Scalars['String'];
 }>;
 
 
 type BlogPostsByCategoryQuery = { readonly allMarkdownRemark: { readonly edges: ReadonlyArray<{ readonly node: { readonly excerpt: string | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null, readonly frontmatter: { readonly category: string | null } | null } }> } };
-
-type BlogPostBySlugQueryVariables = Exact<{
-  slug: Scalars['String'];
-}>;
-
-
-type BlogPostBySlugQuery = { readonly markdownRemark: { readonly id: string, readonly excerpt: string | null, readonly html: string | null, readonly frontmatter: { readonly category: string | null } | null, readonly fields: { readonly slug: string | null, readonly date: string | null, readonly title: string | null } | null } | null };
 
 type BlogPostsBySeriesQueryVariables = Exact<{
   seriesName: Scalars['String'];
