@@ -1,3 +1,4 @@
+// @ts-check
 const transformerRemark = require("./config/plugins/transformer_remark");
 const sourceFilesystems = require("./config/plugins/source_filesystem");
 const googleAnalytics = require("./config/plugins/google_analytics");
@@ -12,6 +13,9 @@ const nodeFields = require("./config/plugins/node_fields");
 const jsonOutput = require("./config/plugins/json_output");
 const siteMetadata = require("./config/meta/site.js");
 
+/**
+ * @type {import('gatsby').GatsbyConfig}
+ */
 const config = {
   siteMetadata,
   graphqlTypegen: true,

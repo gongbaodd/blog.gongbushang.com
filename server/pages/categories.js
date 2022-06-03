@@ -1,6 +1,4 @@
-import path from "path";
-import { CreatePagesArgs } from "gatsby";
-import { PageContext } from "../../src/templates/categories";
+const path = require("path");
 
 const query = `
 {
@@ -12,19 +10,14 @@ const query = `
   }
 `;
 
-interface Data {
-  allMarkdownRemark: {
-    group: Array<{
-      fieldValue: string;
-    }>;
-  };
-}
-
-async function createCategories(
-  graphql: CreatePagesArgs["graphql"],
-  createPage: CreatePagesArgs["actions"]["createPage"]
-) {
-  const result = await graphql<Data>(query);
+/**
+ *
+ * @param {import("gatsby").CreatePagesArgs["graphql"]} graphql
+ * @param {import("gatsby").Actions["createPage"]} createPage
+ * @returns
+ */
+async function createCategories(graphql, createPage) {
+  const result = await graphql(query);
   const CategoryTemplate = path.resolve(
     process.cwd(),
     "./src/templates/categories.tsx"
@@ -39,7 +32,7 @@ async function createCategories(
   }
 
   result.data.allMarkdownRemark.group.forEach(({ fieldValue }) => {
-    createPage<PageContext>({
+    createPage({
       path: `categories/${fieldValue}`,
       component: CategoryTemplate,
       context: {
@@ -49,4 +42,4 @@ async function createCategories(
   });
 }
 
-export default createCategories;
+exports.createCategories = createCategories;

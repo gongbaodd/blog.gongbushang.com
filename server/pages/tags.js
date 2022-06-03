@@ -1,6 +1,5 @@
-import path from "path";
-import { CreatePagesArgs } from "gatsby";
-import { PageContext } from "../../src/templates/tags";
+//@ts-check
+const path = require("path");
 
 const query = `
 {
@@ -12,19 +11,14 @@ const query = `
   }
 `;
 
-interface Data {
-  allMarkdownRemark: {
-    group: Array<{
-      fieldValue: string;
-    }>;
-  };
-}
-
-async function createTags(
-  graphql: CreatePagesArgs["graphql"],
-  createPage: CreatePagesArgs["actions"]["createPage"]
-) {
-  const result = await graphql<Data>(query);
+/**
+ *
+ * @param {import("gatsby").CreatePagesArgs["graphql"]} graphql
+ * @param {import("gatsby").Actions["createPage"]} createPage
+ * @returns
+ */
+async function createTags(graphql, createPage) {
+  const result = await graphql(query);
   const CategoryTemplate = path.resolve(
     process.cwd(),
     "./src/templates/tags.tsx"
@@ -39,7 +33,7 @@ async function createTags(
   }
 
   result.data.allMarkdownRemark.group.forEach(({ fieldValue }) => {
-    createPage<PageContext>({
+    createPage({
       path: `tags/${fieldValue}`,
       component: CategoryTemplate,
       context: {
@@ -49,4 +43,4 @@ async function createTags(
   });
 }
 
-export default createTags;
+exports.createTags = createTags;

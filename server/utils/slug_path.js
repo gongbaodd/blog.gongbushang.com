@@ -1,8 +1,12 @@
-// const slugify = require('@sindresorhus/slugify');
-
+const slugify = require("slugify");
 const SLUG_REG = /\/(\d{4})-(\d{2})-(\d{2})-(.*)\//;
 
-export function slug2path(slug: string, category?: string) {
+/**
+ *
+ * @param {string} slug
+ * @param {string} category
+ */
+exports.slug2path = function (slug, category) {
   const match = slug.match(SLUG_REG) || [];
 
   const year = match[1];
@@ -12,7 +16,7 @@ export function slug2path(slug: string, category?: string) {
 
   const path = `${
     category ? `/${category}` : ""
-  }/${year}/${month}/${day}/${title}`;
+  }/${year}/${month}/${day}/${slugify(title, { lower: true })}`;
 
   return {
     year,
@@ -22,4 +26,4 @@ export function slug2path(slug: string, category?: string) {
     category,
     path,
   };
-}
+};
