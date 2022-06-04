@@ -19,7 +19,7 @@ const BlogLink: FC<Props> = ({ date, category, slug, title, excerpt }) => {
   return (
     <Box style={{ paddingBottom: "2.4rem" }}>
       <ChatMessage
-        author={title}
+        author={<Link to={slug}>{title}</Link>}
         content={excerpt}
         timestamp={date}
         reactionGroup={[
