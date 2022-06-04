@@ -1,7 +1,6 @@
-import React, { FC, useState } from "react";
+import React, { FC, useState, useEffect } from "react";
 import { graphql, useStaticQuery } from "gatsby";
 import { Box } from "@fluentui/react-northstar";
-import useInfiniteScroll from "react-infinite-scroll-hook";
 import BlogLink from "../components/BlogLink";
 
 export const pageQuery = graphql`
@@ -37,31 +36,29 @@ const Posts: FC<Props> = ({ data }) => {
     allMarkdownRemark: { edges },
   } = data || useStaticQuery<Query>(pageQuery);
 
-  const [loading, setLoading] = useState(false);
-  const [lastCurr, setLastCurr] = useState(1);
+  const [lastCurr, setLastCurr] = useState(5);
   const [items, setItems] = useState(edges.slice(0, lastCurr));
-  const [hasNextPage, setHasNextPage] = useState(true);
+  const [hasNextPage, setHasNextPage] = useState(lastCurr < edges.length);
 
-  const [scrollRef] = useInfiniteScroll({
-    loading,
-    hasNextPage,
-    onLoadMore: () => {
-      setLoading(true);
-      setLastCurr(lastCurr + 1);
-      setItems(edges.slice(0, lastCurr));
-      if (lastCurr === edges.length) {
-        setHasNextPage(false);
+  useEffect(() => {
+    function scroll() {
+      if (hasNextPage) {
+        const curr = lastCurr + 5;
+
+        setItems(edges.slice(0, curr));
+        setHasNextPage(curr < edges.length);
+        setLastCurr(curr);
+
+        window.removeEventListener("scroll", scroll);
+        window.removeEventListener("wheel", scroll);
       }
-      setLoading(false);
-    },
-  });
+    }
+    window.addEventListener("scroll", scroll);
+    window.addEventListener("wheel", scroll);
+  }, [lastCurr]);
 
   return (
-    <Box
-      as="article"
-      style={{ padding: "1.2rem 1.2rem 1.2rem 1.2rem" }}
-      ref={scrollRef}
-    >
+    <Box as="article" style={{ padding: "1.2rem 1.2rem 1.2rem 1.2rem" }}>
       {items.map(({ node }) => {
         const { title, date, slug } = node.fields || {};
         const { category: cate } = node.frontmatter || {};
