@@ -46,7 +46,7 @@ const Posts: FC<Props> = ({ data }) => {
       const { documentElement } = document;
       const { clientHeight, scrollHeight, scrollTop } = documentElement;
 
-      if (hasNextPage && scrollHeight - 100 <= clientHeight + scrollTop) {
+      if (hasNextPage && scrollHeight - 100 <= clientHeight * 3 + scrollTop) {
         const curr = lastCurr + 5;
 
         setItems(edges.slice(0, curr));
