@@ -1,7 +1,8 @@
-import React, { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, useRef } from "react";
 import { graphql, useStaticQuery } from "gatsby";
 import { Box } from "@fluentui/react-northstar";
 import BlogLink from "../components/BlogLink";
+import { debounce } from "lodash";
 
 export const pageQuery = graphql`
   query Pages {
@@ -41,8 +42,11 @@ const Posts: FC<Props> = ({ data }) => {
   const [hasNextPage, setHasNextPage] = useState(lastCurr < edges.length);
 
   useEffect(() => {
-    function scroll() {
-      if (hasNextPage) {
+    const scroll = debounce(() => {
+      const { documentElement } = document;
+      const { clientHeight, scrollHeight, scrollTop } = documentElement;
+
+      if (hasNextPage && scrollHeight - 100 <= clientHeight + scrollTop) {
         const curr = lastCurr + 5;
 
         setItems(edges.slice(0, curr));
@@ -52,7 +56,7 @@ const Posts: FC<Props> = ({ data }) => {
         window.removeEventListener("scroll", scroll);
         window.removeEventListener("wheel", scroll);
       }
-    }
+    }, 300);
     window.addEventListener("scroll", scroll);
     window.addEventListener("wheel", scroll);
   }, [lastCurr]);
