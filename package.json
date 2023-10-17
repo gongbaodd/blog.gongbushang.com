@@ -27,5 +27,8 @@
         ]
       }
     }
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
