@@ -91,7 +91,9 @@ const posts = await getCollection('docs')
 					{
 						posts.map((post) => (
 							<li>
-								{title(post)}
+								<a href={`/blog/${post.slug}`}>	
+									{title(post)}
+								</a>
 							</li>
 						))
 					}
