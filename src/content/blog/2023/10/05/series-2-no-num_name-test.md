@@ -4,9 +4,7 @@ category: category1
 tag:
   - tag1
 series:
-  name: 系列二
   slug: series2
-  number: 0
 ---
 
 # This is a test
