@@ -7,4 +7,5 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
 	site: 'https://growgen.xyz',
 	integrations: [mdx(), sitemap()],
+	title: "宫不上的博客",
 });

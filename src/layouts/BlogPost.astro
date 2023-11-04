@@ -7,12 +7,12 @@ import FormattedDate from '../components/FormattedDate.astro';
 
 type Props = CollectionEntry<'docs'>['data'];
 
-// const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
 <html lang="en">
 	<head>
-		<!-- <BaseHead title={title} description={description} /> -->
+		<BaseHead title={title} description={description} />
 		<style>
 			main {
 				width: calc(100% - 2em);
