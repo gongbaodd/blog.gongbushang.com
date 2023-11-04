@@ -16,7 +16,5 @@ export async function GET(context) {
 		})),
 	}
 
-	console.log(options);
-
 	return rss(options);
 }
