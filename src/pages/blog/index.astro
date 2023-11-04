@@ -6,7 +6,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../../consts';
 import { getCollection } from 'astro:content';
 import { title } from "../../utils/extract"
 
-const posts = await getCollection('docs')
+const posts = await getCollection('blog')
 ---
 
 <!doctype html>

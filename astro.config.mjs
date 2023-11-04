@@ -6,6 +6,9 @@ import sitemap from '@astrojs/sitemap';
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://growgen.xyz',
-	integrations: [mdx(), sitemap()],
+	integrations: [
+		mdx(),
+		sitemap(),
+	],
 	title: "宫不上的博客",
 });
