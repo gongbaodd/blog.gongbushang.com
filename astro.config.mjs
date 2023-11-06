@@ -8,6 +8,11 @@ import tailwind from "@astrojs/tailwind";
 // https://astro.build/config
 export default defineConfig({
   site: 'https://growgen.xyz',
-  integrations: [mdx(), sitemap(), react(), tailwind()],
+  integrations: [
+    mdx(), sitemap(), react(),
+    tailwind({
+      applyBaseStyles: false,
+    }),
+  ],
   title: "宫不上的博客"
 });
