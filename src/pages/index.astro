@@ -8,13 +8,16 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "../consts"
 
 import Demo from "../components/demo"
 import { Button } from "@/components/ui/button"
+
+import profile from "@/assets/profile.jpg"
+import { Image } from "astro:assets"
 ---
 
 <HTML>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header title={SITE_TITLE} />
   <main class="h-full">
-    <img class="rounded" src="/profile.jpg" />
+    <Image src={profile} alt="profile"/>
   </main>
   <Footer />
 </HTML>
