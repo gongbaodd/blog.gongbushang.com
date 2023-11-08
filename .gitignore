@@ -23,4 +23,4 @@ pnpm-debug.log*
 tmp
 
 # TODO: remove below when finished dev
-src/content/blog
+src/content/blog/
