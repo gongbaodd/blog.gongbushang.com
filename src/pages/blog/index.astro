@@ -24,6 +24,7 @@ const posts = (await getCollection("blog")).reverse()
             <!--<a href={`/blog/${post.slug}`}>{title(post)}</a>-->
               <BlogCard
 				title={title(post)}
+				date={date(post)}
 			  />
             </li>
           ))
