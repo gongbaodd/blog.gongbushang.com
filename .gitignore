@@ -21,3 +21,6 @@ pnpm-debug.log*
 .DS_Store
 
 tmp
+
+# TODO: remove below when finished dev
+src/content/blog
