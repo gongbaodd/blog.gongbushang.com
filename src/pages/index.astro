@@ -1,25 +1,20 @@
 ---
-import '@/styles/global.css'
+import HTML from "@/layouts/HTML.astro"
 
-import BaseHead from '../components/BaseHead.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import BaseHead from "../components/BaseHead.astro"
+import Header from "../components/Header.astro"
+import Footer from "../components/Footer.astro"
+import { SITE_TITLE, SITE_DESCRIPTION } from "../consts"
 
 import Demo from "../components/demo"
 import { Button } from "@/components/ui/button"
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header title={SITE_TITLE} />
-		<main class="h-96">
-			<img src="/profile.jpg" />
-		</main>
-		<Footer />
-	</body>
-</html>
+<HTML>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header title={SITE_TITLE} />
+  <main class="h-full">
+    <img class="rounded" src="/profile.jpg" />
+  </main>
+  <Footer />
+</HTML>
