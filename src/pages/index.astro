@@ -1,5 +1,5 @@
 ---
-import HTML from "@/layouts/HTML.astro"
+import Global from "@/layouts/Global.astro"
 
 import BaseHead from "../components/BaseHead.astro"
 import Header from "../components/Header.astro"
@@ -13,11 +13,13 @@ import profile from "@/assets/profile.jpg"
 import { Image } from "astro:assets"
 ---
 
-<HTML>
+<Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header title={SITE_TITLE} />
-  <main class="h-full">
-    <Image src={profile} alt="profile"/>
+  <main class="justify-self-center flex flex-col">
+    <div class="grow">
+      <Image src={profile} alt="profile" class="rounded-full" />
+    </div>
+    <Footer />
   </main>
-  <Footer />
-</HTML>
+</Global>
