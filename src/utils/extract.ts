@@ -1,3 +1,5 @@
+import removeMarkdown from "markdown-to-text"
+
 
 export function title(post: { body: string, slug: string }) {
     const lines = post.body.split('\n')
@@ -18,4 +20,10 @@ export function date(post: {slug: string}) {
         parseInt(info[2], 10)
     )
     return date
+}
+
+export function excerpt(post: {body: string}, words = 120) {
+    const content = post.body.replace(/#.*/, "")
+    
+    return  removeMarkdown(content).slice(0, words) + "...";
 }

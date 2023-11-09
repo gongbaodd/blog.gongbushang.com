@@ -7,9 +7,11 @@ import { getCollection } from "astro:content"
 
 import Global from "@/layouts/Global.astro"
 import BlogCard from "@/components/BlogCard"
-import { title, date } from "@/utils/extract"
+import { title, date, excerpt } from "@/utils/extract"
 
 const posts = (await getCollection("blog")).reverse()
+
+console.log(posts.length)
 ---
 
 <Global>
@@ -21,10 +23,10 @@ const posts = (await getCollection("blog")).reverse()
         {
           posts.map((post) => (
             <li>
-            <!--<a href={`/blog/${post.slug}`}>{title(post)}</a>-->
               <BlogCard
 				title={title(post)}
 				date={date(post)}
+				excerpt={excerpt(post)}
 			  />
             </li>
           ))
