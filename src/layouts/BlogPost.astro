@@ -5,12 +5,27 @@ import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 
+import "github-markdown-css/github-markdown.css";
+import Global from "@/layouts/Global.astro"
+
 type Props = CollectionEntry<'blog'>['data'];
 
 const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 ---
 
-<html lang="en">
+<Global>
+	<BaseHead title={title} description={description} slot="head" />
+	<Header/>
+	<main class="min-h-full">
+		<article class="markdown-body">
+			<slot />
+		</article>
+		<Footer />
+	</main>
+</Global>
+
+
+<!-- <html lang="en">
 	<head>
 		<BaseHead title={title} description={description} />
 		<style>
@@ -58,7 +73,7 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 		<Header />
 		<main>
 			<article>
-				<!-- <div class="hero-image">
+				<div class="hero-image">
 					{heroImage && <img width={1020} height={510} src={heroImage} alt="" />}
 				</div>
 				<div class="prose">
@@ -77,10 +92,10 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 						<hr />
 					</div>
 					<slot />
-				</div> -->
+				</div>
 				<slot />
 			</article>
 		</main>
 		<Footer />
 	</body>
-</html>
+</html> -->
