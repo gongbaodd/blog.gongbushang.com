@@ -10,8 +10,7 @@ import BlogCard from "@/components/BlogCard"
 import { title, date, excerpt } from "@/utils/extract"
 
 const posts = (await getCollection("blog")).reverse()
-
-console.log(posts.length)
+console.log(posts[0].slug)
 ---
 
 <Global>
@@ -24,10 +23,12 @@ console.log(posts.length)
           posts.map((post) => (
             <li>
               <BlogCard
-				title={title(post)}
-				date={date(post)}
-				excerpt={excerpt(post)}
-			  />
+                title={title(post)}
+                date={date(post)}
+                excerpt={excerpt(post)}
+                category={post.data.category}
+                link={post.slug}
+              />
             </li>
           ))
         }
@@ -36,29 +37,3 @@ console.log(posts.length)
     <Footer />
   </main>
 </Global>
-
-<!-- <!doctype html>
-<html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<a href={`/blog/${post.slug}`}>	
-									{title(post)}
-								</a>
-							</li>
-						))
-					}
-				</ul>
-			</section>
-		</main>
-		<Footer />
-	</body>
-</html> -->
