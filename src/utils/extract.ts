@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { remark } from "remark"
 import strip from "strip-markdown"
 import { type CollectionEntry } from "astro:content"
