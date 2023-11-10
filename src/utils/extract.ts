@@ -7,12 +7,17 @@ type T_POST = CollectionEntry<"blog">
 export function title(post: T_POST) {
   const lines = post.body.split("\n")
   for (const line of lines) {
-    if (line) return line.replace("#", "")
+    if (line && line.startsWith("#")) {
+      const t = line.replace("#", "").trim()
+      if (t) return t
+    } 
   }
 
-  if (!post.slug) throw new Error("Not a valid post!")
+  const lastIndex = post.slug?.lastIndexOf('/')
 
-  return post.slug
+  if (!post.slug || lastIndex === -1) throw new Error("Not a valid post!")
+
+  return post.slug.slice(lastIndex + 1).replace(/-/g, " ")
 }
 
 export function date(post: { slug: string }) {
