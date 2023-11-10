@@ -19,17 +19,19 @@ const posts = (await getCollection("blog")).reverse()
     <section>
       <ul class="grid grid-cols-3 gap-6 p-4">
         {
-          posts.map((post) => (
-            <li>
-              <BlogCard
-                title={title(post)}
-                date={date(post)}
-                excerpt={excerpt(post)}
-                category={post.data.category}
-                link={"/blog/" + post.slug}
-              />
-            </li>
-          ))
+          posts.map(async (post) => {
+            return (
+              <li>
+                <BlogCard
+                  title={title(post)}
+                  date={date(post)}
+                  excerpt={await excerpt(post)}
+                  category={post.data.category}
+                  link={"/blog/" + post.slug}
+                />
+              </li>
+            )
+          })
         }
       </ul>
     </section>

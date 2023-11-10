@@ -1,6 +1,11 @@
-import removeMarkdown from "markdown-to-text"
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { remark } from "remark"
+import strip from "strip-markdown"
+import { type CollectionEntry } from "astro:content"
 
-export function title(post: { body: string; slug: string }) {
+type T_POST = CollectionEntry<"blog">
+
+export function title(post: T_POST) {
   const lines = post.body.split("\n")
   for (const line of lines) {
     if (line) return line.replace("#", "")
@@ -21,7 +26,8 @@ export function date(post: { slug: string }) {
   return date
 }
 
-export function excerpt(post: { body: string }, words = 120) {
+export async function excerpt(post: { body: string }, words = 120) {
   const content = post.body.replace(/#.*/, "")
-  return removeMarkdown(content).slice(0, words) + "..."
+  const doc = await remark().use(strip).process(content)
+  return String(doc).slice(0, words) + "..."
 }
