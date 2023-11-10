@@ -21,7 +21,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@types/react": "^18.2.35",
     "@types/react-dom": "^18.2.14",
-    "astro": "^3.3.1",
+    "astro": "^3.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "dayjs": "^1.11.10",
@@ -41,7 +41,7 @@
     "eslint-plugin-react": "^7.33.2",
     "husky": "^8.0.0",
     "nx": "16.10.0",
-    "nx-cloud": "latest",
+    "nx-cloud": "^16.0.4",
     "prettier": "3.0.3"
   },
   "nx": {
