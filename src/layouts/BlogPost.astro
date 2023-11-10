@@ -16,8 +16,8 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 <Global>
 	<BaseHead title={title} description={description} slot="head" />
 	<Header/>
-	<main class="min-h-full">
-		<article class="markdown-body">
+	<main class="min-h-full grid grid-cols-1 justify-items-center">
+		<article class="markdown-body max-w-6xl">
 			<slot />
 		</article>
 		<Footer />
