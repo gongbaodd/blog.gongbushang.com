@@ -36,7 +36,7 @@ export const getStaticPaths = async () => {
   )
 
   const [yearResult, yearMonthResult, yearMonthDayResult] = addDateFilter(
-    () => [""]
+    () => ["all"]
   )
 
   return [

@@ -14,12 +14,21 @@ interface Props {
 }
 
 const BlogCard: FC<Props> = ({ title, date, excerpt, category, link }) => {
+    const year = dayjs(date).format("YYYY")
+    const month = dayjs(date).format("MM")
+    const monthName = dayjs(date).format("MMMM")
+    const day = dayjs(date).format("DD")
+
     return (
         <Card>
             <CardHeader className="relative">
                 <CardTitle>{title}</CardTitle>
-                <a className={cn(badgeVariants({ variant: "secondary" }), "absolute top-0 right-1")}>{category}</a>
-                <CardDescription>{dayjs(date).format("MMMM D, YYYY")}</CardDescription>
+                <a className={cn(badgeVariants({ variant: "secondary" }), "absolute top-0 right-1")} href={`/${category}`}>{category}</a>
+                <CardDescription>
+                    <a href={`/${category}/${year}/${month}`}>{monthName}</a>
+                    <a href={`/${category}/${year}/${month}/${day}`}>{day}</a>,
+                    <a href={`/${category}/${year}`}>{year}</a>
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <p>{excerpt}</p>
