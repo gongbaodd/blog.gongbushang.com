@@ -1,0 +1,73 @@
+---
+import type { GetStaticPaths, GetStaticPathsItem } from "astro"
+import { getCollection } from "astro:content"
+import { date, excerpt, title } from "@/utils/extract"
+import Global from "@/layouts/Global.astro"
+import BaseHead from "@/components/BaseHead.astro"
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts"
+import Header from "@/components/Header.astro"
+import BlogCard from "@/components/BlogCard"
+import Footer from "@/components/Footer.astro"
+
+export const getStaticPaths = (async () => {
+  const posts = await getCollection("blog")
+  type T_POST = (typeof posts)[0]
+
+  const categoryItems = posts.reduce((acc, post) => {
+    const { category } = post.data
+    const categorySet = acc.get(category)
+
+    if (!categorySet) {
+      const posts = new Set<T_POST>()
+      posts.add(post)
+      acc.set(category, posts)
+    } else {
+      categorySet.add(post)
+    }
+    return acc
+  }, new Map<string, Set<T_POST>>())
+
+  let categoryResult = []
+  for (const [category, posts] of categoryItems) {
+    categoryResult.push({
+      params: {
+        filter: category,
+      },
+      props: {
+        posts: [...posts],
+      },
+    })
+  }
+
+  return categoryResult
+})
+
+const posts = Astro.props.posts.reverse()
+---
+
+<Global>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header />
+  <main>
+    <section>
+      <ul class="grid grid-cols-3 gap-6 p-4">
+        {
+          posts.map(async (post) => {
+            return (
+              <li>
+                <BlogCard
+                  title={title(post)}
+                  date={date(post)}
+                  excerpt={await excerpt(post)}
+                  category={post.data.category}
+                  link={post.data.category + "/" + post.slug}
+                />
+              </li>
+            )
+          })
+        }
+      </ul>
+    </section>
+    <Footer />
+  </main>
+</Global>

@@ -20,7 +20,7 @@ export function title(post: T_POST) {
   return post.slug.slice(lastIndex + 1).replace(/-/g, " ")
 }
 
-export function date(post: { slug: string }) {
+export function date(post: T_POST) {
   const info = post.slug.split("/")
   const date = new Date(
     parseInt(info[0], 10),
@@ -30,7 +30,7 @@ export function date(post: { slug: string }) {
   return date
 }
 
-export async function excerpt(post: { body: string }, words = 120) {
+export async function excerpt(post: T_POST, words = 120) {
   const content = post.body.replace(/#.*/, "")
   const doc = await remark().use(strip).process(content)
   return String(doc).slice(0, words) + "..."
