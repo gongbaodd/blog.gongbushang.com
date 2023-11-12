@@ -9,7 +9,7 @@ import Global from "@/layouts/Global.astro"
 import BlogCard from "@/components/BlogCard"
 import { title, date, excerpt } from "@/utils/extract"
 
-const posts = (await getCollection("blog")).reverse()
+const posts = [...await getCollection("blog")].reverse()
 ---
 
 <Global>

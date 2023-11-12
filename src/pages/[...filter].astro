@@ -8,26 +8,72 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts"
 import Header from "@/components/Header.astro"
 import BlogCard from "@/components/BlogCard"
 import Footer from "@/components/Footer.astro"
-import dayjs from "dayjs"
 
 export const getStaticPaths = async () => {
   const posts = await getCollection("blog")
   type T_POST = (typeof posts)[0]
 
   const categoryResult = getStaticPathsByFilter(posts, (p) => p.data.category)
-  
+
+  const categoryYearResult = addFilter(categoryResult, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    return `${p.data.category}/${year}`
+  })
+
+  const categoryYearMonthResult = addFilter(categoryYearResult, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    const month = (_date.getMonth() + 1).toString().padStart(2, "0")
+    return `${p.data.category}/${year}/${month}`
+  })
+
+  const categoryYearMonthDayResult = addFilter(categoryYearMonthResult, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    const month = (_date.getMonth() + 1).toString().padStart(2, "0")
+    const day = _date.getDate().toString().padStart(2, "0")
+    return `${p.data.category}/${year}/${month}/${day}`
+  })
+
   const yearResult = getStaticPathsByFilter(posts, (p) => {
     const _date = date(p)
     const year = _date.getFullYear().toString()
     return year
   })
 
-  return [...categoryResult, ...yearResult]
+  const yearMonthResult = addFilter(yearResult, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    const month = (_date.getMonth() + 1).toString().padStart(2, "0")
+    return `${year}/${month}`
+  })
 
-  function getStaticPathsByFilter(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => string) {
+  const yearMonthDayResult = addFilter(yearMonthResult, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    const month = (_date.getMonth() + 1).toString().padStart(2, "0")
+    const day = _date.getDate().toString().padStart(2, "0")
+    return `${year}/${month}/${day}`
+  })
+
+  return [
+    ...categoryResult,
+    ...categoryYearResult,
+    ...categoryYearMonthResult,
+    ...categoryYearMonthDayResult,
+    ...yearResult,
+    ...yearMonthResult,
+    ...yearMonthDayResult,
+  ]
+
+  function getStaticPathsByFilter(
+    posts: Set<T_POST> | T_POST[],
+    filterFn: (p: T_POST) => string
+  ) {
     const items = new Map<string, Set<T_POST>>()
 
-    for(const post of posts) {
+    for (const post of posts) {
       const filter = filterFn(post)
       const item = items.get(filter)
 
@@ -54,9 +100,24 @@ export const getStaticPaths = async () => {
 
     return result
   }
+
+  function addFilter(
+    preItems: ReturnType<typeof getStaticPathsByFilter>,
+    filterFn: (p: T_POST) => string
+  ) {
+    const results = []
+    for (const preItem of preItems) {
+      const { posts } = preItem.props
+      const result = getStaticPathsByFilter(posts, filterFn)
+
+      results.push(...result)
+    }
+
+    return results
+  }
 }
 
-const posts = Astro.props.posts.reverse()
+const posts = [...Astro.props.posts].reverse()
 ---
 
 <Global>
@@ -74,7 +135,7 @@ const posts = Astro.props.posts.reverse()
                   date={date(post)}
                   excerpt={await excerpt(post)}
                   category={post.data.category}
-                  link={post.data.category + "/" + post.slug}
+                  link={`/${post.data.category}/${post.slug}`}
                 />
               </li>
             )
