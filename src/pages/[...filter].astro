@@ -58,6 +58,14 @@ export const getStaticPaths = async () => {
   })
 
   return [
+    {
+      params: {
+        filter: "all",
+      },
+      props: {
+        posts,
+      },
+    },
     ...categoryResult,
     ...categoryYearResult,
     ...categoryYearMonthResult,
