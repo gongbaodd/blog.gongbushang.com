@@ -8,8 +8,9 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts"
 import Header from "@/components/Header.astro"
 import BlogCard from "@/components/BlogCard"
 import Footer from "@/components/Footer.astro"
+import dayjs from "dayjs"
 
-export const getStaticPaths = (async () => {
+export const getStaticPaths = async () => {
   const posts = await getCollection("blog")
   type T_POST = (typeof posts)[0]
 
@@ -27,7 +28,8 @@ export const getStaticPaths = (async () => {
     return acc
   }, new Map<string, Set<T_POST>>())
 
-  let categoryResult = []
+  const categoryResult = []
+  const categoryYearResult = []
   for (const [category, posts] of categoryItems) {
     categoryResult.push({
       params: {
@@ -35,12 +37,69 @@ export const getStaticPaths = (async () => {
       },
       props: {
         posts: [...posts],
+        category,
+      },
+    })
+
+    const yearItems = new Map<string, Set<T_POST>>()
+    for (const post of posts) {
+      const _date = date(post)
+      const year = _date.getFullYear().toString()
+      const yearSet = yearItems.get(year)
+
+      if (!yearSet) {
+        const posts = new Set<T_POST>()
+        posts.add(post)
+        yearItems.set(year, posts)
+      } else {
+        yearSet.add(post)
+      }
+    }
+
+    for (const [year, posts] of yearItems) {
+      categoryYearResult.push({
+        params: {
+          filter: `${category}/${year}`,
+        },
+        props: {
+          posts: [...posts],
+          category,
+          year,
+        },
+      })
+    }
+  }
+
+  const yearItems = posts.reduce((acc, post) => {
+    const _date = date(post)
+    const year = _date.getFullYear().toString()
+    const yearSet = acc.get(year)
+
+    if (!yearSet) {
+      const posts = new Set<T_POST>()
+      posts.add(post)
+      acc.set(year, posts)
+    } else {
+      yearSet.add(post)
+    }
+    return acc
+  }, new Map<string, Set<T_POST>>())
+
+  const yearResult = []
+  for (const [year, posts] of yearItems) {
+    yearResult.push({
+      params: {
+        filter: year,
+      },
+      props: {
+        posts: [...posts],
+        year,
       },
     })
   }
 
-  return categoryResult
-})
+  return [...categoryResult, ...categoryYearResult, ...yearResult]
+}
 
 const posts = Astro.props.posts.reverse()
 ---
