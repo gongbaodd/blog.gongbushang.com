@@ -26,14 +26,11 @@ export const getStaticPaths = async () => {
   const seriesResult = getStaticPathsByFilter(posts, (p) =>
     p.data.series?.slug ? [`series/${p.data.series.slug}`] : []
   )
-  const [
-    seriesYearResult,
-    seriesYearMonthResult,
-    seriesYearMonthDayResult,
-  ] = addDateFilter(
-    (p) => (p.data.series?.slug ? [`series/${p.data.series.slug}`] : []),
-    seriesResult
-  )
+  const [seriesYearResult, seriesYearMonthResult, seriesYearMonthDayResult] =
+    addDateFilter(
+      (p) => (p.data.series?.slug ? [`series/${p.data.series.slug}`] : []),
+      seriesResult
+    )
 
   const [yearResult, yearMonthResult, yearMonthDayResult] = addDateFilter(
     () => ["all"]
@@ -118,14 +115,19 @@ export const getStaticPaths = async () => {
     filterFn: (p: T_POST) => string[],
     result?: ReturnType<typeof getStaticPathsByFilter>
   ) {
-    const yearResult =
-      result ??
-      getStaticPathsByFilter(posts, (p) => {
-        const filters = filterFn(p)
-        const _date = date(p)
-        const year = _date.getFullYear().toString()
-        return filters.map((filter) => `${filter}/${year}`)
-      })
+    const yearResult = result
+      ? addFilter(result, (p) => {
+          const filters = filterFn(p)
+          const _date = date(p)
+          const year = _date.getFullYear().toString()
+          return filters.map((filter) => `${filter}/${year}`)
+        })
+      : getStaticPathsByFilter(posts, (p) => {
+          const filters = filterFn(p)
+          const _date = date(p)
+          const year = _date.getFullYear().toString()
+          return filters.map((filter) => `${filter}/${year}`)
+        })
 
     const yearMonthResult = addFilter(yearResult, (p) => {
       const filters = filterFn(p)
