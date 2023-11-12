@@ -27,7 +27,7 @@ const posts = (await getCollection("blog")).reverse()
                   date={date(post)}
                   excerpt={await excerpt(post)}
                   category={post.data.category}
-                  link={"/blog/" + post.slug}
+                  link={post.data.category + "/" + post.slug}
                 />
               </li>
             )
