@@ -14,91 +14,46 @@ export const getStaticPaths = async () => {
   const posts = await getCollection("blog")
   type T_POST = (typeof posts)[0]
 
-  const categoryItems = posts.reduce((acc, post) => {
-    const { category } = post.data
-    const categorySet = acc.get(category)
+  const categoryResult = getStaticPathsByFilter(posts, (p) => p.data.category)
+  
+  const yearResult = getStaticPathsByFilter(posts, (p) => {
+    const _date = date(p)
+    const year = _date.getFullYear().toString()
+    return year
+  })
 
-    if (!categorySet) {
-      const posts = new Set<T_POST>()
-      posts.add(post)
-      acc.set(category, posts)
-    } else {
-      categorySet.add(post)
-    }
-    return acc
-  }, new Map<string, Set<T_POST>>())
+  return [...categoryResult, ...yearResult]
 
-  const categoryResult = []
-  const categoryYearResult = []
-  for (const [category, posts] of categoryItems) {
-    categoryResult.push({
-      params: {
-        filter: category,
-      },
-      props: {
-        posts: [...posts],
-        category,
-      },
-    })
+  function getStaticPathsByFilter(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => string) {
+    const items = new Map<string, Set<T_POST>>()
 
-    const yearItems = new Map<string, Set<T_POST>>()
-    for (const post of posts) {
-      const _date = date(post)
-      const year = _date.getFullYear().toString()
-      const yearSet = yearItems.get(year)
+    for(const post of posts) {
+      const filter = filterFn(post)
+      const item = items.get(filter)
 
-      if (!yearSet) {
+      if (!item) {
         const posts = new Set<T_POST>()
         posts.add(post)
-        yearItems.set(year, posts)
+        items.set(filter, posts)
       } else {
-        yearSet.add(post)
+        item.add(post)
       }
     }
 
-    for (const [year, posts] of yearItems) {
-      categoryYearResult.push({
+    const result = []
+    for (const [filter, posts] of items) {
+      result.push({
         params: {
-          filter: `${category}/${year}`,
+          filter,
         },
         props: {
           posts: [...posts],
-          category,
-          year,
         },
       })
     }
+
+    return result
   }
-
-  const yearItems = posts.reduce((acc, post) => {
-    const _date = date(post)
-    const year = _date.getFullYear().toString()
-    const yearSet = acc.get(year)
-
-    if (!yearSet) {
-      const posts = new Set<T_POST>()
-      posts.add(post)
-      acc.set(year, posts)
-    } else {
-      yearSet.add(post)
-    }
-    return acc
-  }, new Map<string, Set<T_POST>>())
-
-  const yearResult = []
-  for (const [year, posts] of yearItems) {
-    yearResult.push({
-      params: {
-        filter: year,
-      },
-      props: {
-        posts: [...posts],
-        year,
-      },
-    })
-  }
-
-  return [...categoryResult, ...categoryYearResult, ...yearResult]
 }
 
 const posts = Astro.props.posts.reverse()
