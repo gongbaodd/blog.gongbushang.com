@@ -12,6 +12,7 @@ import { getStaticPaths as getStaticPathsApi } from "@/pages/api/[...filter].jso
 export const getStaticPaths = getStaticPathsApi
 
 const posts = [...Astro.props.posts].reverse()
+const { filter } = Astro.params
 ---
 
 <Global>
@@ -30,6 +31,7 @@ const posts = [...Astro.props.posts].reverse()
                   excerpt={await excerpt(post)}
                   category={post.data.category}
                   link={`/${post.data.category}/${post.slug}`}
+                  filter={filter}
                 />
               </li>
             )

@@ -1,6 +1,7 @@
 import { getCollection, type CollectionEntry } from "astro:content"
 import { date } from "@/utils/extract"
 import type { APIRoute } from "astro"
+import { FILTER_ENTRY } from "@/consts"
 
 type T_POST = CollectionEntry<"blog">
 
@@ -15,31 +16,31 @@ export const getStaticPaths = async () => {
   ] = addDateFilter((p) => [p.data.category], categoryResult)
 
   const tagResult = getStaticPathsByFilter(posts, (p) =>
-    (p.data.tag ?? []).map((t) => `tag/${t.toLowerCase()}`)
+    (p.data.tag ?? []).map((t) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)
   )
   const [tagYearResult, tagYearMonthResult, tagYearMonthDayResult] =
     addDateFilter(
-      (p) => (p.data.tag ?? []).map((t) => `tag/${t.toLowerCase()}`),
+      (p) => (p.data.tag ?? []).map((t) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`),
       tagResult
     )
 
   const seriesResult = getStaticPathsByFilter(posts, (p) =>
-    p.data.series?.slug ? [`series/${p.data.series.slug}`] : []
+    p.data.series?.slug ? [`${FILTER_ENTRY.SERIES}/${p.data.series.slug}`] : []
   )
   const [seriesYearResult, seriesYearMonthResult, seriesYearMonthDayResult] =
     addDateFilter(
-      (p) => (p.data.series?.slug ? [`series/${p.data.series.slug}`] : []),
+      (p) => (p.data.series?.slug ? [`${FILTER_ENTRY.SERIES}/${p.data.series.slug}`] : []),
       seriesResult
     )
 
   const [yearResult, yearMonthResult, yearMonthDayResult] = addDateFilter(
-    () => ["all"]
+    () => [FILTER_ENTRY.ALL],
   )
 
   return [
     {
       params: {
-        filter: "all",
+        filter: FILTER_ENTRY.ALL,
       },
       props: {
         posts,
