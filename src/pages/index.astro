@@ -1,5 +1,4 @@
 ---
-import type { GetStaticPaths } from "astro"
 import Global from "@/layouts/Global.astro"
 
 import BaseHead from "../components/BaseHead.astro"
@@ -8,7 +7,7 @@ import Footer from "../components/Footer.astro"
 import { SITE_TITLE, SITE_DESCRIPTION } from "../consts"
 
 import profile from "@/assets/profile.jpg"
-import { Image } from "astro:assets"
+import { Picture } from "astro:assets"
 import { getCollection } from "astro:content"
 import { Badge } from "@/components/ui/badge"
 
@@ -50,7 +49,7 @@ for (const [category] of categoryMap) {
 }
 
 for (const [tag] of tagMap) {
-  badges.push([tag,`/tag/${tag.toLowerCase()}`])
+  badges.push([tag, `/tag/${tag.toLowerCase()}`])
 }
 
 for (const [series, posts] of seriesMap) {
@@ -63,7 +62,7 @@ for (const [series, posts] of seriesMap) {
     }
   }
 
-  badges.push([name,`/series/${series}`])
+  badges.push([name, `/series/${series}`])
 }
 ---
 
@@ -72,14 +71,21 @@ for (const [series, posts] of seriesMap) {
   <Header title={SITE_TITLE} />
   <main class="justify-self-center flex flex-col">
     <div class="grow flex items-center justify-center">
-      <Image src={profile} alt="profile" class="rounded-full" />
+      <Picture
+        src={profile}
+        alt="profile"
+        class="rounded-full"
+        decoding="async"
+      />
     </div>
     <div>
       <ul class="p-6 justify-center">
         {
           badges.map(([name, url]) => (
             <li class="block float-left mr-1 mt-1">
-              <a href={url}><Badge>{name}</Badge></a>
+              <a href={url}>
+                <Badge>{name}</Badge>
+              </a>
             </li>
           ))
         }
