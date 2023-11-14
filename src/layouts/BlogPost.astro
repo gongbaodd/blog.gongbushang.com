@@ -7,6 +7,7 @@ import Footer from '../components/Footer.astro';
 import "github-markdown-css/github-markdown.css";
 import Global from "@/layouts/Global.astro"
 import { excerpt, title } from '@/utils/extract';
+import { SITE_TITLE } from '@/consts';
 
 type Props = CollectionEntry<'blog'>;
 
@@ -17,7 +18,7 @@ const postExcerpt = await excerpt(post)
 ---
 
 <Global>
-	<BaseHead title={postTitle} description={postExcerpt} slot="head" />
+	<BaseHead title={`${SITE_TITLE} | ${postTitle}`} description={postExcerpt} slot="head" />
 	<Header/>
 	<main class="min-h-full grid grid-cols-1 justify-items-center">
 		<article class="markdown-body max-w-6xl">

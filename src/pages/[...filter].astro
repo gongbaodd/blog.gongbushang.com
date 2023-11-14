@@ -13,10 +13,11 @@ export const getStaticPaths = getStaticPathsApi
 
 const posts = [...Astro.props.posts].reverse()
 const { filter } = Astro.params
+const subTitle = filter.replaceAll("/", " | ")
 ---
 
 <Global>
-  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead title={`${SITE_TITLE} | ${subTitle}`} description={SITE_DESCRIPTION} slot="head" />
   <Header />
   <main>
     <section>
