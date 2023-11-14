@@ -11,7 +11,7 @@ import "@/styles/global.css"
         grid-auto-rows: min-content 1fr min-content;
       }
     </style>
-    <script>
+    <script is:inline>
       const getThemePreference = () => {
         const stored = localStorage?.getItem('theme')
         if (stored) {
