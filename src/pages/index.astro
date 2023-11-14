@@ -10,6 +10,7 @@ import profile from "@/assets/profile.jpg"
 import { Picture } from "astro:assets"
 import { getCollection } from "astro:content"
 import { Badge } from "@/components/ui/badge"
+import { ModeToggle } from "@/components/DarkModeToggle"
 
 const posts = await getCollection("blog")
 type T_POST = (typeof posts)[0]
