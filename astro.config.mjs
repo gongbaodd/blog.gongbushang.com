@@ -6,6 +6,7 @@ import tailwind from "@astrojs/tailwind"
 
 import remarkMath from "remark-math"
 import rehypeKatex from "rehype-katex"
+import rehypeExternalLinks from "rehype-external-links"
 
 // https://astro.build/config
 export default defineConfig({
@@ -20,7 +21,13 @@ export default defineConfig({
   ],
   markdown: {
     remarkPlugins: [remarkMath],
-    rehypePlugins: [rehypeKatex],
+    rehypePlugins: [
+      rehypeKatex,
+      [
+        rehypeExternalLinks,
+        { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] },
+      ],
+    ],
   },
   title: "宫不上的博客",
 })
