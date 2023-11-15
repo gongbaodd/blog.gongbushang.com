@@ -1,0 +1,28 @@
+---
+import HeaderLink from '@/components/HeaderLink.astro';
+import { SITE_TITLE } from '@/consts';
+import {ModeToggle} from '@/components/DarkModeToggle';
+---
+
+<header class="h-16 sticky p-0 px-4 z-10 top-0  bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+	<nav class="flex items-center justify-between">
+		<h2><a href="/">{SITE_TITLE}</a></h2>
+		<div class="flex items-center gap-4">
+			<HeaderLink href="/">Home</HeaderLink>
+			<HeaderLink href="/all">Blog</HeaderLink>
+			<ModeToggle client:load />
+		</div>
+	</nav>
+</header>
+<style>
+	nav a {
+		padding: 1rem 0.5rem;
+		border-bottom: .25rem solid transparent;
+		text-decoration: none;
+	}
+	nav a.active {
+		text-decoration: none;
+		border-bottom-color: var(--accent);
+	}
+
+</style>
