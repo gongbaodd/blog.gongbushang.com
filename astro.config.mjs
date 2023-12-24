@@ -5,6 +5,7 @@ import react from "@astrojs/react"
 import tailwind from "@astrojs/tailwind"
 
 import remarkMath from "remark-math"
+import remarkLicense from "remark-license"
 import rehypeKatex from "rehype-katex"
 import rehypeExternalLinks from "rehype-external-links"
 
@@ -20,7 +21,7 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkMath],
+    remarkPlugins: [remarkMath, remarkLicense],
     rehypePlugins: [
       rehypeKatex,
       [

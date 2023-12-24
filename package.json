@@ -33,6 +33,7 @@
     "rehype-external-links": "^3.0.0",
     "rehype-katex": "^7.0.0",
     "remark": "^15.0.1",
+    "remark-license": "^6.1.0",
     "remark-math": "^5.1.1",
     "remark-parse": "^11.0.0",
     "strip-markdown": "^6.0.0",
