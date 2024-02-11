@@ -1,0 +1,45 @@
+---
+import { date, excerpt, title } from "../../packages/utils/extract"
+import Global from "../../packages/layouts/Global.astro"
+import BaseHead from "../../packages/components/BaseHead.astro"
+import { SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts"
+import Header from "../../packages/components/Header.astro"
+import BlogCard from "../../packages/react/BlogCard"
+import Footer from "../../packages/components/Footer.astro"
+
+import { getStaticPaths as getStaticPathsApi } from "./api/[...filter].json"
+
+export const getStaticPaths = getStaticPathsApi
+
+const posts = [...Astro.props.posts].reverse()
+const { filter } = Astro.params
+const subTitle = filter.replaceAll("/", " | ")
+---
+
+<Global>
+  <BaseHead title={`${SITE_TITLE} | ${subTitle}`} description={SITE_DESCRIPTION} slot="head" />
+  <Header />
+  <main>
+    <section>
+      <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {
+          posts.map(async (post) => {
+            return (
+              <li>
+                <BlogCard
+                  title={title(post)}
+                  date={date(post)}
+                  excerpt={await excerpt(post)}
+                  category={post.data.category}
+                  link={`/${post.data.category}/${post.slug}`}
+                  filter={filter}
+                />
+              </li>
+            )
+          })
+        }
+      </ul>
+    </section>
+    <Footer />
+  </main>
+</Global>
