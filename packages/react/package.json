@@ -1,0 +1,10 @@
+{
+    "name": "react",
+    "version": "0.0.1",
+    "dependencies": {
+        "@types/react": "^18.2.55",
+        "dayjs": "^1.11.10",
+        "lucide-react": "^0.323.0",
+        "react": "^18.2.0"
+    }
+}

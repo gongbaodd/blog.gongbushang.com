@@ -1,4 +1,4 @@
-import { defineConfig } from 'astro/config';
 
-// https://astro.build/config
-export default defineConfig({});
+import config from "./packages/config"
+
+export default config
