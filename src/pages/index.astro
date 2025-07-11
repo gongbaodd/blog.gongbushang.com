@@ -10,6 +10,14 @@ import profile from "../../packages/assets/profile.jpg"
 import { Picture } from "astro:assets"
 import { getCollection } from "astro:content"
 import { Badge } from "../../packages/shadcn/components/ui/badge"
+import { Mail, Icon } from "@lucide/astro"
+import GitHub from "../icons/github.svg?raw"
+import Twitter from "../icons/x.svg?raw"
+import Linkedin from "../icons/linkedin.svg?raw"
+import Instagram from "../icons/instagram.svg?raw"
+import Threads from "../icons/threads.svg?raw"
+
+console.log(GitHub)
 
 const posts = await getCollection("blog")
 type T_POST = (typeof posts)[0]
@@ -70,13 +78,33 @@ for (const [series, posts] of seriesMap) {
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header title={SITE_TITLE} />
   <main class="justify-self-center flex flex-col">
-    <div class="grow flex items-center justify-center">
+    <div class="grow flex items-center justify-center flex-col">
       <Picture
         src={profile}
         alt="profile"
         class="rounded-full"
         decoding="async"
       />
+      <div class="flex flex-row gap-4 mt-4 justify-center">
+        <a href="https://github.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+          <Icon set:html={GitHub} width="28" height="28" stroke-width="1.5" />
+        </a>
+        <a href="https://x.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+          <Icon set:html={Twitter} width="28" height="28" stroke-width="1.5" />
+        </a>
+        <a href="https://www.linkedin.com/in/jian-gong-27762aa8/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+          <Icon set:html={Linkedin} width="28" height="28" stroke-width="1.5" />
+        </a>
+        <a href="https://www.instagram.com/mia_takeshi" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <Icon set:html={Instagram} width="28" height="28" stroke-width="1.5" />
+        </a>
+        <a href="https://www.threads.com/@mia_takeshi" target="_blank" rel="noopener noreferrer" aria-label="Blog">
+          <Icon set:html={Threads} width="28" height="28" stroke-width="1.5"/>
+        </a>
+        <a href="mailto:gongbaodd@outlook.com" aria-label="Email">
+           <Mail width="28" height="28" />
+        </a>
+      </div>
     </div>
     <div>
       <ul class="p-6 justify-center">

@@ -608,6 +608,11 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@lucide/astro@^0.525.0":
+  version "0.525.0"
+  resolved "https://registry.yarnpkg.com/@lucide/astro/-/astro-0.525.0.tgz#227cdf496d7ab8bdc71bcddf7957e4c32f1e0d1b"
+  integrity sha512-CjX9aJlmHg5/Io6mRSrSi3TbwRXtrV/6kwsRjv6eVhBymAA8ogq3j8YrV1PsXn1EHK9HFyzeJOhaXGm00acVLg==
+
 "@mdx-js/mdx@^3.0.0":
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/@mdx-js/mdx/-/mdx-3.0.0.tgz#37ef87685143fafedf1165f0a79e9fe95fbe5154"
