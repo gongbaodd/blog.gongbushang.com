@@ -16,8 +16,7 @@ import Twitter from "../icons/x.svg?raw"
 import Linkedin from "../icons/linkedin.svg?raw"
 import Instagram from "../icons/instagram.svg?raw"
 import Threads from "../icons/threads.svg?raw"
-
-console.log(GitHub)
+import Spotify from "../icons/spotify.svg?raw"
 
 const posts = await getCollection("blog")
 type T_POST = (typeof posts)[0]
@@ -100,6 +99,9 @@ for (const [series, posts] of seriesMap) {
         </a>
         <a href="https://www.threads.com/@mia_takeshi" target="_blank" rel="noopener noreferrer" aria-label="Blog">
           <Icon set:html={Threads} width="28" height="28" stroke-width="1.5"/>
+        </a>
+        <a href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz" target="_blank" rel="noopener noreferrer" aria-label="Spotify">
+          <Icon set:html={Spotify} width="28" height="28" stroke-width="1.5"/>
         </a>
         <a href="mailto:gongbaodd@outlook.com" aria-label="Email">
            <Mail width="28" height="28" />
