@@ -5,13 +5,15 @@ import { type CollectionEntry } from "astro:content"
 type T_POST = CollectionEntry<"blog">
 
 export function title(post: T_POST) {
-  const lines = post.body.split("\n")
-  for (const line of lines) {
-    if (line && line.startsWith("#")) {
-      const t = line.replace("#", "").trim()
-      if (t) return t
-    } 
-  }
+  if (post.body) {
+    const lines = post.body.split("\n")
+    for (const line of lines) {
+      if (line && line.startsWith("#")) {
+        const t = line.replace("#", "").trim()
+        if (t) return t
+      }
+    }
+  } 
 
   const lastIndex = post.slug?.lastIndexOf('/')
 
@@ -31,6 +33,9 @@ export function date(post: T_POST) {
 }
 
 export async function excerpt(post: T_POST, words = 120) {
+  if (!post.body) {
+    return ""
+  }
   const content = post.body.replace(/#.*/, "")
   const doc = await remark().use(strip).process(content)
   return String(doc).slice(0, words) + "..."
