@@ -8,6 +8,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeExternalLinks from "rehype-external-links";
 
+import vercel from '@astrojs/vercel';
+
 export default defineConfig({
   site: "https://growgen.xyz",
   integrations: [
@@ -28,4 +30,7 @@ export default defineConfig({
       ],
     ],
   },
+  adapter: vercel({
+    isr: true,
+  }),
 });
