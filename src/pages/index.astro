@@ -17,6 +17,7 @@ import Linkedin from "../icons/linkedin.svg?raw"
 import Instagram from "../icons/instagram.svg?raw"
 import Threads from "../icons/threads.svg?raw"
 import Spotify from "../icons/spotify.svg?raw"
+import Itchio from "../icons/itchdotio.svg?raw"
 
 const posts = await getCollection("blog")
 type T_POST = (typeof posts)[0]
@@ -87,6 +88,9 @@ for (const [series, posts] of seriesMap) {
       <div class="flex flex-row gap-4 mt-4 justify-center">
         <a href="https://github.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
           <Icon set:html={GitHub} width="28" height="28" stroke-width="1.5" />
+        </a>
+        <a href="https://gongbaodd.itch.io" target="_blank" rel="noopener noreferrer" aria-label="Itch.io">
+          <Icon set:html={Itchio} width="28" height="28" stroke-width="1.5" />
         </a>
         <a href="https://x.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
           <Icon set:html={Twitter} width="28" height="28" stroke-width="1.5" />
