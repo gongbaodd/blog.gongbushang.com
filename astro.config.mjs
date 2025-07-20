@@ -9,6 +9,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeExternalLinks from "rehype-external-links";
 
 import {bundledLanguages } from "shiki"
+import plantumlGrammar from "shiki-plantuml"
 
 import vercel from '@astrojs/vercel';
 
@@ -33,10 +34,12 @@ export default defineConfig({
     ],
     shikiConfig: {
       langAlias: {
-        "C": "c"
+        "C": "c",
+        "plantuml": "PlantUML"
       },
       langs: [
-        ...Object.keys(bundledLanguages),
+        ...Object.values(bundledLanguages),
+        plantumlGrammar,
       ]
     }
   },
