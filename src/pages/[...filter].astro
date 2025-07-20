@@ -9,6 +9,7 @@ import Footer from "../../packages/components/Footer.astro"
 
 import { getFilteredPage } from "../utils/filter"
 
+export const prerender = true;
 export const getStaticPaths = getFilteredPage
 
 const posts = [...Astro.props.posts].reverse()
