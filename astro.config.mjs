@@ -8,6 +8,8 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeExternalLinks from "rehype-external-links";
 
+import {bundledLanguages } from "shiki"
+
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
@@ -32,7 +34,10 @@ export default defineConfig({
     shikiConfig: {
       langAlias: {
         "C": "c"
-      }
+      },
+      langs: [
+        ...Object.keys(bundledLanguages),
+      ]
     }
   },
   output: 'server',

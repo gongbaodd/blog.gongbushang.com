@@ -1,3 +1,6 @@
 [submodule "src/content"]
 	path = src/content
 	url = git@github.com:gongbaodd/gongbaodd.github.io.git
+[submodule "packages/shiki-plantuml"]
+	path = packages/shiki-plantuml
+	url = git@github.com:gongbaodd/shiki-plantuml.git
