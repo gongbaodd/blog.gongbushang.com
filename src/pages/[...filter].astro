@@ -12,7 +12,11 @@ import { getFilteredPage } from "../utils/filter"
 export const prerender = true;
 export const getStaticPaths = getFilteredPage
 
-const posts = [...Astro.props.posts].reverse()
+const posts = [...Astro.props.posts].toSorted((p1, p2) => {
+  const d1 = new Date(date(p1))
+  const d2 = new Date(date(p2))
+  return d1 > d2 ? -1 : 1
+})
 const { filter } = Astro.params
 const subTitle = filter.replaceAll("/", " | ")
 ---
