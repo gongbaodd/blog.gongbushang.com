@@ -7,9 +7,9 @@ import Header from "../../packages/components/Header.astro"
 import BlogCard from "../../packages/react/BlogCard"
 import Footer from "../../packages/components/Footer.astro"
 
-import { getStaticPaths as getStaticPathsApi } from "./api/[...filter].json"
+import { getFilteredPage } from "../utils/filter"
 
-export const getStaticPaths = getStaticPathsApi
+export const getStaticPaths = getFilteredPage
 
 const posts = [...Astro.props.posts].reverse()
 const { filter } = Astro.params

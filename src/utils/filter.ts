@@ -1,11 +1,10 @@
 import { getCollection, type CollectionEntry } from "astro:content"
-import { date } from "../../../packages/utils/extract"
-import type { APIRoute } from "astro"
-import { FILTER_ENTRY } from "../../../packages/consts"
+import { date } from "../../packages/utils/extract"
+import { FILTER_ENTRY } from "../../packages/consts"
 
 type T_POST = CollectionEntry<"blog">
 
-export const getStaticPaths = async () => {
+export const getFilteredPage = async () => {
   const posts = await getCollection("blog")
 
   const categoryResult = getStaticPathsByFilter(posts, (p) => [p.data.category])
@@ -149,10 +148,4 @@ export const getStaticPaths = async () => {
 
     return [yearResult, yearMonthResult, yearMonthDayResult]
   }
-}
-
-type T_PROPS = Awaited<ReturnType<typeof getStaticPaths>>[0]["props"]
-
-export const GET: APIRoute<T_PROPS> = ({ props }) => {
-  return new Response(JSON.stringify(props))
 }
