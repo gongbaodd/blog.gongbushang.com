@@ -29,6 +29,11 @@ export default defineConfig({
         { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] },
       ],
     ],
+    shikiConfig: {
+      langAlias: {
+        "C": "c"
+      }
+    }
   },
   output: 'server',
   adapter: vercel({
