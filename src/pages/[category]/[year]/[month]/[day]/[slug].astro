@@ -1,12 +1,12 @@
 ---
-import { type CollectionEntry, getCollection } from "astro:content"
+import { type CollectionEntry, getCollection, getEntry, render } from "astro:content"
 import BlogPost from "@/packages/layouts/BlogPost.astro"
 
 export const prerender = true;
 export async function getStaticPaths() {
   const posts = await getCollection("blog")
   return posts.map((post) => {
-    const [year, month, day, slug] = post.slug.split("/")
+    const [year, month, day, slug] = post.id.split("/")
 
     return {
       params: {
@@ -23,7 +23,11 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">
 
 const post = Astro.props
-const { Content } = await post.render()
+const entry = await getEntry("blog", post.id);
+if (!entry) {
+  throw new Error('Could not find blog' + post.id);
+}
+const { Content } = await render(entry);
 ---
 
 <BlogPost {...post}>

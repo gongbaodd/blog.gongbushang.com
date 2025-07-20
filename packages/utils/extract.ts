@@ -15,15 +15,15 @@ export function title(post: T_POST) {
     }
   } 
 
-  const lastIndex = post.slug?.lastIndexOf('/')
+  const lastIndex = post.id?.lastIndexOf('/')
 
-  if (!post.slug || lastIndex === -1) throw new Error("Not a valid post!")
+  if (!post.id || lastIndex === -1) throw new Error("Not a valid post!")
 
-  return post.slug.slice(lastIndex + 1).replace(/-/g, " ")
+  return post.id.slice(lastIndex + 1).replace(/-/g, " ")
 }
 
 export function date(post: T_POST) {
-  const info = post.slug.split("/")
+  const info = post.id.split("/")
   const date = new Date(
     parseInt(info[0], 10),
     parseInt(info[1], 10) - 1,

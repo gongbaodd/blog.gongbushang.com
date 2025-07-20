@@ -32,7 +32,7 @@ const subTitle = filter.replaceAll("/", " | ")
                   date={date(post)}
                   excerpt={await excerpt(post)}
                   category={post.data.category}
-                  link={`/${post.data.category}/${post.slug}`}
+                  link={`/${post.data.category}/${post.id}`}
                   filter={filter}
                 />
               </li>
