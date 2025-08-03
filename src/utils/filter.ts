@@ -1,36 +1,24 @@
 import { getCollection, type CollectionEntry } from "astro:content"
 import { date } from "../../packages/utils/extract"
 import { FILTER_ENTRY } from "../../packages/consts"
+import lodash from "lodash"
+const { memoize } = lodash
 
 type T_POST = CollectionEntry<"blog">
 
 export const getFilteredPage = async () => {
   const posts = await getCollection("blog")
+  
+  const getMemorizedCategoryResult = memoize(() => getStaticPathsByFilter(posts, (p) => [p.data.category]), () => posts.length);
+  const categoryResult = getMemorizedCategoryResult();
 
-  const categoryResult = getStaticPathsByFilter(posts, (p) => [p.data.category])
-  const [
-    categoryYearResult,
-    categoryYearMonthResult,
-    categoryYearMonthDayResult,
-  ] = addDateFilter((p) => [p.data.category], categoryResult)
+  const getMemorizedTagResult = memoize(() => getStaticPathsByFilter(posts, (p) => (p.data.tag ?? []).map((t: string) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)), () => posts.length);
+  const tagResult = getMemorizedTagResult();
 
-  const tagResult = getStaticPathsByFilter(posts, (p) =>
-    (p.data.tag ?? []).map((t) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)
-  )
-  const [tagYearResult, tagYearMonthResult, tagYearMonthDayResult] =
-    addDateFilter(
-      (p) => (p.data.tag ?? []).map((t) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`),
-      tagResult
-    )
-
-  const seriesResult = getStaticPathsByFilter(posts, (p) =>
+  const getMemorizedSeriesResult = memoize(() => getStaticPathsByFilter(posts, (p) =>
     p.data.series?.slug ? [`${FILTER_ENTRY.SERIES}/${p.data.series.slug}`] : []
-  )
-  const [seriesYearResult, seriesYearMonthResult, seriesYearMonthDayResult] =
-    addDateFilter(
-      (p) => (p.data.series?.slug ? [`${FILTER_ENTRY.SERIES}/${p.data.series.slug}`] : []),
-      seriesResult
-    )
+  ), () => posts.length);
+  const seriesResult = getMemorizedSeriesResult();
 
   const [yearResult, yearMonthResult, yearMonthDayResult] = addDateFilter(
     () => [FILTER_ENTRY.ALL],
@@ -46,20 +34,8 @@ export const getFilteredPage = async () => {
       },
     },
     ...categoryResult,
-    // ...categoryYearResult,
-    // ...categoryYearMonthResult,
-    // ...categoryYearMonthDayResult,
-
     ...tagResult,
-    // ...tagYearResult,
-    // ...tagYearMonthResult,
-    // ...tagYearMonthDayResult,
-
     ...seriesResult,
-    // ...seriesYearResult,
-    // ...seriesYearMonthResult,
-    // ...seriesYearMonthDayResult,
-
     ...yearResult,
     ...yearMonthResult,
     ...yearMonthDayResult,

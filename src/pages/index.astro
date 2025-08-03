@@ -1,76 +1,85 @@
 ---
-import Global from "../../packages/layouts/Global.astro"
+import Global from "../../packages/layouts/Global.astro";
 
-import BaseHead from "../../packages/components/BaseHead.astro"
-import Header from "../../packages/components/Header.astro"
-import Footer from "../../packages/components/Footer.astro"
-import { SITE_TITLE, SITE_DESCRIPTION } from "../../packages/consts"
+import BaseHead from "../../packages/components/BaseHead.astro";
+import Header from "../../packages/components/Header.astro";
+import Footer from "../../packages/components/Footer.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../packages/consts";
+import lodash from "lodash";
+const { memoize } = lodash;
 
-import profile from "../../packages/assets/profile.jpg"
-import { Picture } from "astro:assets"
-import { getCollection } from "astro:content"
-import { Badge } from "../../packages/shadcn/components/ui/badge"
-import { Mail, Icon } from "@lucide/astro"
-import GitHub from "../icons/github.svg?raw"
-import Twitter from "../icons/x.svg?raw"
-import Linkedin from "../icons/linkedin.svg?raw"
-import Instagram from "../icons/instagram.svg?raw"
-import Threads from "../icons/threads.svg?raw"
-import Spotify from "../icons/spotify.svg?raw"
-import Itchio from "../icons/itchdotio.svg?raw"
+import profile from "../../packages/assets/profile.jpg";
+import { Picture } from "astro:assets";
+import { getCollection } from "astro:content";
+import { Badge } from "../../packages/shadcn/components/ui/badge";
+import { Mail, Icon } from "@lucide/astro";
+import GitHub from "../icons/github.svg?raw";
+import Twitter from "../icons/x.svg?raw";
+import Linkedin from "../icons/linkedin.svg?raw";
+import Instagram from "../icons/instagram.svg?raw";
+import Threads from "../icons/threads.svg?raw";
+import Spotify from "../icons/spotify.svg?raw";
+import Itchio from "../icons/itchdotio.svg?raw";
 
-const posts = await getCollection("blog")
-type T_POST = (typeof posts)[0]
+const posts = await getCollection("blog");
+type T_POST = (typeof posts)[0];
 
-const categoryMap = new Map<string, Set<T_POST>>()
-const tagMap = new Map<string, Set<T_POST>>()
-const seriesMap = new Map<string, Set<T_POST>>()
+const memoriedGetBadges = memoize(getBadges, () => posts.length.toString());
+const badges = memoriedGetBadges();
 
-posts.forEach((post) => {
-  const { category, tag, series } = post.data
+function getBadges() {
+  const categoryMap = new Map<string, Set<T_POST>>();
+  const tagMap = new Map<string, Set<T_POST>>();
+  const seriesMap = new Map<string, Set<T_POST>>();
 
-  if (!categoryMap.has(category)) {
-    categoryMap.set(category, new Set())
-  }
-  categoryMap.get(category)?.add(post)
+  posts.forEach((post) => {
+    const { category, tag, series } = post.data;
 
-  tag?.forEach((t) => {
-    if (!tagMap.has(t)) {
-      tagMap.set(t, new Set())
+    if (!categoryMap.has(category)) {
+      categoryMap.set(category, new Set());
     }
-    tagMap.get(t)?.add(post)
-  })
+    categoryMap.get(category)?.add(post);
 
-  if (series) {
-    const { slug } = series
-    if (!seriesMap.has(slug)) {
-      seriesMap.set(slug, new Set())
+    tag?.forEach((t) => {
+      if (!tagMap.has(t)) {
+        tagMap.set(t, new Set());
+      }
+      tagMap.get(t)?.add(post);
+    });
+
+    if (series) {
+      const { slug } = series;
+      if (!seriesMap.has(slug)) {
+        seriesMap.set(slug, new Set());
+      }
+
+      seriesMap.get(slug)?.add(post);
     }
+  });
 
-    seriesMap.get(slug)?.add(post)
-  }
-})
-
-const badges: [string, string][] = []
-for (const [category] of categoryMap) {
-  badges.push([category, `/${category}`])
-}
-
-for (const [tag] of tagMap) {
-  badges.push([tag, `/tag/${tag.toLowerCase()}`])
-}
-
-for (const [series, posts] of seriesMap) {
-  let name = series
-
-  for (const post of posts) {
-    if (post.data.series?.name) {
-      name = post.data.series.name
-      break
-    }
+  const badges: [string, string][] = [];
+  for (const [category] of categoryMap) {
+    badges.push([category, `/${category}`]);
   }
 
-  badges.push([name, `/series/${series}`])
+  for (const [tag] of tagMap) {
+    badges.push([tag, `/tag/${tag.toLowerCase()}`]);
+  }
+
+  for (const [series, posts] of seriesMap) {
+    let name = series;
+
+    for (const post of posts) {
+      if (post.data.series?.name) {
+        name = post.data.series.name;
+        break;
+      }
+    }
+
+    badges.push([name, `/series/${series}`]);
+  }
+
+  return badges;
 }
 ---
 
@@ -86,34 +95,83 @@ for (const [series, posts] of seriesMap) {
         decoding="async"
       />
       <div class="flex flex-row gap-4 mt-4 justify-center">
-        <a href="https://github.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+        <a
+          href="https://github.com/gongbaodd"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+        >
           <Icon set:html={GitHub} width="28" height="28" stroke-width="1.5" />
         </a>
-        <a href="https://gongbaodd.itch.io" target="_blank" rel="noopener noreferrer" aria-label="Itch.io">
+        <a
+          href="https://gongbaodd.itch.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Itch.io"
+        >
           <Icon set:html={Itchio} width="28" height="28" stroke-width="1.5" />
         </a>
-        <a href="https://x.com/gongbaodd" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+        <a
+          href="https://x.com/gongbaodd"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Twitter"
+        >
           <Icon set:html={Twitter} width="28" height="28" stroke-width="1.5" />
         </a>
-        <a href="https://www.linkedin.com/in/jian-gong-27762aa8/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+        <a
+          href="https://www.linkedin.com/in/jian-gong-27762aa8/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="LinkedIn"
+        >
           <Icon set:html={Linkedin} width="28" height="28" stroke-width="1.5" />
         </a>
-        <a href="https://www.instagram.com/mia_takeshi" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-          <Icon set:html={Instagram} width="28" height="28" stroke-width="1.5" />
+        <a
+          href="https://www.instagram.com/mia_takeshi"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+        >
+          <Icon
+            set:html={Instagram}
+            width="28"
+            height="28"
+            stroke-width="1.5"
+          />
         </a>
-        <a href="https://www.threads.com/@mia_takeshi" target="_blank" rel="noopener noreferrer" aria-label="Blog">
-          <Icon set:html={Threads} width="28" height="28" stroke-width="1.5"/>
+        <a
+          href="https://www.threads.com/@mia_takeshi"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Blog"
+        >
+          <Icon set:html={Threads} width="28" height="28" stroke-width="1.5" />
         </a>
-        <a href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz" target="_blank" rel="noopener noreferrer" aria-label="Spotify">
-          <Icon set:html={Spotify} width="28" height="28" stroke-width="1.5"/>
+        <a
+          href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Spotify"
+        >
+          <Icon set:html={Spotify} width="28" height="28" stroke-width="1.5" />
         </a>
         <a href="mailto:gongbaodd@outlook.com" aria-label="Email">
-           <Mail width="28" height="28" />
+          <Mail width="28" height="28" />
         </a>
       </div>
     </div>
     <div class="flex flex-col items-center justify-center p-4">
-      <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/show/2FJoLvI0tAnjXO3t71Iswz?utm_source=generator&theme=0" width="100%" height="152" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      <iframe
+        data-testid="embed-iframe"
+        style="border-radius:12px"
+        src="https://open.spotify.com/embed/show/2FJoLvI0tAnjXO3t71Iswz?utm_source=generator&theme=0"
+        width="100%"
+        height="152"
+        frameborder="0"
+        allowfullscreen=""
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"></iframe>
     </div>
     <div>
       <ul class="p-6 justify-center">
