@@ -32,6 +32,9 @@ importers:
       astro:
         specifier: 5.11.0
         version: 5.11.0(@types/node@24.0.15)(jiti@2.4.2)(rollup@4.45.1)(typescript@5.8.3)(yaml@2.8.0)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       react:
         specifier: ^18.2.0
         version: 18.3.1
