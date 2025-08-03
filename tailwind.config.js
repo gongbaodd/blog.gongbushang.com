@@ -7,5 +7,4 @@ module.exports = {
         "./packages/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}",
          "!./packages/**/node_modules/**/*"
     ],
-    plugins: [require('@tailwindcss/typography')]
 }
