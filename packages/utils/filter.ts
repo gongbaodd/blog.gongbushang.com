@@ -1,14 +1,44 @@
 import { getCollection, type CollectionEntry } from "astro:content"
-import { date } from "../../packages/utils/extract"
-import { FILTER_ENTRY } from "../../packages/consts"
+import { date } from "./extract"
+import { FILTER_ENTRY } from "../consts"
 import lodash from "lodash"
 const { memoize } = lodash
 
 type T_POST = CollectionEntry<"blog">
 
+const STATIC_ENTRIES = [
+  FILTER_ENTRY.ALL,
+  FILTER_ENTRY.TAG,
+  FILTER_ENTRY.SERIES,
+]
+
+export const getAllFilterEntries = async () => {
+  const posts = await getCollection("blog")
+  const entries = new Set<string>(STATIC_ENTRIES)
+  const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, () => posts.length.toString());
+
+  const categoryEntries = getMemorizedCategoryFilterEntries()
+
+  return [
+    ...entries,
+    ...categoryEntries,
+  ]
+
+  function getCategoryFilterEntries() {
+    const categoryEntries = new Set<string>()
+    for (const post of posts) {
+      if (post.data.category) {
+        categoryEntries.add(post.data.category.toLowerCase())
+      }
+    }
+
+    return categoryEntries
+  }
+}
+
 export const getFilteredPage = async () => {
   const posts = await getCollection("blog")
-  
+
   const getMemorizedCategoryResult = memoize(() => getStaticPathsByFilter(posts, (p) => [p.data.category]), () => posts.length);
   const categoryResult = getMemorizedCategoryResult();
 
@@ -64,7 +94,11 @@ export const getFilteredPage = async () => {
           filter,
         },
         props: {
-          posts: [...posts],
+          posts: [...posts].toSorted((p1, p2) => {
+            const d1 = new Date(date(p1))
+            const d2 = new Date(date(p2))
+            return d1 > d2 ? -1 : 1
+          }),
         },
       })
     }
@@ -93,17 +127,17 @@ export const getFilteredPage = async () => {
   ) {
     const yearResult = result
       ? addFilter(result, (p) => {
-          const filters = filterFn(p)
-          const _date = date(p)
-          const year = _date.getFullYear().toString()
-          return filters.map((filter) => `${filter}/${year}`)
-        })
+        const filters = filterFn(p)
+        const _date = date(p)
+        const year = _date.getFullYear().toString()
+        return filters.map((filter) => `${filter}/${year}`)
+      })
       : getStaticPathsByFilter(posts, (p) => {
-          const filters = filterFn(p)
-          const _date = date(p)
-          const year = _date.getFullYear().toString()
-          return filters.map((filter) => `${filter}/${year}`)
-        })
+        const filters = filterFn(p)
+        const _date = date(p)
+        const year = _date.getFullYear().toString()
+        return filters.map((filter) => `${filter}/${year}`)
+      })
 
     const yearMonthResult = addFilter(yearResult, (p) => {
       const filters = filterFn(p)

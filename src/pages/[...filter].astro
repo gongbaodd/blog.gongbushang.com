@@ -1,50 +1,61 @@
 ---
-import { date, excerpt, title } from "../../packages/utils/extract"
-import Global from "../../packages/layouts/Global.astro"
-import BaseHead from "../../packages/components/BaseHead.astro"
-import { SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts"
-import Header from "../../packages/components/Header.astro"
-import BlogCard from "../../packages/react/BlogCard"
-import Footer from "../../packages/components/Footer.astro"
+import { date, excerpt, title } from "../../packages/utils/extract";
+import Global from "../../packages/layouts/Global.astro";
+import BaseHead from "../../packages/components/BaseHead.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts";
+import Header from "../../packages/components/Header.astro";
+import BlogCard from "../../packages/react/BlogCard";
+import Footer from "../../packages/components/Footer.astro";
+import NotFound from "./404.astro";
 
-import { getFilteredPage } from "../utils/filter"
+import {
+  getFilteredPage,
+  getAllFilterEntries,
+} from "../../packages/utils/filter";
 
 export const prerender = true;
-export const getStaticPaths = getFilteredPage
+export const getStaticPaths = getFilteredPage;
 
-const posts = [...Astro.props.posts].toSorted((p1, p2) => {
-  const d1 = new Date(date(p1))
-  const d2 = new Date(date(p2))
-  return d1 > d2 ? -1 : 1
-})
-const { filter } = Astro.params
-const subTitle = filter.replaceAll("/", " | ")
+const posts = Astro.props.posts;
+const { filter } = Astro.params;
+const subTitle = filter.replaceAll("/", " | ");
+const validFiltes = await getAllFilterEntries();
+const parts = filter.split("/").filter(Boolean) ?? [];
+const isValidFilter = validFiltes.some((f) => f === parts[0]);
 ---
 
-<Global>
-  <BaseHead title={`${SITE_TITLE} | ${subTitle}`} description={SITE_DESCRIPTION} slot="head" />
-  <Header />
-  <main>
-    <section>
-      <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {
-          posts.map(async (post) => {
-            return (
-              <li>
-                <BlogCard
-                  title={title(post)}
-                  date={date(post)}
-                  excerpt={await excerpt(post)}
-                  category={post.data.category}
-                  link={`/${post.data.category}/${post.id}`}
-                  filter={filter}
-                />
-              </li>
-            )
-          })
-        }
-      </ul>
-    </section>
-    <Footer />
-  </main>
-</Global>
+{
+  isValidFilter ? (
+    <Global>
+      <BaseHead
+        title={`${SITE_TITLE} | ${subTitle}`}
+        description={SITE_DESCRIPTION}
+        slot="head"
+      />
+      <Header />
+      <main>
+        <section>
+          <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {posts.map(async (post) => {
+              return (
+                <li>
+                  <BlogCard
+                    title={title(post)}
+                    date={date(post)}
+                    excerpt={await excerpt(post)}
+                    category={post.data.category}
+                    link={`/${post.data.category}/${post.id}`}
+                    filter={filter}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <Footer />
+      </main>
+    </Global>
+  ) : (
+    <NotFound />
+  )
+}
