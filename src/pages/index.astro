@@ -10,7 +10,7 @@ const { memoize } = lodash;
 
 import profile from "../../packages/assets/profile.jpg";
 import { Picture } from "astro:assets";
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import { Badge } from "../../packages/shadcn/components/ui/badge";
 import { Mail, Icon } from "@lucide/astro";
 import GitHub from "../icons/github.svg?raw";
@@ -21,8 +21,9 @@ import Threads from "../icons/threads.svg?raw";
 import Spotify from "../icons/spotify.svg?raw";
 import Itchio from "../icons/itchdotio.svg?raw";
 
+export const prerender = true;
 const posts = await getCollection("blog");
-type T_POST = (typeof posts)[0];
+type T_POST = CollectionEntry<"blog">;
 
 const memoriedGetBadges = memoize(getBadges, () => posts.length.toString());
 const badges = memoriedGetBadges();
