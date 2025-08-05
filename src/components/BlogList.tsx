@@ -75,7 +75,6 @@ function List({ posts }: Props) {
     <AppShell
       header={{ height: 70 }}
       padding="md"
-      bg="gray.0"
     >
       <AppShell.Header>
         <Container size="xl" h="100%">
