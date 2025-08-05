@@ -1,4 +1,3 @@
-import { SITE_TITLE } from "@/packages/consts";
 import {
   Anchor,
   AppShell,
@@ -10,28 +9,30 @@ import {
   Title,
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
-import classes from "./mantineHeader.module.css";
+import classes from "./MantineHeader.module.css";
 
 interface IProps {
   links: { label: string; href: string }[];
+  title: string;
+  pathname: string;
 }
 
-export default function ({ links }: IProps) {
+export default function MantineHeader({ links, title, pathname }: IProps) {
   return (
     <MantineProvider>
       <AppShell header={{ height: 70 }} padding="md">
-        <AppShell.Header>
+        <AppShell.Header className="backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <Container size="xl" h="100%">
             <Flex justify="space-between" align="center" h="100%">
               <Title order={2} c="blue.6">
-                {SITE_TITLE}
+                {title}
               </Title>
               <Group gap="lg" visibleFrom="sm">
                 {links.map((link) => (
                   <Anchor
+                    className={classes.link + (link.href === pathname ? ` ${classes.active}` : "")}
                     key={link.label}
                     href={link.href}
-                    className={classes.link}
                   >
                     {link.label}
                   </Anchor>

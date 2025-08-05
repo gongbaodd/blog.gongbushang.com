@@ -1,8 +1,12 @@
 /* HomeLink.module.css */
 .link {
-    color: var(--mantine-color-dimmed)
+  color: var(--mantine-color-dimmed)
 }
 
 .link:hover {
+  color: var(--mantine-color-blue-6);
+}
+
+.link.active {
   color: var(--mantine-color-blue-6);
 }

@@ -9,3 +9,8 @@ export enum FILTER_ENTRY {
     TAG = 'tag',
     SERIES = 'series',
 }
+
+export const ROUTES = [
+    { label: "Home", href: "/" },
+    { label: "Blog", href: "/all" },
+]

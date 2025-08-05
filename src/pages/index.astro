@@ -2,9 +2,8 @@
 import Global from "../../packages/layouts/Global.astro";
 
 import BaseHead from "../../packages/components/BaseHead.astro";
-import Header from "../../packages/components/Header.astro";
 import Footer from "../../packages/components/Footer.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "../../packages/consts";
+import { SITE_TITLE, SITE_DESCRIPTION, ROUTES } from "@/packages/consts";
 
 import profile from "../../packages/assets/profile.jpg";
 import { Picture } from "astro:assets";
@@ -18,6 +17,7 @@ import Threads from "../icons/threads.svg?raw";
 import Spotify from "../icons/spotify.svg?raw";
 import Itchio from "../icons/itchdotio.svg?raw";
 import { getBadges } from "@/packages/utils/badges";
+import MantineMain from "../components/MantineMain";
 import MantineHeader from "../components/MantineHeader";
 
 export const prerender = true;
@@ -26,9 +26,12 @@ const badges = await getBadges();
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <!-- <Header title={SITE_TITLE} /> -->
-   <MantineHeader links={[{label: "Home", href: "/"}, {label: "Blog", href: "/all"}]}  />
-  <main class="justify-self-center flex flex-col">
+  <MantineHeader
+    title={SITE_TITLE}
+    links={ROUTES}
+    pathname={Astro.url.pathname}
+  />
+  <MantineMain>
     <div class="grow flex items-center justify-center flex-col">
       <Picture
         src={profile}
@@ -128,5 +131,5 @@ const badges = await getBadges();
       </ul>
     </div>
     <Footer />
-  </main>
+  </MantineMain>
 </Global>
