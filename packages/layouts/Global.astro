@@ -1,20 +1,15 @@
 ---
-import "../shadcn/app/globals.css"
+import { ColorSchemeScript } from "@mantine/core";
+import "@mantine/core/styles.css";
 ---
 
 <!doctype html>
 <html lang="en" class="h-full relative">
   <head>
+    <ColorSchemeScript defaultColorScheme="dark" />
     <slot name="head" />
-    <style>
-      body {
-        grid-auto-rows: min-content 1fr min-content;
-      }
-    </style>
-  </head>    
-  <body class="min-h-full grid grid-cols-1">
+  </head>
+  <body>
     <slot />
   </body>
 </html>
-
-

@@ -18,6 +18,7 @@ import Threads from "../icons/threads.svg?raw";
 import Spotify from "../icons/spotify.svg?raw";
 import Itchio from "../icons/itchdotio.svg?raw";
 import { getBadges } from "@/packages/utils/badges";
+import MantineHeader from "../components/MantineHeader";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -25,7 +26,8 @@ const badges = await getBadges();
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header title={SITE_TITLE} />
+  <!-- <Header title={SITE_TITLE} /> -->
+   <MantineHeader links={[{label: "Home", href: "/"}, {label: "Blog", href: "/all"}]}  />
   <main class="justify-self-center flex flex-col">
     <div class="grow flex items-center justify-center flex-col">
       <Picture

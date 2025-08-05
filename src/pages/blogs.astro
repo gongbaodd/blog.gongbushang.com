@@ -1,13 +1,9 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
-import Footer from "@/packages/components/Footer.astro";
-import Header from "@/packages/components/Header.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
-import Global from "@/packages/layouts/Global.astro";
 import { getCollection } from "astro:content";
 import BlogList from "../components/BlogList";
 import "@mantine/core/styles.css";
-import { ColorSchemeScript } from "@mantine/core";
 
 const posts = await getCollection("blog");
 ---
@@ -15,7 +11,6 @@ const posts = await getCollection("blog");
 <!doctype html>
 <html lang="en" class="h-full relative">
   <head>
-    <ColorSchemeScript defaultColorScheme="dark" />
     <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
   </head>
   <body>
