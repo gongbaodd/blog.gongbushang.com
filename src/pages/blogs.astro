@@ -6,7 +6,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import { getCollection } from "astro:content";
 import BlogList from "../components/BlogList";
-import '@mantine/core/styles.css';
+import "@mantine/core/styles.css";
 
 const posts = await getCollection("blog");
 ---
@@ -14,17 +14,9 @@ const posts = await getCollection("blog");
 <!doctype html>
 <html lang="en" class="h-full relative">
   <head>
-    <slot name="head" />
-    <style>
-      body {
-        grid-auto-rows: min-content 1fr min-content;
-      }
-    </style>
-    <BaseHead
-      title={SITE_TITLE}
-      description={SITE_DESCRIPTION}/>
-  </head>    
-  <body class="min-h-full grid grid-cols-1">
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
     <BlogList posts={posts} />
   </body>
 </html>
