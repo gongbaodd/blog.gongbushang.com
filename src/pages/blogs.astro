@@ -1,0 +1,43 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import Footer from "@/packages/components/Footer.astro";
+import Header from "@/packages/components/Header.astro";
+import { FILTER_ENTRY, SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import BlogCard from "@/packages/react/BlogCard";
+import { date, excerpt, title } from "@/packages/utils/extract";
+import { getCollection } from "astro:content";
+
+const posts = await getCollection("blog")
+const filter = FILTER_ENTRY.ALL;
+---
+
+<Global>
+      <BaseHead
+        title={`${SITE_TITLE}`}
+        description={SITE_DESCRIPTION}
+        slot="head"
+      />
+      <Header />
+      <main>
+        <section>
+          <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {posts.map(async (post) => {
+              return (
+                <li>
+                  <BlogCard
+                    title={title(post)}
+                    date={date(post)}
+                    excerpt={await excerpt(post)}
+                    category={post.data.category}
+                    link={`/${post.data.category}/${post.id}`}
+                    filter={filter}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <Footer />
+      </main>
+    </Global>
