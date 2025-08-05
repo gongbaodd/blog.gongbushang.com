@@ -10,6 +10,8 @@ import {
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
 import classes from "./MantineHeader.module.css";
+import { useStore } from "@nanostores/react";
+import layoutStore from "../stores/layout";
 
 interface IProps {
   links: { label: string; href: string }[];
@@ -18,10 +20,12 @@ interface IProps {
 }
 
 export default function MantineHeader({ links, title, pathname }: IProps) {
+  const { headerHeight } = useStore(layoutStore)
   return (
     <MantineProvider>
-      <AppShell header={{ height: 70 }} padding="md">
-        <AppShell.Header className="backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <AppShell header={{ height: headerHeight }} padding="md">
+        {/*TODO: className="backdrop-blur supports-[backdrop-filter]:bg-background/60"*/}
+        <AppShell.Header>
           <Container size="xl" h="100%">
             <Flex justify="space-between" align="center" h="100%">
               <Title order={2} c="blue.6">

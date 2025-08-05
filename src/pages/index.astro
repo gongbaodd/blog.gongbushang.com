@@ -5,7 +5,7 @@ import BaseHead from "../../packages/components/BaseHead.astro";
 import Footer from "../../packages/components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION, ROUTES } from "@/packages/consts";
 
-import profile from "../../packages/assets/profile.jpg";
+import profile from "@/packages/assets/profile.jpg";
 import { Picture } from "astro:assets";
 import { Badge } from "../../packages/shadcn/components/ui/badge";
 import { Mail, Icon } from "@lucide/astro";
@@ -19,6 +19,7 @@ import Itchio from "../icons/itchdotio.svg?raw";
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../components/MantineMain";
 import MantineHeader from "../components/MantineHeader";
+import Hero from "../components/Hero";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -32,13 +33,15 @@ const badges = await getBadges();
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <div class="grow flex items-center justify-center flex-col">
+    <Hero>
       <Picture
-        src={profile}
-        alt="profile"
-        class="rounded-full"
-        decoding="async"
-      />
+          src={profile}
+          alt="profile"
+          decoding="async"
+          slot="picture"
+        />
+    </Hero>
+    <div class="grow flex items-center justify-center flex-col">
       <div class="flex flex-row gap-4 mt-4 justify-center">
         <a
           href="https://github.com/gongbaodd"
