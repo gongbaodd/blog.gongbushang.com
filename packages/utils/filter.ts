@@ -60,7 +60,7 @@ export const getFilteredPage = async () => {
         filter: FILTER_ENTRY.ALL,
       },
       props: {
-        posts,
+        posts: sortPostsByDate(posts),
       },
     },
     ...categoryResult,
@@ -94,16 +94,20 @@ export const getFilteredPage = async () => {
           filter,
         },
         props: {
-          posts: [...posts].toSorted((p1, p2) => {
-            const d1 = new Date(date(p1))
-            const d2 = new Date(date(p2))
-            return d1 > d2 ? -1 : 1
-          }),
+          posts: sortPostsByDate(Array.from(posts)),
         },
       })
     }
 
     return result
+  }
+
+  function sortPostsByDate(posts: T_POST[]) {
+    return posts.toSorted((p1, p2) => {
+      const d1 = new Date(date(p1))
+      const d2 = new Date(date(p2))
+      return d1 > d2 ? -1 : 1
+    })
   }
 
   function addFilter(

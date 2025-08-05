@@ -14,9 +14,10 @@ import {
 } from "../../packages/utils/filter";
 
 export const prerender = true;
-export const getStaticPaths = getFilteredPage;
 
+export const getStaticPaths = getFilteredPage;
 const posts = Astro.props.posts;
+
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
 const validFiltes = await getAllFilterEntries();
