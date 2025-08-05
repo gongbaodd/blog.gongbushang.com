@@ -2,42 +2,29 @@
 import BaseHead from "@/packages/components/BaseHead.astro";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/components/Header.astro";
-import { FILTER_ENTRY, SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
-import BlogCard from "@/packages/react/BlogCard";
-import { date, excerpt, title } from "@/packages/utils/extract";
 import { getCollection } from "astro:content";
+import BlogList from "../components/BlogList";
+import '@mantine/core/styles.css';
 
-const posts = await getCollection("blog")
-const filter = FILTER_ENTRY.ALL;
+const posts = await getCollection("blog");
 ---
 
-<Global>
-      <BaseHead
-        title={`${SITE_TITLE}`}
-        description={SITE_DESCRIPTION}
-        slot="head"
-      />
-      <Header />
-      <main>
-        <section>
-          <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {posts.map(async (post) => {
-              return (
-                <li>
-                  <BlogCard
-                    title={title(post)}
-                    date={date(post)}
-                    excerpt={await excerpt(post)}
-                    category={post.data.category}
-                    link={`/${post.data.category}/${post.id}`}
-                    filter={filter}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        <Footer />
-      </main>
-    </Global>
+<!doctype html>
+<html lang="en" class="h-full relative">
+  <head>
+    <slot name="head" />
+    <style>
+      body {
+        grid-auto-rows: min-content 1fr min-content;
+      }
+    </style>
+    <BaseHead
+      title={SITE_TITLE}
+      description={SITE_DESCRIPTION}/>
+  </head>    
+  <body class="min-h-full grid grid-cols-1">
+    <BlogList posts={posts} />
+  </body>
+</html>
