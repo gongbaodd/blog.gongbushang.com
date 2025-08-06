@@ -44,7 +44,7 @@ export default function SpotifyPlayer() {
             <Stack className={classes.cookie} justify="center" align="center">
               <Group>
                 <Button variant="default" onClick={() => setOpened(true)}>
-                  🍪 Open Podcast Player
+                  🍪 Open the Podcast Player
                 </Button>
               </Group>
             </Stack>
