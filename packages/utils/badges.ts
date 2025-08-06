@@ -41,13 +41,13 @@ export async function getBadges() {
             }
         });
 
-        const badges: [string, string][] = [];
+        const badges: [string, string, number][] = [];
         for (const [category] of categoryMap) {
-            badges.push([category, `/${category}`]);
+            badges.push([category, `/${category}`, categoryMap.get(category)?.size || 0]);
         }
 
         for (const [tag] of tagMap) {
-            badges.push([tag, `/tag/${tag.toLowerCase()}`]);
+            badges.push([tag, `/tag/${tag.toLowerCase()}`, tagMap.get(tag)?.size || 0]);
         }
 
         for (const [series, posts] of seriesMap) {
@@ -60,9 +60,9 @@ export async function getBadges() {
                 }
             }
 
-            badges.push([name, `/series/${series}`]);
+            badges.push([name, `/series/${series}`, posts.size || 0]);
         }
 
-        return badges;
+        return badges.toSorted((a, b) => b[2] - a[2]);
     }
 }
