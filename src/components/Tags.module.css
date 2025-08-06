@@ -1,4 +1,25 @@
-.tags {
-    height: 128px;
+.area {
+    --show-more-button-height: 4rem;
+    position: relative;
+    transition: max-height 1.2s ease-in-out, padding-bottom .6s ease-in-out;
+    max-height: 100rem;
+    padding-bottom: 0;
     overflow: hidden;
 }
+
+.less {
+    max-height: 10rem;
+}
+
+.all {
+    padding-bottom: var(--show-more-button-height);
+}
+
+.button {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: var(--show-more-button-height);
+    background: linear-gradient(to bottom, transparent, var(--mantine-color-body));
+}
+

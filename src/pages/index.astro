@@ -7,7 +7,6 @@ import { SITE_TITLE, SITE_DESCRIPTION, ROUTES } from "@/packages/consts";
 
 import profile from "@/packages/assets/profile.jpg";
 import { Picture } from "astro:assets";
-import { Badge } from "../../packages/shadcn/components/ui/badge";
 import { Mail, Icon } from "@lucide/astro";
 import GitHub from "../icons/github.svg?raw";
 import Twitter from "../icons/x.svg?raw";
@@ -21,7 +20,7 @@ import MantineMain from "../components/MantineMain";
 import MantineHeader from "../components/MantineHeader";
 import Hero from "../components/Hero";
 import SpotifyPlayer from "../components/SpotifyPlayer";
-import Tags from "../components/Tags";
+import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
 
 export const prerender = true;
@@ -40,7 +39,9 @@ const badges = await getBadges();
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
     <SpotifyPlayer client:load />
-    <Tags tags={badges} client:load />
+    <Tags client:load >
+      <TagGroup tags={badges} slot="tagGroup" />
+    </Tags>
     <NewsLetter />
       <div class="flex flex-row gap-4 mt-4 justify-center">
         <a
