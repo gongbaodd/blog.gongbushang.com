@@ -1,4 +1,4 @@
-import { AppShell, MantineProvider } from "@mantine/core";
+import { AppShell, Container, MantineProvider, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../stores/layout";
 
@@ -12,7 +12,11 @@ export default function MantineMain({
   return (
     <MantineProvider>
       <AppShell header={{ height: headerHeight }} padding="md">
-        <AppShell.Main>{children}</AppShell.Main>
+        <AppShell.Main>
+          <Container size="xl">
+            <Stack gap="xl">{children}</Stack>
+          </Container>
+        </AppShell.Main>
       </AppShell>
     </MantineProvider>
   );

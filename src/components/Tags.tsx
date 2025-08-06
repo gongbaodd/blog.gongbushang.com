@@ -6,6 +6,7 @@ import {
   Stack,
   Title,
 } from "@mantine/core";
+import classes from "./Tags.module.css";
 
 interface ITagsProps {
   tags: [name: string, url: string, count: number][];
@@ -17,12 +18,13 @@ export default function Tags({ tags }: ITagsProps) {
       <Stack gap="xl">
         <Stack gap="md">
           <Title order={3}># Tags</Title>
-          <Group gap="xs">
+          <Group gap="xs" className={classes.tags}>
             {tags.map(([name, url]) => (
               <TagItem key={name} tag={name} url={url} />
             ))}
           </Group>
         </Stack>
+        
       </Stack>
     </MantineProvider>
   );

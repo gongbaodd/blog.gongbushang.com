@@ -40,7 +40,7 @@ const badges = await getBadges();
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
     <SpotifyPlayer client:load />
-    <Tags tags={badges} />
+    <Tags tags={badges} client:load />
     <NewsLetter />
       <div class="flex flex-row gap-4 mt-4 justify-center">
         <a
