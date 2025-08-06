@@ -1,8 +1,7 @@
 import { getCollection, type CollectionEntry } from "astro:content"
 import { date } from "./extract"
 import { FILTER_ENTRY } from "../consts"
-import lodash from "lodash"
-const { memoize } = lodash
+import { memoize } from "es-toolkit"
 
 type T_POST = CollectionEntry<"blog">
 
@@ -15,7 +14,7 @@ const STATIC_ENTRIES = [
 export const getAllFilterEntries = async () => {
   const posts = await getCollection("blog")
   const entries = new Set<string>(STATIC_ENTRIES)
-  const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, () => posts.length.toString());
+  const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, { getCacheKey: () => posts.length.toString() });
 
   const categoryEntries = getMemorizedCategoryFilterEntries()
 
@@ -39,7 +38,7 @@ export const getAllFilterEntries = async () => {
 export const getFilteredPage = async () => {
   const posts = await getCollection("blog")
 
-  const getMemorizedCategoryResult = memoize(() => getStaticPathsByFilter(posts, (p) => [p.data.category]), () => posts.length);
+  const getMemorizedCategoryResult = memoize(() => getStaticPathsByFilter(posts, (p) => [p.data.category]), { getCacheKey: () => posts.length });
   const categoryResult = getMemorizedCategoryResult();
 
   const getMemorizedTagResult = memoize(() => getStaticPathsByFilter(posts, (p) => (p.data.tag ?? []).map((t: string) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)), () => posts.length);
@@ -47,7 +46,7 @@ export const getFilteredPage = async () => {
 
   const getMemorizedSeriesResult = memoize(() => getStaticPathsByFilter(posts, (p) =>
     p.data.series?.slug ? [`${FILTER_ENTRY.SERIES}/${p.data.series.slug}`] : []
-  ), () => posts.length);
+  ), { getCacheKey: () => posts.length });
   const seriesResult = getMemorizedSeriesResult();
 
   const [yearResult, yearMonthResult, yearMonthDayResult] = addDateFilter(

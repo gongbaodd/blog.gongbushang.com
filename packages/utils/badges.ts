@@ -1,12 +1,11 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import lodash from "lodash";
-const { memoize } = lodash;
+import { memoize } from "es-toolkit"
 
 export async function getBadges() {
     const posts = await getCollection("blog");
     type T_POST = CollectionEntry<"blog">;
 
-    const memoriedGetBadges = memoize(_getBadges, () => posts.length.toString());
+    const memoriedGetBadges = memoize(_getBadges, { getCacheKey: () => posts.length.toString() });
     const badges = memoriedGetBadges();
 
     return badges;
