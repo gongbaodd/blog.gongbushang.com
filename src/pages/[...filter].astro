@@ -2,8 +2,7 @@
 import { date, excerpt, title } from "../../packages/utils/extract";
 import Global from "../../packages/layouts/Global.astro";
 import BaseHead from "../../packages/components/BaseHead.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts";
-import Header from "../../packages/components/Header.astro";
+import { ROUTES, SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts";
 import BlogCard from "../../packages/react/BlogCard";
 import Footer from "../../packages/components/Footer.astro";
 import NotFound from "./404.astro";
@@ -12,6 +11,9 @@ import {
   getFilteredPage,
   getAllFilterEntries,
 } from "../../packages/utils/filter";
+import MantineHeader from "../components/MantineHeader";
+import MantineMain from "../components/MantineMain";
+import BlogList from "../components/BlogList";
 
 export const prerender = true;
 
@@ -33,28 +35,15 @@ const isValidFilter = validFiltes.some((f) => f === parts[0]);
         description={SITE_DESCRIPTION}
         slot="head"
       />
-      <Header />
-      <main>
-        <section>
-          <ul class="grid gap-6 p-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {posts.map(async (post) => {
-              return (
-                <li>
-                  <BlogCard
-                    title={title(post)}
-                    date={date(post)}
-                    excerpt={await excerpt(post)}
-                    category={post.data.category}
-                    link={`/${post.data.category}/${post.id}`}
-                    filter={filter}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+      <MantineHeader
+        title={SITE_TITLE}
+        links={ROUTES}
+        pathname={Astro.url.pathname}
+      />
+      <MantineMain>
+        <BlogList posts={posts} />
         <Footer />
-      </main>
+      </MantineMain>
     </Global>
   ) : (
     <NotFound />

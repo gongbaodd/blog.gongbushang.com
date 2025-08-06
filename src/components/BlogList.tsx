@@ -72,29 +72,7 @@ const allTags = [
 
 function List({ posts }: Props) {
   return (
-    <AppShell
-      header={{ height: 70 }}
-      padding="md"
-    >
-      <AppShell.Header>
-        <Container size="xl" h="100%">
-          <Flex justify="space-between" align="center" h="100%">
-            <Title order={2} c="blue.6">
-              我的博客
-            </Title>
-            <TextInput
-              placeholder="搜索文章..."
-              value={""}
-              onChange={(e) => {}}
-              leftSection={<IconSearch size={16} />}
-              w={300}
-              radius="xl"
-            />
-          </Flex>
-        </Container>
-      </AppShell.Header>
 
-      <AppShell.Main>
         <Container size="xl">
           <Grid gutter="lg">
             <Grid.Col span={{ base: 12, md: 3 }}>
@@ -271,7 +249,5 @@ function List({ posts }: Props) {
             </Grid.Col>
           </Grid>
         </Container>
-      </AppShell.Main>
-    </AppShell>
   );
 }

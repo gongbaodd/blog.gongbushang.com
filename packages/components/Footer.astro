@@ -1,8 +1,114 @@
 ---
+import { Icon } from "@lucide/astro";
+import GitHub from "../../src/icons/github.svg?raw";
+import Twitter from "../../src/icons/x.svg?raw";
+import Linkedin from "../../src/icons/linkedin.svg?raw";
+import Instagram from "../../src/icons/instagram.svg?raw";
+import Threads from "../../src/icons/threads.svg?raw";
+import Youtube from "../../src/icons/youtube.svg?raw";
+import Spotify from "../../src/icons/spotify.svg?raw";
+import Itchio from "../../src/icons/itchdotio.svg?raw";
+import Jike from "../../src/icons/jike.svg?raw";
+import Xiaohongshu from "../../src/icons/xiaohongshu.svg?raw";
+import Facebook from "../../src/icons/facebook.svg?raw";
+import MantineFooter from "@/src/components/MantineFooter";
+
 const today = new Date();
 ---
 
-<footer>
+<MantineFooter>
+  <Icon
+    set:html={GitHub}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconGithub"
+  />
+  <Icon
+    set:html={Itchio}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconItchio"
+    }
+  />
+  <Icon
+    set:html={Twitter}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconTwitter"
+  />
+  <Icon
+    set:html={Linkedin}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconLinkedin"
+  />
+  <Icon
+    set:html={Instagram}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconInstagram"
+  />
+  <Icon
+    set:html={Threads}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconThreads"
+  />
+  <Icon
+    set:html={Spotify}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconSpotify"
+  />
+  <Icon
+    set:html={Youtube}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconYoutube"
+  />
+  <Icon
+    set:html={Jike}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconJike"
+  />
+  <Icon
+    set:html={Xiaohongshu}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconXiaohongshu"
+  />
+  <Icon
+    set:html={Facebook}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconFacebook"
+  />
+</MantineFooter>
+
+<!-- <footer>
 	&copy; {today.getFullYear()} 宫不上, built with <span class="heart">❤️</span>. All rights reserved.
 </footer>
 <style>
@@ -16,4 +122,4 @@ const today = new Date();
 	.heart {
 		color: red;
 	}
-</style>
+</style> -->

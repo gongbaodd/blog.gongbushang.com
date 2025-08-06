@@ -9,4 +9,5 @@
 
 .link.active {
   color: var(--mantine-color-blue-6);
+  font-weight: bold;
 }
