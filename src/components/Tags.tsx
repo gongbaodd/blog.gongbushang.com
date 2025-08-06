@@ -14,6 +14,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 interface ITagsProps {
   tagGroup?: ReactNode;
@@ -23,7 +24,7 @@ export default function Tags({ tagGroup }: ITagsProps) {
   const [isAll, setIsAll] = useState(false);
 
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
       <Stack
         gap="xl"
         className={classes.area + " " + (isAll ? classes.all : classes.less)}
@@ -45,7 +46,7 @@ export default function Tags({ tagGroup }: ITagsProps) {
           </Group>
         </Stack>
       </Stack>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }
 

@@ -10,13 +10,14 @@ import {
 import { useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import classes from "./SpotifyPlayer.module.css";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function SpotifyPlayer() {
   const [loaded, setLoaded] = useState(false);
   const [opened, setOpened] = useState(false);
 
   return (
-    <MantineProvider withGlobalClasses withCssVariables>
+    <CustomMantineProvider>
       <Stack gap="xl">
         <Card
           shadow="sm"
@@ -67,6 +68,6 @@ export default function SpotifyPlayer() {
           )}
         </Card>
       </Stack>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import type { ReactNode } from "react";
 import classes from "./Hero.module.css";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 interface IProps {
   picture?: ReactNode;
@@ -19,7 +20,7 @@ interface IProps {
 
 export default function Hero({ picture }: IProps) {
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
         <Box py="xl">
           <Group align="center" gap="xl">
             <Avatar size={120} radius="xl" className={classes.avatar}>
@@ -40,6 +41,6 @@ export default function Hero({ picture }: IProps) {
           </Group>
         </Box>
         <Divider />
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }

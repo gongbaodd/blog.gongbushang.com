@@ -4,7 +4,6 @@ import {
   Container,
   Flex,
   Group,
-  MantineProvider,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -12,6 +11,7 @@ import { IconSearch } from "@tabler/icons-react";
 import classes from "./MantineHeader.module.css";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../stores/layout";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 interface IProps {
   links: { label: string; href: string }[];
@@ -22,7 +22,7 @@ interface IProps {
 export default function MantineHeader({ links, title, pathname }: IProps) {
   const { headerHeight } = useStore(layoutStore)
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
       <AppShell header={{ height: headerHeight }} padding="md">
         {/*TODO: className="backdrop-blur supports-[backdrop-filter]:bg-background/60"*/}
         <AppShell.Header>
@@ -54,6 +54,6 @@ export default function MantineHeader({ links, title, pathname }: IProps) {
           </Container>
         </AppShell.Header>
       </AppShell>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }

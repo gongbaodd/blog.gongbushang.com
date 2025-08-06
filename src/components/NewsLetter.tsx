@@ -7,10 +7,11 @@ import {
   Button,
   MantineProvider,
 } from "@mantine/core";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function NewsLetter() {
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
       <Card shadow="sm" padding="xl" radius="md" withBorder bg="blue.0">
         <Stack gap="md" align="center" ta="center">
           <Title order={3}>订阅我的博客</Title>
@@ -25,6 +26,6 @@ export default function NewsLetter() {
           </Group>
         </Stack>
       </Card>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }

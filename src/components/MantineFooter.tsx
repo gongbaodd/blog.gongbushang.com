@@ -6,13 +6,13 @@ import {
   Container,
   Divider,
   Group,
-  MantineProvider,
   SimpleGrid,
   Stack,
   Text,
 } from "@mantine/core";
 import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 interface IFooterProps {
   children?: ReactNode;
@@ -43,7 +43,7 @@ export default function MantineFooter({
   iconFacebook,
 }: IFooterProps) {
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
       <Box
         component="footer"
         mt="xl"
@@ -284,6 +284,6 @@ export default function MantineFooter({
           </Text>
         </Container>
       </Box>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }
