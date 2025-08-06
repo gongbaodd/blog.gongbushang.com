@@ -41,7 +41,7 @@ export const getFilteredPage = async () => {
   const getMemorizedCategoryResult = memoize(() => getStaticPathsByFilter(posts, (p) => [p.data.category]), { getCacheKey: () => posts.length });
   const categoryResult = getMemorizedCategoryResult();
 
-  const getMemorizedTagResult = memoize(() => getStaticPathsByFilter(posts, (p) => (p.data.tag ?? []).map((t: string) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)), () => posts.length);
+  const getMemorizedTagResult = memoize(() => getStaticPathsByFilter(posts, (p) => (p.data.tag ?? []).map((t: string) => `${FILTER_ENTRY.TAG}/${t.toLowerCase()}`)), { getCacheKey: () => posts.length });
   const tagResult = getMemorizedTagResult();
 
   const getMemorizedSeriesResult = memoize(() => getStaticPathsByFilter(posts, (p) =>

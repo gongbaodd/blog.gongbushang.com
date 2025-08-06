@@ -134,6 +134,9 @@ function List({ posts }: Props) {
                     padding="lg"
                     radius="md"
                     withBorder
+                    style={{
+                      "backgroundColor": "var(--mantine-color-pink-9)",
+                    }}
                   >
                     <Flex gap="md" align="flex-start">
                       {/* Avatar/Thumbnail */}
@@ -150,7 +153,7 @@ function List({ posts }: Props) {
                               component="button"
                               fw={700}
                               size="lg"
-                              c="dark"
+                              c={"light"}
                               style={{
                                 textAlign: "left",
                                 textDecoration: "none",
