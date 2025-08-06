@@ -11,6 +11,7 @@ import {
   Divider,
 } from "@mantine/core";
 import type { ReactNode } from "react";
+import classes from "./Hero.module.css";
 
 interface IProps {
   picture?: ReactNode;
@@ -23,7 +24,7 @@ export default function Hero({ picture }: IProps) {
         <Stack gap="xl">
           <Box py="xl">
             <Group align="center" gap="xl">
-              <Avatar size={120} radius="xl">
+              <Avatar size={120} radius="xl" className={classes.avatar}>
                 {picture}
               </Avatar>
               <Stack gap="md" flex={1}>
