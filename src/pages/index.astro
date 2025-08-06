@@ -2,7 +2,6 @@
 import Global from "../../packages/layouts/Global.astro";
 
 import BaseHead from "../../packages/components/BaseHead.astro";
-import Footer from "../../packages/components/Footer.astro";
 import { SITE_TITLE, SITE_DESCRIPTION, ROUTES } from "@/packages/consts";
 
 import profile from "@/packages/assets/profile.jpg";
@@ -13,8 +12,12 @@ import Twitter from "../icons/x.svg?raw";
 import Linkedin from "../icons/linkedin.svg?raw";
 import Instagram from "../icons/instagram.svg?raw";
 import Threads from "../icons/threads.svg?raw";
+import Youtube from "../icons/youtube.svg?raw";
 import Spotify from "../icons/spotify.svg?raw";
 import Itchio from "../icons/itchdotio.svg?raw";
+import Jike from "../icons/jike.svg?raw";
+import Xiaohongshu from "../icons/xiaohongshu.svg?raw";
+import Facebook from "../icons/facebook.svg?raw";
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../components/MantineMain";
 import MantineHeader from "../components/MantineHeader";
@@ -22,6 +25,7 @@ import Hero from "../components/Hero";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
+import MantineFooter from "../components/MantineFooter";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -39,76 +43,22 @@ const badges = await getBadges();
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
     <SpotifyPlayer client:load />
-    <Tags client:load >
+    <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />
     </Tags>
     <NewsLetter />
-      <div class="flex flex-row gap-4 mt-4 justify-center">
-        <a
-          href="https://github.com/gongbaodd"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="GitHub"
-        >
-          <Icon set:html={GitHub} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a
-          href="https://gongbaodd.itch.io"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Itch.io"
-        >
-          <Icon set:html={Itchio} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a
-          href="https://x.com/gongbaodd"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Twitter"
-        >
-          <Icon set:html={Twitter} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a
-          href="https://www.linkedin.com/in/jian-gong-27762aa8/"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="LinkedIn"
-        >
-          <Icon set:html={Linkedin} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a
-          href="https://www.instagram.com/mia_takeshi"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Instagram"
-        >
-          <Icon
-            set:html={Instagram}
-            width="28"
-            height="28"
-            stroke-width="1.5"
-          />
-        </a>
-        <a
-          href="https://www.threads.com/@mia_takeshi"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Blog"
-        >
-          <Icon set:html={Threads} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a
-          href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Spotify"
-        >
-          <Icon set:html={Spotify} width="28" height="28" stroke-width="1.5" />
-        </a>
-        <a href="mailto:gongbaodd@outlook.com" aria-label="Email">
-          <Mail width="28" height="28" />
-        </a>
-      </div>
-    <Footer />
+    <MantineFooter>
+      <Icon set:html={GitHub} width="24" height="24" stroke="none" fill="currentcolor" slot="iconGithub" />
+      <Icon set:html={Itchio} width="24" height="24" stroke="none" fill="currentcolor" slot="iconItchio"}  />
+      <Icon set:html={Twitter} width="24" height="24" stroke="none" fill="currentcolor" slot="iconTwitter"  />
+      <Icon set:html={Linkedin} width="24" height="24" stroke="none" fill="currentcolor" slot="iconLinkedin"  />
+      <Icon set:html={Instagram} width="24" height="24" stroke="none" fill="currentcolor" slot="iconInstagram"  />
+      <Icon set:html={Threads} width="24" height="24" stroke="none" fill="currentcolor" slot="iconThreads"  />
+      <Icon set:html={Spotify} width="24" height="24" stroke="none" fill="currentcolor" slot="iconSpotify" />
+      <Icon set:html={Youtube} width="24" height="24" stroke="none" fill="currentcolor" slot="iconYoutube" />
+      <Icon set:html={Jike} width="24" height="24" stroke="none" fill="currentcolor" slot="iconJike" />
+      <Icon set:html={Xiaohongshu} width="24" height="24" stroke="none" fill="currentcolor" slot="iconXiaohongshu" />
+      <Icon set:html={Facebook} width="24" height="24" stroke="none" fill="currentcolor" slot="iconFacebook" />
+    </MantineFooter>
   </MantineMain>
 </Global>

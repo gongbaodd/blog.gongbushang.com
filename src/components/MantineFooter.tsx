@@ -1,0 +1,289 @@
+import {
+  ActionIcon,
+  Anchor,
+  Avatar,
+  Box,
+  Container,
+  Divider,
+  Group,
+  MantineProvider,
+  SimpleGrid,
+  Stack,
+  Text,
+} from "@mantine/core";
+import type { ReactNode } from "react";
+import { Mail } from "lucide-react";
+
+interface IFooterProps {
+  children?: ReactNode;
+  iconGithub?: ReactNode;
+  iconTwitter?: ReactNode;
+  iconInstagram?: ReactNode;
+  iconLinkedin?: ReactNode;
+  iconItchio?: ReactNode;
+  iconThreads?: ReactNode;
+  iconSpotify?: ReactNode;
+  iconJike?: ReactNode;
+  iconXiaohongshu?: ReactNode;
+  iconYoutube?: ReactNode;
+  iconFacebook?: ReactNode;
+}
+
+export default function MantineFooter({
+  iconGithub,
+  iconTwitter,
+  iconInstagram,
+  iconLinkedin,
+  iconItchio,
+  iconSpotify,
+  iconYoutube,
+  iconThreads,
+  iconJike,
+  iconXiaohongshu,
+  iconFacebook,
+}: IFooterProps) {
+  return (
+    <MantineProvider>
+      <Box
+        component="footer"
+        mt="xl"
+        pt="xl"
+        style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
+      >
+        <Container size="xl">
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg" mb="xl">
+            <Stack gap="md">
+              <Text fw={600} size="lg">
+                关于博客
+              </Text>
+              <Stack gap="xs">
+                <Anchor href="/about" size="sm" c="dimmed" td="none">
+                  关于我
+                </Anchor>
+                <Anchor href="/contact" size="sm" c="dimmed" td="none">
+                  联系方式
+                </Anchor>
+                <Anchor href="/resume" size="sm" c="dimmed" td="none">
+                  个人简历
+                </Anchor>
+                <Anchor href="/projects" size="sm" c="dimmed" td="none">
+                  项目展示
+                </Anchor>
+              </Stack>
+            </Stack>
+
+            <Stack gap="md">
+              <Text fw={600} size="lg">
+                内容分类
+              </Text>
+              <Stack gap="xs">
+                <Anchor href="/posts/frontend" size="sm" c="dimmed" td="none">
+                  前端开发
+                </Anchor>
+                <Anchor href="/posts/backend" size="sm" c="dimmed" td="none">
+                  后端技术
+                </Anchor>
+                <Anchor href="/posts/ai" size="sm" c="dimmed" td="none">
+                  人工智能
+                </Anchor>
+                <Anchor href="/posts/tutorials" size="sm" c="dimmed" td="none">
+                  技术教程
+                </Anchor>
+              </Stack>
+            </Stack>
+
+            <Stack gap="md">
+              <Text fw={600} size="lg">
+                资源链接
+              </Text>
+              <Stack gap="xs">
+                <Anchor href="/rss" size="sm" c="dimmed" td="none">
+                  RSS订阅
+                </Anchor>
+                <Anchor href="/sitemap" size="sm" c="dimmed" td="none">
+                  网站地图
+                </Anchor>
+                <Anchor href="/archive" size="sm" c="dimmed" td="none">
+                  文章归档
+                </Anchor>
+                <Anchor href="/tags" size="sm" c="dimmed" td="none">
+                  标签云
+                </Anchor>
+              </Stack>
+            </Stack>
+
+            <Stack gap="md">
+              <Text fw={600} size="lg">
+                关注我
+              </Text>
+              <Group gap="md">
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="mailto:gongbaodd@outlook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Mail"
+                >
+                  <Mail size={24} />
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://github.com/gongbaodd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                >
+                  {iconGithub}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://twitter.com/gongbaodd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Twitter"
+                >
+                  {iconTwitter}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.instagram.com/mia_takeshi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                >
+                  {iconInstagram}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.facebook.com/gongbaodd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                >
+                  {iconFacebook}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.linkedin.com/in/jian-gong-27762aa8/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                >
+                  {iconLinkedin}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://gongbaodd.itch.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Itch.io"
+                >
+                  {iconItchio}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.threads.com/@mia_takeshi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Threads"
+                >
+                  {iconThreads}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Spotify"
+                >
+                  {iconSpotify}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.youtube.com/@gongbaodd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Youtube"
+                >
+                  {iconYoutube}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://m.okjike.com/users/a03ab857-dd35-44d3-8373-97e7a855db39?ref=PROFILE_CARD&utm_source=user_card"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Jike"
+                >
+                  {iconJike}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.xiaohongshu.com/user/profile/5b9aeeb2bc5acf0001cd8205?xsec_token=YB4pIrXwKkwZGhzRaHexYmAG4DbiA36rNSxHVtHOtJ3zY=&xsec_source=app_share&xhsshare=CopyLink&appuid=5b9aeeb2bc5acf0001cd8205&apptime=1754485791&share_id=c2a983d5fab04381a84f0851f936f880"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="小红书"
+                >
+                  {iconXiaohongshu}
+                </ActionIcon>
+              </Group>
+              <Text size="sm" c="dimmed">
+                订阅我的博客，获取最新技术文章和编程技巧
+              </Text>
+            </Stack>
+          </SimpleGrid>
+
+          <Divider mb="md" />
+
+          <Group justify="space-between" align="center" py="md">
+            <Group align="center" gap="xs">
+              <Avatar src="/developer-avatar.png" size="sm" radius="xl" />
+              <Text size="sm" c="dimmed">
+                © 2024 我的技术博客. 保留所有权利.
+              </Text>
+            </Group>
+
+            <Group gap="md" visibleFrom="sm">
+              <Anchor href="/privacy" size="sm" c="dimmed" td="none">
+                隐私政策
+              </Anchor>
+              <Anchor href="/terms" size="sm" c="dimmed" td="none">
+                使用条款
+              </Anchor>
+              <Anchor href="/cookies" size="sm" c="dimmed" td="none">
+                Cookie政策
+              </Anchor>
+            </Group>
+          </Group>
+
+          <Text ta="center" size="xs" c="dimmed" py="sm">
+            使用 Astro.build + Mantine 构建 | 部署在 Vercel
+          </Text>
+        </Container>
+      </Box>
+    </MantineProvider>
+  );
+}

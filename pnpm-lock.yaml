@@ -50,6 +50,9 @@ importers:
       es-toolkit:
         specifier: ^1.39.8
         version: 1.39.8
+      lucide-react:
+        specifier: ^0.323.0
+        version: 0.323.0(react@19.1.1)
       nanostores:
         specifier: ^1.0.1
         version: 1.0.1
@@ -73,7 +76,7 @@ importers:
         version: 6.0.0
       shiki-plantuml:
         specifier: file:./packages/shiki-plantuml
-        version: file:packages/shiki-plantuml(typescript@5.8.3)
+        version: link:packages/shiki-plantuml
       tailwindcss:
         specifier: ^3.4.1
         version: 3.4.17
@@ -3149,9 +3152,6 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
-  shiki-plantuml@file:packages/shiki-plantuml:
-    resolution: {directory: packages/shiki-plantuml, type: directory}
-
   shiki@3.8.1:
     resolution: {integrity: sha512-+MYIyjwGPCaegbpBeFN9+oOifI8CKiKG3awI/6h3JeT85c//H2wDW/xCJEGuQ5jPqtbboKNqNy+JyX9PYpGwNg==}
 
@@ -6053,6 +6053,10 @@ snapshots:
     dependencies:
       react: 18.3.1
 
+  lucide-react@0.323.0(react@19.1.1):
+    dependencies:
+      react: 19.1.1
+
   magic-string@0.30.17:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.4
@@ -7352,17 +7356,6 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
-
-  shiki-plantuml@file:packages/shiki-plantuml(typescript@5.8.3):
-    dependencies:
-      plist: 3.1.0
-      unbuild: 3.5.0(typescript@5.8.3)
-    transitivePeerDependencies:
-      - sass
-      - typescript
-      - vue
-      - vue-sfc-transformer
-      - vue-tsc
 
   shiki@3.8.1:
     dependencies:

@@ -1,7 +1,7 @@
 .area {
     --show-more-button-height: 4rem;
     position: relative;
-    transition: max-height 1.2s ease-in-out, padding-bottom .6s ease-in-out;
+    transition: max-height 1.2s ease-in-out, padding-bottom .55s ease-in-out;
     max-height: 100rem;
     padding-bottom: 0;
     overflow: hidden;
