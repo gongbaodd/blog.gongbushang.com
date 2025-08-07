@@ -30,6 +30,7 @@ import {
   IconTag,
 } from "@tabler/icons-react";
 import { Masonry } from "@mui/lab";
+import classes from "./BlogList.module.css";
 
 interface Props {
   posts: IPost[];
@@ -147,7 +148,7 @@ function List({ posts }: Props) {
       <Container size="xl" className="py-8">
         <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={3}>
           {posts.map((post, i) => (
-            <PostCard key={post.id} post={post} index={i} />
+            <PostCard key={post.id} post={post}/>
           ))}
         </Masonry>
       </Container>
@@ -155,10 +156,9 @@ function List({ posts }: Props) {
   );
 }
 
-function PostCard({ post, index }: { post: IPost, index?: number }) {
+function PostCard({ post }: { post: IPost }) {
   return (
-  <div>
-    <Card key={post.id} shadow="sm" padding="lg" radius="md" withBorder style={{"order": index}}>
+    <Card key={post.id} shadow="sm" padding="lg" radius="md" withBorder className={classes.item} >
       <Flex gap="md" align="center" justify="center">
         {/* Avatar/Thumbnail */}
         <Box>
@@ -244,6 +244,5 @@ function PostCard({ post, index }: { post: IPost, index?: number }) {
         </Stack>
       </Box>
     </Card>
-    </div>
   );
 }
