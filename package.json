@@ -47,6 +47,7 @@
   "license": "GPL-3.0",
   "private": true,
   "devDependencies": {
+    "dts-bundle-generator": "^9.5.1",
     "sharp": "^0.34.3",
     "shiki": "^3.8.1"
   }

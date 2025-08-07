@@ -15,10 +15,17 @@ import MantineMain from "../components/MantineMain";
 import BlogList from "../components/BlogList";
 import BlogCard from "../components/BlogCard";
 
+
 export const prerender = true;
 
 export const getStaticPaths = getFilteredPage;
-const posts = Astro.props.posts;
+const posts = await Promise.all( Astro.props.posts.map(async post=> ({
+          id: post.id,
+          title: title(post),
+          date: date(post),
+          data: post.data,
+          excerpt: await excerpt(post),
+        })))
 
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");

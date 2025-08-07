@@ -29,12 +29,22 @@ import {
   IconShare,
   IconTag,
 } from "@tabler/icons-react";
-import { date, excerpt, title } from "@/packages/utils/extract";
 import { Masonry } from "@mui/lab";
-import type { CollectionEntry } from "astro:content";
 
 interface Props {
-  posts: CollectionEntry<"blog">[];
+  posts: IPost[];
+}
+
+export interface IPost {
+  id: string;
+  title: string;
+  date: Date;
+  data: {
+    category: string;
+    tag?: string[];
+    [T: string]: any;
+  };
+  excerpt: string;
 }
 
 export default function BlogList(props: Props) {
@@ -145,7 +155,7 @@ function List({ posts }: Props) {
   );
 }
 
-function PostCard({ post, index }: { post: CollectionEntry<"blog">, index?: number }) {
+function PostCard({ post, index }: { post: IPost, index?: number }) {
   return (
   <div>
     <Card key={post.id} shadow="sm" padding="lg" radius="md" withBorder style={{"order": index}}>
@@ -153,7 +163,7 @@ function PostCard({ post, index }: { post: CollectionEntry<"blog">, index?: numb
         {/* Avatar/Thumbnail */}
         <Box>
           <Avatar size={128} radius="md">
-            {title(post).charAt(0)}
+            {post.title.charAt(0)}
           </Avatar>
         </Box>
       </Flex>
@@ -172,13 +182,13 @@ function PostCard({ post, index }: { post: CollectionEntry<"blog">, index?: numb
               }}
               onClick={() => {}}
             >
-              {title(post)}
+              {post.title}
             </Anchor>
             <Group gap="md" mt="xs">
               <Group gap="xs">
                 <IconCalendar size={14} color="var(--mantine-color-gray-6)" />
                 <Text size="sm" c="dimmed">
-                  {date(post).toISOString()}
+                  {post.date.toISOString()}
                 </Text>
               </Group>
               <Badge color="blue" variant="light" size="sm">
@@ -188,7 +198,7 @@ function PostCard({ post, index }: { post: CollectionEntry<"blog">, index?: numb
           </Box>
 
           <Text c="dimmed" size="sm" lineClamp={3}>
-            {excerpt(post)}
+            {post.excerpt}
           </Text>
 
           <Group gap="xs">
