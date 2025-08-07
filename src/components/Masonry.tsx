@@ -3,6 +3,7 @@ import { Box, Container, MantineProvider } from "@mantine/core";
 import { Masonry } from "@mui/lab";
 import { Card, Text, Badge, Group } from "@mantine/core";
 import { Clock, Eye } from "lucide-react";
+import classes from "./Masonry.module.css"
 
 export interface BlogPost {
   id: number;
@@ -180,7 +181,7 @@ const BlogMasonry: React.FC = () => {
   return (
     <MantineProvider>
       <Box style={{ width: '100%', maxWidth: 1200, mx: 'auto' }}>
-        <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={3}>
+        <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} defaultColumns={4} defaultHeight={1216} defaultSpacing={3} spacing={3}>
           {blogPosts.map((post) => (
             <BlogCard key={post.id} post={post} />
           ))}
@@ -200,13 +201,13 @@ const BlogCard: React.FC<BlogCardProps> = ({ post }) => {
   const getCardClass = () => {
     switch (post.type) {
       case "vertical":
-        return "masonry-item-vertical";
+        return classes["masonry-item-vertical"];
       case "horizontal":
-        return "masonry-item-horizontal";
+        return classes["masonry-item-horizontal"];
       case "square":
-        return "masonry-item-square";
+        return classes["masonry-item-square"];
       default:
-        return "masonry-item-square";
+        return classes["masonry-item-square"];
     }
   };
 
