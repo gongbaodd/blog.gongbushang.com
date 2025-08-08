@@ -15,6 +15,7 @@ import {
   getFilteredPage,
   getAllFilterEntries,
   mapServerPostToClient,
+  isValidFilter,
 } from "../../packages/utils/filter";
 import MantineHeader from "../components/MantineHeader";
 import MantineMain from "../components/MantineMain";
@@ -28,13 +29,11 @@ const posts = await mapServerPostToClient(limitedPosts);
 
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
-const validFiltes = await getAllFilterEntries();
-const parts = filter.split("/").filter(Boolean) ?? [];
-const isValidFilter = validFiltes.some((f) => f === parts[0]);
+const isValid = await isValidFilter(filter);
 ---
 
 {
-  isValidFilter ? (
+  isValid ? (
     <Global>
       <BaseHead
         title={`${SITE_TITLE} | ${subTitle}`}

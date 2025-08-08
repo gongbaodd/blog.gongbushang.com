@@ -175,3 +175,9 @@ export async function mapServerPostToClient(posts: T_POST[]) {
     }))
   );
 }
+
+export async function isValidFilter(filter: string) {
+  const validFiltes = await getAllFilterEntries();
+  const parts = filter.split("/").filter(Boolean) ?? [];
+  return validFiltes.some((f) => f === parts[0]);
+}
