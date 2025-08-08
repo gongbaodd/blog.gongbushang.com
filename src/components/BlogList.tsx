@@ -33,65 +33,8 @@ import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import wordcount from "words-count";
-
-enum CARD_RATIO {
-  xs = "xs",
-  sm = "sm",
-  md = "md",
-  lg = "lg",
-  xl = "xl",
-}
-
-const CARD_CLASSNAMES = [
-  "liquid_cheese",
-  "protruding_squares",
-  "wintery_sunburst",
-  "subtle_prism",
-  "bullseye_gradient",
-  "spectrum_gradient",
-  "wavy_fingerprint",
-  "radient_gradient",
-  "endless_constellation",
-  "zig_zag",
-  "repeating_chevrons",
-  "large_triangles",
-  "abstract_envelope",
-  "diamond_sunset",
-  "square_versatiles",
-  "geometric_intersaction",
-  "diagonal_stripes",
-  "hollowed_boxes",
-  "rose_petals",
-  "confetti_doodles",
-  "dragon_scales",
-  "quantum_gradient",
-  "cornered_staires",
-  "slanted_gradient",
-  "dalmatian_spots",
-  "tortoise_shell",
-  "alternating_arrowhead",
-  "repeating_triangles",
-  "bermuda_triangle",
-  "bermuda_square",
-  "bermuda_diamond",
-  "parabolic_rectangle",
-  "parabolic_pentagon",
-  "parabolic_ellipse",
-  "parabolic_triangle",
-  "polka_dots",
-  "colorful_stingrays",
-  "varying_stripes",
-  "vanishing_stripes",
-  "sun_tornado",
-  "scattered_forcefields",
-  "page_turner",
-  "abstract_timekeeper",
-  "rainbow_vortex",
-  "subtle_stripes",
-  "pattern_randomized",
-  "flat_mountains",
-  "bermuda_circle",
-];
+import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "@/packages/consts";
+import { IconQuoteFilled } from "@tabler/icons-react";
 
 interface Props {
   posts: IPost[];
@@ -99,6 +42,7 @@ interface Props {
 
 export interface IPost {
   id: string;
+  href: string;
   title: string;
   date: Date;
   data: {
@@ -218,17 +162,17 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
   const { layoutCls } = {
     get layoutCls() {
       let count = wordcount(title) + (post.data.tag?.length ?? 0);
-      if (count < 3) return CARD_RATIO.xs;
-      if (count < 4) return CARD_RATIO.sm;
-      if (count < 5) return CARD_RATIO.md;
-      if (count < 10) return CARD_RATIO.lg;
-      return CARD_RATIO.xl;
+      if (count < 3) return POST_CARD_LAYOUT.xs;
+      if (count < 4) return POST_CARD_LAYOUT.sm;
+      if (count < 5) return POST_CARD_LAYOUT.md;
+      if (count < 10) return POST_CARD_LAYOUT.lg;
+      return POST_CARD_LAYOUT.xl;
     },
   };
 
   return (
     <Box>
-      <Anchor underline="never">
+      <Anchor underline="never" href={post.href}>
         <Card
           key={post.id}
           shadow="sm"
@@ -238,7 +182,7 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
           className={
             classes.item +
             " " +
-            classes[CARD_CLASSNAMES[index % CARD_CLASSNAMES.length]] +
+            classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]] +
             " " +
             classes[layoutCls]
           }
@@ -275,9 +219,18 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
           </Flex>
         </Card>
       </Anchor>
-      <Text size="sm" lineClamp={2} px={15} pt={10}>
-        {post.excerpt}
-      </Text>
+      <Flex pl={5} pr={10} pt={5}>
+        <Avatar size="xs" variant="transparent" style={{transform: "rotateZ(180deg)"}}>
+          <IconQuoteFilled />
+        </Avatar>
+        <Text
+          size="sm"
+          lineClamp={2}
+          className={classes.excerpt}
+        >
+          {post.excerpt}
+        </Text>
+      </Flex>
     </Box>
   );
 }

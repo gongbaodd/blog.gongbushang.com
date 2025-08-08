@@ -2,7 +2,12 @@
 import { date, excerpt, title } from "../../packages/utils/extract";
 import Global from "../../packages/layouts/Global.astro";
 import BaseHead from "../../packages/components/BaseHead.astro";
-import { ROUTES, SITE_DESCRIPTION, SITE_TITLE } from "../../packages/consts";
+import {
+  ROUTES,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  POST_COUNT_PER_PAGE,
+} from "../../packages/consts";
 import Footer from "../../packages/components/Footer.astro";
 import NotFound from "./404.astro";
 
@@ -17,9 +22,11 @@ import BlogList from "../components/BlogList";
 export const prerender = true;
 
 export const getStaticPaths = getFilteredPage;
+const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
 const posts = await Promise.all(
-  Astro.props.posts.slice(0, 16).map(async (post) => ({
+  limitedPosts.map(async (post) => ({
     id: post.id,
+    href: `/${post.data.category}/${post.id}`,
     title: title(post),
     date: date(post),
     data: post.data,
@@ -48,7 +55,7 @@ const isValidFilter = validFiltes.some((f) => f === parts[0]);
         pathname={Astro.url.pathname}
       />
       <MantineMain>
-        <BlogList posts={posts} client:only></BlogList>
+        <BlogList posts={posts} client:only />
         <Footer />
       </MantineMain>
     </Global>
