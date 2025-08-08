@@ -1,0 +1,38 @@
+---
+import Global from "../../packages/layouts/Global.astro";
+import BaseHead from "../../packages/components/BaseHead.astro";
+import {
+  ROUTES,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+  POST_COUNT_PER_PAGE,
+} from "../../packages/consts";
+import MantineHeader from "./MantineHeader";
+import MantineMain from "./MantineMain";
+import BlogList, { type IPost } from "./BlogList";
+import Footer from "@/packages/components/Footer.astro";
+
+interface Props {
+    subTitle: string
+    posts: IPost[]
+}
+
+const { subTitle, posts } = Astro.props
+
+---
+<Global>
+  <BaseHead
+    title={`${SITE_TITLE} | ${subTitle}`}
+    description={SITE_DESCRIPTION}
+    slot="head"
+  />
+  <MantineHeader
+    title={SITE_TITLE}
+    links={ROUTES}
+    pathname={Astro.url.pathname}
+  />
+  <MantineMain>
+    <BlogList posts={posts} client:only />
+    <Footer />
+  </MantineMain>
+</Global>
