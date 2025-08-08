@@ -30,7 +30,7 @@ export default function Tags({ tagGroup }: ITagsProps) {
         className={classes.area + " " + (isAll ? classes.all : classes.less)}
       >
         <Stack gap="md">
-          <Title order={3}># Tags</Title>
+          <Title order={3}># Topics</Title>
           {tagGroup}
         </Stack>
         <Stack>

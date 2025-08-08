@@ -1,6 +1,6 @@
 import { getCollection, type CollectionEntry } from "astro:content"
 import { date, excerpt, title } from "./extract"
-import { FILTER_ENTRY } from "../consts"
+import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 
 type T_POST = CollectionEntry<"blog">
@@ -112,8 +112,8 @@ let seriesPostMap = new Map<string, Set<T_POST>>()
 function initSeriesPostMap(posts: Set<T_POST> | T_POST[]) {
   const init = memoize(() => {
     seriesPostMap = createPostMap(posts, (p) =>
-    p.data.series?.slug ? [p.data.series.slug] : []
-  )
+      p.data.series?.slug ? [p.data.series.slug] : []
+    )
     return seriesPostMap
   }, { getCacheKey: () => Array.from(posts).length })
   return init()
@@ -159,6 +159,40 @@ export async function isValidFilter(filter: string) {
   return validFiltes.some((f) => f === parts[0]);
 }
 
+
+export function page(filterFn: typeof getFilterByCategoryPage | typeof getFilterBySeriesPage | typeof getFilterByTagPage) {
+  return async () => {
+    const results = await filterFn();
+    type T_RES = typeof results[0];
+    type T_PAGED_RES = T_RES & {
+      params: (T_RES extends { params: object } ? T_RES["params"] : {}) & {
+        page: number;
+      };
+    }
+
+    const pagedResults: T_PAGED_RES[] = [];
+
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+      if (result.props.posts.length <= POST_COUNT_PER_PAGE) continue; // no need to be paged
+
+      for (let j = POST_COUNT_PER_PAGE; j < result.props.posts.length; j += POST_COUNT_PER_PAGE) {
+        pagedResults.push({
+          ...result,
+          params: {
+            ...result.params,
+            page: Math.floor(j / POST_COUNT_PER_PAGE)
+          },
+          props: {
+            posts: result.props.posts.slice(j, j + POST_COUNT_PER_PAGE)
+          }
+        })
+      }
+    }
+
+    return pagedResults;
+  }
+}
 
 function createPostMap(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => string[]) {
   const items = new Map<string, Set<T_POST>>()

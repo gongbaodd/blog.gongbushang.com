@@ -6,14 +6,15 @@ import NotFound from "../404.astro";
 
 
 export const prerender = true;
-
 export const getStaticPaths = getFilterBySeriesPage;
+
 const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
 const posts = await mapServerPostToClient(limitedPosts);
 
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
 const isValid = await isValidSeriesFilter(filter);
+const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={posts} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} posts={posts} totalCount={totalPostsCount} /> : <NotFound />}

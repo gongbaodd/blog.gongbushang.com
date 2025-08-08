@@ -14,10 +14,11 @@ export const prerender = true;
 export const getStaticPaths = getFilterByCategoryPage;
 const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
 const posts = await mapServerPostToClient(limitedPosts);
+const totalPostsCount = Astro.props.posts.length;
 
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
 const isValid = await isValidCategoryFilter(filter);
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={posts} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} posts={posts} totalCount={totalPostsCount} /> : <NotFound />}
