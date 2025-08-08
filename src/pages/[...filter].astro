@@ -14,6 +14,7 @@ import NotFound from "./404.astro";
 import {
   getFilteredPage,
   getAllFilterEntries,
+  mapServerPostToClient,
 } from "../../packages/utils/filter";
 import MantineHeader from "../components/MantineHeader";
 import MantineMain from "../components/MantineMain";
@@ -23,16 +24,7 @@ export const prerender = true;
 
 export const getStaticPaths = getFilteredPage;
 const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
-const posts = await Promise.all(
-  limitedPosts.map(async (post) => ({
-    id: post.id,
-    href: `/${post.data.category}/${post.id}`,
-    title: title(post),
-    date: date(post),
-    data: post.data,
-    excerpt: await excerpt(post),
-  }))
-);
+const posts = await mapServerPostToClient(limitedPosts);
 
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");

@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from "astro:content"
-import { date } from "./extract"
+import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY } from "../consts"
 import { memoize } from "es-toolkit"
 
@@ -161,4 +161,17 @@ export const getFilteredPage = async () => {
 
     return [yearResult, yearMonthResult, yearMonthDayResult]
   }
+}
+
+export async function mapServerPostToClient(posts: T_POST[]) {
+  return await Promise.all(
+    posts.map(async (post) => ({
+      id: post.id,
+      href: `/${post.data.category}/${post.id}`,
+      title: title(post),
+      date: date(post),
+      data: post.data,
+      excerpt: await excerpt(post),
+    }))
+  );
 }

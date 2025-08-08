@@ -12,6 +12,10 @@
     mix-blend-mode: difference;
 }
 
+.item {
+    overflow: clip; 
+}
+
 .item.xs {
     aspect-ratio: 16/9;
 }
