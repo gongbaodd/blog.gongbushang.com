@@ -100,19 +100,15 @@ export default function BlogList({
 }
 
 interface BlogGridProps {
-  posts: IPost[]
+  posts: IPost[];
 }
 
-const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }
+const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
 
 export function BlogGrid({ posts }: BlogGridProps) {
   return (
     <CustomMantineProvider>
-      <Masonry
-        columns={COLUMNS_STYLE}
-        spacing={3}
-        sequential
-      >
+      <Masonry columns={COLUMNS_STYLE} spacing={3} sequential>
         {posts.map((post, i) => (
           <PostCard key={post.id} post={post} index={i} />
         ))}
@@ -124,13 +120,13 @@ export function BlogGrid({ posts }: BlogGridProps) {
 type T_SIZE = "xs" | "sm" | "md" | "lg" | "xl";
 
 export function BlogGridSSR({ posts, size }: BlogGridProps & { size: T_SIZE }) {
-  const {columns} = {
+  const { columns } = {
     get columns() {
-      return COLUMNS_STYLE[size]
-    }
-  }
+      return COLUMNS_STYLE[size];
+    },
+  };
 
-    return (
+  return (
     <CustomMantineProvider>
       <Masonry
         columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
@@ -161,9 +157,8 @@ export function MenuCategory({ categories }: { categories: TLink[] }) {
         </Group>
         <Stack gap="xs">
           {categories.map(({ label, href }) => (
-            <Anchor href={href}>
+            <Anchor href={href} key={label}>
               <Button
-                key={label}
                 variant={"default"}
                 color="blue"
                 justify="flex-start"
@@ -192,9 +187,8 @@ export function MenuSeries({ series }: { series: TLink[] }) {
         </Group>
         <Stack gap="xs">
           {series.map(({ label, href }) => (
-            <Anchor href={href}>
+            <Anchor href={href} key={label}>
               <Button
-                key={label}
                 variant={"default"}
                 color="blue"
                 justify="flex-start"
@@ -223,9 +217,8 @@ export function MenuTag({ tags }: { tags: TLink[] }) {
         </Group>
         <Group gap="xs">
           {tags.map(({ label, href }) => (
-            <Anchor href={href}>
+            <Anchor href={href} key={label}>
               <Badge
-                key={label}
                 variant={"outline"}
                 color="green"
                 style={{ cursor: "pointer" }}
@@ -250,7 +243,7 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
 
   const { layoutCls } = {
     get layoutCls() {
-      const count =  wordcount(title) + (post.data.tag?.length ?? 0);
+      const count = wordcount(title) + (post.data.tag?.length ?? 0);
       if (count < 3) return POST_CARD_LAYOUT.xs;
       if (count < 4) return POST_CARD_LAYOUT.sm;
       if (count < 5) return POST_CARD_LAYOUT.md;
