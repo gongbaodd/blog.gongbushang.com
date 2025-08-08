@@ -31,6 +31,65 @@ import {
 } from "@tabler/icons-react";
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
+import CustomMantineProvider from "../stores/CustomMantineProvider";
+import wordcount from "words-count";
+
+enum CARD_RATIO {
+  V = "vertical",
+  H = "horizontal",
+  S = "square",
+}
+
+const CARD_CLASSNAMES = [
+  "liquid_cheese",
+  "protruding_squares",
+  "wintery_sunburst",
+  "subtle_prism",
+  "bullseye_gradient",
+  "spectrum_gradient",
+  "wavy_fingerprint",
+  "radient_gradient",
+  "endless_constellation",
+  "zig_zag",
+  "repeating_chevrons",
+  "large_triangles",
+  "abstract_envelope",
+  "diamond_sunset",
+  "square_versatiles",
+  "geometric_intersaction",
+  "diagonal_stripes",
+  "hollowed_boxes",
+  "rose_petals",
+  "confetti_doodles",
+  "dragon_scales",
+  "quantum_gradient",
+  "cornered_staires",
+  "slanted_gradient",
+  "dalmatian_spots",
+  "tortoise_shell",
+  "alternating_arrowhead",
+  "repeating_triangles",
+  "bermuda_triangle",
+  "bermuda_square",
+  "bermuda_diamond",
+  "parabolic_rectangle",
+  "parabolic_pentagon",
+  "parabolic_ellipse",
+  "parabolic_triangle",
+  "polka_dots",
+  "colorful_stingrays",
+  "varying_stripes",
+  "vanishing_stripes",
+  "sun_tornado",
+  "scattered_forcefields",
+  "page_turner",
+  "abstract_timekeeper",
+  "rainbow_vortex",
+  "subtle_stripes",
+  "pattern_randomized",
+  "flat_mountains",
+  "bermuda_circle",
+];
 
 interface Props {
   posts: IPost[];
@@ -50,9 +109,9 @@ export interface IPost {
 
 export default function BlogList(props: Props) {
   return (
-    <MantineProvider>
+    <CustomMantineProvider>
       <List posts={props.posts}></List>
-    </MantineProvider>
+    </CustomMantineProvider>
   );
 }
 
@@ -86,7 +145,7 @@ function List({ posts }: Props) {
   return (
     <Container size="xl">
       <Grid gutter="lg">
-        <Grid.Col span={{ base: 12, md: 3 }}>
+        <Grid.Col span={{ base: 12, md: 2 }}>
           <Stack gap="lg">
             {/* Categories */}
             <Paper p="md" radius="md" withBorder>
@@ -135,114 +194,143 @@ function List({ posts }: Props) {
             </Paper>
           </Stack>
         </Grid.Col>
-
-        {/* <Grid.Col span={{ base: 12, md: 6 }}>
-          <Stack gap="md">
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+        <Grid.Col span={{ base: 12, md: 10 }}>
+          <Masonry
+            columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}
+            spacing={3}
+            sequential
+          >
+            {posts.map((post, i) => (
+              <PostCard key={post.id} post={post} index={i} />
             ))}
-          </Stack>
-        </Grid.Col> */}
+          </Masonry>
+        </Grid.Col>
       </Grid>
-
-      <Container size="xl" className="py-8">
-        <Masonry columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={3}>
-          {posts.map((post, i) => (
-            <PostCard key={post.id} post={post}/>
-          ))}
-        </Masonry>
-      </Container>
     </Container>
   );
 }
 
-function PostCard({ post }: { post: IPost }) {
+function PostCard({ post, index }: { post: IPost; index: number }) {
+  const title = post.title
+
+  const { layoutCls } = {
+    get layoutCls() {
+      const count = wordcount(title)
+      if (count < 3) return CARD_RATIO.H
+      if (count < 6) return CARD_RATIO.S
+      return CARD_RATIO.V
+    },
+  }
+
   return (
-    <Card key={post.id} shadow="sm" padding="lg" radius="md" withBorder className={classes.item} >
-      <Flex gap="md" align="center" justify="center">
-        {/* Avatar/Thumbnail */}
+    <Box>
+      <Card
+        key={post.id}
+        shadow="sm"
+        padding="lg"
+        radius="md"
+        withBorder
+        className={
+          classes.item + " " + classes[CARD_CLASSNAMES[index]] + " " + classes[layoutCls]
+        }
+      >
+        <Title className={classes.title}>{title}</Title>
+      </Card>
+
+      <Text size="sm" lineClamp={2} px={15} pt={10}>
+        {post.excerpt}
+      </Text>
+    </Box>
+  );
+}
+
+function _PostCard({ post, index }: { post: IPost; index: number }) {
+  return (
+    <Box>
+      <Card
+        key={post.id}
+        shadow="sm"
+        padding="lg"
+        radius="md"
+        withBorder
+        className={classes.item + " " + classes[CARD_CLASSNAMES[index]]}
+      >
         <Box>
-          <Avatar size={128} radius="md">
-            {post.title.charAt(0)}
-          </Avatar>
-        </Box>
-      </Flex>
-
-      <Box style={{ flex: 1, minWidth: 0 }}>
-        <Stack gap="sm">
-          <Box>
-            <Anchor
-              component="button"
-              fw={700}
-              size="lg"
-              c={"light"}
-              style={{
-                textAlign: "left",
-                textDecoration: "none",
-              }}
-              onClick={() => {}}
-            >
-              {post.title}
-            </Anchor>
-            <Group gap="md" mt="xs">
-              <Group gap="xs">
-                <IconCalendar size={14} color="var(--mantine-color-gray-6)" />
-                <Text size="sm" c="dimmed">
-                  {post.date.toISOString()}
-                </Text>
+          <Stack gap="sm">
+            <Box>
+              <Anchor
+                component="button"
+                fw={700}
+                size="lg"
+                c={"light"}
+                style={{
+                  textAlign: "left",
+                  textDecoration: "none",
+                }}
+                onClick={() => {}}
+              >
+                {post.title}
+              </Anchor>
+              <Group gap="md" mt="xs">
+                <Group gap="xs">
+                  <IconCalendar size={14} color="var(--mantine-color-gray-6)" />
+                  <Text size="sm" c="dimmed">
+                    {post.date.toISOString()}
+                  </Text>
+                </Group>
+                <Badge color="blue" variant="light" size="sm">
+                  {post.data.category}
+                </Badge>
               </Group>
-              <Badge color="blue" variant="light" size="sm">
-                {post.data.category}
-              </Badge>
+            </Box>
+
+            <Group gap="xs">
+              {post.data.tag?.map((tag) => (
+                <Badge key={tag} color="gray" variant="outline" size="xs">
+                  #{tag}
+                </Badge>
+              ))}
             </Group>
-          </Box>
 
-          <Text c="dimmed" size="sm" lineClamp={3}>
-            {post.excerpt}
-          </Text>
+            <Divider />
 
-          <Group gap="xs">
-            {post.data.tag?.map((tag) => (
-              <Badge key={tag} color="gray" variant="outline" size="xs">
-                #{tag}
-              </Badge>
-            ))}
-          </Group>
+            {/* Actions */}
+            <Group justify="space-between">
+              <Group gap="lg">
+                <Group gap="xs">
+                  <ActionIcon variant="subtle" color={"red"} size="sm">
+                    <IconHeart size={16} fill={"currentColor"} />
+                  </ActionIcon>
+                  <Text size="sm" c="dimmed">
+                    1
+                  </Text>
+                </Group>
 
-          <Divider />
+                <Group gap="xs">
+                  <ActionIcon variant="subtle" color="gray" size="sm">
+                    <IconMessageCircle size={16} />
+                  </ActionIcon>
+                  <Text size="sm" c="dimmed">
+                    comments
+                  </Text>
+                </Group>
 
-          {/* Actions */}
-          <Group justify="space-between">
-            <Group gap="lg">
-              <Group gap="xs">
-                <ActionIcon variant="subtle" color={"red"} size="sm">
-                  <IconHeart size={16} fill={"currentColor"} />
-                </ActionIcon>
-                <Text size="sm" c="dimmed">
-                  1
-                </Text>
-              </Group>
-
-              <Group gap="xs">
                 <ActionIcon variant="subtle" color="gray" size="sm">
-                  <IconMessageCircle size={16} />
+                  <IconShare size={16} />
                 </ActionIcon>
-                <Text size="sm" c="dimmed">
-                  comments
-                </Text>
               </Group>
 
-              <ActionIcon variant="subtle" color="gray" size="sm">
-                <IconShare size={16} />
+              <ActionIcon variant="subtle" color={"yellow"} size="sm">
+                <IconBookmark size={16} fill={"currentcolor"} />
               </ActionIcon>
             </Group>
+          </Stack>
+        </Box>
+      </Card>
 
-            <ActionIcon variant="subtle" color={"yellow"} size="sm">
-              <IconBookmark size={16} fill={"currentcolor"} />
-            </ActionIcon>
-          </Group>
-        </Stack>
-      </Box>
-    </Card>
+      <Text size="sm" lineClamp={2} px={15} pt={10}>
+        {post.excerpt}
+      </Text>
+    </Box>
   );
 }

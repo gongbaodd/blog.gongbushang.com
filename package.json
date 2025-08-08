@@ -39,7 +39,8 @@
     "remark-math": "^6.0.0",
     "shiki-plantuml": "file:./packages/shiki-plantuml",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "words-count": "^2.0.2"
   },
   "workspaces": [
     "packages/*"
