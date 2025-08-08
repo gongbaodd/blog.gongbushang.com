@@ -51,15 +51,15 @@ export default function Tags({ tagGroup }: ITagsProps) {
 }
 
 interface ITagGroupProps {
-  tags: [name: string, url: string, count: number][];
+  tags: { label: string; href: string; count: number }[];
 }
 
 export function TagGroup({ tags }: ITagGroupProps) {
   return (
     <MantineProvider>
       <Group gap="xs">
-        {tags.map(([name, url]) => (
-          <TagItem key={name} tag={name} url={url} />
+        {tags.map(({ label, href }) => (
+          <TagItem key={label} tag={label} url={href} />
         ))}
       </Group>
     </MantineProvider>

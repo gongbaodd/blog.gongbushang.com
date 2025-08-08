@@ -9,8 +9,10 @@ import {
 } from "../../packages/consts";
 import MantineHeader from "./MantineHeader";
 import MantineMain from "./MantineMain";
-import BlogList, { type IPost } from "./BlogList";
+import BlogList, { BlogGrid, BlogGridSSR, MenuCategory, MenuSeries, MenuTag, type IPost } from "./BlogList";
 import Footer from "@/packages/components/Footer.astro";
+import { getCategories, getSeries, getTags } from "@/packages/utils/badges";
+
 
 interface Props {
     subTitle: string
@@ -19,6 +21,15 @@ interface Props {
 }
 
 const { subTitle, posts } = Astro.props
+const [
+  categories,
+  series,
+  tags
+] = await Promise.all([
+  getCategories(),
+  getSeries(),
+  getTags()
+])
 
 ---
 <Global>
@@ -33,7 +44,17 @@ const { subTitle, posts } = Astro.props
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <BlogList posts={posts} client:only />
+    <BlogList posts={posts}>
+      <MenuCategory slot="menuCategory" categories={categories} />
+      <MenuSeries slot="menuSeries" series={series} />
+      <MenuTag slot="menuTag" tags={tags} />
+      <BlogGridSSR slot="blogGridxs" posts={posts} size="xs" />
+      <BlogGridSSR slot="blogGridsm" posts={posts} size="sm" />
+      <BlogGridSSR slot="blogGridmd" posts={posts} size="md" />
+      <BlogGridSSR slot="blogGridlg" posts={posts} size="lg" />
+      <BlogGridSSR slot="blogGridxl" posts={posts} size="xl" /> 
+      <BlogGrid slot="blogGrid" posts={posts} client:only />
+    </BlogList>
     <Footer />
   </MantineMain>
 </Global>

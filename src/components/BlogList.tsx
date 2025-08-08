@@ -20,7 +20,7 @@ import {
   ActionIcon,
 } from "@mantine/core";
 import {
-  IconBookmark,
+  IconBook,
   IconCalendar,
   IconFolder,
   IconHeart,
@@ -28,16 +28,26 @@ import {
   IconSearch,
   IconShare,
   IconTag,
+  type ReactNode,
 } from "@tabler/icons-react";
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import wordcount from "words-count";
 import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "@/packages/consts";
 import { IconQuoteFilled } from "@tabler/icons-react";
+import { Fragment } from "react/jsx-runtime";
 
 interface Props {
   posts: IPost[];
+  menuCategory?: ReactNode;
+  menuSeries?: ReactNode;
+  menuTag?: ReactNode;
+  blogGrid?: ReactNode;
+  blogGridxs?: ReactNode;
+  blogGridsm?: ReactNode;
+  blogGridmd?: ReactNode;
+  blogGridlg?: ReactNode;
+  blogGridxl?: ReactNode;
 }
 
 export interface IPost {
@@ -53,107 +63,186 @@ export interface IPost {
   excerpt: string;
 }
 
-export default function BlogList(props: Props) {
+export default function BlogList({
+  blogGrid,
+  blogGridxs,
+  blogGridsm,
+  blogGridmd,
+  blogGridlg,
+  blogGridxl,
+  menuCategory,
+  menuSeries,
+  menuTag,
+}: Props) {
   return (
     <CustomMantineProvider>
-      <List posts={props.posts}></List>
+      <Container fluid>
+        <Grid gutter="lg">
+          <Grid.Col span={{ base: 12, md: 1 }}>
+            <Stack gap="lg">
+              <Fragment key={"category"}>{menuCategory}</Fragment>
+              <Fragment key={"series"}>{menuSeries}</Fragment>
+              <Fragment key={"tag"}>{menuTag}</Fragment>
+            </Stack>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 11 }}>
+            <Fragment key={"xs"}>{blogGridxs}</Fragment>
+            {/* <Fragment key={"sm"}>{blogGridsm}</Fragment>
+            <Fragment key={"md"}>{blogGridmd}</Fragment>
+            <Fragment key={"lg"}>{blogGridlg}</Fragment>
+            <Fragment key={"xl"}>{blogGridxl}</Fragment>
+            <Fragment key={"client"}>{blogGrid}</Fragment> */}
+          </Grid.Col>
+        </Grid>
+      </Container>
     </CustomMantineProvider>
   );
 }
 
-const categories = [
-  "全部",
-  "前端开发",
-  "CSS设计",
-  "TypeScript",
-  "UI/UX设计",
-  "后端开发",
-];
-const allTags = [
-  "React",
-  "JavaScript",
-  "前端",
-  "CSS",
-  "布局",
-  "Grid",
-  "TypeScript",
-  "类型系统",
-  "编程",
-  "响应式",
-  "设计",
-  "用户体验",
-  "Node.js",
-  "性能优化",
-  "后端",
-];
+interface BlogGridProps {
+  posts: IPost[]
+}
 
-function List({ posts }: Props) {
+const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }
+
+export function BlogGrid({ posts }: BlogGridProps) {
   return (
-    <Container fluid>
-      <Grid gutter="lg">
-        <Grid.Col span={{ base: 12, md: 2 }}>
-          <Stack gap="lg">
-            {/* Categories */}
-            <Paper p="md" radius="md" withBorder>
-              <Group mb="md">
-                <IconFolder size={20} color="var(--mantine-color-blue-6)" />
-                <Text fw={600} size="lg">
-                  分类
-                </Text>
-              </Group>
-              <Stack gap="xs">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={"default"}
-                    color="blue"
-                    justify="flex-start"
-                    fullWidth
-                    size="sm"
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </Stack>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group mb="md">
-                <IconTag size={20} color="var(--mantine-color-green-6)" />
-                <Text fw={600} size="lg">
-                  标签
-                </Text>
-              </Group>
-              <Group gap="xs">
-                {allTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={"outline"}
-                    color="green"
-                    style={{ cursor: "pointer" }}
-                    size="sm"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </Group>
-            </Paper>
-          </Stack>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 10 }}>
-          <Masonry
-            columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
-            spacing={3}
-            sequential
-          >
-            {posts.map((post, i) => (
-              <PostCard key={post.id} post={post} index={i} />
-            ))}
-          </Masonry>
-        </Grid.Col>
-      </Grid>
-    </Container>
+    <CustomMantineProvider>
+      <Masonry
+        columns={COLUMNS_STYLE}
+        spacing={3}
+        sequential
+      >
+        {posts.map((post, i) => (
+          <PostCard key={post.id} post={post} index={i} />
+        ))}
+      </Masonry>
+    </CustomMantineProvider>
   );
+}
+
+type T_SIZE = "xs" | "sm" | "md" | "lg" | "xl";
+
+export function BlogGridSSR({ posts, size }: BlogGridProps & { size: T_SIZE }) {
+  const {columns} = {
+    get columns() {
+      return COLUMNS_STYLE[size]
+    }
+  }
+
+    return (
+    <CustomMantineProvider>
+      <Masonry
+        columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+        spacing={3}
+        sequential
+        className={classes.masonry + " " + classes[size]}
+        defaultColumns={columns}
+      >
+        {posts.map((post, i) => (
+          <PostCard key={post.id} post={post} index={i} />
+        ))}
+      </Masonry>
+    </CustomMantineProvider>
+  );
+}
+
+type TLink = { label: string; href: string };
+
+export function MenuCategory({ categories }: { categories: TLink[] }) {
+  return (
+    <CustomMantineProvider>
+      <Stack gap="sm">
+        <Group>
+          <IconFolder size={20} />
+          <Text fw={600} size="lg">
+            Category
+          </Text>
+        </Group>
+        <Stack gap="xs">
+          {categories.map(({ label, href }) => (
+            <Anchor href={href}>
+              <Button
+                key={label}
+                variant={"default"}
+                color="blue"
+                justify="flex-start"
+                fullWidth
+                size="sm"
+              >
+                {label}
+              </Button>
+            </Anchor>
+          ))}
+        </Stack>
+      </Stack>
+    </CustomMantineProvider>
+  );
+}
+
+export function MenuSeries({ series }: { series: TLink[] }) {
+  return (
+    <CustomMantineProvider>
+      <Stack gap="sm">
+        <Group>
+          <IconBook size={20} />
+          <Text fw={600} size="lg">
+            Series
+          </Text>
+        </Group>
+        <Stack gap="xs">
+          {series.map(({ label, href }) => (
+            <Anchor href={href}>
+              <Button
+                key={label}
+                variant={"default"}
+                color="blue"
+                justify="flex-start"
+                fullWidth
+                size="sm"
+              >
+                {label}
+              </Button>
+            </Anchor>
+          ))}
+        </Stack>
+      </Stack>
+    </CustomMantineProvider>
+  );
+}
+
+export function MenuTag({ tags }: { tags: TLink[] }) {
+  return (
+    <CustomMantineProvider>
+      <Stack gap="sm">
+        <Group>
+          <IconTag size={20} />
+          <Text fw={600} size="lg">
+            Tags
+          </Text>
+        </Group>
+        <Group gap="xs">
+          {tags.map(({ label, href }) => (
+            <Anchor href={href}>
+              <Badge
+                key={label}
+                variant={"outline"}
+                color="green"
+                style={{ cursor: "pointer" }}
+                size="sm"
+              >
+                {label}
+              </Badge>
+            </Anchor>
+          ))}
+        </Group>
+      </Stack>
+    </CustomMantineProvider>
+  );
+}
+
+function wordcount(title: string) {
+  return title.split("/s").length;
 }
 
 function PostCard({ post, index }: { post: IPost; index: number }) {
@@ -161,7 +250,7 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
 
   const { layoutCls } = {
     get layoutCls() {
-      let count = wordcount(title) + (post.data.tag?.length ?? 0);
+      const count =  wordcount(title) + (post.data.tag?.length ?? 0);
       if (count < 3) return POST_CARD_LAYOUT.xs;
       if (count < 4) return POST_CARD_LAYOUT.sm;
       if (count < 5) return POST_CARD_LAYOUT.md;
@@ -220,14 +309,14 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
         </Card>
       </Anchor>
       <Flex pl={5} pr={10} pt={5}>
-        <Avatar size="xs" variant="transparent" style={{transform: "rotateZ(180deg)"}}>
+        <Avatar
+          size="xs"
+          variant="transparent"
+          style={{ transform: "rotateZ(180deg)" }}
+        >
           <IconQuoteFilled />
         </Avatar>
-        <Text
-          size="sm"
-          lineClamp={2}
-          className={classes.excerpt}
-        >
+        <Text size="sm" lineClamp={2} className={classes.excerpt}>
           {post.excerpt}
         </Text>
       </Flex>
