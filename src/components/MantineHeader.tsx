@@ -26,7 +26,7 @@ export default function MantineHeader({ links, title, pathname }: IProps) {
       <AppShell header={{ height: headerHeight }} padding="md">
         {/*TODO: className="backdrop-blur supports-[backdrop-filter]:bg-background/60"*/}
         <AppShell.Header>
-          <Container size="xl" h="100%">
+          <Container h="100%" fluid>
             <Flex justify="space-between" align="center" h="100%">
               <Title order={2} c="blue.6">
                 {title}

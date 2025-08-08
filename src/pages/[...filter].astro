@@ -18,7 +18,7 @@ export const prerender = true;
 
 export const getStaticPaths = getFilteredPage;
 const posts = await Promise.all(
-  Astro.props.posts.slice(0, 48).map(async (post) => ({
+  Astro.props.posts.slice(0, 16).map(async (post) => ({
     id: post.id,
     title: title(post),
     date: date(post),

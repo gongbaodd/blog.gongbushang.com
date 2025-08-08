@@ -35,9 +35,11 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 import wordcount from "words-count";
 
 enum CARD_RATIO {
-  V = "vertical",
-  H = "horizontal",
-  S = "square",
+  xs = "xs",
+  sm = "sm",
+  md = "md",
+  lg = "lg",
+  xl = "xl",
 }
 
 const CARD_CLASSNAMES = [
@@ -143,7 +145,7 @@ const allTags = [
 
 function List({ posts }: Props) {
   return (
-    <Container size="xl">
+    <Container fluid>
       <Grid gutter="lg">
         <Grid.Col span={{ base: 12, md: 2 }}>
           <Stack gap="lg">
@@ -196,7 +198,7 @@ function List({ posts }: Props) {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 10 }}>
           <Masonry
-            columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}
+            columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
             spacing={3}
             sequential
           >
@@ -211,123 +213,68 @@ function List({ posts }: Props) {
 }
 
 function PostCard({ post, index }: { post: IPost; index: number }) {
-  const title = post.title
+  const title = post.title;
 
   const { layoutCls } = {
     get layoutCls() {
-      const count = wordcount(title)
-      if (count < 3) return CARD_RATIO.H
-      if (count < 6) return CARD_RATIO.S
-      return CARD_RATIO.V
+      let count = wordcount(title) + (post.data.tag?.length ?? 0);
+      if (count < 3) return CARD_RATIO.xs;
+      if (count < 4) return CARD_RATIO.sm;
+      if (count < 5) return CARD_RATIO.md;
+      if (count < 10) return CARD_RATIO.lg;
+      return CARD_RATIO.xl;
     },
-  }
+  };
 
   return (
     <Box>
-      <Card
-        key={post.id}
-        shadow="sm"
-        padding="lg"
-        radius="md"
-        withBorder
-        className={
-          classes.item + " " + classes[CARD_CLASSNAMES[index]] + " " + classes[layoutCls]
-        }
-      >
-        <Title className={classes.title}>{title}</Title>
-      </Card>
+      <Anchor underline="never">
+        <Card
+          key={post.id}
+          shadow="sm"
+          padding="lg"
+          radius="md"
+          withBorder
+          className={
+            classes.item +
+            " " +
+            classes[CARD_CLASSNAMES[index % CARD_CLASSNAMES.length]] +
+            " " +
+            classes[layoutCls]
+          }
+        >
+          <Flex direction={"column"} justify={"space-between"} flex={1}>
+            <Title className={classes.title}>{title}</Title>
 
-      <Text size="sm" lineClamp={2} px={15} pt={10}>
-        {post.excerpt}
-      </Text>
-    </Box>
-  );
-}
-
-function _PostCard({ post, index }: { post: IPost; index: number }) {
-  return (
-    <Box>
-      <Card
-        key={post.id}
-        shadow="sm"
-        padding="lg"
-        radius="md"
-        withBorder
-        className={classes.item + " " + classes[CARD_CLASSNAMES[index]]}
-      >
-        <Box>
-          <Stack gap="sm">
-            <Box>
-              <Anchor
-                component="button"
-                fw={700}
-                size="lg"
-                c={"light"}
-                style={{
-                  textAlign: "left",
-                  textDecoration: "none",
-                }}
-                onClick={() => {}}
-              >
-                {post.title}
-              </Anchor>
-              <Group gap="md" mt="xs">
-                <Group gap="xs">
-                  <IconCalendar size={14} color="var(--mantine-color-gray-6)" />
-                  <Text size="sm" c="dimmed">
-                    {post.date.toISOString()}
-                  </Text>
-                </Group>
-                <Badge color="blue" variant="light" size="sm">
+            <Flex gap="xs" justify={"space-between"} align={"end"}>
+              <Group flex={1}>
+                <Badge
+                  color="gray"
+                  variant="default"
+                  size="sm"
+                  className={classes.category}
+                >
                   {post.data.category}
                 </Badge>
               </Group>
-            </Box>
 
-            <Group gap="xs">
-              {post.data.tag?.map((tag) => (
-                <Badge key={tag} color="gray" variant="outline" size="xs">
-                  #{tag}
-                </Badge>
-              ))}
-            </Group>
-
-            <Divider />
-
-            {/* Actions */}
-            <Group justify="space-between">
-              <Group gap="lg">
-                <Group gap="xs">
-                  <ActionIcon variant="subtle" color={"red"} size="sm">
-                    <IconHeart size={16} fill={"currentColor"} />
-                  </ActionIcon>
-                  <Text size="sm" c="dimmed">
-                    1
-                  </Text>
-                </Group>
-
-                <Group gap="xs">
-                  <ActionIcon variant="subtle" color="gray" size="sm">
-                    <IconMessageCircle size={16} />
-                  </ActionIcon>
-                  <Text size="sm" c="dimmed">
-                    comments
-                  </Text>
-                </Group>
-
-                <ActionIcon variant="subtle" color="gray" size="sm">
-                  <IconShare size={16} />
-                </ActionIcon>
+              <Group gap="xs" flex={0} miw="5em">
+                {post.data.tag?.map((tag) => (
+                  <Badge
+                    key={tag}
+                    className={classes.tag}
+                    color="gray"
+                    variant="transparent"
+                    size="xs"
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
               </Group>
-
-              <ActionIcon variant="subtle" color={"yellow"} size="sm">
-                <IconBookmark size={16} fill={"currentcolor"} />
-              </ActionIcon>
-            </Group>
-          </Stack>
-        </Box>
-      </Card>
-
+            </Flex>
+          </Flex>
+        </Card>
+      </Anchor>
       <Text size="sm" lineClamp={2} px={15} pt={10}>
         {post.excerpt}
       </Text>

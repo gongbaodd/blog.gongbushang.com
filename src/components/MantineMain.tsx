@@ -14,7 +14,7 @@ export default function MantineMain({
     <CustomMantineProvider>
       <AppShell header={{ height: headerHeight }} padding="md">
         <AppShell.Main>
-          <Container size="xl">
+          <Container fluid>
             <Stack gap="xl">{children}</Stack>
           </Container>
         </AppShell.Main>
