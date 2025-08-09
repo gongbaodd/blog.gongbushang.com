@@ -5,10 +5,11 @@ import {
   ROUTES,
   SITE_DESCRIPTION,
   SITE_TITLE,
+  FILTER_ENTRY
 } from "../../packages/consts";
 import MantineHeader from "./MantineHeader";
 import MantineMain from "./MantineMain";
-import BlogList, { BlogGrid, BlogGridSSR, MenuCategory, MenuSeries, MenuTag, type IPost } from "./BlogList";
+import BlogList, { BlogGrid, BlogGridSSR, BlogListNanoStore, MenuCategory, MenuSeries, MenuTag, type IPost } from "./BlogList";
 import Footer from "@/packages/components/Footer.astro";
 import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
 import type { CollectionEntry } from "astro:content";
@@ -20,6 +21,8 @@ interface Props {
     subTitle: string
     posts: T_POST[]
     totalCount: number
+    filter: string
+    entryType?: FILTER_ENTRY
 }
 
 const { subTitle, posts: limitedPosts } = Astro.props
@@ -40,7 +43,9 @@ const [
     title={`${SITE_TITLE} | ${subTitle}`}
     description={SITE_DESCRIPTION}
     slot="head"
-  />
+  >
+  <BlogListNanoStore posts={posts} client:load />
+  </BaseHead>
   <MantineHeader
     title={SITE_TITLE}
     links={ROUTES}
@@ -51,12 +56,12 @@ const [
       <MenuCategory slot="menuCategory" categories={categories} />
       <MenuSeries slot="menuSeries" series={series} />
       <MenuTag slot="menuTag" tags={tags} />
-      <BlogGridSSR slot="blogGridxs" posts={posts} size="xs" />
-      <BlogGridSSR slot="blogGridsm" posts={posts} size="sm" />
-      <BlogGridSSR slot="blogGridmd" posts={posts} size="md" /> 
-      <BlogGridSSR slot="blogGridlg" posts={posts} size="lg" />
-      <BlogGridSSR slot="blogGridxl" posts={posts} size="xl" /> 
-      <BlogGrid slot="blogGrid" posts={posts} client:only />
+      <BlogGridSSR slot="blogGridxs" size="xs" />
+      <BlogGridSSR slot="blogGridsm" size="sm" />
+      <BlogGridSSR slot="blogGridmd" size="md" /> 
+      <BlogGridSSR slot="blogGridlg" size="lg" />
+      <BlogGridSSR slot="blogGridxl" size="xl" /> 
+      <BlogGrid slot="blogGrid" client:only />
     </BlogList>
     <Footer />
   </MantineMain>

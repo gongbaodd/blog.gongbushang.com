@@ -1,5 +1,5 @@
 ---
-import { POST_COUNT_PER_PAGE } from '@/packages/consts';
+import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from '@/packages/consts';
 import { getFilterBySeriesPage, isValidSeriesFilter, mapServerPostToClient } from '@/packages/utils/filter';
 import BlogListPage from '@/src/components/BlogListPage.astro';
 import NotFound from "../404.astro";
@@ -16,4 +16,4 @@ const isValid = await isValidSeriesFilter(filter);
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.SERIES} /> : <NotFound />}

@@ -18,6 +18,7 @@ import {
   Anchor,
   Divider,
   ActionIcon,
+  Center,
 } from "@mantine/core";
 import {
   IconBook,
@@ -39,6 +40,8 @@ import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
 import { ThemeProvider } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { $posts } from "../stores/posts";
+import { useStore } from "@nanostores/react";
 
 interface Props {
   posts: IPost[];
@@ -102,20 +105,41 @@ export default function BlogList({
   );
 }
 
-interface BlogGridProps {
-  posts: IPost[];
+interface IStoreProps {
+  posts: IPost[]
 }
 
+export function BlogListNanoStore({ posts }: IStoreProps) {
+  useEffect(() => {
+    $posts.set(posts);
+  }, [])
+
+  return <></>
+}
+
+
+
 const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
-const COLUMNS_SSR_HEIGHT = {xl: 2000, lg: 2000, md: 2500, sm: 3500, xs: undefined  };
+const COLUMNS_SSR_HEIGHT = {
+  xl: 2000,
+  lg: 2000,
+  md: 2500,
+  sm: 3500,
+  xs: undefined,
+};
 
-export function BlogGrid({ posts }: BlogGridProps) {
-
+export function BlogGrid() {
   const ref = useRef<HTMLDivElement>(null);
+  const posts = useStore($posts);
+
+  // const requestPosts = useCallback(async () => {
+  //     const newPosts: { posts: IPost[] } = await (await fetch("/api/all/1.json")).json();
+  //     setPosts([...posts, ...newPosts.posts]);
+  // }, []);
 
   useEffect(() => {
     if (!ref.current) return;
-    const parent = ref.current.parentNode?.parentNode;
+    const parent = ref.current.parentNode?.parentNode?.parentNode;
     const observer = new MutationObserver(() => {
       parent?.querySelectorAll("." + classes.masonrySSR).forEach((node) => {
         node.className += " " + classes.hide;
@@ -124,27 +148,44 @@ export function BlogGrid({ posts }: BlogGridProps) {
       observer.disconnect();
     });
 
-   
-    observer.observe(ref.current, { childList: true, subtree: true, attributes: true });
+    observer.observe(ref.current, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
     return () => observer.disconnect();
   }, []);
 
-
-
   return (
     <CustomMantineProvider>
-      <Masonry ref={ref} columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={3} sequential>
-        {posts.map((post, i) => (
-          <PostCard key={post.id} post={post} index={i} />
-        ))}
-      </Masonry>
+      <Stack>
+        <Masonry
+          ref={ref}
+          columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+          spacing={3}
+          sequential
+        >
+          {posts.map((post, i) => (
+            <PostCard key={post.id} post={post} index={i} />
+          ))}
+        </Masonry>
+        <Center>
+          <Button
+            variant="default"
+            // onClick={() => requestPosts()}
+          >
+            Load More
+          </Button>
+        </Center>
+      </Stack>
     </CustomMantineProvider>
   );
 }
 
 type T_SIZE = "xs" | "sm" | "md" | "lg" | "xl";
 
-export function BlogGridSSR({ posts, size }: BlogGridProps & { size: T_SIZE }) {
+export function BlogGridSSR({ size }: { size: T_SIZE }) {
+  const posts = useStore($posts);
   const { columns } = {
     get columns() {
       return COLUMNS_STYLE[size];
@@ -157,26 +198,26 @@ export function BlogGridSSR({ posts, size }: BlogGridProps & { size: T_SIZE }) {
     md: "none",
     lg: "none",
     xl: "none",
-  }
+  };
 
   displays[size] = "flex";
 
   return (
     <CustomMantineProvider>
-        <Masonry
-          columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
-          spacing={3}
-          sequential
-          defaultColumns={columns}
-          defaultHeight={COLUMNS_SSR_HEIGHT[size]}
-          defaultSpacing={3}
-          sx={{display: displays}}
-          className={classes.masonrySSR}
-        >
-          {posts.map((post, i) => (
-            <PostCard key={post.id} post={post} index={i} />
-          ))}
-        </Masonry>
+      <Masonry
+        columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+        spacing={3}
+        sequential
+        defaultColumns={columns}
+        defaultHeight={COLUMNS_SSR_HEIGHT[size]}
+        defaultSpacing={3}
+        sx={{ display: displays }}
+        className={classes.masonrySSR}
+      >
+        {posts.map((post, i) => (
+          <PostCard key={post.id} post={post} index={i} />
+        ))}
+      </Masonry>
     </CustomMantineProvider>
   );
 }

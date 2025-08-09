@@ -20,4 +20,4 @@ const subTitle = filter.replaceAll("/", " | ");
 const isValid = await isValidCategoryFilter(filter);
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} /> : <NotFound />}
