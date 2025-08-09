@@ -9,6 +9,7 @@ import { excerpt, title } from "../utils/extract";
 import { ROUTES, SITE_TITLE } from "../consts";
 import MantineHeader from "@/src/components/MantineHeader";
 import MantineMain from "@/src/components/MantineMain";
+import BlogContent from "@/src/components/BlogContent";
 
 type Props = CollectionEntry<"blog">;
 
@@ -29,7 +30,9 @@ const postExcerpt = await excerpt(post);
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <slot />
+    <BlogContent>
+      <slot />
+    </BlogContent>
     <Footer />
   </MantineMain>
 </Global>
