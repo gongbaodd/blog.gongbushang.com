@@ -179,7 +179,9 @@ const BlogContent: React.FC<{ children: ReactNode }> = ({ children }) => {
                   </Group>
 
                   <Divider />
+                  <Stack className="prose lg:prose-xl">
                   {children}
+                  </Stack>
                 </Stack>
               </Paper>
             </Grid.Col>

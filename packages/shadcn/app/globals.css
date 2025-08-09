@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@plugin "@tailwindcss/typography";
 
 @layer base {
   :root {
@@ -82,8 +83,20 @@
   * {
     @apply border-border;
   }
+}
 
-  body {
-    @apply bg-background text-foreground;
+@layer utilities {
+  .prose {
+    --tw-prose-body: var(--color-text);
+    --tw-prose-headings: var(--color-primary);
+    --tw-prose-links: var(--color-primary);
+    --tw-prose-bold: var(--color-primary);
+    --tw-prose-hr: var(--color-border);
+    --tw-prose-code: var(--color-primary);
+    max-width: none; /* Optional: remove width limit */
+  }
+
+  .prose a:hover {
+    color: var(--color-primary-light);
   }
 }
