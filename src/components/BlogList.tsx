@@ -34,13 +34,22 @@ import {
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "@/packages/consts";
+import {
+  FILTER_ENTRY,
+  POST_CARD_CLASSNAMES,
+  POST_CARD_LAYOUT,
+} from "@/packages/consts";
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
 import { ThemeProvider } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { $posts } from "../stores/posts";
+import {
+  $hasMorePosts,
+  $posts,
+  $postsListParams,
+  requestPosts,
+} from "../stores/posts";
 import { useStore } from "@nanostores/react";
 
 interface Props {
@@ -92,12 +101,14 @@ export default function BlogList({
             </Stack>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 11 }}>
+            <Stack>
             <Fragment key={"xs"}>{blogGridxs}</Fragment>
             <Fragment key={"sm"}>{blogGridsm}</Fragment>
             <Fragment key={"md"}>{blogGridmd}</Fragment>
             <Fragment key={"lg"}>{blogGridlg}</Fragment>
             <Fragment key={"xl"}>{blogGridxl}</Fragment>
             <Fragment key={"client"}>{blogGrid}</Fragment>
+            </Stack>
           </Grid.Col>
         </Grid>
       </Container>
@@ -106,18 +117,25 @@ export default function BlogList({
 }
 
 interface IStoreProps {
-  posts: IPost[]
+  posts: IPost[];
+  filter: string;
+  entryType?: FILTER_ENTRY;
+  totalCount: number;
 }
 
-export function BlogListNanoStore({ posts }: IStoreProps) {
+export function BlogListNanoStore({
+  posts,
+  filter,
+  entryType,
+  totalCount,
+}: IStoreProps) {
   useEffect(() => {
     $posts.set(posts);
-  }, [])
+    $postsListParams.set({ filter, entryType, page: 0, totalCount });
+  }, []);
 
-  return <></>
+  return <></>;
 }
-
-
 
 const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
 const COLUMNS_SSR_HEIGHT = {
@@ -132,14 +150,9 @@ export function BlogGrid() {
   const ref = useRef<HTMLDivElement>(null);
   const posts = useStore($posts);
 
-  // const requestPosts = useCallback(async () => {
-  //     const newPosts: { posts: IPost[] } = await (await fetch("/api/all/1.json")).json();
-  //     setPosts([...posts, ...newPosts.posts]);
-  // }, []);
-
   useEffect(() => {
     if (!ref.current) return;
-    const parent = ref.current.parentNode?.parentNode?.parentNode;
+    const parent = ref.current.parentNode?.parentNode;
     const observer = new MutationObserver(() => {
       parent?.querySelectorAll("." + classes.masonrySSR).forEach((node) => {
         node.className += " " + classes.hide;
@@ -158,7 +171,6 @@ export function BlogGrid() {
 
   return (
     <CustomMantineProvider>
-      <Stack>
         <Masonry
           ref={ref}
           columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
@@ -169,23 +181,20 @@ export function BlogGrid() {
             <PostCard key={post.id} post={post} index={i} />
           ))}
         </Masonry>
-        <Center>
-          <Button
-            variant="default"
-            // onClick={() => requestPosts()}
-          >
-            Load More
-          </Button>
-        </Center>
-      </Stack>
+        {$hasMorePosts.get() && (
+          <Center>
+            <Button variant="default" onClick={() => requestPosts()}>
+              Load More
+            </Button>
+          </Center>
+        )}
     </CustomMantineProvider>
   );
 }
 
 type T_SIZE = "xs" | "sm" | "md" | "lg" | "xl";
 
-export function BlogGridSSR({ size }: { size: T_SIZE }) {
-  const posts = useStore($posts);
+export function BlogGridSSR({ size, posts }: { size: T_SIZE, posts: IPost[] }) {
   const { columns } = {
     get columns() {
       return COLUMNS_STYLE[size];
