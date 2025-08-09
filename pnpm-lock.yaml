@@ -95,9 +95,9 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.8.3
-      words-count:
-        specifier: ^2.0.2
-        version: 2.0.2
+      word-count:
+        specifier: ^0.3.1
+        version: 0.3.1
     devDependencies:
       dts-bundle-generator:
         specifier: ^9.5.1
@@ -3959,8 +3959,8 @@ packages:
     resolution: {integrity: sha512-c9bZp7b5YtRj2wOe6dlj32MK+Bx/M/d+9VB2SHM1OtsUHR0aV0tdP6DWh/iMt0kWi1t5g1Iudu6hQRNd1A4PVA==}
     engines: {node: '>=18'}
 
-  words-count@2.0.2:
-    resolution: {integrity: sha512-u0LFfJPhnR0xXu/5WoqWIkgdGJst5GahS4lYy4G5TIX4JAQgeNKD33HpmMoxveVBWNS6W6YZV2OQjVIVLL4K7Q==}
+  word-count@0.3.1:
+    resolution: {integrity: sha512-tTDKyKX1yy8FZWUw64TOgnMeLeXPZBA+ZunaCCpFRrGFeLSwSdEgSsFI/5DIJkiUfM7CkCREFPkZd9U4eLXgqA==}
 
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
@@ -8457,7 +8457,7 @@ snapshots:
     dependencies:
       string-width: 7.2.0
 
-  words-count@2.0.2: {}
+  word-count@0.3.1: {}
 
   wrap-ansi@7.0.0:
     dependencies:

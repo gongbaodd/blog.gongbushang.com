@@ -1,21 +1,8 @@
-.masonry.xs {
-
+.masonrySSR {
 }
 
-.masonry.sm {
-
-}
-
-.masonry.md {
-
-}
-
-.masonry.lg {
-
-}
-
-.masonry.xl {
-
+.hide, .masonrySSR.hide {
+    display: none;
 }
 
 .item .category {

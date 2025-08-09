@@ -36,6 +36,9 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "@/packages/consts";
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
+import wordcount from "word-count";
+import { ThemeProvider } from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
   posts: IPost[];
@@ -87,11 +90,11 @@ export default function BlogList({
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 11 }}>
             <Fragment key={"xs"}>{blogGridxs}</Fragment>
-            {/* <Fragment key={"sm"}>{blogGridsm}</Fragment>
+            <Fragment key={"sm"}>{blogGridsm}</Fragment>
             <Fragment key={"md"}>{blogGridmd}</Fragment>
             <Fragment key={"lg"}>{blogGridlg}</Fragment>
             <Fragment key={"xl"}>{blogGridxl}</Fragment>
-            <Fragment key={"client"}>{blogGrid}</Fragment> */}
+            <Fragment key={"client"}>{blogGrid}</Fragment>
           </Grid.Col>
         </Grid>
       </Container>
@@ -104,11 +107,33 @@ interface BlogGridProps {
 }
 
 const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
+const COLUMNS_SSR_HEIGHT = {xl: 2000, lg: 2000, md: 2500, sm: 3500, xs: undefined  };
 
 export function BlogGrid({ posts }: BlogGridProps) {
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const parent = ref.current.parentNode?.parentNode;
+    const observer = new MutationObserver(() => {
+      parent?.querySelectorAll("." + classes.masonrySSR).forEach((node) => {
+        node.className += " " + classes.hide;
+      });
+
+      observer.disconnect();
+    });
+
+   
+    observer.observe(ref.current, { childList: true, subtree: true, attributes: true });
+    return () => observer.disconnect();
+  }, []);
+
+
+
   return (
     <CustomMantineProvider>
-      <Masonry columns={COLUMNS_STYLE} spacing={3} sequential>
+      <Masonry ref={ref} columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={3} sequential>
         {posts.map((post, i) => (
           <PostCard key={post.id} post={post} index={i} />
         ))}
@@ -126,19 +151,32 @@ export function BlogGridSSR({ posts, size }: BlogGridProps & { size: T_SIZE }) {
     },
   };
 
+  const displays = {
+    xs: "none",
+    sm: "none",
+    md: "none",
+    lg: "none",
+    xl: "none",
+  }
+
+  displays[size] = "flex";
+
   return (
     <CustomMantineProvider>
-      <Masonry
-        columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
-        spacing={3}
-        sequential
-        className={classes.masonry + " " + classes[size]}
-        defaultColumns={columns}
-      >
-        {posts.map((post, i) => (
-          <PostCard key={post.id} post={post} index={i} />
-        ))}
-      </Masonry>
+        <Masonry
+          columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+          spacing={3}
+          sequential
+          defaultColumns={columns}
+          defaultHeight={COLUMNS_SSR_HEIGHT[size]}
+          defaultSpacing={3}
+          sx={{display: displays}}
+          className={classes.masonrySSR}
+        >
+          {posts.map((post, i) => (
+            <PostCard key={post.id} post={post} index={i} />
+          ))}
+        </Masonry>
     </CustomMantineProvider>
   );
 }
@@ -232,10 +270,6 @@ export function MenuTag({ tags }: { tags: TLink[] }) {
       </Stack>
     </CustomMantineProvider>
   );
-}
-
-function wordcount(title: string) {
-  return title.split("/s").length;
 }
 
 function PostCard({ post, index }: { post: IPost; index: number }) {
