@@ -10,24 +10,28 @@ import MantineHeader from "./MantineHeader";
 import MantineMain from "./MantineMain";
 import BlogList, { BlogGrid, BlogGridSSR, MenuCategory, MenuSeries, MenuTag, type IPost } from "./BlogList";
 import Footer from "@/packages/components/Footer.astro";
-import { getCategories, getSeries, getTags } from "@/packages/utils/badges";
+import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
+import type { CollectionEntry } from "astro:content";
+import { mapServerPostToClient } from "@/packages/utils/filter";
 
 
+type T_POST = CollectionEntry<"blog">;
 interface Props {
     subTitle: string
-    posts: IPost[]
+    posts: T_POST[]
     totalCount: number
 }
 
-const { subTitle, posts } = Astro.props
+const { subTitle, posts: limitedPosts } = Astro.props
+const posts = await mapServerPostToClient(limitedPosts);
 const [
   categories,
   series,
   tags
 ] = await Promise.all([
-  getCategories(),
-  getSeries(),
-  getTags()
+  getCategoriesFrom(limitedPosts),
+  getSeriesFrom(limitedPosts),
+  getTagsFrom(limitedPosts)
 ])
 
 ---
