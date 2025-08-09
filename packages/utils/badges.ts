@@ -72,9 +72,19 @@ function initSeriesMap(posts: T_POST[]) {
 export async function getSeries() {
     const posts = await getCollection("blog");
     initSeriesMap(posts);
-    return Array.from<any, T_Link>(seriesMap, ([label, posts]) => (
-        { label, href: `/series/${label}`, count: [...posts].length }
-    )).toSorted((a, b) => b.count - a.count);
+    return Array.from<any, T_Link>(seriesMap, ([_label, posts]) => {
+        let label = _label;
+        for (const post of posts) {
+            if (post.data.series?.name) {
+                label = post.data.series.name;
+                break;
+            }
+        }
+
+        return (
+            { label, href: `/series/${label}`, count: [...posts].length }
+        )
+    }).toSorted((a, b) => b.count - a.count);
 }
 
 export async function getBadges() {
