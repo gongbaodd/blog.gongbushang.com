@@ -1,25 +1,21 @@
 ---
-import type { CollectionEntry } from "astro:content"
-import BaseHead from "../components/BaseHead.astro"
-import Header from "../components/Header.astro"
-import Footer from "../components/Footer.astro"
+import type { CollectionEntry } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
 
-import "github-markdown-css/github-markdown.css"
-import Global from "./Global.astro"
-import { excerpt, title } from "../utils/extract"
-import { SITE_TITLE } from "../consts"
+import "github-markdown-css/github-markdown.css";
+import Global from "./Global.astro";
+import { excerpt, title } from "../utils/extract";
+import { ROUTES, SITE_TITLE } from "../consts";
+import MantineHeader from "@/src/components/MantineHeader";
+import MantineMain from "@/src/components/MantineMain";
 
-type Props = CollectionEntry<"blog">
+type Props = CollectionEntry<"blog">;
 
-const post = Astro.props
-const postTitle = title(post)
-const postExcerpt = await excerpt(post)
+const post = Astro.props;
+const postTitle = title(post);
+const postExcerpt = await excerpt(post);
 ---
-<style is:global>
-  .markdown-body {
-    background-color: transparent;
-  }
-</style>
 
 <Global>
   <BaseHead
@@ -27,11 +23,13 @@ const postExcerpt = await excerpt(post)
     description={postExcerpt}
     slot="head"
   />
-  <Header />
-  <main class="min-h-full grid grid-cols-1 justify-items-center">
-    <article class="markdown-body max-w-6xl">
-        <slot />
-    </article>
+  <MantineHeader
+    title={SITE_TITLE}
+    links={ROUTES}
+    pathname={Astro.url.pathname}
+  />
+  <MantineMain>
+    <slot />
     <Footer />
-  </main>
+  </MantineMain>
 </Global>

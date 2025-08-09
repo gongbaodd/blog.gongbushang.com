@@ -12,8 +12,8 @@ import Jike from "../../src/icons/jike.svg?raw";
 import Xiaohongshu from "../../src/icons/xiaohongshu.svg?raw";
 import Facebook from "../../src/icons/facebook.svg?raw";
 import MantineFooter from "@/src/components/MantineFooter";
-
-const today = new Date();
+import { Picture } from "astro:assets";
+import zheng from "@/packages/assets/zheng.png";
 ---
 
 <MantineFooter>
@@ -106,6 +106,7 @@ const today = new Date();
     fill="currentcolor"
     slot="iconFacebook"
   />
+  <Picture src={zheng} alt="profile" decoding="async" slot="picture" />
 </MantineFooter>
 
 <!-- <footer>

@@ -27,6 +27,7 @@ interface IFooterProps {
   iconXiaohongshu?: ReactNode;
   iconYoutube?: ReactNode;
   iconFacebook?: ReactNode;
+  picture?: ReactNode;
 }
 
 export default function MantineFooter({
@@ -41,6 +42,7 @@ export default function MantineFooter({
   iconJike,
   iconXiaohongshu,
   iconFacebook,
+  picture,
 }: IFooterProps) {
   return (
     <CustomMantineProvider>
@@ -260,9 +262,11 @@ export default function MantineFooter({
 
           <Group justify="space-between" align="center" py="md">
             <Group align="center" gap="xs">
-              <Avatar src="/developer-avatar.png" size="sm" radius="xl" />
+              <Avatar size="sm" radius="xl" >
+                {picture}
+              </Avatar>
               <Text size="sm" c="dimmed">
-                © 2024 我的技术博客. 保留所有权利.
+                © 2025 我的技术博客. 保留所有权利.
               </Text>
             </Group>
 
