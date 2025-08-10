@@ -40,21 +40,21 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "./BlogContent.module.css"
 
 interface IProps {
-   children: ReactNode;
-   title: string;
+  children: ReactNode;
+  title: string;
 }
 
 const BlogContent: React.FC<IProps> = ({ children, title }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  
+
   return (
     <CustomMantineProvider>
       <Container fluid>
         <Grid gutter="xl">
           <Grid.Col span={{ base: 12, md: 10 }}>
             <Paper shadow="md" radius="lg" p="xl">
-              <Stack gap="lg">
+              <Stack gap="xl">
                 <Stack gap="lg">
                   <Group mb="sm">
                     <Badge color="blue" variant="light">
@@ -67,19 +67,15 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
                       Mantine
                     </Badge>
                   </Group>
+                  <Group className="prose lg:prose-xl">
+                    <h1>
+                      {title}
+                    </h1>
+                  </Group>
 
-                  <Title
-                    order={1}
-                    size="h1"
-                    mb="md"
-                    lh={1.2}
-                    className="prose lg:prose-xl"
-                  >
-                    {title}
-                  </Title>
                 </Stack>
 
-                <Group justify="space-between">
+                <Group justify="space-between" mt={24}>
                   <Group>
                     <Avatar src="/profile.jpg" size="lg" radius="xl" />
                     <div>
@@ -140,7 +136,7 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
           {/* 侧边栏 */}
           <Grid.Col span={{ base: 12, md: 2 }}>
             <Stack gap="xl">
-               <Paper shadow="md" radius="lg" p="xl" style={{ position: 'sticky', top: 100 }}>
+              <Paper shadow="md" radius="lg" p="xl" style={{ position: 'sticky', top: 100 }}>
                 <Group mb="lg">
                   <IconList size={20} />
                   <Title order={4}>文章目录</Title>
