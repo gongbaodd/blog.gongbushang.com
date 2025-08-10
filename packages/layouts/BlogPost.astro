@@ -14,7 +14,7 @@ import BlogContent from "@/src/components/BlogContent";
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
-const postTitle = title(post);
+const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
 ---
 
@@ -30,7 +30,7 @@ const postExcerpt = await excerpt(post);
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <BlogContent>
+    <BlogContent title={postTitle}>
       <slot />
     </BlogContent>
     <Footer />

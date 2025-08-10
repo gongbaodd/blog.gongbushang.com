@@ -1,24 +1,20 @@
 import { remark } from "remark"
 import strip from "strip-markdown"
-import { type CollectionEntry } from "astro:content"
+import { getEntry, render, type CollectionEntry } from "astro:content"
 
 type T_POST = CollectionEntry<"blog">
 
-export function title(post: T_POST) {
-  if (post.body) {
-    const lines = post.body.split("\n")
-    for (const line of lines) {
-      if (line && line.startsWith("#")) {
-        const t = line.replace("#", "").trim()
-        if (t) return t
-      }
-    }
-  } 
+export async function title(post: T_POST) {
+  const entry = await getEntry("blog", post.id)
+  if (!entry) throw new Error("Not a valid post!")
+
+  const { headings } = await render(entry)
+
+  for (const { text } of headings) {
+    return text
+  }
 
   const lastIndex = post.id?.lastIndexOf('/')
-
-  if (!post.id || lastIndex === -1) throw new Error("Not a valid post!")
-
   return post.id.slice(lastIndex + 1).replace(/-/g, " ")
 }
 

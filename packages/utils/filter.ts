@@ -145,7 +145,7 @@ export async function mapServerPostToClient(posts: T_POST[]) {
     posts.map(async (post) => ({
       id: post.id,
       href: `/${post.data.category}/${post.id}`,
-      title: title(post),
+      title: await title(post),
       date: date(post),
       data: post.data,
       excerpt: await excerpt(post),

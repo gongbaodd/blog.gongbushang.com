@@ -1,6 +1,5 @@
 ---
 import { POST_COUNT_PER_PAGE } from "../../packages/consts";
-import NotFound from "./404.astro";
 
 import {
   getFilterByCategoryPage,
@@ -18,6 +17,15 @@ const totalPostsCount = Astro.props.posts.length;
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
 const isValid = await isValidCategoryFilter(filter);
+
+if (!isValid) {
+  Astro.redirect("/404");
+}
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} /> : <NotFound />}
+<BlogListPage
+  subTitle={subTitle}
+  posts={limitedPosts}
+  totalCount={totalPostsCount}
+  filter={filter}
+/>
