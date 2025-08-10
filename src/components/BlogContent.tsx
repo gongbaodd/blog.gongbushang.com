@@ -52,7 +52,7 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
     <CustomMantineProvider>
       <Container fluid>
         <Grid gutter="xl">
-          <Grid.Col span={{ base: 12, md: 8 }}>
+          <Grid.Col span={{ base: 12, md: 10 }}>
             <Paper shadow="md" radius="lg" p="xl">
               <Stack gap="lg">
                 <Stack gap="lg">
@@ -138,7 +138,7 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
           </Grid.Col>
 
           {/* 侧边栏 */}
-          <Grid.Col span={{ base: 12, md: 4 }}>
+          <Grid.Col span={{ base: 12, md: 2 }}>
             <Stack gap="xl">
                <Paper shadow="md" radius="lg" p="xl" style={{ position: 'sticky', top: 100 }}>
                 <Group mb="lg">
