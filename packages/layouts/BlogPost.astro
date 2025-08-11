@@ -18,6 +18,7 @@ const post = Astro.props;
 const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
 const links = await getLinks();
+
 const createDate = date(post);
 const { minutes } = getReadingTime(post.body ?? "");
 
