@@ -115,9 +115,12 @@ export async function getSeries(_map?: typeof seriesMap) {
 
     const map = _map ?? seriesMap
 
-    return Array.from<any, T_Link>(map, ([_label, posts]) => {
+    return Array.from<any, T_Link>(map, ([_label, posts]: [string, T_POST[]]) => {
         let label = _label;
+        let slug = "";
         for (const post of posts) {
+            slug = post.data.series?.slug ?? slug;
+
             if (post.data.series?.name) {
                 label = post.data.series.name;
                 break;
@@ -125,7 +128,7 @@ export async function getSeries(_map?: typeof seriesMap) {
         }
 
         return (
-            { label, href: `/series/${label}`, count: [...posts].length }
+            { label, href: `/series/${slug}`, count: [...posts].length }
         )
     }).toSorted((a, b) => b.count - a.count);
 }

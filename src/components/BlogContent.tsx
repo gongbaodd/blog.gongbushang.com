@@ -10,16 +10,9 @@ import {
   Divider,
   Button,
   Grid,
-  Card,
-  Image,
   Stack,
   ActionIcon,
-  Progress,
-  Box,
   Anchor,
-  List,
-  Code,
-  Blockquote,
   ScrollArea,
 } from "@mantine/core";
 import {
@@ -28,23 +21,26 @@ import {
   IconBookmark,
   IconEye,
   IconClock,
-  IconUser,
   IconCalendar,
   IconTag,
-  IconChevronRight,
-  IconThumbUp,
-  IconMessageCircle,
   IconList,
 } from "@tabler/icons-react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "./BlogContent.module.css"
+import dayjs from "dayjs"
 
+interface ILink {
+  label: string;
+  href: string;
+}
 interface IProps {
   children: ReactNode;
   title: string;
+  links: ILink[];
+  date: Date;
 }
 
-const BlogContent: React.FC<IProps> = ({ children, title }) => {
+const BlogContent: React.FC<IProps> = ({ children, title, links, date }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -57,15 +53,13 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
               <Stack gap="xl">
                 <Stack gap="lg">
                   <Group mb="sm">
-                    <Badge color="blue" variant="light">
-                      前端开发
-                    </Badge>
-                    <Badge color="green" variant="light">
-                      React
-                    </Badge>
-                    <Badge color="orange" variant="light">
-                      Mantine
-                    </Badge>
+                    {links.map(({ label, href }) => (
+                      <Anchor href={href}>
+                        <Badge variant="outline">
+                          {label}
+                        </Badge>
+                      </Anchor>
+                    ))}
                   </Group>
                   <Group className="prose lg:prose-xl">
                     <h1>
@@ -79,12 +73,12 @@ const BlogContent: React.FC<IProps> = ({ children, title }) => {
                   <Group>
                     <Avatar src="/profile.jpg" size="lg" radius="xl" />
                     <div>
-                      <Text fw={600}>J.Gong</Text>
+                      <Text>J.Gong</Text>
                       <Group gap="xs">
                         <Group gap={4}>
                           <IconCalendar size={14} />
                           <Text size="sm" c="dimmed">
-                            2024年1月20日
+                            {dayjs(date).format("YYYY-MM-DD")}
                           </Text>
                         </Group>
                         <Group gap={4}>

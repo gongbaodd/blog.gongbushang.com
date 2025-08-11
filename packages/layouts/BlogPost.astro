@@ -5,17 +5,32 @@ import Footer from "../components/Footer.astro";
 
 import "github-markdown-css/github-markdown.css";
 import Global from "./Global.astro";
-import { excerpt, title } from "../utils/extract";
+import { category, excerpt, tags, title , date} from "../utils/extract";
 import { ROUTES, SITE_TITLE } from "../consts";
 import MantineHeader from "@/src/components/MantineHeader";
 import MantineMain from "@/src/components/MantineMain";
 import BlogContent from "@/src/components/BlogContent";
+import { series } from "../utils/extract";
 
 type Props = CollectionEntry<"blog">;
 
 const post = Astro.props;
 const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
+const links = await getLinks();
+const createDate = date(post);
+
+async function getLinks() {
+  const categoryLink = category(post);
+  const tagsLink = tags(post);
+  const links = [categoryLink, ...tagsLink];
+  const seriesLink = await series(post);
+  if (seriesLink) {
+    links.push(seriesLink);
+  }
+
+  return links;
+}
 ---
 
 <Global>
@@ -30,7 +45,7 @@ const postExcerpt = await excerpt(post);
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <BlogContent title={postTitle}>
+    <BlogContent title={postTitle} links={links} date={createDate}>
       <slot />
     </BlogContent>
     <Footer />

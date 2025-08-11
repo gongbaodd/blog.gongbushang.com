@@ -59,6 +59,9 @@ importers:
       astro:
         specifier: 5.11.0
         version: 5.11.0(@types/node@24.0.15)(jiti@2.4.2)(rollup@4.45.1)(typescript@5.8.3)(yaml@2.8.0)
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.13
       es-toolkit:
         specifier: ^1.39.8
         version: 1.39.8

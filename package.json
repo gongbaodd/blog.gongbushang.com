@@ -28,6 +28,7 @@
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "astro": "5.11.0",
+    "dayjs": "^1.11.13",
     "es-toolkit": "^1.39.8",
     "lucide-react": "^0.323.0",
     "nanostores": "^1.0.1",

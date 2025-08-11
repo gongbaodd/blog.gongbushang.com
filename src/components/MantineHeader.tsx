@@ -28,9 +28,11 @@ export default function MantineHeader({ links, title, pathname }: IProps) {
         <AppShell.Header>
           <Container h="100%" fluid>
             <Flex justify="space-between" align="center" h="100%">
-              <Title order={2} c="blue.6">
-                {title}
-              </Title>
+              <Anchor href="/">
+                <Title order={2}>
+                  {title}
+                </Title>
+              </Anchor>
               <Group gap="lg" visibleFrom="sm">
                 {links.map((link) => (
                   <Anchor

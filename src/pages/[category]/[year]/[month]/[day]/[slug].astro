@@ -23,11 +23,11 @@ export async function getStaticPaths() {
 type Props = CollectionEntry<"blog">
 
 const post = Astro.props
-const entry = await getEntry("blog", post.id);
+const entry = await getEntry("blog", post.id)
 if (!entry) {
-  throw new Error('Could not find blog' + post.id);
+  return Astro.redirect("/404")
 }
-const { Content } = await render(entry);
+const { Content } = await render(entry)
 ---
 
 <BlogPost {...post}>

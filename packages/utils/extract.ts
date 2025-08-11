@@ -1,6 +1,7 @@
 import { remark } from "remark"
 import strip from "strip-markdown"
 import { getEntry, render, type CollectionEntry } from "astro:content"
+import { getSeries } from "./badges"
 
 type T_POST = CollectionEntry<"blog">
 
@@ -35,4 +36,48 @@ export async function excerpt(post: T_POST, words = 120) {
   const content = post.body.replace(/#.*/, "")
   const doc = await remark().use(strip).process(content)
   return String(doc).slice(0, words) + "..."
+}
+
+type TLink = {
+  label: string;
+  href: string;
+};
+
+export function tags(post: T_POST): TLink[] {
+  const { tag } = post.data
+  if (!tag) return []
+
+  return tag.map(t => ({
+    label: t,
+    href: `/tag/${t}`,
+  }))
+}
+
+export function category(post: T_POST): TLink {
+  const { category } = post.data
+  return {
+    label: category,
+    href: `/${category}`,
+  }
+}
+
+export async function series(post: T_POST) {
+  const { series } = post.data
+  if (!series) return void(0)
+
+  let name = series.name ?? ""
+  const href = `/series/${series.slug}`;
+
+  if (!name) {
+    const allSeries = await getSeries()
+    const series = allSeries.find(s => s.href === href)
+    if (series) {
+      name = series.label
+    }
+  }
+
+  return {
+    label: name,
+    href,
+  } satisfies TLink
 }
