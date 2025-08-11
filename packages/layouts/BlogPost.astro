@@ -12,6 +12,7 @@ import MantineMain from "@/src/components/MantineMain";
 import BlogContent from "@/src/components/BlogContent";
 import { getReadingTime } from "../utils/readingTime";
 import { render } from "astro:content";
+import Header from "../components/Header.astro";
 
 type Props = CollectionEntry<"blog">;
 const post = Astro.props;
@@ -28,9 +29,6 @@ const links = await getLinks();
 
 const createDate = date(post);
 const { minutes } = getReadingTime(post.body ?? "");
-
-
-
 
 async function getLinks() {
   const categoryLink = category(post);
@@ -51,11 +49,7 @@ async function getLinks() {
     description={postExcerpt}
     slot="head"
   />
-  <MantineHeader
-    title={SITE_TITLE}
-    links={ROUTES}
-    pathname={Astro.url.pathname}
-  />
+  <Header/>
   <MantineMain>
     <BlogContent title={postTitle} links={links} date={createDate} time={minutes + "min"} headings={headings}>
       <slot />

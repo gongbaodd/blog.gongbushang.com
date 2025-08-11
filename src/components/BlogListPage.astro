@@ -26,6 +26,7 @@ import {
 } from "@/packages/utils/badges";
 import type { CollectionEntry } from "astro:content";
 import { mapServerPostToClient } from "@/packages/utils/filter";
+import Header from "@/packages/components/Header.astro";
 
 type T_POST = CollectionEntry<"blog">;
 interface Props {
@@ -64,11 +65,7 @@ const [categories, series, tags] = await Promise.all([
     totalCount={totalCount}
     client:load
   />
-  <MantineHeader
-    title={SITE_TITLE}
-    links={ROUTES}
-    pathname={Astro.url.pathname}
-  />
+  <Header/>
   <MantineMain>
     <BlogList posts={posts}>
       <MenuCategory slot="menuCategory" categories={categories} />

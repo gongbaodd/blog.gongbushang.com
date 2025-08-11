@@ -9,12 +9,12 @@ import { Picture } from "astro:assets";
 
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../components/MantineMain";
-import MantineHeader from "../components/MantineHeader";
 import Hero from "../components/Hero";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
+import Header from "@/packages/components/Header.astro";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -22,11 +22,7 @@ const badges = await getBadges();
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <MantineHeader
-    title={SITE_TITLE}
-    links={ROUTES}
-    pathname={Astro.url.pathname}
-  />
+  <Header/>
   <MantineMain>
     <Hero>
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />

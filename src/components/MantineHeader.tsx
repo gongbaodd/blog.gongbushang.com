@@ -1,10 +1,11 @@
 import {
   Anchor,
   AppShell,
+  Button,
   Container,
   Flex,
   Group,
-  TextInput,
+  Text,
   Title,
 } from "@mantine/core";
 import { IconSearch } from "@tabler/icons-react";
@@ -17,15 +18,15 @@ interface IProps {
   links: { label: string; href: string }[];
   title: string;
   pathname: string;
+  searchNode?: React.ReactNode
 }
 
-export default function MantineHeader({ links, title, pathname }: IProps) {
+export default function MantineHeader({ links, title, pathname, searchNode }: IProps) {
   const { headerHeight } = useStore(layoutStore)
   return (
     <CustomMantineProvider>
-      <AppShell header={{ height: headerHeight }} padding="md">
-        {/*TODO: className="backdrop-blur supports-[backdrop-filter]:bg-background/60"*/}
-        <AppShell.Header>
+      <AppShell header={{ height: headerHeight }} padding="md" >
+        <AppShell.Header className={classes.header}>
           <Container h="100%" fluid>
             <Flex justify="space-between" align="center" h="100%">
               <Anchor href="/">
@@ -44,14 +45,7 @@ export default function MantineHeader({ links, title, pathname }: IProps) {
                   </Anchor>
                 ))}
               </Group>
-              {/* <TextInput
-                placeholder="搜索文章..."
-                value={""}
-                onChange={(e) => {}}
-                leftSection={<IconSearch size={16} />}
-                w={300}
-                radius="xl"
-              /> */}
+              {searchNode}
             </Flex>
           </Container>
         </AppShell.Header>
