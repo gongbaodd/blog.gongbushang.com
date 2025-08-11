@@ -74,7 +74,7 @@ interface ITagItemProps {
 function TagItem({ tag, url }: ITagItemProps) {
   return (
     <Anchor href={url}>
-      <Badge key={tag} variant="light" size="lg" style={{ cursor: "pointer" }}>
+      <Badge key={tag} variant="light" size="lg" style={{ cursor: "pointer", textTransform: "none" }}>
         {tag}
       </Badge>
     </Anchor>
