@@ -28,6 +28,7 @@ import {
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "./BlogContent.module.css"
 import dayjs from "dayjs"
+import type { MarkdownHeading } from "astro";
 
 interface ILink {
   label: string;
@@ -39,9 +40,10 @@ interface IProps {
   links: ILink[];
   date: Date;
   time: string;
+  headings: MarkdownHeading[];
 }
 
-const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) => {
+const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, headings }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -88,12 +90,14 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
                             {time}
                           </Text>
                         </Group>
-                        {/* <Group gap={4}>
+                        {/* TODO: UV
+                        <Group gap={4}>
                           <IconEye size={14} />
                           <Text size="sm" c="dimmed">
                             2.5k 次浏览
                           </Text>
-                        </Group> */}
+                        </Group> 
+                        */}
                       </Group>
                     </div>
                   </Group>
@@ -128,36 +132,18 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
             </Paper>
           </Grid.Col>
 
-          {/* 侧边栏 */}
           <Grid.Col span={{ base: 12, md: 2 }}>
-            <Stack gap="xl">
-              <Paper shadow="md" radius="lg" p="xl" style={{ position: 'sticky', top: 100 }}>
+            <Stack gap="xl" style={{ position: 'sticky', top: 100 }}>
+              <Paper shadow="md" radius="lg" p="xl" >
                 <Group mb="lg">
                   <IconList size={20} />
-                  <Title order={4}>文章目录</Title>
+                  <Title order={4}>Headings</Title>
                 </Group>
                 <ScrollArea h={300}>
                   <Stack gap="xs">
-                    {/* {tableOfContents.map((item) => (
-                      <Anchor
-                        key={item.id}
-                        onClick={() => scrollToSection(item.id)}
-                        size="sm"
-                        style={{
-                          paddingLeft: item.level === 3 ? 16 : 0,
-                          fontWeight: activeSection === item.id ? 600 : 400,
-                          color: activeSection === item.id ? 'var(--mantine-color-blue-6)' : undefined,
-                          cursor: 'pointer',
-                          display: 'block',
-                          padding: '4px 0',
-                          borderLeft: activeSection === item.id ? '3px solid var(--mantine-color-blue-6)' : '3px solid transparent',
-                          paddingLeft: item.level === 3 ? 19 : 3,
-                          transition: 'all 0.2s ease',
-                        }}
-                      >
-                        {item.title}
-                      </Anchor>
-                    ))} */}
+                    {headings.map(heading => (<Anchor key={heading.slug} href={`#${heading.slug}`} >
+                      {heading.text}
+                    </Anchor>))}
                   </Stack>
                 </ScrollArea>
               </Paper>
@@ -166,12 +152,7 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
                   <Avatar src="/profile.jpg" size={120} radius="xl" />
                   <div style={{ textAlign: "center" }}>
                     <Title order={4}>J.Gong</Title>
-                    <Text c="dimmed" size="sm" mb="md">
-                      全栈开发工程师
-                    </Text>
                     <Text size="sm" lh={1.4}>
-                      专注于React、Node.js和现代Web开发技术。
-                      热爱分享技术知识和最佳实践。
                     </Text>
                   </div>
                   <Button fullWidth variant="light">
@@ -228,29 +209,19 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
                 </Stack>
               </Paper>
 
-              {/* 标签云 */}
               <Paper shadow="md" radius="lg" p="xl">
                 <Title order={4} mb="lg">
-                  热门标签
+                  Tags
                 </Title>
                 <Group gap="xs">
-                  {[
-                    "React",
-                    "TypeScript",
-                    "JavaScript",
-                    "CSS",
-                    "Node.js",
-                    "Vue.js",
-                    "Next.js",
-                    "Webpack",
-                  ].map((tag) => (
+                  {links.map(({ label, href }) => (
                     <Badge
-                      key={tag}
+                      key={label}
                       variant="light"
                       style={{ cursor: "pointer" }}
                       leftSection={<IconTag size={12} />}
                     >
-                      {tag}
+                      {label}
                     </Badge>
                   ))}
                 </Group>

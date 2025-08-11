@@ -1,5 +1,5 @@
 ---
-import type { CollectionEntry } from "astro:content";
+import { getEntry, type CollectionEntry } from "astro:content";
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 
@@ -11,16 +11,26 @@ import MantineHeader from "@/src/components/MantineHeader";
 import MantineMain from "@/src/components/MantineMain";
 import BlogContent from "@/src/components/BlogContent";
 import { getReadingTime } from "../utils/readingTime";
+import { render } from "astro:content";
 
 type Props = CollectionEntry<"blog">;
-
 const post = Astro.props;
+
+const entry = await getEntry("blog", post.id)
+if (!entry) {
+  return Astro.redirect("/404")
+}
+const { headings } = await render(entry)
+
 const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
 const links = await getLinks();
 
 const createDate = date(post);
 const { minutes } = getReadingTime(post.body ?? "");
+
+
+
 
 async function getLinks() {
   const categoryLink = category(post);
@@ -47,7 +57,7 @@ async function getLinks() {
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <BlogContent title={postTitle} links={links} date={createDate} time={minutes + "min"}>
+    <BlogContent title={postTitle} links={links} date={createDate} time={minutes + "min"} headings={headings}>
       <slot />
     </BlogContent>
     <Footer />
