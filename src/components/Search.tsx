@@ -2,7 +2,7 @@ import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, Text
 import { useDisclosure, useHotkeys } from "@mantine/hooks"
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { IconSearch } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Calendar, User, Search as SearchIcon } from "lucide-react";
 
 const mockArticles = [
@@ -210,6 +210,7 @@ function SearchModal({ opened, onClose }: { opened: boolean; onClose: () => void
 }
 export default function Search() {
     const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+    const [isLoading, setIsLoading] = useState(false)
 
     useHotkeys([
         ['mod+K', openSearch],
@@ -217,16 +218,21 @@ export default function Search() {
         ['Escape', closeSearch],
     ]);
 
+    const loadPostsIndex = useCallback(async () => {
+          setIsLoading(true)
+
+    }, [])
+
     return (
         <CustomMantineProvider>
             <Button
-                leftSection={<IconSearch size={16} />}
+                leftSection={isLoading ? <Loader size="xs" c={"dimmed"} /> : <IconSearch size={16} />}
                 radius={"xl"} variant="outline" c="dimmed"
                 style={{ borderColor: "var(--mantine-color-dimmed)" }}
-                onClick={openSearch}
+                onClick={loadPostsIndex}
             >
-                Search...
-                <Text span c="dimmed" size="xs" ml="1em">⌘{" "}K</Text>
+                {isLoading? "Loading..." : "Search..."}
+                {!isLoading && <Text span c="dimmed" size="xs" ml="1em">⌘{" "}K</Text>}
             </Button>
             <SearchModal opened={searchOpened} onClose={closeSearch} />
         </CustomMantineProvider>
