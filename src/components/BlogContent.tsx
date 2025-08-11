@@ -38,9 +38,10 @@ interface IProps {
   title: string;
   links: ILink[];
   date: Date;
+  time: string;
 }
 
-const BlogContent: React.FC<IProps> = ({ children, title, links, date }) => {
+const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -54,7 +55,7 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date }) => {
                 <Stack gap="lg">
                   <Group mb="sm">
                     {links.map(({ label, href }) => (
-                      <Anchor href={href}>
+                      <Anchor href={href} key={label}>
                         <Badge variant="outline">
                           {label}
                         </Badge>
@@ -84,15 +85,15 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date }) => {
                         <Group gap={4}>
                           <IconClock size={14} />
                           <Text size="sm" c="dimmed">
-                            10分钟阅读
+                            {time}
                           </Text>
                         </Group>
-                        <Group gap={4}>
+                        {/* <Group gap={4}>
                           <IconEye size={14} />
                           <Text size="sm" c="dimmed">
                             2.5k 次浏览
                           </Text>
-                        </Group>
+                        </Group> */}
                       </Group>
                     </div>
                   </Group>

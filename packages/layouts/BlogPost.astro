@@ -5,12 +5,12 @@ import Footer from "../components/Footer.astro";
 
 import "github-markdown-css/github-markdown.css";
 import Global from "./Global.astro";
-import { category, excerpt, tags, title , date} from "../utils/extract";
+import { category, excerpt, tags, title , date, series} from "../utils/extract";
 import { ROUTES, SITE_TITLE } from "../consts";
 import MantineHeader from "@/src/components/MantineHeader";
 import MantineMain from "@/src/components/MantineMain";
 import BlogContent from "@/src/components/BlogContent";
-import { series } from "../utils/extract";
+import { getReadingTime } from "../utils/readingTime";
 
 type Props = CollectionEntry<"blog">;
 
@@ -19,6 +19,7 @@ const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
 const links = await getLinks();
 const createDate = date(post);
+const { minutes } = getReadingTime(post.body ?? "");
 
 async function getLinks() {
   const categoryLink = category(post);
@@ -45,7 +46,7 @@ async function getLinks() {
     pathname={Astro.url.pathname}
   />
   <MantineMain>
-    <BlogContent title={postTitle} links={links} date={createDate}>
+    <BlogContent title={postTitle} links={links} date={createDate} time={minutes + "min"}>
       <slot />
     </BlogContent>
     <Footer />
