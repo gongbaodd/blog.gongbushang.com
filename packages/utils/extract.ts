@@ -47,10 +47,13 @@ export function tags(post: T_POST): TLink[] {
   const { tag } = post.data
   if (!tag) return []
 
-  return tag.map(t => ({
-    label: t,
-    href: `/tag/${t}`,
-  }))
+  return tag.map(_t => {
+    const t = _t.toLocaleLowerCase()
+    return ({
+      label: t,
+      href: `/tag/${t}`,
+    })
+  })
 }
 
 export function category(post: T_POST): TLink {

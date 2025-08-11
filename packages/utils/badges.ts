@@ -55,7 +55,9 @@ function generateTagMap(posts: T_POST[]) {
     posts.forEach((post) => {
         const { tag } = post.data;
 
-        tag?.forEach((t: string) => {
+        tag?.forEach((_t: string) => {
+            const t = _t.toLocaleLowerCase();
+
             if (!tagMap.has(t)) {
                 tagMap.set(t, new Set());
             }
