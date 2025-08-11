@@ -139,13 +139,11 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
                   <IconList size={20} />
                   <Title order={4}>Headings</Title>
                 </Group>
-                <ScrollArea h={300}>
-                  <Stack gap="xs">
-                    {headings.map(heading => (<Anchor key={heading.slug} href={`#${heading.slug}`} >
-                      {heading.text}
-                    </Anchor>))}
-                  </Stack>
-                </ScrollArea>
+                <Stack gap="xs">
+                  {headings.map(heading => (<Anchor key={heading.slug} href={`#${heading.slug}`} >
+                    {heading.text}
+                  </Anchor>))}
+                </Stack>
               </Paper>
               <Paper shadow="md" radius="lg" p="xl">
                 <Stack align="center" gap="md">
