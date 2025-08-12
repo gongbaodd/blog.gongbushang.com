@@ -68,6 +68,9 @@ importers:
       es-toolkit:
         specifier: ^1.39.8
         version: 1.39.8
+      excerpt:
+        specifier: ^0.0.1
+        version: 0.0.1
       lucide-react:
         specifier: ^0.323.0
         version: 0.323.0(react@19.1.1)
@@ -2171,6 +2174,9 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+
+  excerpt@0.0.1:
+    resolution: {integrity: sha512-pRLqBupzqk1Bs3xLm6MNoPwWKF/xlusp+uZo2AYRuOvFy1zy2BcEd8n2c2x1j/LpQ0cNbgXB/HpIqPn70sXBxA==}
 
   exsolve@1.0.7:
     resolution: {integrity: sha512-VO5fQUzZtI6C+vx4w/4BWJpg3s/5l+6pRQEHzFRM8WFi4XffSP1Z+4qi7GbjWbvRQEbdIco5mIMq+zX4rPuLrw==}
@@ -6204,6 +6210,8 @@ snapshots:
       '@types/estree': 1.0.8
 
   eventemitter3@5.0.1: {}
+
+  excerpt@0.0.1: {}
 
   exsolve@1.0.7: {}
 

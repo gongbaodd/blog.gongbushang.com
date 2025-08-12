@@ -6,18 +6,23 @@ import { Calendar, User, Search as SearchIcon } from "lucide-react";
 import { $postsToIndex, loadPostsToIndex } from "../stores/search";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
-import type { SafeResult } from "astro:actions";
+import excerpt from "excerpt"
 import type { SearchResult } from "minisearch";
 import type { IPost } from "../pages/api/posts/all.json";
 
 export default function Search() {
-  const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  const [searchOpened, { open: openSearch, close: _closeSearch }] = useDisclosure(false);
   const postsToIndex = useStore($postsToIndex)
   const isLoading = postsToIndex.isLoading
   const [postsPromise, setPostsPromise] = useState<null | Promise<void>>(null)
   const loadPosts = () => {
     openSearch()
     setPostsPromise(loadPostsToIndex())
+  }
+
+  const closeSearch = () => {
+    _closeSearch()
+    setPostsPromise(null)
   }
 
   useHotkeys([
@@ -84,7 +89,7 @@ function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened
 
           <Box style={{ maxHeight: '50vh', overflowY: 'auto', overflowX: "hidden" }}>
             <Stack gap="xs">
-              {posts.length === 0 ? (
+              {query.length > 0 && posts.length === 0 ? (
                 <Center>
                   <Text c="dimmed">Sorry, no related files.</Text>
                 </Center>
@@ -94,13 +99,13 @@ function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened
                     <Group justify="space-between" align="flex-start">
                       <Box>
                         <Text fw={600} size="lg" mb={4}>
-                          <Highlight component="span" highlight={""} color="yellow">
+                          <Highlight component="span" highlight={post.queryTerms} color="yellow">
                             {post.title}
                           </Highlight>
                         </Text>
                         <Text c="dimmed" size="sm" mb="xs">
-                          <Highlight component="span" highlight={""} color="yellow">
-                            {post.content}
+                          <Highlight component="span" highlight={post.queryTerms} color="yellow">
+                            {excerpt(post.content, post.queryTerms[0], 100)}
                           </Highlight>
                         </Text>
                         <Group gap="xs" mb="xs">
