@@ -32,6 +32,7 @@
     "dayjs": "^1.11.13",
     "es-toolkit": "^1.39.8",
     "lucide-react": "^0.323.0",
+    "minisearch": "^7.1.2",
     "nanostores": "^1.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

@@ -38,7 +38,7 @@ export async function excerpt(post: T_POST, words = 120) {
   return String(doc).slice(0, words) + "..."
 }
 
-type TLink = {
+export type TLink = {
   label: string;
   href: string;
 };
