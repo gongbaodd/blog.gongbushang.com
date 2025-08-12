@@ -1,11 +1,14 @@
 import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center } from "@mantine/core";
-import { useDisclosure, useHotkeys } from "@mantine/hooks"
+import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks"
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Suspense, use, useCallback, useEffect, useState } from "react";
 import { Calendar, User, Search as SearchIcon } from "lucide-react";
 import { $postsToIndex, loadPostsToIndex } from "../stores/search";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
+import type { SafeResult } from "astro:actions";
+import type { SearchResult } from "minisearch";
+import type { IPost } from "../pages/api/posts/all.json";
 
 export default function Search() {
   const [searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
@@ -45,7 +48,14 @@ export default function Search() {
 function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened: boolean, closeSearch: () => void, postsPromise: Promise<void> }) {
   use(postsPromise)
   const postsToIndex = useStore($postsToIndex)
-  const posts = postsToIndex.posts
+  const [posts, setPosts] = useState<(SearchResult & IPost)[]>([])
+  const [query, setQuery] = useState("")
+  const handleSearch = useDebouncedCallback((query: string) => {
+    if (query) {
+       const _posts = (postsToIndex.index?.search(query) ?? []) as (SearchResult & IPost)[]
+       setPosts(_posts)
+    }
+  }, 500)
 
   return (
       <Modal
@@ -63,8 +73,12 @@ function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened
             placeholder="Search Contents..."
             size="lg"
             leftSection={<SearchIcon size={20} />}
-            value={""}
-            onChange={(event) => { }}
+            value={query}
+            onChange={(event) => {
+              const value = event.currentTarget.value
+              setQuery(value)
+              handleSearch(value)
+            }}
             autoFocus
           />
 
@@ -75,7 +89,7 @@ function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened
                   <Text c="dimmed">Sorry, no related files.</Text>
                 </Center>
               ) : (
-                posts.slice(0, 3).map(post => (
+                posts.map((post) => (
                   <Paper key={post.id} p="md" withBorder style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
                     <Group justify="space-between" align="flex-start">
                       <Box>
