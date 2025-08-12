@@ -1,8 +1,8 @@
-import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center } from "@mantine/core";
+import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center, Anchor } from "@mantine/core";
 import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks"
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { Suspense, use, useCallback, useEffect, useState } from "react";
-import { Calendar, User, Search as SearchIcon } from "lucide-react";
+import { Suspense, use, useState } from "react";
+import { Calendar, Search as SearchIcon } from "lucide-react";
 import { $postsToIndex, loadPostsToIndex } from "../stores/search";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
@@ -95,35 +95,37 @@ function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened
                 </Center>
               ) : (
                 posts.map((post) => (
-                  <Paper key={post.id} p="md" withBorder style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                    <Group justify="space-between" align="flex-start">
-                      <Box>
-                        <Text fw={600} size="lg" mb={4}>
-                          <Highlight component="span" highlight={post.queryTerms} color="yellow">
-                            {post.title}
-                          </Highlight>
-                        </Text>
-                        <Text c="dimmed" size="sm" mb="xs">
-                          <Highlight component="span" highlight={post.queryTerms} color="yellow">
-                            {excerpt(post.content, post.queryTerms[0], 100)}
-                          </Highlight>
-                        </Text>
-                        <Group gap="xs" mb="xs">
-                          {[post.category, post.series!, ...post.tags].filter(Boolean).map(({ label }) => (
-                            <Badge key={label} variant="light" size="xs">
-                              {label}
-                            </Badge>
-                          ))}
-                        </Group>
-                        <Group gap={4}>
-                          <Calendar size={14} />
-                          <Text size="xs" c="dimmed">
-                            {dayjs(post.date).format("YYYY-MM-DD")}
+                  <Anchor href={`/${post.category.label}/${post.id}`}>
+                    <Paper key={post.id} p="md" withBorder style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                      <Group justify="space-between" align="flex-start">
+                        <Box>
+                          <Text fw={600} size="lg" mb={4}>
+                            <Highlight component="span" highlight={post.queryTerms} color="yellow">
+                              {post.title}
+                            </Highlight>
                           </Text>
-                        </Group>
-                      </Box>
-                    </Group>
-                  </Paper>
+                          <Text c="dimmed" size="sm" mb="xs">
+                            <Highlight component="span" highlight={post.queryTerms} color="yellow">
+                              {excerpt(post.content, post.queryTerms[0], 100)}
+                            </Highlight>
+                          </Text>
+                          <Group gap="xs" mb="xs">
+                            {[post.category, post.series!, ...post.tags].filter(Boolean).map(({ label }) => (
+                              <Badge key={label} variant="light" size="xs">
+                                {label}
+                              </Badge>
+                            ))}
+                          </Group>
+                          <Group gap={4}>
+                            <Calendar size={14} />
+                            <Text size="xs" c="dimmed">
+                              {dayjs(post.date).format("YYYY-MM-DD")}
+                            </Text>
+                          </Group>
+                        </Box>
+                      </Group>
+                    </Paper>
+                  </Anchor>
                 ))
               )}
             </Stack>
