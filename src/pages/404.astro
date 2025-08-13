@@ -1,13 +1,20 @@
 ---
+import { MantineProvider } from '@mantine/core';
+import NotFoundPage from '../components/NotFoundPage';
+
 Astro.response.status = 404;
 ---
+
 <html lang="en">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>404 - Page Not Found</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
-    <h1>404</h1>
-    <p>Sorry, this page doesn't exist.</p>
-    <a href="/">Go back home</a>
+    <MantineProvider client:load>
+      <NotFoundPage client:load />
+    </MantineProvider>
   </body>
 </html>
