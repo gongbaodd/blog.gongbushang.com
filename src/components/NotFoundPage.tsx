@@ -5,8 +5,8 @@ import CustomMantineProvider from '../stores/CustomMantineProvider';
 export default function NotFoundPage() {
     return (
         <CustomMantineProvider>
-            <Container size="md" style={{ minHeight: '100vh' }}>
-                <Center style={{ minHeight: '100vh' }}>
+            <Container size="md" style={{ alignSelf: "center"}}>
+                <Center>
                     <Stack align="center" gap="xl">
                         <div style={{ textAlign: 'center' }}>
                             <Title

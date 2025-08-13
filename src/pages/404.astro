@@ -1,20 +1,18 @@
 ---
-import { MantineProvider } from '@mantine/core';
+import Header from '@/packages/components/Header.astro';
+import MantineMain from '../components/MantineMain';
 import NotFoundPage from '../components/NotFoundPage';
+import BaseHead from '@/packages/components/BaseHead.astro';
+import Global from '@/packages/layouts/Global.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/packages/consts';
 
 Astro.response.status = 404;
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>404 - Page Not Found</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <MantineProvider client:load>
-      <NotFoundPage client:load />
-    </MantineProvider>
-  </body>
-</html>
+<Global>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header/>
+  <MantineMain isStacked={false}>
+      <NotFoundPage />
+  </MantineMain>
+</Global>

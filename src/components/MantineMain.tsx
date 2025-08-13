@@ -5,18 +5,20 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function MantineMain({
   children,
+  isStacked = true,
 }: {
   children: React.ReactNode;
+  isStacked?: boolean;
 }) {
   const { headerHeight } = useStore(layoutStore);
 
   return (
     <CustomMantineProvider>
       <AppShell header={{ height: headerHeight }} padding="md">
-        <AppShell.Main>
-          <Container fluid>
-            <Stack gap="xl">{children}</Stack>
-          </Container>
+        <AppShell.Main display={"flex"}>
+          {isStacked ? (
+              <Stack gap="xl">{children}</Stack>
+          ) : children}
         </AppShell.Main>
       </AppShell>
     </CustomMantineProvider>
