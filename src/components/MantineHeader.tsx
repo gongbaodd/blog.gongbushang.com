@@ -1,14 +1,11 @@
 import {
   Anchor,
   AppShell,
-  Button,
   Container,
   Flex,
   Group,
-  Text,
   Title,
 } from "@mantine/core";
-import { IconSearch } from "@tabler/icons-react";
 import classes from "./MantineHeader.module.css";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../stores/layout";

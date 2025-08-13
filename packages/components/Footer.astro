@@ -11,6 +11,8 @@ import Itchio from "../../src/icons/itchdotio.svg?raw";
 import Jike from "../../src/icons/jike.svg?raw";
 import Xiaohongshu from "../../src/icons/xiaohongshu.svg?raw";
 import Facebook from "../../src/icons/facebook.svg?raw";
+import Bilibili from "../../src/icons/bilibili.svg?raw";
+import v2ex from "../../src/icons/v2ex.svg?raw";
 import MantineFooter from "@/src/components/MantineFooter";
 import { Picture } from "astro:assets";
 import zheng from "@/packages/assets/zheng.png";
@@ -106,21 +108,21 @@ import zheng from "@/packages/assets/zheng.png";
     fill="currentcolor"
     slot="iconFacebook"
   />
+  <Icon
+    set:html={Bilibili}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconBilibili"
+  />
+  <Icon
+    set:html={v2ex}
+    width="24"
+    height="24"
+    stroke="none"
+    fill="currentcolor"
+    slot="iconV2ex"
+  />
   <Picture src={zheng} alt="profile" decoding="async" slot="picture" />
 </MantineFooter>
-
-<!-- <footer>
-	&copy; {today.getFullYear()} 宫不上, built with <span class="heart">❤️</span>. All rights reserved.
-</footer>
-<style>
-	footer {
-		padding: 2em 1em 4em 1em;
-		background: linear-gradient(var(--gray-gradient)) no-repeat;
-		color: rgb(var(--gray));
-		text-align: center;
-	}
-
-	.heart {
-		color: red;
-	}
-</style> -->

@@ -1,4 +1,4 @@
-import { AppShell, Container, MantineProvider, Stack } from "@mantine/core";
+import { AppShell, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../stores/layout";
 import CustomMantineProvider from "../stores/CustomMantineProvider";

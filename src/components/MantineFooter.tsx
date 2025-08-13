@@ -27,6 +27,8 @@ interface IFooterProps {
   iconXiaohongshu?: ReactNode;
   iconYoutube?: ReactNode;
   iconFacebook?: ReactNode;
+  iconBilibili?: ReactNode;
+  iconV2ex?: ReactNode;
   picture?: ReactNode;
 }
 
@@ -42,6 +44,8 @@ export default function MantineFooter({
   iconJike,
   iconXiaohongshu,
   iconFacebook,
+  iconBilibili,
+  iconV2ex,
   picture,
 }: IFooterProps) {
   return (
@@ -116,7 +120,7 @@ export default function MantineFooter({
 
             <Stack gap="md">
               <Text fw={600} size="lg">
-                关注我
+                Follow me in social media
               </Text>
               <Group gap="md">
                 <ActionIcon
@@ -250,6 +254,28 @@ export default function MantineFooter({
                   aria-label="小红书"
                 >
                   {iconXiaohongshu}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://space.bilibili.com/3368538"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Bilibili"
+                >
+                  {iconBilibili}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  size="lg"
+                  component="a"
+                  href="https://www.v2ex.com/member/gongbaodd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="v2ex"
+                >
+                  {iconV2ex}
                 </ActionIcon>
               </Group>
               <Text size="sm" c="dimmed">
