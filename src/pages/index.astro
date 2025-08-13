@@ -10,6 +10,7 @@ import { Picture } from "astro:assets";
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../components/MantineMain";
 import Hero from "../components/Hero";
+import BlogSectionsWrapper from "../components/BlogSectionsWrapper.astro";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
@@ -27,6 +28,7 @@ const badges = await getBadges();
     <Hero>
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
+    <BlogSectionsWrapper />
     <SpotifyPlayer client:load />
     <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />

@@ -1,0 +1,40 @@
+---
+import { getCollection } from "astro:content";
+import { date as dateFrom, title as titleFrom } from "@/packages/utils/extract";
+import type { IPost } from "./BlogList";
+import BlogSections from "./BlogSections";
+
+// Get all blog posts
+const _posts = await getCollection("blog");
+
+// Transform posts to match IPost interface
+const allPosts: IPost[] = await Promise.all(
+  _posts.map(async (post) => ({
+    id: post.id,
+    href: `/${post.data.category}/${post.id}`,
+    title: await titleFrom(post),
+    date: dateFrom(post),
+    data: {
+      category: post.data.category,
+      tag: post.data.tag,
+      cover: post.data.cover,
+    },
+    excerpt: post.data.description || post.body?.slice(0, 150) + "..." || "",
+  }))
+);
+
+// Sort posts by date (newest first)
+const sortedPosts = allPosts.sort((a, b) => b.date.getTime() - a.date.getTime());
+
+// Get latest 3 posts
+const latestPosts = sortedPosts.slice(0, 3);
+
+// Get history posts (older posts, skip the latest 3)
+const historyPosts = sortedPosts.slice(3, 6);
+---
+
+<BlogSections 
+  latestPosts={latestPosts} 
+  historyPosts={historyPosts} 
+  client:load 
+/>

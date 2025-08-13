@@ -97,12 +97,12 @@ export default function BlogList({
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 11 }}>
             <Stack>
-            <Fragment key={"xs"}>{blogGridxs}</Fragment>
-            <Fragment key={"sm"}>{blogGridsm}</Fragment>
-            <Fragment key={"md"}>{blogGridmd}</Fragment>
-            <Fragment key={"lg"}>{blogGridlg}</Fragment>
-            <Fragment key={"xl"}>{blogGridxl}</Fragment>
-            <Fragment key={"client"}>{blogGrid}</Fragment>
+              <Fragment key={"xs"}>{blogGridxs}</Fragment>
+              <Fragment key={"sm"}>{blogGridsm}</Fragment>
+              <Fragment key={"md"}>{blogGridmd}</Fragment>
+              <Fragment key={"lg"}>{blogGridlg}</Fragment>
+              <Fragment key={"xl"}>{blogGridxl}</Fragment>
+              <Fragment key={"client"}>{blogGrid}</Fragment>
             </Stack>
           </Grid.Col>
         </Grid>
@@ -166,23 +166,23 @@ export function BlogGrid() {
 
   return (
     <CustomMantineProvider>
-        <Masonry
-          ref={ref}
-          columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
-          spacing={3}
-          sequential
-        >
-          {posts.map((post, i) => (
-            <PostCard key={post.id} post={post} index={i} />
-          ))}
-        </Masonry>
-        {$hasMorePosts.get() && (
-          <Center>
-            <Button variant="default" onClick={() => requestPosts()}>
-              Load More
-            </Button>
-          </Center>
-        )}
+      <Masonry
+        ref={ref}
+        columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+        spacing={3}
+        sequential
+      >
+        {posts.map((post, i) => (
+          <PostCard key={post.id} post={post} index={i} />
+        ))}
+      </Masonry>
+      {$hasMorePosts.get() && (
+        <Center>
+          <Button variant="default" onClick={() => requestPosts()}>
+            Load More
+          </Button>
+        </Center>
+      )}
     </CustomMantineProvider>
   );
 }
@@ -317,7 +317,7 @@ export function MenuTag({ tags }: { tags: TLink[] }) {
   );
 }
 
-function PostCard({ post, index }: { post: IPost; index: number }) {
+export function PostCard({ post, index }: { post: IPost; index: number }) {
   const title = post.title;
 
   const { layoutCls } = {
@@ -333,7 +333,7 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
 
   const className = [
     classes.item,
-    post.data.cover? classes.with_bg : classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]],
+    post.data.cover ? classes.with_bg : classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]],
     classes[layoutCls]
   ].join(" ")
 
