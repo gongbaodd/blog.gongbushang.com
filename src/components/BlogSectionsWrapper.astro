@@ -23,17 +23,15 @@ const allPosts: IPost[] = await Promise.all(
   }))
 );
 
-// Sort posts by date (newest first)
 const sortedPosts = allPosts.sort((a, b) => b.date.getTime() - a.date.getTime());
 
-// Get latest 3 posts
-const latestPosts = sortedPosts.slice(0, 3);
+const latestPosts = sortedPosts.slice(0, 5);
 
-// Get history posts (older posts, skip the latest 3)
-const historyPosts = sortedPosts.slice(3, 6);
+const historyPosts = sortedPosts.slice(5, 10);
 ---
 
 <BlogSections 
   latestPosts={latestPosts} 
   historyPosts={historyPosts} 
+  client:load
 />

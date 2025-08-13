@@ -40,7 +40,7 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
             </Anchor>
           </Stack>
           <Carousel
-            maw={480}
+            maw={600}
             slideSize="70%"
             height={320}
             slideGap="sm"
@@ -49,6 +49,9 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
             withControls
             withIndicators={false}
             emblaOptions={{ dragFree: true, align: 'start' }}
+            style={{
+              borderRadius: "var(--mantine-radius-md)"
+            }}
           >
             {posts.map((post, index) => (
               <Carousel.Slide maw={250} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
