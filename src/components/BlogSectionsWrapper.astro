@@ -1,6 +1,6 @@
 ---
 import { getCollection } from "astro:content";
-import { date as dateFrom, title as titleFrom } from "@/packages/utils/extract";
+import { date as dateFrom, excerpt as excertpFrom, title as titleFrom } from "@/packages/utils/extract";
 import type { IPost } from "./BlogList";
 import BlogSections from "./BlogSections";
 
@@ -19,7 +19,7 @@ const allPosts: IPost[] = await Promise.all(
       tag: post.data.tag,
       cover: post.data.cover,
     },
-    excerpt: post.data.description || post.body?.slice(0, 150) + "..." || "",
+    excerpt: await excertpFrom(post),
   }))
 );
 
@@ -36,5 +36,4 @@ const historyPosts = sortedPosts.slice(3, 6);
 <BlogSections 
   latestPosts={latestPosts} 
   historyPosts={historyPosts} 
-  client:load 
 />

@@ -3,9 +3,12 @@
 
   @supports(backdrop-filter: blur(8px)) {
         background: linear-gradient(to bottom,
-              color-mix(in srgb, var(--mantine-color-body) 100%, transparent) 45%,
-              color-mix(in srgb, var(--mantine-color-body) 0%, transparent) 100%);
+              color-mix(in srgb, var(--mantine-color-body) 100%, transparent) 15%,
+              color-mix(in srgb, var(--mantine-color-body) 80%, transparent) 45%,
+              color-mix(in srgb, var(--mantine-color-body) 60%, transparent) 65%,
+              color-mix(in srgb, var(--mantine-color-body) 0%, transparent));
         border-width: 0px;
+        background-size: cover;
   }
 }
 

@@ -10,9 +10,8 @@ interface Props {
 export default function BlogSections({ latestPosts, historyPosts }: Props) {
   return (
     <CustomMantineProvider>
-      <Container size="xl" py="xl">
-        <Grid gutter="xl">
-          {/* Latest Posts Section */}
+      <Container py="xl" fluid>
+        <Grid gutter="lg">
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Stack gap="lg">
               <Title order={2} size="h2" fw={600}>
@@ -20,13 +19,14 @@ export default function BlogSections({ latestPosts, historyPosts }: Props) {
               </Title>
               <Stack gap="md">
                 {latestPosts.map((post, index) => (
+                  <Stack style={{ width: "100px" }}>
                   <PostCard key={post.id} post={post} index={index} />
+                  </Stack>
                 ))}
               </Stack>
             </Stack>
           </Grid.Col>
 
-          {/* History Posts Section */}
           <Grid.Col span={{ base: 12, md: 6 }}>
             <Stack gap="lg">
               <Title order={2} size="h2" fw={600}>
