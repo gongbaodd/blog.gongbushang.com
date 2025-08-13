@@ -13,13 +13,12 @@ import {
   Stack,
   ActionIcon,
   Anchor,
-  ScrollArea,
+  Image,
 } from "@mantine/core";
 import {
   IconHeart,
   IconShare,
   IconBookmark,
-  IconEye,
   IconClock,
   IconCalendar,
   IconTag,
@@ -41,9 +40,15 @@ interface IProps {
   date: Date;
   time: string;
   headings: MarkdownHeading[];
+  cover?: {
+    url: {
+      src: string;
+    };
+    alt: string;
+  }
 }
 
-const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, headings }) => {
+const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, headings, cover }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -90,14 +95,6 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
                             {time}
                           </Text>
                         </Group>
-                        {/* TODO: UV
-                        <Group gap={4}>
-                          <IconEye size={14} />
-                          <Text size="sm" c="dimmed">
-                            2.5k 次浏览
-                          </Text>
-                        </Group> 
-                        */}
                       </Group>
                     </div>
                   </Group>
@@ -125,6 +122,8 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
                 </Group>
 
                 <Divider />
+                
+                <Image src={cover?.url.src} alt={cover?.alt} />
                 <Stack className={"prose lg:prose-xl " + classes.content}>
                   {children}
                 </Stack>

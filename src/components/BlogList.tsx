@@ -42,7 +42,7 @@ import {
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
-import { ThemeProvider } from "@mui/material";
+import { createStyles, ThemeProvider } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   $hasMorePosts,
@@ -73,6 +73,12 @@ export interface IPost {
   data: {
     category: string;
     tag?: string[];
+    cover?: {
+      url: {
+        src: string;
+      },
+      alt: string;
+    },
     [T: string]: any;
   };
   excerpt: string;
@@ -336,6 +342,12 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
     },
   };
 
+  const className = [
+    classes.item,
+    post.data.cover? classes.with_bg : classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]],
+    classes[layoutCls]
+  ].join(" ")
+
   return (
     <Box>
       <Anchor underline="never" href={post.href}>
@@ -345,16 +357,13 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
           padding="lg"
           radius="md"
           withBorder
-          className={
-            classes.item +
-            " " +
-            classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]] +
-            " " +
-            classes[layoutCls]
-          }
+          className={className}
         >
-          <Flex direction={"column"} justify={"space-between"} flex={1}>
-            <Title className={classes.title}>{title}</Title>
+          {post.data.cover ? <div className={classes.cover} style={{ backgroundImage: `url(${post.data.cover?.url.src})` }}></div> : null}
+          <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
+            <Title className={classes.title}>
+              <span>{title}</span>
+            </Title>
 
             <Flex gap="xs" justify={"space-between"} align={"end"}>
               <Group flex={1}>

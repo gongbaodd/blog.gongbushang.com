@@ -4,7 +4,7 @@ import { defineCollection, z } from 'astro:content';
 const blog = defineCollection({
     loader: glob({pattern: "**/*.{md,mdx}", base: "./src/content/_docs"}),
 	// Type-check frontmatter using a schema
-	schema: z.object({
+	schema: ({image}) => z.object({
 		type: z.enum(['post', 'draft']),
 		category: z.string(),
 		tag: z.array(z.string()).optional(),
@@ -12,6 +12,10 @@ const blog = defineCollection({
 			slug: z.string(),
 			name: z.string().optional(),
 			number: z.number().optional(),
+		}).optional(),
+		cover: z.object({
+			url: image(),
+			alt: z.string(),
 		}).optional(),
 	}),
 });
