@@ -317,7 +317,9 @@ export function MenuTag({ tags }: { tags: TLink[] }) {
   );
 }
 
-export function PostCard({ post, index }: { post: IPost; index: number }) {
+interface ICardProp { post: IPost; index: number, hideExcerpt?: boolean }
+
+export function PostCard({ post, index, hideExcerpt }: ICardProp) {
   const title = post.title;
 
   const { layoutCls } = {
@@ -400,18 +402,20 @@ export function PostCard({ post, index }: { post: IPost; index: number }) {
           </Flex>
         </Card>
       </Anchor>
-      <Flex pl={5} pr={10} pt={5}>
-        <Avatar
-          size="xs"
-          variant="transparent"
-          style={{ transform: "rotateZ(180deg)" }}
-        >
-          <IconQuoteFilled />
-        </Avatar>
-        <Text size="sm" lineClamp={2} className={classes.excerpt}>
-          {post.excerpt}
-        </Text>
-      </Flex>
+      {!hideExcerpt && (
+        <Flex pl={5} pr={10} pt={5}>
+          <Avatar
+            size="xs"
+            variant="transparent"
+            style={{ transform: "rotateZ(180deg)" }}
+          >
+            <IconQuoteFilled />
+          </Avatar>
+          <Text size="sm" lineClamp={2} className={classes.excerpt}>
+            {post.excerpt}
+          </Text>
+        </Flex>
+      )}
     </Box>
   );
 }

@@ -1,6 +1,7 @@
-import { Container, Grid, Stack, Title, SimpleGrid } from "@mantine/core";
+import { Container, Grid, Stack, Title, Paper, Button, Group, Flex, Anchor, Card } from "@mantine/core";
 import { PostCard, type IPost } from "./BlogList";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
+import { Carousel } from '@mantine/carousel';
 
 interface Props {
   latestPosts: IPost[];
@@ -10,37 +11,53 @@ interface Props {
 export default function BlogSections({ latestPosts, historyPosts }: Props) {
   return (
     <CustomMantineProvider>
-      <Container py="xl" fluid>
-        <Grid gutter="lg">
+      <Container fluid p={0} style={{ marginInline: "initial" }}>
+        <Grid gutter="xl">
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="lg">
-              <Title order={2} size="h2" fw={600}>
-                Latest Posts
-              </Title>
-              <Stack gap="md">
-                {latestPosts.map((post, index) => (
-                  <Stack style={{ width: "100px" }}>
-                  <PostCard key={post.id} post={post} index={index} />
-                  </Stack>
-                ))}
-              </Stack>
-            </Stack>
+            <BlogSection title="Latest Posts" posts={latestPosts} />
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Stack gap="lg">
-              <Title order={2} size="h2" fw={600}>
-                From the Archives
-              </Title>
-              <Stack gap="md">
-                {historyPosts.map((post, index) => (
-                  <PostCard key={post.id} post={post} index={index + 3} />
-                ))}
-              </Stack>
-            </Stack>
+            <BlogSection title="From the Archives" posts={historyPosts} />
           </Grid.Col>
         </Grid>
       </Container>
     </CustomMantineProvider>
   );
+}
+
+function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
+  return (
+    <Card shadow="md" radius="lg" p="xl"  >
+      <Stack gap="md" justify="space-between" style={{ height: "100%" }}>
+        <Flex direction="row" justify={"space-between"}>
+          <Stack justify="space-between">
+            <Title order={2} size="h2" fw={600}>
+              {title}
+            </Title>
+            <Anchor href="/all">
+              <Button size="md" variant="outline">View All</Button>
+            </Anchor>
+          </Stack>
+          <Carousel
+            maw={480}
+            slideSize="70%"
+            height={320}
+            slideGap="sm"
+            controlsOffset="lg"
+            controlSize={40}
+            withControls
+            withIndicators={false}
+            emblaOptions={{ dragFree: true, align: 'start' }}
+          >
+            {posts.map((post, index) => (
+              <Carousel.Slide maw={250} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
+                <PostCard key={post.id} post={post} index={index} hideExcerpt />
+              </Carousel.Slide>
+            ))}
+          </Carousel>
+        </Flex>
+      </Stack>
+    </Card>
+  )
 }
