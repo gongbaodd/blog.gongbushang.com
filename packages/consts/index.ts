@@ -27,6 +27,23 @@ export enum POST_CARD_LAYOUT {
   xl = "xl",
 }
 
+const prefix = "--mantine-color-";
+export const POST_CARD_UNDERLINE_COLORS = [
+  "pink-2",
+  "indigo-2",
+  "yellow-2",
+  "green-4",
+  "orange-2",
+  "teal-2",
+  "violet-2",
+  "cyan-2",
+  "grape-3",
+  "blue-2",
+  "lime-2",
+  "dark-8",
+  "red-3",
+].map(c => `${prefix}${c}`)
+
 
 export const POST_CARD_CLASSNAMES = [
   "liquid_cheese",

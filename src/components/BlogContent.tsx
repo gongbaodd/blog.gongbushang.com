@@ -123,7 +123,7 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
 
                 <Divider />
                 
-                <Image src={cover?.url.src} alt={cover?.alt} />
+                <Image src={cover?.url.src} alt={cover?.alt} radius={"lg"} />
                 <Stack className={"prose lg:prose-xl " + classes.content}>
                   {children}
                 </Stack>

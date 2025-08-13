@@ -1,13 +1,9 @@
 import {
-  AppShell,
   Container,
   Flex,
   Grid,
   Group,
-  MantineProvider,
-  Paper,
   Stack,
-  TextInput,
   Title,
   Text,
   Button,
@@ -16,18 +12,11 @@ import {
   Box,
   Avatar,
   Anchor,
-  Divider,
-  ActionIcon,
   Center,
 } from "@mantine/core";
 import {
   IconBook,
-  IconCalendar,
   IconFolder,
-  IconHeart,
-  IconMessageCircle,
-  IconSearch,
-  IconShare,
   IconTag,
   type ReactNode,
 } from "@tabler/icons-react";
@@ -38,12 +27,12 @@ import {
   FILTER_ENTRY,
   POST_CARD_CLASSNAMES,
   POST_CARD_LAYOUT,
+  POST_CARD_UNDERLINE_COLORS,
 } from "@/packages/consts";
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
-import { createStyles, ThemeProvider } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
   $hasMorePosts,
   $posts,
@@ -76,7 +65,7 @@ export interface IPost {
     cover?: {
       url: {
         src: string;
-      },
+      } | string,
       alt: string;
     },
     [T: string]: any;
@@ -348,6 +337,20 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
     classes[layoutCls]
   ].join(" ")
 
+  const { coverImage } = {
+    get coverImage() {
+      const { cover } = post.data
+      if (cover) {
+        if (typeof cover.url === "string") {
+          return cover.url
+        }
+
+        return cover.url.src
+      }
+      return "";
+    }
+  }
+
   return (
     <Box>
       <Anchor underline="never" href={post.href}>
@@ -358,8 +361,11 @@ function PostCard({ post, index }: { post: IPost; index: number }) {
           radius="md"
           withBorder
           className={className}
+          style={{
+            "--underline-color": `var(${POST_CARD_UNDERLINE_COLORS[index % POST_CARD_UNDERLINE_COLORS.length]})`,
+            "--cover-image": `url(${coverImage})`,
+          }}
         >
-          {post.data.cover ? <div className={classes.cover} style={{ backgroundImage: `url(${post.data.cover?.url.src})` }}></div> : null}
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
             <Title className={classes.title}>
               <span>{title}</span>
