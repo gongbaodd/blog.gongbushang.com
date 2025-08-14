@@ -1,7 +1,7 @@
-import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center, Anchor } from "@mantine/core";
+import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center, Anchor, Flex, Kbd } from "@mantine/core";
 import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks"
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { Suspense, use, useState } from "react";
+import { Suspense, use, useEffect, useState, type ReactNode } from "react";
 import { Calendar, Search as SearchIcon } from "lucide-react";
 import { $postsToIndex, loadPostsToIndex } from "../stores/search";
 import { useStore } from "@nanostores/react";
@@ -9,9 +9,10 @@ import dayjs from "dayjs";
 import excerpt from "excerpt"
 import type { SearchResult } from "minisearch";
 import type { IPost } from "../pages/api/posts/all.json";
+import { Spotlight, spotlight } from "@mantine/spotlight"
 
 export default function Search() {
-  const [searchOpened, { open: openSearch, close: _closeSearch }] = useDisclosure(false);
+  const [_searchOpened, { open: openSearch, close: _closeSearch }] = useDisclosure(false);
   const postsToIndex = useStore($postsToIndex)
   const isLoading = postsToIndex.isLoading
   const [postsPromise, setPostsPromise] = useState<null | Promise<void>>(null)
@@ -40,101 +41,78 @@ export default function Search() {
         onClick={loadPosts}
       >
         {isLoading ? "Loading..." : "Search..."}
-        {!isLoading && <Text span c="dimmed" size="xs" ml="1em">⌘{" "}K</Text>}
+        {!isLoading && <Text span c="dimmed" size="xs" ml="1em"><Kbd>⌘</Kbd>+<Kbd>K</Kbd></Text>}
       </Button>
       {postsPromise && <Suspense>
-        <SearchModal searchOpened={searchOpened} closeSearch={closeSearch} postsPromise={postsPromise} />
+        <SpotlightModal postsPromise={postsPromise} onSpotlightClose={closeSearch} />
       </Suspense>}
     </CustomMantineProvider>
   )
 }
 
-
-function SearchModal({ searchOpened, closeSearch, postsPromise }: { searchOpened: boolean, closeSearch: () => void, postsPromise: Promise<void> }) {
+function SpotlightModal({ postsPromise, onSpotlightClose }: { postsPromise: Promise<void>, onSpotlightClose: () => void }) {
   use(postsPromise)
+  spotlight.open()
+
+  const [query, _setQuery] = useState("")
   const postsToIndex = useStore($postsToIndex)
-  const [posts, setPosts] = useState<(SearchResult & IPost)[]>([])
-  const [query, setQuery] = useState("")
+  const [posts, setPosts] = useState<(SearchResult & IPost | IPost)[]>(postsToIndex.posts.reverse().slice(0, 6))
+
+  const actions: ReactNode[] = posts.map(post => (
+    <Spotlight.Action key={post.id} px={0} onClick={() => location.href = `/${post.category.label}/${post.id}`} closeSpotlightOnTrigger >
+      <Group justify="space-between" align="flex-start" p={"xs"}>
+        <Box>
+          <Text fw={600} size="lg" mb={4}>
+            <Highlight component="span" highlight={query} color="yellow">
+              {post.title}
+            </Highlight>
+          </Text>
+          {query && (
+            <Text c="dimmed" size="sm" mb="xs">
+              <Highlight component="span" highlight={query} color="yellow">
+                {excerpt(post.content, query, 100)}
+              </Highlight>
+            </Text>
+          )}
+
+          <Group gap="xs" mb="xs">
+            {[post.category, post.series!, ...post.tags].filter(Boolean).map(({ label }) => (
+              <Badge key={label} variant="light" size="xs">
+                {label}
+              </Badge>
+            ))}
+          </Group>
+          <Group gap={4}>
+            <Calendar size={14} />
+            <Text size="xs" c="dimmed">
+              {dayjs(post.date).format("YYYY-MM-DD")}
+            </Text>
+          </Group>
+        </Box>
+      </Group>
+    </Spotlight.Action>))
+
   const handleSearch = useDebouncedCallback((query: string) => {
     if (query) {
-       const _posts = (postsToIndex.index?.search(query) ?? []) as (SearchResult & IPost)[]
-       setPosts(_posts)
+      const _posts = (postsToIndex.index?.search(query) ?? []) as (SearchResult & IPost)[]
+      setPosts(_posts)
     }
   }, 500)
 
+  const setQuery = (query: string) => {
+      _setQuery(query)
+      handleSearch(query)
+  }
+
   return (
-      <Modal
-        opened={searchOpened} onClose={closeSearch}
-        size={"lg"}
-        centered
-        overlayProps={{
-          backgroundOpacity: .6,
-          blur: 4
-        }}
-        withCloseButton={false}
-      >
-        <Stack gap="md">
-          <TextInput
-            placeholder="Search Contents..."
-            size="lg"
-            leftSection={<SearchIcon size={20} />}
-            value={query}
-            onChange={(event) => {
-              const value = event.currentTarget.value
-              setQuery(value)
-              handleSearch(value)
-            }}
-            autoFocus
-          />
-
-          <Box style={{ maxHeight: '50vh', overflowY: 'auto', overflowX: "hidden" }}>
-            <Stack gap="xs">
-              {query.length > 0 && posts.length === 0 ? (
-                <Center>
-                  <Text c="dimmed">Sorry, no related files.</Text>
-                </Center>
-              ) : (
-                posts.map((post) => (
-                  <Anchor href={`/${post.category.label}/${post.id}`}>
-                    <Paper key={post.id} p="md" withBorder style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}>
-                      <Group justify="space-between" align="flex-start">
-                        <Box>
-                          <Text fw={600} size="lg" mb={4}>
-                            <Highlight component="span" highlight={post.queryTerms} color="yellow">
-                              {post.title}
-                            </Highlight>
-                          </Text>
-                          <Text c="dimmed" size="sm" mb="xs">
-                            <Highlight component="span" highlight={post.queryTerms} color="yellow">
-                              {excerpt(post.content, post.queryTerms[0], 100)}
-                            </Highlight>
-                          </Text>
-                          <Group gap="xs" mb="xs">
-                            {[post.category, post.series!, ...post.tags].filter(Boolean).map(({ label }) => (
-                              <Badge key={label} variant="light" size="xs">
-                                {label}
-                              </Badge>
-                            ))}
-                          </Group>
-                          <Group gap={4}>
-                            <Calendar size={14} />
-                            <Text size="xs" c="dimmed">
-                              {dayjs(post.date).format("YYYY-MM-DD")}
-                            </Text>
-                          </Group>
-                        </Box>
-                      </Group>
-                    </Paper>
-                  </Anchor>
-                ))
-              )}
-            </Stack>
-          </Box>
-
-          <Text size="xs" c="dimmed" ta="center">
-            Press ESC to close this dialog
-          </Text>
-        </Stack>
-      </Modal>
+    <Spotlight.Root query={query} onQueryChange={setQuery} maxHeight={"50vh"} scrollable onSpotlightClose={onSpotlightClose} style={(query ? { height: "auto" }: undefined)}>
+      <Spotlight.Search placeholder="Search..." leftSection={<SearchIcon />} />
+      <Spotlight.ActionsList>
+        {actions.length > 0 ? actions : <Spotlight.Empty>Nothing found...</Spotlight.Empty>}
+      </Spotlight.ActionsList>
+      <Text size="xs" c="dimmed" ta="center" p={"md"}>
+        Press <Kbd>Esc</Kbd> to close this dialog
+      </Text>
+    </Spotlight.Root>
   )
 }
