@@ -18,7 +18,7 @@ export default function BlogSections({ latestPosts, historyPosts }: Props) {
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <BlogSection title="From the Archives" posts={historyPosts} />
+            <BlogSection title="Time machine" posts={historyPosts} />
           </Grid.Col>
         </Grid>
       </Container>
