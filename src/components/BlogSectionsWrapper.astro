@@ -2,18 +2,59 @@
 import BlogSections from "./BlogSections";
 import dayjs from "dayjs";
 import { getAllPostByDateDesc, initYearPostMap, mapServerPostToClient } from "@/packages/utils/filter";
+import { date } from "@/packages/utils/extract";
 
 const _posts = await getAllPostByDateDesc();
 const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));
-const historyPosts =  await mapServerPostToClient(_posts.slice(5, 10));
 
-const buildDateLabel = dayjs().format("YYYY-MM-DD");
-const randomYear = Math.floor(Math.random() * 10) + 2015;
+const buildMonth = dayjs().format("MM"); // Current month (01, 02, etc.)
+const buildDay = dayjs().format("DD"); // Current day (01, 02, etc.)
 const monthPostMap = initYearPostMap(_posts);
+
+// Find all posts from the same month across different years
+const sameMonthPosts: any[] = [];
+
+for (const [yearMonth, postsSet] of monthPostMap) {
+  const [_year, month] = yearMonth.split("-");
+  
+  // Only include posts from the same month as current build date
+  if (month === buildMonth) {
+    // Add all posts from this year-month to our array
+    sameMonthPosts.push(...Array.from(postsSet));
+  }
+}
+
+// Find posts with dates closest to the current day of the month
+const postsWithDayProximity = sameMonthPosts.map(post => {
+  const postDate = dayjs(date(post));
+  const postDay = postDate.format("DD");
+  const dayDiff = Math.abs(parseInt(postDay) - parseInt(buildDay));
+  
+  return {
+    post,
+    dayDiff,
+    postDay: parseInt(postDay)
+  };
+});
+
+// Sort by day proximity (closest to current day first)
+const sortedByDayProximity = postsWithDayProximity.sort((a, b) => {
+  if (a.dayDiff !== b.dayDiff) {
+    return a.dayDiff - b.dayDiff; // Sort by day difference first
+  }
+  // If day difference is the same, prefer the day that's earlier in the month
+  return a.postDay - b.postDay;
+});
+
+// Take the top 5 posts and extract just the post objects
+const selectedMonthPosts = sortedByDayProximity.slice(0, 5).map(item => item.post);
+
+// Transform the selected month posts to client format
+const historyPosts = await mapServerPostToClient(selectedMonthPosts);
 ---
 
-<BlogSections 
-  latestPosts={latestPosts} 
-  historyPosts={historyPosts} 
+<BlogSections
+  latestPosts={latestPosts}
+  historyPosts={historyPosts}
   client:load
 />

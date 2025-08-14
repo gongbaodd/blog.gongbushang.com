@@ -42,7 +42,7 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
           <Carousel
             maw={600}
             slideSize="70%"
-            height={320}
+            height={450}
             slideGap="sm"
             controlsOffset="lg"
             controlSize={40}
