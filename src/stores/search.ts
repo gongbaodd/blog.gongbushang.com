@@ -1,6 +1,6 @@
 import { map } from "nanostores";
 import miniSearch from "minisearch";
-import type { IPost } from "../pages/api/posts/all.json";
+import type { IPost } from "@/packages/utils/post";
 
 export const $postsToIndex = map<{
     posts: IPost[];
