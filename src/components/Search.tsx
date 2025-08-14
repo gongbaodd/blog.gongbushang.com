@@ -8,7 +8,7 @@ import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import excerpt from "excerpt"
 import type { SearchResult } from "minisearch";
-import type { IPost } from "../pages/api/posts/all.json";
+import type { IPost } from "@/packages/utils/post";
 import { Spotlight, spotlight } from "@mantine/spotlight"
 
 export default function Search() {
@@ -67,13 +67,13 @@ function SpotlightModal({ postsPromise, onSpotlightClose }: { postsPromise: Prom
               {post.title}
             </Highlight>
           </Text>
-          {query && (
+          {"queryTerms" in post && (post as SearchResult)?.queryTerms.map(q => (
             <Text c="dimmed" size="sm" mb="xs">
               <Highlight component="span" highlight={query} color="yellow">
                 {excerpt(post.content, query, 100)}
               </Highlight>
             </Text>
-          )}
+          ))}
 
           <Group gap="xs" mb="xs">
             {[post.category, post.series!, ...post.tags].filter(Boolean).map(({ label }) => (

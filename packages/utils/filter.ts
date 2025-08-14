@@ -2,6 +2,7 @@ import { getCollection, type CollectionEntry } from "astro:content"
 import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
+import dayjs from "dayjs"
 
 type T_POST = CollectionEntry<"blog">
 
@@ -10,6 +11,11 @@ const STATIC_ENTRIES = [
   FILTER_ENTRY.TAG,
   FILTER_ENTRY.SERIES,
 ]
+
+export async function getAllPostByDateDesc() {
+  const posts = await getCollection("blog")
+  return sortPostsByDate(posts)
+}
 
 export const getAllFilterEntries = async () => {
   const posts = await getCollection("blog")
@@ -131,7 +137,6 @@ export const getFilterBySeriesPage = async () => {
 
   return seriesResult
 }
-
 export const isValidSeriesFilter = async (filter: string) => {
   const posts = await getCollection("blog")
   const tagPostMap = initSeriesPostMap(posts)
@@ -194,7 +199,7 @@ export function page(filterFn: typeof getFilterByCategoryPage | typeof getFilter
   }
 }
 
-function createPostMap(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => string[]) {
+export function createPostMap(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => string[]) {
   const items = new Map<string, Set<T_POST>>()
 
   for (const post of posts) {
@@ -210,10 +215,40 @@ function createPostMap(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POST) => s
   return items
 }
 
-function sortPostsByDate(posts: T_POST[]) {
-  return posts.toSorted((p1, p2) => {
-    const d1 = new Date(date(p1))
-    const d2 = new Date(date(p2))
-    return d1 > d2 ? -1 : 1
+export function sortPostsByDate(posts: T_POST[]) {
+  const memSort = memoize((posts: T_POST[]) => {
+    return posts.toSorted((p1, p2) => {
+      const d1 = new Date(date(p1))
+      const d2 = new Date(date(p2))
+      return d1 > d2 ? -1 : 1
+    })
   })
+
+  return memSort(posts)
+}
+
+
+
+let monthPostMap = new Map<string, Set<T_POST>>()
+export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
+  const init = memoize(() => {
+    monthPostMap = createPostMap(posts, (p) =>
+      [dayjs(date(p)).format("YYYY-MM")]
+    )
+    return monthPostMap
+  }, { getCacheKey: () => Array.from(posts).length })
+  return init()
+}
+
+export const getFilterByMonthPage = async () => {
+  const posts = await getCollection("blog")
+  const seriesPostMap = initYearPostMap(posts)
+  const seriesResult = Array.from(seriesPostMap, ([filter, postsSet]) => ({
+    params: {
+      filter,
+    },
+    props: { posts: sortPostsByDate(Array.from(postsSet)) },
+  }))
+
+  return seriesResult
 }

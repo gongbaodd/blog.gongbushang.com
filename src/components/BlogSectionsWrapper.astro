@@ -1,33 +1,15 @@
 ---
-import { getCollection } from "astro:content";
-import { date as dateFrom, excerpt as excertpFrom, title as titleFrom } from "@/packages/utils/extract";
-import type { IPost } from "./BlogList";
 import BlogSections from "./BlogSections";
+import dayjs from "dayjs";
+import { getAllPostByDateDesc, initYearPostMap, mapServerPostToClient } from "@/packages/utils/filter";
 
-// Get all blog posts
-const _posts = await getCollection("blog");
+const _posts = await getAllPostByDateDesc();
+const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));
+const historyPosts =  await mapServerPostToClient(_posts.slice(5, 10));
 
-// Transform posts to match IPost interface
-const allPosts: IPost[] = await Promise.all(
-  _posts.map(async (post) => ({
-    id: post.id,
-    href: `/${post.data.category}/${post.id}`,
-    title: await titleFrom(post),
-    date: dateFrom(post),
-    data: {
-      category: post.data.category,
-      tag: post.data.tag,
-      cover: post.data.cover,
-    },
-    excerpt: await excertpFrom(post),
-  }))
-);
-
-const sortedPosts = allPosts.sort((a, b) => b.date.getTime() - a.date.getTime());
-
-const latestPosts = sortedPosts.slice(0, 5);
-
-const historyPosts = sortedPosts.slice(5, 10);
+const buildDateLabel = dayjs().format("YYYY-MM-DD");
+const randomYear = Math.floor(Math.random() * 10) + 2015;
+const monthPostMap = initYearPostMap(_posts);
 ---
 
 <BlogSections 
