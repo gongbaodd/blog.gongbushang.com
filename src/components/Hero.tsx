@@ -1,9 +1,7 @@
 import {
   Avatar,
   Box,
-  Container,
   Group,
-  MantineProvider,
   Stack,
   Title,
   Text,
@@ -31,7 +29,7 @@ export default function Hero({ picture }: IProps) {
                 You found my secret garden!
               </Title>
               <Text size="lg" c="dimmed">
-                Talk about every thing here.
+                Sorry, making a little rebuilding, many functions are not available yet.
               </Text>
               <Group>
                 <Button>订阅更新</Button>
