@@ -4,14 +4,14 @@ import {
   Button,
   Group,
   MantineProvider,
+  Spoiler,
   Stack,
   Title,
 } from "@mantine/core";
 import classes from "./Tags.module.css";
 import {
-  useDeferredValue,
+  useRef,
   useState,
-  useTransition,
   type ReactNode,
 } from "react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
@@ -21,29 +21,36 @@ interface ITagsProps {
 }
 
 export default function Tags({ tagGroup }: ITagsProps) {
-  const [isAll, setIsAll] = useState(false);
+  const [expanded, setExpanded] = useState(false)
+
+  const ToggleButton = () => {
+    return (
+      <Stack>
+        <Group align="center" justify="center" className={classes.button}>
+          <Button variant="default" onClick={() => setExpanded(!expanded)}>
+            Show{expanded ? " Less" : " More"}
+          </Button>
+        </Group>
+      </Stack>
+    )
+  }
 
   return (
     <CustomMantineProvider>
       <Stack
         gap="xl"
-        className={classes.area + " " + (isAll ? classes.all : classes.less)}
+         className={classes.area + " " + (expanded ? classes.all : classes.less)}
       >
         <Stack gap="md">
           <Title order={3}># Topics</Title>
-          {tagGroup}
-        </Stack>
-        <Stack>
-          <Group align="center" justify="center" className={classes.button}>
-            <Button
-              variant="default"
-              onClick={() => {
-                setIsAll(!isAll);
-              }}
-            >
-              Show{isAll ? " Less" : " More"}
-            </Button>
-          </Group>
+          <Spoiler
+            showLabel={""}
+            hideLabel={""}
+            expanded={expanded}
+          >
+            {tagGroup}
+          </Spoiler>
+          <ToggleButton />
         </Stack>
       </Stack>
     </CustomMantineProvider>
