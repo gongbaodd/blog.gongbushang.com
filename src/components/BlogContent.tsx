@@ -28,6 +28,7 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "./BlogContent.module.css"
 import dayjs from "dayjs"
 import type { MarkdownHeading } from "astro";
+import { isString } from "es-toolkit";
 
 interface ILink {
   label: string;
@@ -51,6 +52,8 @@ interface IProps {
 const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, headings, cover }) => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+
+  const coverUrl = isString(cover?.url) ? cover.url: cover?.url.src;
 
   return (
     <CustomMantineProvider>
@@ -121,9 +124,8 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
                   </Group>
                 </Group>
 
-                <Divider />
-                
-                <Image src={cover?.url.src} alt={cover?.alt} radius={"lg"} />
+                <Divider />                
+                {coverUrl && <Image src={coverUrl} alt={cover?.alt} radius={"lg"} />}
                 <Stack className={"prose lg:prose-xl " + classes.content}>
                   {children}
                 </Stack>
