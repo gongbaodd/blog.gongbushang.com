@@ -40,6 +40,8 @@ import {
   requestPosts,
 } from "../stores/posts";
 import { useStore } from "@nanostores/react";
+import dayjs from "dayjs";
+import { Calendar } from "lucide-react";
 
 interface Props {
   posts: IPost[];
@@ -369,6 +371,19 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
           }}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
+
+            <Badge
+              color="gray"
+              variant="default"
+              size="sm"
+              className={classes.category}
+            >
+              <Group gap={6}>
+                <Calendar size={12} />
+                <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
+              </Group>
+            </Badge>
+
             <Title className={classes.title}>
               <span>{title}</span>
             </Title>
@@ -389,10 +404,10 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
                 {post.data.tag?.map((tag) => (
                   <Badge
                     key={tag}
-                    className={classes.tag}
                     color="gray"
-                    variant="transparent"
+                    variant="default"
                     size="xs"
+                    className={classes.category}
                   >
                     #{tag}
                   </Badge>

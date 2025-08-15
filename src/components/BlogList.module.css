@@ -19,7 +19,7 @@
     box-decoration-break: clone;
     background-repeat: no-repeat;
     background-image:
-        linear-gradient(180deg, var(--underline-color), var(--underline-color));
+        linear-gradient(0deg, var(--underline-color), var(--underline-color));
     background-position-x: 0, 100%;
     background-position-y: calc(100% - var(--underline-offset-y) * -1);
     background-size:
@@ -35,11 +35,6 @@
 
 .item .category {
     opacity: .7;
-}
-
-.item .tag {
-    opacity: .7;
-    text-shadow: 2 1 var(--mantine-color-dark-9);
 }
 
 .item .title {
@@ -147,6 +142,10 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpolygon fill='%23000' fill-opacity='.1' points='120 0 120 60 90 30 60 0 0 0 0 0 60 60 0 120 60 120 90 90 120 60 120 0'/%3E%3C/svg%3E");
 }
 
+.item.zig_zag .title {
+    mix-blend-mode: color-burn;
+}
+
 .item.repeating_chevrons {
     background-color: #ddffaa;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cpolygon fill='%23AE9' points='120 120 60 120 90 90 120 60 120 0 120 0 60 60 0 0 0 60 30 90 60 120 120 120 '/%3E%3C/svg%3E");
@@ -166,6 +165,10 @@
 .item.diamond_sunset {
     background-color: #ffffff;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' %3E%3Cdefs%3E%3ClinearGradient id='a' x1='0' x2='0' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%2380F'/%3E%3Cstop offset='1' stop-color='%23f40'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpattern id='b' width='24' height='24' patternUnits='userSpaceOnUse'%3E%3Ccircle fill='%23ffffff' cx='12' cy='12' r='12'/%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3Crect width='100%25' height='100%25' fill='url(%23b)' fill-opacity='0.04'/%3E%3C/svg%3E");
+}
+
+.item.diamond_sunset .title {
+    mix-blend-mode: color-burn;
 }
 
 
