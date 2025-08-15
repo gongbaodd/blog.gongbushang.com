@@ -8,6 +8,7 @@
   --underline-offset-y: -4px;
   background-image: var(--cover-image);
   background-size: cover;
+  background-position: center;
 }
 
 .item.with_bg .title {
@@ -37,8 +38,8 @@
 }
 
 .item .tag {
-    mix-blend-mode: difference;
     opacity: .7;
+    text-shadow: 2 1 var(--mantine-color-dark-9);
 }
 
 .item .title {

@@ -7,24 +7,23 @@ import { date } from "@/packages/utils/extract";
 const _posts = await getAllPostByDateDesc();
 const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));
 
-const buildMonth = dayjs().format("MM"); // Current month (01, 02, etc.)
-const buildDay = dayjs().format("DD"); // Current day (01, 02, etc.)
+const buildYear = dayjs().format("YYYY");
+const buildMonth = dayjs().format("MM");
+const buildDay = dayjs().format("DD");
 const monthPostMap = initYearPostMap(_posts);
 
-// Find all posts from the same month across different years
 const sameMonthPosts: any[] = [];
 
 for (const [yearMonth, postsSet] of monthPostMap) {
   const [_year, month] = yearMonth.split("-");
+
+  if (_year === buildYear) continue;
   
-  // Only include posts from the same month as current build date
   if (month === buildMonth) {
-    // Add all posts from this year-month to our array
     sameMonthPosts.push(...Array.from(postsSet));
   }
 }
 
-// Find posts with dates closest to the current day of the month
 const postsWithDayProximity = sameMonthPosts.map(post => {
   const postDate = dayjs(date(post));
   const postDay = postDate.format("DD");
@@ -37,19 +36,15 @@ const postsWithDayProximity = sameMonthPosts.map(post => {
   };
 });
 
-// Sort by day proximity (closest to current day first)
 const sortedByDayProximity = postsWithDayProximity.sort((a, b) => {
   if (a.dayDiff !== b.dayDiff) {
-    return a.dayDiff - b.dayDiff; // Sort by day difference first
+    return a.dayDiff - b.dayDiff; 
   }
-  // If day difference is the same, prefer the day that's earlier in the month
   return a.postDay - b.postDay;
 });
 
-// Take the top 5 posts and extract just the post objects
 const selectedMonthPosts = sortedByDayProximity.slice(0, 5).map(item => item.post);
 
-// Transform the selected month posts to client format
 const historyPosts = await mapServerPostToClient(selectedMonthPosts);
 ---
 
