@@ -235,7 +235,7 @@
 
 .item.cornered_staires .title {
     color: var(--mantine-color-dark-6);
-    mix-blend-mode: color-burn;
+    text-shadow: 1px 1px var(--mantine-color-gray-0);
 }
 
 .item.slanted_gradient {
