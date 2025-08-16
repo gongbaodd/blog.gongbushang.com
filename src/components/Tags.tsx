@@ -10,7 +10,6 @@ import {
 } from "@mantine/core";
 import classes from "./Tags.module.css";
 import {
-  useRef,
   useState,
   type ReactNode,
 } from "react";

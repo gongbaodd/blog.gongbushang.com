@@ -15,12 +15,6 @@ import {
   Center,
   type MantineStyleProp,
 } from "@mantine/core";
-import {
-  IconBook,
-  IconFolder,
-  IconTag,
-  type ReactNode,
-} from "@tabler/icons-react";
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
@@ -33,7 +27,7 @@ import {
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   $hasMorePosts,
   $posts,
@@ -43,6 +37,7 @@ import {
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import { Calendar } from "lucide-react";
+import type { TLink } from "@/packages/utils/extract";
 
 interface Props {
   posts: IPost[];
@@ -91,14 +86,14 @@ export default function BlogList({
     <CustomMantineProvider>
       <Container fluid style={{ marginInline: "initial" }}>
         <Grid gutter="lg">
-          <Grid.Col span={{ base: 12, md: 1 }}>
+          <Grid.Col span={{ base: 12, md: 1.5 }}>
             <Stack gap="lg">
               <Fragment key={"category"}>{menuCategory}</Fragment>
               <Fragment key={"series"}>{menuSeries}</Fragment>
               <Fragment key={"tag"}>{menuTag}</Fragment>
             </Stack>
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 11 }}>
+          <Grid.Col span={{ base: 12, md: 10.5 }}>
             <Stack>
               <Fragment key={"xs"}>{blogGridxs}</Fragment>
               <Fragment key={"sm"}>{blogGridsm}</Fragment>
@@ -112,27 +107,6 @@ export default function BlogList({
       </Container>
     </CustomMantineProvider>
   );
-}
-
-interface IStoreProps {
-  posts: IPost[];
-  filter: string;
-  entryType?: FILTER_ENTRY;
-  totalCount: number;
-}
-
-export function BlogListNanoStore({
-  posts,
-  filter,
-  entryType,
-  totalCount,
-}: IStoreProps) {
-  useEffect(() => {
-    $posts.set(posts);
-    $postsListParams.set({ filter, entryType, page: 0, totalCount });
-  }, []);
-
-  return <></>;
 }
 
 const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
@@ -225,97 +199,6 @@ export function BlogGridSSR({ size, posts }: { size: T_SIZE, posts: IPost[] }) {
           <PostCard key={post.id} post={post} index={i} />
         ))}
       </Masonry>
-    </CustomMantineProvider>
-  );
-}
-
-type TLink = { label: string; href: string };
-
-export function MenuCategory({ categories }: { categories: TLink[] }) {
-  return (
-    <CustomMantineProvider>
-      <Stack gap="sm">
-        <Group>
-          <IconFolder size={20} />
-          <Text fw={600} size="lg">
-            Category
-          </Text>
-        </Group>
-        <Stack gap="xs">
-          {categories.map(({ label, href }) => (
-            <Anchor href={href} key={label}>
-              <Button
-                variant={"default"}
-                color="blue"
-                justify="flex-start"
-                fullWidth
-                size="sm"
-              >
-                {label}
-              </Button>
-            </Anchor>
-          ))}
-        </Stack>
-      </Stack>
-    </CustomMantineProvider>
-  );
-}
-
-export function MenuSeries({ series }: { series: TLink[] }) {
-  return (
-    <CustomMantineProvider>
-      <Stack gap="sm">
-        <Group>
-          <IconBook size={20} />
-          <Text fw={600} size="lg">
-            Series
-          </Text>
-        </Group>
-        <Stack gap="xs">
-          {series.map(({ label, href }) => (
-            <Anchor href={href} key={label}>
-              <Button
-                variant={"default"}
-                color="blue"
-                justify="flex-start"
-                fullWidth
-                size="sm"
-              >
-                {label}
-              </Button>
-            </Anchor>
-          ))}
-        </Stack>
-      </Stack>
-    </CustomMantineProvider>
-  );
-}
-
-export function MenuTag({ tags }: { tags: TLink[] }) {
-  return (
-    <CustomMantineProvider>
-      <Stack gap="sm">
-        <Group>
-          <IconTag size={20} />
-          <Text fw={600} size="lg">
-            Tags
-          </Text>
-        </Group>
-        <Group gap="xs">
-          {tags.map(({ label, href }) => (
-            <Anchor href={href} key={label}>
-              <Badge
-                variant={"outline"}
-                color="green"
-                style={{ cursor: "pointer" }}
-                size="sm"
-              >
-                {label}
-              </Badge>
-            </Anchor>
-          ))}
-        </Group>
-      </Stack>
     </CustomMantineProvider>
   );
 }

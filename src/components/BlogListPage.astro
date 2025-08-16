@@ -10,10 +10,6 @@ import MantineMain from "./MantineMain";
 import BlogList, {
   BlogGrid,
   BlogGridSSR,
-  BlogListNanoStore,
-  MenuCategory,
-  MenuSeries,
-  MenuTag,
 } from "./BlogList";
 import Footer from "@/packages/components/Footer.astro";
 import {
@@ -24,6 +20,10 @@ import {
 import type { CollectionEntry } from "astro:content";
 import { mapServerPostToClient } from "@/packages/utils/filter";
 import Header from "@/packages/components/Header.astro";
+import { MenuCategory, MenuSeries, MenuTag } from "./BlogListMenu";
+import { $posts } from "../stores/posts";
+import { BlogListNanoStore } from "./BlogListStore";
+import { $category } from "../stores/links";
 
 type T_POST = CollectionEntry<"blog">;
 interface Props {
@@ -47,6 +47,9 @@ const [categories, series, tags] = await Promise.all([
   getSeriesFrom(limitedPosts),
   getTagsFrom(limitedPosts),
 ]);
+
+$posts.set(posts)
+$category.set(categories)
 ---
 
 <Global>
@@ -57,6 +60,9 @@ const [categories, series, tags] = await Promise.all([
   />
   <BlogListNanoStore
     posts={posts}
+    tags={tags}
+    series={series}
+    categories={categories}
     filter={filter}
     entryType={entryType}
     totalCount={totalCount}
@@ -65,9 +71,9 @@ const [categories, series, tags] = await Promise.all([
   <Header/>
   <MantineMain>
     <BlogList posts={posts}>
-      <MenuCategory slot="menuCategory" categories={categories} />
-      <MenuSeries slot="menuSeries" series={series} />
-      <MenuTag slot="menuTag" tags={tags} />
+      <MenuCategory slot="menuCategory" client:load />
+      <MenuSeries slot="menuSeries" client:load />
+      <MenuTag slot="menuTag" client:load />
       <BlogGridSSR slot="blogGridxs" posts={posts} size="xs" />
       <BlogGridSSR slot="blogGridsm" posts={posts} size="sm" />
       <BlogGridSSR slot="blogGridmd" posts={posts} size="md" />
