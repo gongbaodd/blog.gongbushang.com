@@ -42,7 +42,7 @@ export const getAllFilterEntries = async () => {
 }
 
 let categoryPostMap = new Map<string, Set<T_POST>>()
-function initCategoryPostMap(posts: Set<T_POST> | T_POST[]) {
+export function initCategoryPostMap(posts: Set<T_POST> | T_POST[]) {
   const init = memoize(() => {
     categoryPostMap = createPostMap(posts, (p) => [p.data.category])
     return categoryPostMap
@@ -84,7 +84,7 @@ export const isValidCategoryFilter = async (filter: string) => {
 }
 
 let tagPostMap = new Map<string, Set<T_POST>>()
-function initTagPostMap(posts: Set<T_POST> | T_POST[]) {
+export function initTagPostMap(posts: Set<T_POST> | T_POST[]) {
   const init = memoize(() => {
     tagPostMap = createPostMap(posts, (p) => (p.data.tag ?? []).map((t: string) => t.toLowerCase()))
     return tagPostMap
@@ -115,7 +115,7 @@ export const isValidTagFilter = async (filter: string) => {
 
 
 let seriesPostMap = new Map<string, Set<T_POST>>()
-function initSeriesPostMap(posts: Set<T_POST> | T_POST[]) {
+export function initSeriesPostMap(posts: Set<T_POST> | T_POST[]) {
   const init = memoize(() => {
     seriesPostMap = createPostMap(posts, (p) =>
       p.data.series?.slug ? [p.data.series.slug] : []
