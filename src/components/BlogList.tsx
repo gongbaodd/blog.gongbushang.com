@@ -13,6 +13,7 @@ import {
   Avatar,
   Anchor,
   Center,
+  type MantineStyleProp,
 } from "@mantine/core";
 import {
   IconBook,
@@ -32,7 +33,7 @@ import {
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
 import wordcount from "word-count";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   $hasMorePosts,
   $posts,
@@ -136,9 +137,9 @@ export function BlogListNanoStore({
 
 const COLUMNS_STYLE = { xs: 1, sm: 2, md: 3, lg: 4, xl: 5 };
 const COLUMNS_SSR_HEIGHT = {
-  xl: 2000,
-  lg: 2000,
-  md: 2500,
+  xl: 3500,
+  lg: 3500,
+  md: 3500,
   sm: 3500,
   xs: undefined,
 };
@@ -355,6 +356,15 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
     }
   }
 
+  const [style, setStyle] = useState<MantineStyleProp>({})
+
+  useEffect(() => {
+    setStyle({
+      "--underline-color": `var(${POST_CARD_UNDERLINE_COLORS[index % POST_CARD_UNDERLINE_COLORS.length]})`,
+      "--cover-image": `url(${coverImage})`,
+    })
+  }, [coverImage])
+
   return (
     <Box>
       <Anchor underline="never" href={post.href}>
@@ -365,10 +375,7 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
           radius="md"
           withBorder
           className={className}
-          style={{
-            "--underline-color": `var(${POST_CARD_UNDERLINE_COLORS[index % POST_CARD_UNDERLINE_COLORS.length]})`,
-            "--cover-image": `url(${coverImage})`,
-          }}
+          style={style}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
 
