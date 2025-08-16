@@ -28,7 +28,7 @@ const entry = await getEntry("blog", post.id)
 if (!entry) {
   return Astro.redirect("/404")
 }
-const { Content } = await render(entry)
+const { Content, remarkPluginFrontmatter } = await render(entry)
 ---
 
 <BlogPost {...post}>

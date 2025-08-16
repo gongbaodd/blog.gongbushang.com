@@ -1,4 +1,3 @@
-import { getCollection, type CollectionEntry } from "astro:content"
 import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"

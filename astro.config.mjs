@@ -10,6 +10,7 @@ import rehypeExternalLinks from "rehype-external-links";
 
 import {bundledLanguages } from "shiki"
 import plantumlGrammar from "shiki-plantuml"
+import extractColor from "./plugins/extract-color.mjs"
 
 import vercel from '@astrojs/vercel';
 
@@ -24,7 +25,7 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkMath],
+    remarkPlugins: [remarkMath, extractColor],
     rehypePlugins: [
       [rehypeKatex, { strict: false }],
       [

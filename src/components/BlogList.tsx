@@ -149,7 +149,7 @@ export function BlogGrid() {
         sequential
       >
         {posts.map((post, i) => (
-          <PostCard key={post.id} post={post} index={i} />
+          <PostCard key={post.id} post={post}/>
         ))}
       </Masonry>
       {$hasMorePosts.get() && (
@@ -194,17 +194,17 @@ export function BlogGridSSR({ size, posts }: { size: T_SIZE, posts: IPost[] }) {
         sx={{ display: displays }}
         className={classes.masonrySSR}
       >
-        {posts.map((post, i) => (
-          <PostCard key={post.id} post={post} index={i} />
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} />
         ))}
       </Masonry>
     </CustomMantineProvider>
   );
 }
 
-interface ICardProp { post: IPost; index: number, hideExcerpt?: boolean }
+interface ICardProp { post: IPost; hideExcerpt?: boolean }
 
-export function PostCard({ post, index, hideExcerpt }: ICardProp) {
+export function PostCard({ post, hideExcerpt }: ICardProp) {
   const title = post.title;
 
   const { layoutCls } = {
