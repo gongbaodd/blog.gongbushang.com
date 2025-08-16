@@ -2,11 +2,13 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, type TLink } from "@/packages/utils/extract";
 import { isString, memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
-import { POST_CARD_CLASSNAMES } from "../consts";
+import { POST_CARD_CLASSNAMES, TITLE_COLOR_MAP } from "../consts";
 import { Vibrant } from "node-vibrant/node";
 import sharp from "sharp"
 import fs from "fs"
 import path from "path"
+import chroma from "chroma-js"
+import { name } from "../shiki-plantuml/dist";
 
 export interface IPost {
     id: string;
@@ -100,19 +102,30 @@ async function getColorSet(imagePathOrUrl: string) {
     const palette = await vibrantBuilder.getPalette()
     return {
         get bgColor() {
-            const rgb = palette.Muted?.rgb
-            if (rgb) {
-                return `rgb(${rgb.join(",")})`
+            const hex = palette.Muted?.hex
+            if (hex) {
+                return hex
             }
             return ""
         },
 
         get titleColor() {
-            const rgb = palette.Vibrant?.rgb
-            if (rgb) {
-                return `rgb(${rgb.join(",")})`
+            const hex = palette.Vibrant?.hex
+            if (hex) {
+                return findNearestTitleColor(hex)
             }
             return ""
         }
     }
+}
+
+function findNearestTitleColor(color: string) {
+    let distance = Infinity
+    let nearestColor = ""
+    for(const [name, value] of Object.entries(TITLE_COLOR_MAP)) {
+        const dis = chroma.deltaE(color, value)
+        distance = distance < dis ? distance: dis
+        if (distance === dis) nearestColor = name
+    }
+    return nearestColor
 }

@@ -242,7 +242,6 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
 
   useEffect(() => {
     setStyle({
-      "--underline-color": `var(${POST_CARD_UNDERLINE_COLORS[index % POST_CARD_UNDERLINE_COLORS.length]})`,
       "--cover-image": `url(${coverImage})`,
     })
   }, [coverImage])
@@ -257,7 +256,11 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
           radius="md"
           withBorder
           className={className}
-          style={style}
+          style={{
+            backgroundColor: post.data.bgColor,
+            "--underline-color": `var(${post.data.titleColor})`,
+            ...style
+          }}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
             <Badge

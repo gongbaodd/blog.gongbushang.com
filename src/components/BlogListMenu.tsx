@@ -40,7 +40,7 @@ function Menu({ title, children, loadFunc }: IMenuProps) {
                     {children}
                 </Spoiler>
                 <Button c="gray" variant="transparent" style={{ alignSelf: "flex-start" }} p={0} onClick={load}>
-                    {loading ? <Loader /> : expanded ? <ChevronUp /> : <ChevronDown />}
+                    {loading ? <Loader size="xs" /> : expanded ? <ChevronUp /> : <ChevronDown />}
                 </Button>
             </Stack>
         </CustomMantineProvider>
