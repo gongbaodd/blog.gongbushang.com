@@ -1,7 +1,6 @@
 ---
-import { getCollection, getEntry, render } from "astro:content"
+import { getCollection, getEntry, render, type CollectionEntry } from "astro:content"
 import BlogPost from "@/packages/layouts/BlogPost.astro"
-import type { T_EXT_POST } from "@/packages/utils/post";
 
 export const prerender = true;
 export async function getStaticPaths() {
@@ -21,14 +20,14 @@ export async function getStaticPaths() {
     }
   })
 }
-type Props = T_EXT_POST
+type Props = CollectionEntry<"blog">
 
 const post = Astro.props
 const entry = await getEntry("blog", post.id)
 if (!entry) {
   return Astro.redirect("/404")
 }
-const { Content, remarkPluginFrontmatter } = await render(entry)
+const { Content } = await render(entry)
 ---
 
 <BlogPost {...post}>

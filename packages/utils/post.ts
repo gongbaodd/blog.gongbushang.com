@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, type TLink } from "@/packages/utils/extract";
+import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { isString, memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
 import { POST_CARD_CLASSNAMES, TITLE_COLOR_MAP } from "../consts";
@@ -25,8 +25,14 @@ export interface IPost {
 }
 
 type T_PROPS = CollectionEntry<"blog">
+type T_EXT = {
+    bgClass: string;
+    bgColor: string;
+    titleColor: string;
+}
+type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
 
-export async function mapServerPostToJSON(post: T_EXT_POST) {
+export async function mapServerPostToJSON(post: T_PROPS) {
     return {
         id: post.id,
         href: `/${post.data.category}/${post.id}`,
@@ -39,27 +45,39 @@ export async function mapServerPostToJSON(post: T_EXT_POST) {
     } as IPost
 }
 
+export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
+
+export async function mapServerPostToClient(posts: T_PROPS[]) {
+  return await Promise.all(
+      posts.map(async (post, i) => {
+          const clientPost = await colorizePost(post, i)
+          return ({
+              id: clientPost.id,
+              href: `/${post.data.category}/${post.id}`,
+              title: await titleFrom(post),
+              date: dateFrom(post),
+              data: clientPost.data,
+              excerpt: await excerptFrom(post),
+          })
+      })
+  );
+}
+
+
 let posts: IPost[]
 
-export async function getAllClientPosts() {
+export async function getAllClientPostsForSearch() {
     const _posts = await getAllPosts()
-    const memMap = memoize(() => _posts.map(async (post) => mapServerPostToJSON(post)), { getCacheKey: () => _posts.length.toString() })
+    const memMap = memoize(() => {
+        const ps = _posts.map(async (post) => mapServerPostToJSON(post))
+        return ps
+    }, { getCacheKey: () => _posts.length.toString() })
     posts = await Promise.all(memMap())
     return posts
 }
-
-export type T_EXT = {
-    bgClass: string;
-    bgColor: string;
-    titleColor: string;
-}
-export type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
-
 export async function getAllPosts() {
     const posts = await getCollection("blog")
-    const memExt = memoize(async () => await Promise.all(posts.map(colorizePost)), { getCacheKey: () => posts.length })
-
-    return await memExt()
+    return posts
 }
 
 async function colorizePost(post: T_PROPS, index: number): Promise<T_EXT_POST> {
@@ -71,10 +89,7 @@ async function colorizePost(post: T_PROPS, index: number): Promise<T_EXT_POST> {
 
     const { url } = post.data.cover;
 
-    const { bgColor, titleColor } =  {
-        bgColor: "",
-        titleColor: ""
-    };// await getColorSet(isString(url) ? url : url.src.replace(/^\/@fs\/|(\?.*)$/g, ""))
+    const { bgColor, titleColor } =  await getColorSet(isString(url) ? url : url.src.replace(/^\/@fs\/|(\?.*)$/g, ""))
 
     return {
         get result() {

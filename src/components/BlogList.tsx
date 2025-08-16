@@ -37,7 +37,7 @@ import {
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import { Calendar } from "lucide-react";
-import type { T_EXT } from "@/packages/utils/post";
+import type { TClientPost } from "@/packages/utils/post";
 
 interface Props {
   posts: IPost[];
@@ -52,22 +52,7 @@ interface Props {
   blogGridxl?: ReactNode;
 }
 
-export interface IPost {
-  id: string;
-  href: string;
-  title: string;
-  date: Date;
-  data: {
-    category: string;
-    tag?: string[];
-    cover?: {
-      url: {
-        src: string;
-      } | string,
-      alt: string;
-    },
-  } & T_EXT;
-  excerpt: string;
+export interface IPost extends TClientPost {
 }
 
 export default function BlogList({
@@ -292,7 +277,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
               </Group>
 
               <Group gap="xs" flex={0} miw="5em">
-                {post.data.tag?.map((tag) => (
+                { post.data.tag?.map((tag: string) => (
                   <Badge
                     key={tag}
                     color="gray"

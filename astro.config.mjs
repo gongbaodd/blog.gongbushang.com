@@ -25,7 +25,7 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkMath, extractColor],
+    remarkPlugins: [remarkMath],
     rehypePlugins: [
       [rehypeKatex, { strict: false }],
       [

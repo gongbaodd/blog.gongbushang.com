@@ -2,9 +2,10 @@ import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
-import { getAllPosts, type T_EXT_POST } from "./post"
+import { getAllPosts } from "./post"
+import type { CollectionEntry } from "astro:content"
 
-type T_POST = T_EXT_POST
+type T_POST = CollectionEntry<"blog">;
 
 const STATIC_ENTRIES = [
   FILTER_ENTRY.ALL,
@@ -143,19 +144,6 @@ export const isValidSeriesFilter = async (filter: string) => {
   const tagEntries = Array.from(tagPostMap, ([filter]) => filter)
 
   return tagEntries.some(v => filter === v)
-}
-
-export async function mapServerPostToClient(posts: T_POST[]) {
-  return await Promise.all(
-    posts.map(async (post) => ({
-      id: post.id,
-      href: `/${post.data.category}/${post.id}`,
-      title: await title(post),
-      date: date(post),
-      data: post.data,
-      excerpt: await excerpt(post),
-    }))
-  );
 }
 
 export async function isValidFilter(filter: string) {

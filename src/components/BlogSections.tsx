@@ -55,7 +55,7 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
           >
             {posts.map((post, index) => (
               <Carousel.Slide maw={250} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
-                <PostCard key={post.id} post={post} index={index} hideExcerpt />
+                <PostCard key={post.id} post={post} hideExcerpt />
               </Carousel.Slide>
             ))}
           </Carousel>

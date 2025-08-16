@@ -1,4 +1,5 @@
-import { getFilterByCategoryPage, page, mapServerPostToClient } from "@/packages/utils/filter";
+import { getFilterByCategoryPage, page } from "@/packages/utils/filter";
+import { mapServerPostToClient } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 
 export const prerender = true;

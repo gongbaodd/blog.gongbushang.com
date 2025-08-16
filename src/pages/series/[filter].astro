@@ -1,9 +1,8 @@
 ---
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from '@/packages/consts';
-import { getFilterBySeriesPage, isValidSeriesFilter, mapServerPostToClient } from '@/packages/utils/filter';
+import { getFilterBySeriesPage, isValidSeriesFilter } from '@/packages/utils/filter';
 import BlogListPage from '@/src/components/BlogListPage.astro';
 import NotFound from "../404.astro";
-
 
 export const prerender = true;
 export const getStaticPaths = getFilterBySeriesPage;
