@@ -10,8 +10,9 @@ import BlogContent from "@/src/components/BlogContent";
 import { getReadingTime } from "../utils/readingTime";
 import { render } from "astro:content";
 import Header from "../components/Header.astro";
+import type { T_EXT_POST } from "../utils/post";
 
-type Props = CollectionEntry<"blog">;
+type Props = T_EXT_POST
 const post = Astro.props;
 
 const entry = await getEntry("blog", post.id)

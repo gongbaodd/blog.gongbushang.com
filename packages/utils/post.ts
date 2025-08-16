@@ -5,10 +5,10 @@ import { set } from 'es-toolkit/compat';
 import { POST_CARD_CLASSNAMES, TITLE_COLOR_MAP } from "../consts";
 import { Vibrant } from "node-vibrant/node";
 import sharp from "sharp"
-import fs from "fs"
-import path from "path"
 import chroma from "chroma-js"
-import { name } from "../shiki-plantuml/dist";
+import fs from "node:fs"
+import path, { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export interface IPost {
     id: string;
@@ -86,17 +86,25 @@ async function getColorSet(imagePathOrUrl: string) {
         return /^https?:\/\//.test(url);
     }
     
-    let buffer: Buffer;
+    let buffer: Buffer | undefined = undefined;
 
     if (isRemote(imagePathOrUrl)) {
         const res = await fetch(imagePathOrUrl);
         if (!res.ok) throw new Error(`Failed to fetch ${imagePathOrUrl}`);
         buffer = Buffer.from(await res.arrayBuffer());
+        buffer = await sharp(buffer).png().toBuffer();
     } else {
-        buffer = fs.readFileSync(path.resolve(imagePathOrUrl));
+        let url = imagePathOrUrl
+        const devPattern = /^\/@fs\/|(\?.*)$/g
+        if (devPattern.test(imagePathOrUrl)) {
+            url = imagePathOrUrl.replace(/^\/@fs\/|(\?.*)$/g, "")
+        } else {
+            const root = fileURLToPath(new URL(".", import.meta.url));
+            url = join(root, "..", imagePathOrUrl);
+        }
+        buffer = fs.readFileSync(path.resolve(url));
     }
 
-    buffer = await sharp(buffer).png().toBuffer();
 
     const vibrantBuilder = Vibrant.from(buffer)
     const palette = await vibrantBuilder.getPalette()
