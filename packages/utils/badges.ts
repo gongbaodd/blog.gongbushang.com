@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import { memoize } from "es-toolkit"
+import { getAllPosts } from "./post";
 
 type T_POST = CollectionEntry<"blog">;
 type T_Link = { label: string; href: string, count: number };
@@ -27,7 +28,7 @@ function generateCategoryMap(posts: T_POST[]) {
 }
 export async function getCategories(_map?: typeof categoryMap) {
     if (!_map) {
-        const posts = await getCollection("blog");
+        const posts = await getAllPosts()
         initCategoryMap(posts);
     }
 
@@ -68,7 +69,7 @@ function generateTagMap(posts: T_POST[]) {
 }
 export async function getTags(_map?: typeof tagMap) {
     if (!_map) {
-        const posts = await getCollection("blog");
+        const posts = await getAllPosts()
         initTagMap(posts);
     }
 
@@ -111,7 +112,7 @@ function generateSeriesMap(posts: T_POST[]) {
 export async function getSeries(_map?: typeof seriesMap) {
     if (!_map) {
 
-        const posts = await getCollection("blog");
+        const posts = await getAllPosts()
         initSeriesMap(posts);
     }
 
@@ -140,7 +141,7 @@ export async function getSeriesFrom(posts: T_POST[]) {
 }
 
 export async function getBadges() {
-    const posts = await getCollection("blog");
+    const posts = await getAllPosts()
 
     const memoriedGetBadges = memoize(_getBadges, { getCacheKey: () => posts.length.toString() });
     const badges = memoriedGetBadges();

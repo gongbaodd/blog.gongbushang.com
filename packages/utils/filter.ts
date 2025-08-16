@@ -3,6 +3,7 @@ import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
+import { getAllPosts } from "./post"
 
 type T_POST = CollectionEntry<"blog">
 
@@ -13,12 +14,12 @@ const STATIC_ENTRIES = [
 ]
 
 export async function getAllPostByDateDesc() {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   return sortPostsByDate(posts)
 }
 
 export const getAllFilterEntries = async () => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const entries = new Set<string>(STATIC_ENTRIES)
   const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, { getCacheKey: () => posts.length.toString() });
 
@@ -51,7 +52,7 @@ export function initCategoryPostMap(posts: Set<T_POST> | T_POST[]) {
 }
 
 export const getFilterByCategoryPage = async () => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const categoryPostMap = initCategoryPostMap(posts)
   const categoryResult = Array.from(categoryPostMap, ([filter, postsSet]) => ({
     params: {
@@ -76,7 +77,7 @@ export const getFilterByCategoryPage = async () => {
 export const isValidCategoryFilter = async (filter: string) => {
   if (filter === FILTER_ENTRY.ALL) return true
 
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const categoryPostMap = initCategoryPostMap(posts)
   const categoryEntries = Array.from(categoryPostMap, ([filter]) => filter)
 
@@ -93,7 +94,7 @@ export function initTagPostMap(posts: Set<T_POST> | T_POST[]) {
 }
 
 export const getFilterByTagPage = async () => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const tagPostMap = initTagPostMap(posts)
   const tagResult = Array.from(tagPostMap, ([filter, postsSet]) => ({
     params: {
@@ -106,7 +107,7 @@ export const getFilterByTagPage = async () => {
 }
 
 export const isValidTagFilter = async (filter: string) => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const tagPostMap = initTagPostMap(posts)
   const tagEntries = Array.from(tagPostMap, ([filter]) => filter)
 
@@ -126,7 +127,7 @@ export function initSeriesPostMap(posts: Set<T_POST> | T_POST[]) {
 }
 
 export const getFilterBySeriesPage = async () => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const seriesPostMap = initSeriesPostMap(posts)
   const seriesResult = Array.from(seriesPostMap, ([filter, postsSet]) => ({
     params: {
@@ -138,7 +139,7 @@ export const getFilterBySeriesPage = async () => {
   return seriesResult
 }
 export const isValidSeriesFilter = async (filter: string) => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const tagPostMap = initSeriesPostMap(posts)
   const tagEntries = Array.from(tagPostMap, ([filter]) => filter)
 
@@ -241,7 +242,7 @@ export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
 }
 
 export const getFilterByMonthPage = async () => {
-  const posts = await getCollection("blog")
+  const posts = await getAllPosts()
   const seriesPostMap = initYearPostMap(posts)
   const seriesResult = Array.from(seriesPostMap, ([filter, postsSet]) => ({
     params: {
