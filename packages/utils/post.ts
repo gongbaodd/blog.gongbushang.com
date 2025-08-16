@@ -24,7 +24,7 @@ export interface IPost {
 
 type T_PROPS = CollectionEntry<"blog">
 
-export async function mapServerPostToJSON(post: T_PROPS) {
+export async function mapServerPostToJSON(post: T_EXT_POST) {
     return {
         id: post.id,
         href: `/${post.data.category}/${post.id}`,
@@ -46,12 +46,12 @@ export async function getAllClientPosts() {
     return posts
 }
 
-type T_EXT = {
+export type T_EXT = {
     bgClass: string;
     bgColor: string;
     titleColor: string;
 }
-type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
+export type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
 
 export async function getAllPosts() {
     const posts = await getCollection("blog")
@@ -61,12 +61,6 @@ export async function getAllPosts() {
 }
 
 async function colorizePost(post: T_PROPS, index: number): Promise<T_EXT_POST> {
-    const ext: T_EXT = {
-        bgClass: "",
-        bgColor: "",
-        titleColor: "",
-    }
-
     if (!post.data.cover) {
         const bgClass = POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]
         const result = set<T_EXT_POST>({ ...post }, "data.bgClass", bgClass)

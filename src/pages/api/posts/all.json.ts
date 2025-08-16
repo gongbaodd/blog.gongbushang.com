@@ -1,8 +1,7 @@
-import { getAllClientPosts } from "@/packages/utils/post";
+import { getAllClientPosts, type T_EXT_POST } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
-import { getCollection, type CollectionEntry } from "astro:content";
 
-type T_PROPS = CollectionEntry<"blog">
+type T_PROPS = T_EXT_POST
 
 export const prerender = true;
 

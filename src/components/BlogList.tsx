@@ -37,7 +37,7 @@ import {
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import { Calendar } from "lucide-react";
-import type { TLink } from "@/packages/utils/extract";
+import type { T_EXT } from "@/packages/utils/post";
 
 interface Props {
   posts: IPost[];
@@ -66,8 +66,7 @@ export interface IPost {
       } | string,
       alt: string;
     },
-    [T: string]: any;
-  };
+  } & T_EXT;
   excerpt: string;
 }
 
@@ -221,7 +220,7 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
 
   const className = [
     classes.item,
-    post.data.cover ? classes.with_bg : classes[POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]],
+    post.data.cover ? classes.with_bg : classes[post.data.bgClass],
     classes[layoutCls]
   ].join(" ")
 
@@ -261,7 +260,6 @@ export function PostCard({ post, index, hideExcerpt }: ICardProp) {
           style={style}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
-
             <Badge
               color="gray"
               variant="default"

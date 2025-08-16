@@ -1,9 +1,10 @@
 import { remark } from "remark"
 import strip from "strip-markdown"
-import { getEntry, render, type CollectionEntry } from "astro:content"
+import { getEntry, render } from "astro:content"
 import { getSeries } from "./badges"
+import type { T_EXT_POST } from "./post"
 
-type T_POST = CollectionEntry<"blog">
+type T_POST = T_EXT_POST
 
 export async function title(post: T_POST) {
   const entry = await getEntry("blog", post.id)

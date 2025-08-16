@@ -3,9 +3,9 @@ import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
-import { getAllPosts } from "./post"
+import { getAllPosts, type T_EXT_POST } from "./post"
 
-type T_POST = CollectionEntry<"blog">
+type T_POST = T_EXT_POST
 
 const STATIC_ENTRIES = [
   FILTER_ENTRY.ALL,

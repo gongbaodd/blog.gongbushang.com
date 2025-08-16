@@ -24,11 +24,11 @@ import { MenuCategory, MenuSeries, MenuTag } from "./BlogListMenu";
 import { $posts } from "../stores/posts";
 import { BlogListNanoStore } from "./BlogListStore";
 import { $category } from "../stores/links";
+import type { T_EXT_POST } from "@/packages/utils/post";
 
-type T_POST = CollectionEntry<"blog">;
 interface Props {
   subTitle: string;
-  posts: T_POST[];
+  posts: T_EXT_POST[];
   totalCount: number;
   filter: string;
   entryType?: FILTER_ENTRY;
