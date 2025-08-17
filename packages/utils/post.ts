@@ -9,6 +9,7 @@ import chroma from "chroma-js"
 import fs from "node:fs"
 import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import potrace from "potrace"
 
 
 export interface IPost {
@@ -31,6 +32,7 @@ type T_EXT = {
     bgClass: string;
     bgColor: string;
     titleColor: string;
+    trace: string;
 }
 type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
 
@@ -110,12 +112,13 @@ async function colorizePost(post: T_PROPS | T_EXT_POST, index: number): Promise<
 
     const { url } = post.data.cover;
 
-    const { bgColor, titleColor } =  await getColorSet(isString(url) ? url : url.src)
+    const { bgColor, titleColor, trace } =  await getColorSet(isString(url) ? url : url.src)
 
     return {
         get result() {
             const r = set({ ...post }, "data.bgColor", bgColor)
-            return set<T_EXT_POST>(r, "data.titleColor", titleColor)
+            const t = set(r, "data.trace", trace)
+            return set<T_EXT_POST>(t, "data.titleColor", titleColor)
         }
     }.result
 }
@@ -147,6 +150,12 @@ async function getColorSet(imagePathOrUrl: string) {
 
     const vibrantBuilder = Vibrant.from(buffer)
     const palette = await vibrantBuilder.getPalette()
+    const trace = await new Promise<string>((res, rej) => {
+        potrace.trace(buffer, (err, svg) => {
+            if (err) return rej(err)
+            res(svg)
+        })
+    })
     return {
         get bgColor() {
             const hex = palette.Muted?.hex
@@ -162,7 +171,9 @@ async function getColorSet(imagePathOrUrl: string) {
                 return findNearestTitleColor(hex)
             }
             return ""
-        }
+        },
+
+        trace
     }
 }
 
