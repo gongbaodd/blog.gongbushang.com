@@ -89,7 +89,7 @@ async function colorizePost(post: T_PROPS, index: number): Promise<T_EXT_POST> {
 
     const { url } = post.data.cover;
 
-    const { bgColor, titleColor } =  await getColorSet(isString(url) ? url : url.src.replace(/^\/@fs\/|(\?.*)$/g, ""))
+    const { bgColor, titleColor } =  await getColorSet(isString(url) ? url : url.src)
 
     return {
         get result() {
