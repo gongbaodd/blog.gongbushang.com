@@ -204,22 +204,25 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
     }
   }
 
-  const [style, setStyle] = useState<MantineStyleProp>({})
-
   const [coverOpacity, setCoverOpacity] = useState(0)
 
   useEffect(() => {
     if (!coverImage) return
-
-    setStyle({
-      "--cover-image": `url(${coverImage})`,
-    })
 
     const img = new Image()
     img.src = coverImage
     img.onload = () => setCoverOpacity(1)
 
   }, [coverImage])
+
+  const { tracedCover } = {
+    get tracedCover() {
+      const { trace } = post.data
+      const encoded = encodeURIComponent(trace);
+      const cssBg = `url("data:image/svg+xml,${encoded}")`;
+      return cssBg
+    }
+  }
 
   return (
     <Box>
@@ -235,7 +238,8 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
             backgroundColor: post.data.bgColor,
             "--underline-color": `var(${post.data.titleColor})`,
             "--cover-opacity": coverOpacity,
-            ...style
+            "--cover-image": `url(${coverImage})`,
+            "--cover-trace": tracedCover
           }}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>

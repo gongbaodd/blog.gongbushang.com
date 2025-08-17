@@ -8,6 +8,10 @@
   --mixed-underline-color: color-mix(in srgb, var(--underline-color) 85%, transparent);
   --underline-offset-y: -4px;
   --cover-opacity: 0;
+
+  background-size: cover;
+  background-position: center;
+  background-image: var(--cover-trace);
 }
 
 .item.with_bg > * {

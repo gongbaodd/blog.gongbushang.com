@@ -151,7 +151,11 @@ async function getColorSet(imagePathOrUrl: string) {
     const vibrantBuilder = Vibrant.from(buffer)
     const palette = await vibrantBuilder.getPalette()
     const trace = await new Promise<string>((res, rej) => {
-        potrace.trace(buffer, (err, svg) => {
+        potrace.trace(buffer, {
+            turdSize: 100,
+            optCurve: true,
+            optTolerance: 0.4,
+        }, (err, svg) => {
             if (err) return rej(err)
             res(svg)
         })
