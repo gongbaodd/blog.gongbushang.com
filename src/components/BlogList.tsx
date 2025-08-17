@@ -190,19 +190,21 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
     classes[post.data.layout]
   ].join(" ")
 
-  const { coverImage } = {
-    get coverImage() {
+  const [coverImage, setCoverImage] = useState("")
+
+  useEffect(() => {
+    setCoverImage(c => {
       const { cover } = post.data
       if (cover) {
         if (typeof cover.url === "string") {
           return cover.url
         }
-
         return cover.url.src
       }
-      return "";
-    }
-  }
+      return c
+    })
+
+  }, [post])
 
   const [coverOpacity, setCoverOpacity] = useState(0)
 
@@ -212,7 +214,6 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
     const img = new Image()
     img.src = coverImage
     img.onload = () => setCoverOpacity(1)
-
   }, [coverImage])
 
   const { tracedCover } = {
