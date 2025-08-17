@@ -1,7 +1,7 @@
-import { Anchor, Avatar, Badge, Button, ButtonGroup, Group, Loader, Spoiler, Stack, Text } from "@mantine/core";
+import { Anchor, Badge, Button, Group, Loader, Spoiler, Stack, Text } from "@mantine/core";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { IconBook, IconFolder, IconTag } from "@tabler/icons-react";
-import { Children, useCallback, useState, type MouseEventHandler, type ReactNode } from "react";
+import { IconFolder } from "@tabler/icons-react";
+import { useCallback, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useStore } from "@nanostores/react";
 import { $category, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../stores/links";

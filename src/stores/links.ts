@@ -13,7 +13,10 @@ function request(url: string, $link: typeof $category) {
     return async () => {
         const data = await fetch(url)
         const { links } = await data.json() as { links: TLink[] }
-        $link.set(links)
+        const existingLinks = $link.get()
+        const existingHrefs = new Set(existingLinks.map(link => link.href))
+        const newLinks = links.filter(link => !existingHrefs.has(link.href))
+        $link.set([...existingLinks, ...newLinks])
     }
 }
 
