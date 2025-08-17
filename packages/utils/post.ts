@@ -2,13 +2,15 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { isString, memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
-import { POST_CARD_CLASSNAMES, TITLE_COLOR_MAP } from "../consts";
+import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT, TITLE_COLOR_MAP } from "../consts";
 import { Vibrant } from "node-vibrant/node";
 import sharp from "sharp"
 import chroma from "chroma-js"
 import fs from "node:fs"
 import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import wordcount from "word-count";
+
 
 export interface IPost {
     id: string;
@@ -26,6 +28,7 @@ export interface IPost {
 
 type T_PROPS = CollectionEntry<"blog">
 type T_EXT = {
+    layoutCLass: string;
     bgClass: string;
     bgColor: string;
     titleColor: string;
@@ -50,7 +53,8 @@ export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
 export async function mapServerPostToClient(posts: T_PROPS[]) {
   return await Promise.all(
       posts.map(async (post, i) => {
-          const clientPost = await colorizePost(post, i)
+          const cPost = await colorizePost(post, i)
+          const clientPost = await layoutPost(cPost)
           return ({
               id: clientPost.id,
               href: `/${post.data.category}/${post.id}`,
@@ -80,7 +84,24 @@ export async function getAllPosts() {
     return posts
 }
 
-async function colorizePost(post: T_PROPS, index: number): Promise<T_EXT_POST> {
+async function layoutPost(post:T_PROPS | T_EXT_POST) {
+    const title = await titleFrom(post)
+    
+    const { layoutCls } = {
+        get layoutCls() {
+            const count = wordcount(title) + (post.data.tag?.length ?? 0);
+            if (count < 3) return POST_CARD_LAYOUT.xs;
+            if (count < 4) return POST_CARD_LAYOUT.sm;
+            if (count < 5) return POST_CARD_LAYOUT.md;
+            if (count < 10) return POST_CARD_LAYOUT.lg;
+            return POST_CARD_LAYOUT.xl;
+        },
+    };
+
+    return set<T_EXT_POST>(post, "data.layoutClass", layoutCls)
+}
+
+async function colorizePost(post: T_PROPS | T_EXT_POST, index: number): Promise<T_EXT_POST> {
     if (!post.data.cover) {
         const bgClass = POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]
         const result = set<T_EXT_POST>({ ...post }, "data.bgClass", bgClass)

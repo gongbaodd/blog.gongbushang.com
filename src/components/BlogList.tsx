@@ -192,21 +192,10 @@ interface ICardProp { post: IPost; hideExcerpt?: boolean }
 export function PostCard({ post, hideExcerpt }: ICardProp) {
   const title = post.title;
 
-  const { layoutCls } = {
-    get layoutCls() {
-      const count = wordcount(title) + (post.data.tag?.length ?? 0);
-      if (count < 3) return POST_CARD_LAYOUT.xs;
-      if (count < 4) return POST_CARD_LAYOUT.sm;
-      if (count < 5) return POST_CARD_LAYOUT.md;
-      if (count < 10) return POST_CARD_LAYOUT.lg;
-      return POST_CARD_LAYOUT.xl;
-    },
-  };
-
   const className = [
     classes.item,
     post.data.cover ? classes.with_bg : classes[post.data.bgClass],
-    classes[layoutCls]
+    classes[post.data.layoutCLass]
   ].join(" ")
 
   const { coverImage } = {
@@ -225,10 +214,19 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
 
   const [style, setStyle] = useState<MantineStyleProp>({})
 
+  const [coverOpacity, setCoverOpacity] = useState(0)
+
   useEffect(() => {
+    if (!coverImage) return
+
     setStyle({
       "--cover-image": `url(${coverImage})`,
     })
+
+    const img = new Image()
+    img.src = coverImage
+    img.onload = () => setCoverOpacity(1)
+
   }, [coverImage])
 
   return (
@@ -244,6 +242,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
           style={{
             backgroundColor: post.data.bgColor,
             "--underline-color": `var(${post.data.titleColor})`,
+            "--cover-opacity": coverOpacity,
             ...style
           }}
         >

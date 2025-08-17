@@ -16,7 +16,7 @@ export const ROUTES = [
     { label: "Blog", href: "/all" },
 ]
 
-export const POST_COUNT_PER_PAGE = 16;
+export const POST_COUNT_PER_PAGE = 20;
 
 
 export enum POST_CARD_LAYOUT {
