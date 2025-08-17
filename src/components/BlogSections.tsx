@@ -53,7 +53,7 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
               borderRadius: "var(--mantine-radius-md)"
             }}
           >
-            {posts.map((post, index) => (
+            {posts.map((post) => (
               <Carousel.Slide maw={250} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
                 <PostCard key={post.id} post={post} hideExcerpt />
               </Carousel.Slide>

@@ -85,19 +85,6 @@
     aspect-ratio: 9/16;
 }
 
-
-.item.vertical {
-    aspect-ratio: 9/16;
-}
-
-.item.horizontal {
-    aspect-ratio: 4/3;
-}
-
-.item.square {
-    aspect-ratio: 1;
-}
-
 .item.liquid_cheese {
     background-size: cover;
     background-color: #ffaa00;

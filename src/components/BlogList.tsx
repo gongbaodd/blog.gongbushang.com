@@ -18,20 +18,12 @@ import {
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import {
-  FILTER_ENTRY,
-  POST_CARD_CLASSNAMES,
-  POST_CARD_LAYOUT,
-  POST_CARD_UNDERLINE_COLORS,
-} from "@/packages/consts";
 import { IconQuoteFilled } from "@tabler/icons-react";
 import { Fragment } from "react/jsx-runtime";
-import wordcount from "word-count";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   $hasMorePosts,
   $posts,
-  $postsListParams,
   requestPosts,
 } from "../stores/posts";
 import { useStore } from "@nanostores/react";
@@ -195,7 +187,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
   const className = [
     classes.item,
     post.data.cover ? classes.with_bg : classes[post.data.bgClass],
-    classes[post.data.layoutCLass]
+    classes[post.data.layout]
   ].join(" ")
 
   const { coverImage } = {

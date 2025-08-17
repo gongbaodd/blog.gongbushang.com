@@ -124,7 +124,7 @@ importers:
         version: 6.0.0
       shiki-plantuml:
         specifier: file:./packages/shiki-plantuml
-        version: link:packages/shiki-plantuml
+        version: file:packages/shiki-plantuml(typescript@5.8.3)
       swr:
         specifier: ^2.3.5
         version: 2.3.5(react@19.1.1)
@@ -134,9 +134,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.8.3
-      word-count:
-        specifier: ^0.3.1
-        version: 0.3.1
     devDependencies:
       '@tailwindcss/typography':
         specifier: ^0.5.16
@@ -3714,6 +3711,9 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+  shiki-plantuml@file:packages/shiki-plantuml:
+    resolution: {directory: packages/shiki-plantuml, type: directory}
+
   shiki@3.8.1:
     resolution: {integrity: sha512-+MYIyjwGPCaegbpBeFN9+oOifI8CKiKG3awI/6h3JeT85c//H2wDW/xCJEGuQ5jPqtbboKNqNy+JyX9PYpGwNg==}
 
@@ -4298,9 +4298,6 @@ packages:
   widest-line@5.0.0:
     resolution: {integrity: sha512-c9bZp7b5YtRj2wOe6dlj32MK+Bx/M/d+9VB2SHM1OtsUHR0aV0tdP6DWh/iMt0kWi1t5g1Iudu6hQRNd1A4PVA==}
     engines: {node: '>=18'}
-
-  word-count@0.3.1:
-    resolution: {integrity: sha512-tTDKyKX1yy8FZWUw64TOgnMeLeXPZBA+ZunaCCpFRrGFeLSwSdEgSsFI/5DIJkiUfM7CkCREFPkZd9U4eLXgqA==}
 
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
@@ -8534,6 +8531,17 @@ snapshots:
 
   shebang-regex@3.0.0: {}
 
+  shiki-plantuml@file:packages/shiki-plantuml(typescript@5.8.3):
+    dependencies:
+      plist: 3.1.0
+      unbuild: 3.5.0(typescript@5.8.3)
+    transitivePeerDependencies:
+      - sass
+      - typescript
+      - vue
+      - vue-sfc-transformer
+      - vue-tsc
+
   shiki@3.8.1:
     dependencies:
       '@shikijs/core': 3.8.1
@@ -9129,8 +9137,6 @@ snapshots:
   widest-line@5.0.0:
     dependencies:
       string-width: 7.2.0
-
-  word-count@0.3.1: {}
 
   wrap-ansi@7.0.0:
     dependencies:

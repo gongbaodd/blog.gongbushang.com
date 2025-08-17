@@ -9,7 +9,6 @@ import chroma from "chroma-js"
 import fs from "node:fs"
 import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import wordcount from "word-count";
 
 
 export interface IPost {
@@ -28,7 +27,7 @@ export interface IPost {
 
 type T_PROPS = CollectionEntry<"blog">
 type T_EXT = {
-    layoutCLass: string;
+    layout: string;
     bgClass: string;
     bgColor: string;
     titleColor: string;
@@ -55,14 +54,15 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
       posts.map(async (post, i) => {
           const cPost = await colorizePost(post, i)
           const clientPost = await layoutPost(cPost)
-          return ({
+          const result = {
               id: clientPost.id,
               href: `/${post.data.category}/${post.id}`,
               title: await titleFrom(post),
               date: dateFrom(post),
               data: clientPost.data,
               excerpt: await excerptFrom(post),
-          })
+          }          
+          return result
       })
   );
 }
@@ -89,7 +89,8 @@ async function layoutPost(post:T_PROPS | T_EXT_POST) {
     
     const { layoutCls } = {
         get layoutCls() {
-            const count = wordcount(title) + (post.data.tag?.length ?? 0);
+            const count = wordcount(title) + (post.data.tag?.length ?? 0);      
+
             if (count < 3) return POST_CARD_LAYOUT.xs;
             if (count < 4) return POST_CARD_LAYOUT.sm;
             if (count < 5) return POST_CARD_LAYOUT.md;
@@ -97,8 +98,7 @@ async function layoutPost(post:T_PROPS | T_EXT_POST) {
             return POST_CARD_LAYOUT.xl;
         },
     };
-
-    return set<T_EXT_POST>(post, "data.layoutClass", layoutCls)
+    return set<T_EXT_POST>(post, "data.layout", layoutCls)
 }
 
 async function colorizePost(post: T_PROPS | T_EXT_POST, index: number): Promise<T_EXT_POST> {
@@ -175,4 +175,21 @@ function findNearestTitleColor(color: string) {
         if (distance === dis) nearestColor = name
     }
     return nearestColor
+}
+
+function wordcount(text: string): number {
+    if (!text || typeof text !== 'string') return 0;
+    
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        try {
+            const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
+            const segments = segmenter.segment(text);  
+            
+            return [...segments].filter(w => w.isWordLike).length;
+        } catch (error) {
+            console.warn('Intl.Segmenter failed, falling back to simple word counting:', error);
+        }
+    }
+    
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 }
