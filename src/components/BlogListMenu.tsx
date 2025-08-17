@@ -50,7 +50,7 @@ function Menu({ title, children, loadFunc }: IMenuProps) {
 export function MenuCategory() {
     const categories = useStore($category)
     return (
-        <Menu title={"Category"} loadFunc={requestAllCategories}>
+        <Menu title={"Categories"} loadFunc={requestAllCategories}>
             <Stack>
                 {categories.map(({ label, href }) => (
                     <Anchor href={href} key={label}>
