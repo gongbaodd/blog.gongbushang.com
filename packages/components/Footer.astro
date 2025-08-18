@@ -14,8 +14,14 @@ import Facebook from "../../src/icons/facebook.svg?raw";
 import Bilibili from "../../src/icons/bilibili.svg?raw";
 import v2ex from "../../src/icons/v2ex.svg?raw";
 import MantineFooter from "@/src/components/MantineFooter";
-import { Picture } from "astro:assets";
-import zheng from "@/packages/assets/zheng.png";
+import ViewCount from "@/src/components/ViewCount";
+import PV from "@/src/components/PV.astro";
+
+interface Props {
+  slug: string
+}
+
+const slug = Astro.props.slug
 ---
 
 <MantineFooter>
@@ -124,5 +130,7 @@ import zheng from "@/packages/assets/zheng.png";
     fill="currentcolor"
     slot="iconV2ex"
   />
-  <Picture src={zheng} alt="profile" decoding="async" slot="picture" />
+  <ViewCount slug={slug} slot="viewCount" client:load />
 </MantineFooter>
+<PV slug={slug} />
+

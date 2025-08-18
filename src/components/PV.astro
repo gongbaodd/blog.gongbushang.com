@@ -1,0 +1,11 @@
+---
+import { PV_URL } from '@/packages/consts'
+
+interface Props {
+    slug: string
+}
+
+const pvUrl = PV_URL + Astro.props.slug.replaceAll("/", "-") + "/count"
+
+---
+<img src={pvUrl} width="1" height="1" style="opacity:0; position:absolute; left:-9999px;" alt="pv" />

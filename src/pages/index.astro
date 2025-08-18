@@ -16,6 +16,7 @@ import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/components/Header.astro";
+import PV from "../components/PV.astro";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -34,6 +35,6 @@ const badges = await getBadges();
       <TagGroup tags={badges} slot="tagGroup" />
     </Tags>
     <NewsLetter />
-    <Footer />
+    <Footer slug={"index"} />
   </MantineMain>
 </Global>

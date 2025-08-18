@@ -16,6 +16,8 @@ export const ROUTES = [
     { label: "Blog", href: "/all" },
 ]
 
+export const PV_URL = "https://pv.growgen.xyz/"
+
 export const POST_COUNT_PER_PAGE = 20;
 
 

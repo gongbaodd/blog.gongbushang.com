@@ -13,6 +13,7 @@ import {
 import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
+import ViewCount from "./ViewCount";
 
 interface IFooterProps {
   children?: ReactNode;
@@ -30,6 +31,7 @@ interface IFooterProps {
   iconBilibili?: ReactNode;
   iconV2ex?: ReactNode;
   picture?: ReactNode;
+  viewCount?: ReactNode;
 }
 
 export default function MantineFooter({
@@ -46,7 +48,7 @@ export default function MantineFooter({
   iconFacebook,
   iconBilibili,
   iconV2ex,
-  picture,
+  viewCount,
 }: IFooterProps) {
   return (
     <CustomMantineProvider>
@@ -288,9 +290,7 @@ export default function MantineFooter({
 
           <Group justify="space-between" align="center" py="md">
             <Group align="center" gap="xs">
-              <Avatar size="sm" radius="xl" >
-                {picture}
-              </Avatar>
+              {viewCount}
               <Text size="sm" c="dimmed">
                 © 2025 我的技术博客. 保留所有权利.
               </Text>

@@ -1,18 +1,21 @@
 ---
-import Header from '@/packages/components/Header.astro';
-import MantineMain from '../components/MantineMain';
-import NotFoundPage from '../components/NotFoundPage';
-import BaseHead from '@/packages/components/BaseHead.astro';
-import Global from '@/packages/layouts/Global.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '@/packages/consts';
+import Header from "@/packages/components/Header.astro";
+import MantineMain from "../components/MantineMain";
+import NotFoundPage from "../components/NotFoundPage";
+import BaseHead from "@/packages/components/BaseHead.astro";
+import Global from "@/packages/layouts/Global.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import Footer from "@/packages/components/Footer.astro";
+import PV from "../components/PV.astro";
 
 Astro.response.status = 404;
 ---
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header/>
+  <Header />
   <MantineMain isStacked={false}>
-      <NotFoundPage />
+    <NotFoundPage />
+    <Footer slug={"404"}  />
   </MantineMain>
 </Global>

@@ -30,6 +30,7 @@ import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import { Calendar } from "lucide-react";
 import type { TClientPost } from "@/packages/utils/post";
+import ViewCount from "./ViewCount";
 
 interface Props {
   posts: IPost[];
@@ -244,17 +245,29 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
           }}
         >
           <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
-            <Badge
-              color="gray"
-              variant="default"
-              size="sm"
-              className={classes.category}
-            >
-              <Group gap={6}>
-                <Calendar size={12} />
-                <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
-              </Group>
-            </Badge>
+            <Flex justify={"space-between"} align={"center"}>
+              <Badge
+                color="gray"
+                variant="default"
+                size="sm"
+                className={classes.category}
+              >
+                <Group gap={6}>
+                  <Calendar size={12} />
+                  <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
+                </Group>
+              </Badge>
+              <Avatar
+                color="gray"
+                variant="default"
+                size="sm"
+                className={classes.category}
+                p={0}
+              >
+                <ViewCount slug={post.id} />
+              </Avatar>
+            </Flex>
+
 
             <Title className={classes.title}>
               <span>{title}</span>
