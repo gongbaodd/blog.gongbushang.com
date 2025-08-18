@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import { getAllPostByDateDesc, initYearPostMap } from "@/packages/utils/filter";
 import { date } from "@/packages/utils/extract";
 import { mapServerPostToClient } from "@/packages/utils/post";
+import type { CollectionEntry } from "astro:content";
+type T_POST = CollectionEntry<"blog">
 
 const _posts = await getAllPostByDateDesc();
 const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));
@@ -13,7 +15,7 @@ const buildMonth = dayjs().format("MM");
 const buildDay = dayjs().format("DD");
 const monthPostMap = initYearPostMap(_posts);
 
-const sameMonthPosts: any[] = [];
+const sameMonthPosts: (T_POST)[] = [];
 
 for (const [yearMonth, postsSet] of monthPostMap) {
   const [_year, month] = yearMonth.split("-");
@@ -44,9 +46,8 @@ const sortedByDayProximity = postsWithDayProximity.sort((a, b) => {
   return a.postDay - b.postDay;
 });
 
-const selectedMonthPosts = sortedByDayProximity.slice(0, 5).map(item => item.post);
-
-const historyPosts = await mapServerPostToClient(selectedMonthPosts);
+const selectedMonthPosts = sortedByDayProximity.slice(0, 5).map(item => item.post)
+const historyPosts = (await mapServerPostToClient(selectedMonthPosts)).sort((a, b) => Number(a.date) - Number(b.date))
 ---
 
 <BlogSections
