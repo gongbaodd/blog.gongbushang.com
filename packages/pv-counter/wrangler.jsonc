@@ -5,7 +5,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "pv-counter",
-	"main": "src/index.js",
+	"main": "src/index.ts",
 	"compatibility_flags": ["nodejs_compat"],
 	"compatibility_date": "2025-08-16",
 	"observability": {
