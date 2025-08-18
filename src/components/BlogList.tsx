@@ -273,6 +273,18 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
               </Group>
 
               <Group gap="xs" flex={0} miw="5em">
+                {post.data.series && (
+                  <Badge 
+                    key={post.data.series.slug}
+                    color="gray"
+                    variant="default"
+                    size="xs"
+                    className={classes.category}
+                  >
+                    {post.data.series.name ?? post.data.series.slug}
+                  </Badge>
+                )}
+
                 { post.data.tag?.map((tag: string) => (
                   <Badge
                     key={tag}
