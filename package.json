@@ -21,6 +21,7 @@
     "@emotion/styled": "^11.14.1",
     "@lucide/astro": "^0.525.0",
     "@mantine/carousel": "^8.2.4",
+    "@mantine/charts": "^8.2.5",
     "@mantine/core": "^8.2.2",
     "@mantine/hooks": "^8.2.4",
     "@mantine/spotlight": "^8.2.4",

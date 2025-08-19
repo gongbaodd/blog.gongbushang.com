@@ -2,23 +2,33 @@ import { Container, Grid, Stack, Title, Paper, Button, Group, Flex, Anchor, Card
 import { PostCard, type IPost } from "./BlogList";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Carousel } from '@mantine/carousel';
+import type { ReactNode } from "react";
 
 interface Props {
   latestPosts: IPost[];
   historyPosts: IPost[];
+  totalCount: number;
 }
 
-export default function BlogSections({ latestPosts, historyPosts }: Props) {
+export default function BlogSections({ latestPosts, historyPosts, totalCount }: Props) {
   return (
     <CustomMantineProvider>
       <Container fluid p={0} style={{ marginInline: "initial" }}>
         <Grid gutter="xl">
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <BlogSection title="Latest Posts" posts={latestPosts} />
+            <BlogSection title="Latest Posts" posts={latestPosts} >
+              <Anchor href="/all">
+                <Button size="md" variant="outline">View All {totalCount} Posts</Button>
+              </Anchor>
+            </BlogSection>
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <BlogSection title="Time machine" posts={historyPosts} />
+            <BlogSection title="Time machine" posts={historyPosts} >
+              <Anchor href="/archive">
+                <Button size="md" variant="outline">View Archives</Button>
+              </Anchor>
+            </BlogSection>
           </Grid.Col>
         </Grid>
       </Container>
@@ -26,7 +36,7 @@ export default function BlogSections({ latestPosts, historyPosts }: Props) {
   );
 }
 
-function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
+function BlogSection({ title, posts, children }: { title: string, posts: IPost[], children: ReactNode }) {
   return (
     <Card shadow="md" radius="lg" p="xl"  >
       <Stack gap="md" justify="space-between" style={{ height: "100%" }}>
@@ -35,9 +45,7 @@ function BlogSection({ title, posts }: { title: string, posts: IPost[] }) {
             <Title order={2} size="h2" fw={600}>
               {title}
             </Title>
-            <Anchor href="/all">
-              <Button size="md" variant="outline">View All</Button>
-            </Anchor>
+            {children}
           </Stack>
           <Carousel
             maw={600}

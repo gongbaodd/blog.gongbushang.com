@@ -2,7 +2,7 @@
 import Global from "../../packages/layouts/Global.astro";
 
 import BaseHead from "../../packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION, ROUTES } from "@/packages/consts";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 
 import profile from "@/packages/assets/profile.jpg";
 import { Picture } from "astro:assets";
@@ -16,10 +16,13 @@ import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/components/Header.astro";
-import PV from "../components/PV.astro";
+import MantineHeat from "../components/MantineHeat";
+import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
 
 export const prerender = true;
-const badges = await getBadges();
+const badges = await getBadges()
+const heatData = await getHeatmapData()
+const counts = await getCounts()
 ---
 
 <Global>
@@ -29,11 +32,12 @@ const badges = await getBadges();
     <Hero>
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
+    <MantineHeat data={heatData} count={counts["2025"]} />
     <BlogSectionsWrapper />
-    <SpotifyPlayer client:load />
     <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />
     </Tags>
+    <SpotifyPlayer client:load />
     <NewsLetter />
     <Footer slug={"index"} />
   </MantineMain>

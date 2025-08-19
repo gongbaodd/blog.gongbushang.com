@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { getAllPostByDateDesc, initYearPostMap } from "@/packages/utils/filter";
 import { date } from "@/packages/utils/extract";
 import { mapServerPostToClient } from "@/packages/utils/post";
+import { getCounts } from "@/packages/utils/heatmap";
 import type { CollectionEntry } from "astro:content";
 type T_POST = CollectionEntry<"blog">
 
@@ -52,10 +53,13 @@ const historyPosts = (await mapServerPostToClient(selectedMonthPosts)).sort((a, 
   if (b.data.cover) return 1
   return  Number(a.date) - Number(b.date)
 })
+
+const counts = await getCounts()
 ---
 
 <BlogSections
   latestPosts={latestPosts}
   historyPosts={historyPosts}
+  totalCount={counts.ALL}
   client:load
 />
