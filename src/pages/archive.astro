@@ -1,0 +1,22 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import Footer from "@/packages/components/Footer.astro";
+import Header from "@/packages/components/Header.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "../components/MantineMain";
+
+---
+
+<Global>
+  <BaseHead
+    title={`${SITE_TITLE} | Archive`}
+    description={SITE_DESCRIPTION}
+    slot="head"
+  />
+  <Header/>
+  <MantineMain>
+
+    <Footer slug={"archive"} />
+  </MantineMain>
+</Global>
