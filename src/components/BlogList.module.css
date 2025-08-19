@@ -4,6 +4,7 @@
 
 .item .title::first-letter {
     font-size: 1.5em;
+    vertical-align: -0.1em; 
 }
 
 .item.with_bg {
