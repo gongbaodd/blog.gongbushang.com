@@ -3,7 +3,7 @@ import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks"
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Suspense, use, useEffect, useState, type ReactNode } from "react";
 import { Calendar, Search as SearchIcon } from "lucide-react";
-import { $postsToIndex, loadPostsToIndex } from "../stores/search";
+import { $index, $posts, loadPostsToIndex, search } from "../stores/search";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import excerpt from "excerpt"
@@ -13,7 +13,7 @@ import { Spotlight, spotlight } from "@mantine/spotlight"
 
 export default function Search() {
   const [_searchOpened, { open: openSearch, close: _closeSearch }] = useDisclosure(false);
-  const postsToIndex = useStore($postsToIndex)
+  const postsToIndex = useStore($index)
   const isLoading = postsToIndex.isLoading
   const [postsPromise, setPostsPromise] = useState<null | Promise<void>>(null)
   const loadPosts = () => {
@@ -55,8 +55,7 @@ function SpotlightModal({ postsPromise, onSpotlightClose }: { postsPromise: Prom
   spotlight.open()
 
   const [query, _setQuery] = useState("")
-  const postsToIndex = useStore($postsToIndex)
-  const [posts, setPosts] = useState<(SearchResult & IPost | IPost)[]>(postsToIndex.posts.reverse().slice(0, 6))
+  const posts = useStore($posts)
 
   const actions: ReactNode[] = posts.map(post => (
     <Spotlight.Action key={post.id} px={0} onClick={() => location.href = `/${post.category.label}/${post.id}`} closeSpotlightOnTrigger >
@@ -93,11 +92,8 @@ function SpotlightModal({ postsPromise, onSpotlightClose }: { postsPromise: Prom
     </Spotlight.Action>))
 
   const handleSearch = useDebouncedCallback((query: string) => {
-    if (query) {
-      const _posts = (postsToIndex.index?.search(query) ?? []) as (SearchResult & IPost)[]
-      setPosts(_posts)
-    }
-  }, 500)
+    search(query)
+  }, 200)
 
   const setQuery = (query: string) => {
       _setQuery(query)

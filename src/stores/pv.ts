@@ -22,3 +22,12 @@ export async function requestViewCount(slug: string) {
         [slug]: count
     })
 }
+
+export const $pvMap = atom<Record<string, number>>({})
+
+export async function requestAllViewCount() {
+    const pvUrl = PV_URL + "pv/all"
+    const data = await fetch(pvUrl)
+    const result = await data.json() as Record<string, number>
+    $pvMap.set(result)
+}
