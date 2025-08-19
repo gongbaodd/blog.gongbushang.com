@@ -2,6 +2,10 @@
     position: relative;
 }
 
+.item .title::first-letter {
+    font-size: 1.5em;
+}
+
 .item.with_bg {
   --underline-width: 28;
   --underline-color: var(--mantine-color-dark-8);
