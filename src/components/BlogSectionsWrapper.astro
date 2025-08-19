@@ -6,6 +6,7 @@ import { date } from "@/packages/utils/extract";
 import { mapServerPostToClient } from "@/packages/utils/post";
 import { getCounts } from "@/packages/utils/heatmap";
 import type { CollectionEntry } from "astro:content";
+import { FILTER_ENTRY } from "@/packages/consts";
 type T_POST = CollectionEntry<"blog">
 
 const _posts = await getAllPostByDateDesc();
@@ -60,6 +61,6 @@ const counts = await getCounts()
 <BlogSections
   latestPosts={latestPosts}
   historyPosts={historyPosts}
-  totalCount={counts.ALL}
+  totalCount={counts[FILTER_ENTRY.ALL]}
   client:load
 />

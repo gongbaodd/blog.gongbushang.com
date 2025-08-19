@@ -1,0 +1,13 @@
+.cover {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0px;
+    left: 0px;
+    opacity: .6;
+
+}
+
+.cover rect[data-empty] {
+    fill: var(--mantine-color-dark-2);
+}

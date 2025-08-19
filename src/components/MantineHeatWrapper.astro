@@ -1,0 +1,10 @@
+---
+import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
+import MantineHeat from "./MantineHeat";
+import dayjs from "dayjs";
+const heatData = await getHeatmapData()
+const counts = await getCounts()
+const year = dayjs().format("YYYY")
+
+---
+<MantineHeat data={heatData} count={counts[year]} />

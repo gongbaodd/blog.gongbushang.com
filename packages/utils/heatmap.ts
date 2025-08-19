@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { date as dateFrom } from "./extract";
 import { getAllPosts } from "./post";
+import { FILTER_ENTRY } from "../consts";
 
 export async function getHeatmapData() {
     const posts = await getAllPosts()
@@ -27,6 +28,6 @@ export async function getCounts(): Promise<Record<string, number>> {
         return acc
     }, {} as Record<string, number>)
 
-    counts.ALL = posts.length
+    counts[FILTER_ENTRY.ALL] = posts.length
     return counts
 }

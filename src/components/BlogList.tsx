@@ -64,7 +64,7 @@ export default function BlogList({
       <Container fluid style={{ marginInline: "initial" }}>
         <Grid gutter="lg">
           <Grid.Col span={{ base: 12, md: 1.5 }}>
-            <Stack gap="lg">
+            <Stack gap="lg" style={{ position: "sticky", top: 100 }}>
               <Fragment key={"category"}>{menuCategory}</Fragment>
               <Fragment key={"series"}>{menuSeries}</Fragment>
               <Fragment key={"tag"}>{menuTag}</Fragment>
@@ -233,7 +233,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
           key={post.id}
           shadow="sm"
           padding="lg"
-          radius="md"
+          radius="lg"
           withBorder
           className={className}
           style={{

@@ -2,41 +2,27 @@
 	Installed from https://reactbits.dev/ts/tailwind/
 */
 
-import React, { useState } from "react";
+import { darken } from "@mantine/core";
+import React, { useState, type ReactNode } from "react";
 
 interface FolderProps {
   color?: string;
   size?: number;
   items?: React.ReactNode[];
   className?: string;
+  cover?: ReactNode
+  title?: ReactNode
 }
 
-const darkenColor = (hex: string, percent: number): string => {
-  let color = hex.startsWith("#") ? hex.slice(1) : hex;
-  if (color.length === 3) {
-    color = color
-      .split("")
-      .map((c) => c + c)
-      .join("");
-  }
-  const num = parseInt(color, 16);
-  let r = (num >> 16) & 0xff;
-  let g = (num >> 8) & 0xff;
-  let b = num & 0xff;
-  r = Math.max(0, Math.min(255, Math.floor(r * (1 - percent))));
-  g = Math.max(0, Math.min(255, Math.floor(g * (1 - percent))));
-  b = Math.max(0, Math.min(255, Math.floor(b * (1 - percent))));
-  return (
-    "#" +
-    ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()
-  );
-};
+const darkenColor = darken
 
 const Folder: React.FC<FolderProps> = ({
   color = "#5227FF",
   size = 1,
   items = [],
   className = "",
+  cover,
+  title,
 }) => {
   const maxItems = 3;
   const papers = items.slice(0, maxItems);
@@ -49,7 +35,7 @@ const Folder: React.FC<FolderProps> = ({
     Array.from({ length: maxItems }, () => ({ x: 0, y: 0 })),
   );
 
-  const folderBackColor = darkenColor(color, 0.08);
+  const folderBackColor = darkenColor(color, 0.5);
   const paper1 = darkenColor("#ffffff", 0.1);
   const paper2 = darkenColor("#ffffff", 0.05);
   const paper3 = "#ffffff";
@@ -125,7 +111,7 @@ const Folder: React.FC<FolderProps> = ({
           <span
             className="absolute z-0 bottom-[98%] left-0 w-[30px] h-[10px] rounded-tl-[5px] rounded-tr-[5px] rounded-bl-0 rounded-br-0"
             style={{ backgroundColor: folderBackColor }}
-          ></span>
+          >{title}</span>
           {papers.map((item, i) => {
             let sizeClasses = "";
             if (i === 0)
@@ -159,7 +145,7 @@ const Folder: React.FC<FolderProps> = ({
               </div>
             );
           })}
-          <div
+          {/* <div
             className={`absolute z-30 w-full h-full origin-bottom transition-all duration-300 ease-in-out ${
               !open ? "group-hover:[transform:skew(15deg)_scaleY(0.6)]" : ""
             }`}
@@ -168,7 +154,7 @@ const Folder: React.FC<FolderProps> = ({
               borderRadius: "5px 10px 10px 10px",
               ...(open && { transform: "skew(15deg) scaleY(0.6)" }),
             }}
-          ></div>
+          > </div> */}
           <div
             className={`absolute z-30 w-full h-full origin-bottom transition-all duration-300 ease-in-out ${
               !open ? "group-hover:[transform:skew(-15deg)_scaleY(0.6)]" : ""
@@ -178,7 +164,9 @@ const Folder: React.FC<FolderProps> = ({
               borderRadius: "5px 10px 10px 10px",
               ...(open && { transform: "skew(-15deg) scaleY(0.6)" }),
             }}
-          ></div>
+          >
+            {cover}
+          </div>
         </div>
       </div>
     </div>

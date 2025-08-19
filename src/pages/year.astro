@@ -5,8 +5,7 @@ import Header from "@/packages/components/Header.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../components/MantineMain";
-import Years from "../components/Years";
-import MantineHeat from "../components/MantineHeat";
+import Folders from "../components/Folders";
 import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
 
 
@@ -22,8 +21,7 @@ const counts = await getCounts()
   />
   <Header/>
   <MantineMain>
-    <Years />
-    <MantineHeat data={heatData} count={counts["2025"]}/>
-    <Footer slug={"archive"} />
+    <Folders heatmap={heatData} counts={counts} />
+    <Footer slug={"year"} />
   </MantineMain>
 </Global>

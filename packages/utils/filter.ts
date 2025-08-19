@@ -216,9 +216,31 @@ export function sortPostsByDate(posts: T_POST[]) {
 }
 
 
+let yearPostMap = new Map<string, Set<T_POST>>()
+export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
+  const init = memoize(() => {
+    yearPostMap = createPostMap(posts, (p) => [dayjs(date(p)).format("YYYY")])
+    return yearPostMap
+  }, { getCacheKey: () => Array.from(posts).length })
+  return init()
+}
+
+export const getFilterByYearPage = async () => {
+  const posts = await getAllPosts()
+   initYearPostMap(posts)
+  const yearResult = Array.from(yearPostMap, ([filter, postsSet]) => ({
+    params: {
+      filter,
+    },
+    props: { posts: sortPostsByDate(Array.from(postsSet)) },
+  }))
+
+  return yearResult
+}
+
 
 let monthPostMap = new Map<string, Set<T_POST>>()
-export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
+export function initYearMonthPostMap(posts: Set<T_POST> | T_POST[]) {
   const init = memoize(() => {
     monthPostMap = createPostMap(posts, (p) =>
       [dayjs(date(p)).format("YYYY-MM")]
@@ -230,13 +252,13 @@ export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
 
 export const getFilterByMonthPage = async () => {
   const posts = await getAllPosts()
-  const seriesPostMap = initYearPostMap(posts)
-  const seriesResult = Array.from(seriesPostMap, ([filter, postsSet]) => ({
+  initYearMonthPostMap(posts)
+  const ymResult = Array.from(seriesPostMap, ([filter, postsSet]) => ({
     params: {
       filter,
     },
     props: { posts: sortPostsByDate(Array.from(postsSet)) },
   }))
 
-  return seriesResult
+  return ymResult
 }

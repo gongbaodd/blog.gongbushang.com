@@ -16,13 +16,10 @@ import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/components/Header.astro";
-import MantineHeat from "../components/MantineHeat";
-import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
+import MantineHeatWrapper from "../components/MantineHeatWrapper.astro";
 
 export const prerender = true;
 const badges = await getBadges()
-const heatData = await getHeatmapData()
-const counts = await getCounts()
 ---
 
 <Global>
@@ -32,7 +29,7 @@ const counts = await getCounts()
     <Hero>
       <Picture src={profile} alt="profile" decoding="async" slot="picture" />
     </Hero>
-    <MantineHeat data={heatData} count={counts["2025"]} />
+    <MantineHeatWrapper />
     <BlogSectionsWrapper />
     <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />

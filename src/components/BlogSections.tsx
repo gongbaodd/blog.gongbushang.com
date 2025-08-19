@@ -24,8 +24,8 @@ export default function BlogSections({ latestPosts, historyPosts, totalCount }: 
           </Grid.Col>
 
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <BlogSection title="Time machine" posts={historyPosts} >
-              <Anchor href="/archive">
+            <BlogSection title="Time Machine" posts={historyPosts} >
+              <Anchor href="/year">
                 <Button size="md" variant="outline">View Archives</Button>
               </Anchor>
             </BlogSection>

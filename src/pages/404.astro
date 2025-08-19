@@ -6,7 +6,6 @@ import BaseHead from "@/packages/components/BaseHead.astro";
 import Global from "@/packages/layouts/Global.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Footer from "@/packages/components/Footer.astro";
-import PV from "../components/PV.astro";
 
 Astro.response.status = 404;
 ---
@@ -16,6 +15,6 @@ Astro.response.status = 404;
   <Header />
   <MantineMain isStacked={false}>
     <NotFoundPage />
-    <Footer slug={"404"}  />
   </MantineMain>
+  <Footer slug={"404"} />
 </Global>
