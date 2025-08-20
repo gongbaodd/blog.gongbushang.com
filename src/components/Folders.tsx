@@ -1,4 +1,4 @@
-import { Container, Flex, Stack, Group, Text, darken, Anchor } from "@mantine/core";
+import { Container, Flex, Stack, Group, Text, darken, Anchor, Card, Paper } from "@mantine/core";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import Folder from "../bits/Components/Folder/Folder";
 import { Heatmap } from "@mantine/charts";
@@ -9,6 +9,7 @@ import { File } from "lucide-react";
 import { type IPost } from "./BlogList";
 import { isString } from "es-toolkit";
 import { useEffect, useState } from "react";
+import LetterGlitch from "../bits/Backgrounds/LetterGlitch/LetterGlitch";
 
 interface IYearProps {
     heatmap: Record<string, number>
