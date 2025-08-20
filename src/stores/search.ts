@@ -43,14 +43,11 @@ async function filterHighestPvPost(posts: IPost[]) {
     if (posts.length === 0) return []
 
     await requestAllViewCount()
-    const filteredSlugs = Object.entries($pvMap.get())
-        .filter(([k]) => /^\d{4}-\d{2}-\d{2}-/.test(k))
-        .sort(([, v1], [, v2]) => v2 - v1)
-        .slice(0, 6)
-        .map(([k, v]) => [k.replace(/^(\d{4})-(\d{2})-(\d{2})-(.*)/, "$1/$2/$3/$4"), v] as const)
-
-
-    const filteredPosts = posts.filter(post => filteredSlugs.some(([slug]) => slug === post.id))
+    const filteredPaths = Object.entries($pvMap.get())
+    console.log(filteredPaths)
+    const filteredPosts = posts.filter(post => {
+       return filteredPaths.some(([path]) => path === post.href)
+    })
     return filteredPosts
 }
 

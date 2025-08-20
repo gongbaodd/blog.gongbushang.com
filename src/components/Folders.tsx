@@ -1,4 +1,4 @@
-import { Container, Flex, Stack, Group, Text, darken, Anchor, Card, Paper } from "@mantine/core";
+import { Container, Flex, Stack, Group, Text, darken, Anchor, Card, Paper, Button, Center } from "@mantine/core";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import Folder from "../bits/Components/Folder/Folder";
 import { Heatmap } from "@mantine/charts";
@@ -9,7 +9,7 @@ import { File } from "lucide-react";
 import { type IPost } from "./BlogList";
 import { isString } from "es-toolkit";
 import { useEffect, useState } from "react";
-import LetterGlitch from "../bits/Backgrounds/LetterGlitch/LetterGlitch";
+import { } from "lucide-react"
 
 interface IYearProps {
     heatmap: Record<string, number>
@@ -18,22 +18,54 @@ interface IYearProps {
 }
 
 export default function Folders({ heatmap, counts, top3s }: IYearProps) {
+    const [openedYear, setOpenedYear] = useState<null | string>(null)
+
     return (
         <CustomMantineProvider>
             <Container fluid style={{ marginInline: "initial" }}>
                 <Flex wrap={"wrap"}>
                     {Object.keys(counts).filter(year => year !== FILTER_ENTRY.ALL).reverse().map(year => {
                         const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
+                        const { top3 } = {
+                            get top3() {
+                                const t3 = top3s.get(year)
+
+                                if (t3?.length === 1) {
+                                    return [undefined, undefined, t3[0]]
+                                }
+
+                                
+                                if (t3?.length === 2) {
+                                    return [t3[0], undefined, t3[1]]
+                                }
+
+                                return t3
+                            }
+                        }
+
                         return (
-                            <Group w={400} h={400} justify="center" key={year}>
-                                {/* <Anchor href={"/year/" + year}> */}
-                                    <Folder size={3}
-                                        color={color}
-                                        title={<PostCountLabel text={counts[year].toString()}/>}
-                                        cover={<FolderCover year={year} heatmap={heatmap} />}
-                                        items={top3s.get(year)?.map(post => <FileItem post={post}/>)}
-                                    />
-                                {/* </Anchor> */}
+                            <Group w={400} h={400} justify="center" key={year} style={{ position: "relative" }}>
+                                <Folder size={3}
+                                    color={color}
+                                    title={<PostCountLabel text={counts[year].toString()} />}
+                                    cover={<FolderCover year={year} heatmap={heatmap} />}
+                                    items={top3?.map(post => post && <FileItem post={post} />)}
+                                    setOpen={open => {
+                                        if (open) {
+                                            setOpenedYear(year)
+                                        } else {
+                                            setOpenedYear(null)
+                                        }}
+                                    }
+                                    open={openedYear === year}
+                                />
+                                {openedYear === year && (
+                                    <Center style={{ position: "absolute" }}>
+                                        <Anchor href={"/year/" + year}>
+                                            <Button radius={"md"} size="xl" variant="gradient">View {counts[year].toString()} posts</Button>
+                                        </Anchor>
+                                    </Center>
+                                )}
                             </Group>
                         )
                     })}
@@ -43,7 +75,7 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
     )
 }
 
-function FileItem({ post }: { post: IPost }) {
+function FileItem({ post }: { post: IPost}) {
     const [url, setUrl] = useState("")
 
     useEffect(() => {
@@ -54,7 +86,13 @@ function FileItem({ post }: { post: IPost }) {
         imgEl.src = coverUrl
     }, [post])
 
-    return url ? <img src={url} />: null
+    return url ? <Group w={"100%"} h={"100%"} style={{
+        position: "absolute",
+        backgroundImage: `url(${url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center"
+    }}>
+    </Group> : null
 }
 
 interface IHeat {

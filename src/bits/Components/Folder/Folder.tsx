@@ -3,7 +3,7 @@
 */
 
 import { darken } from "@mantine/core";
-import React, { useEffect, useState, type ReactNode } from "react";
+import React, { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
 interface FolderProps {
   color?: string;
@@ -12,6 +12,8 @@ interface FolderProps {
   className?: string;
   cover?: ReactNode
   title?: ReactNode
+  setOpen: Dispatch<SetStateAction<boolean>>
+  open: boolean
 }
 
 const darkenColor = darken
@@ -23,6 +25,8 @@ const Folder: React.FC<FolderProps> = ({
   className = "",
   cover,
   title,
+  setOpen,
+  open
 }) => {
   const maxItems = 3;
   const papers = items.slice(0, maxItems);
@@ -30,10 +34,11 @@ const Folder: React.FC<FolderProps> = ({
     papers.push(null);
   }
 
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(isOpen);
   const [paperOffsets, setPaperOffsets] = useState<{ x: number; y: number }[]>(
     Array.from({ length: maxItems }, () => ({ x: 0, y: 0 })),
   );
+
 
   const folderBackColor = darkenColor(color, 0.5);
   const paper1 = darkenColor("#ffffff", 0.1);
@@ -41,7 +46,7 @@ const Folder: React.FC<FolderProps> = ({
   const paper3 = "#ffffff";
 
   const handleClick = () => {
-    setOpen((prev) => !prev);
+    setOpen(!open);
     if (open) {
       setPaperOffsets(Array.from({ length: maxItems }, () => ({ x: 0, y: 0 })));
     }
