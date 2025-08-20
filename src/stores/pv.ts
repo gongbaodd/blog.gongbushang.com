@@ -23,17 +23,19 @@ interface IRespond {
     hits: T_Hits[]
 }
 
-export async function requestAllViewCount() {
-    const throttledFn = throttle(async () => {
-        const pvUrl = PV_URL + "pv"
-        const data = await fetch(pvUrl)
-        const result = await data.json() as IRespond
-        const { hits } = result
+const throttledFn = throttle(async () => {
+    const pvUrl = PV_URL + "pv"
+    const data = await fetch(pvUrl)
+    const result = await data.json() as IRespond
+    const { hits } = result
 
-        const pvMap = hits.reduce((sum, hit) =>  ({...sum, [hit.path]: hit.count }), {})
-
+    if (hits && hits.length) {
+        const pvMap = hits.reduce((sum, hit) => ({ ...sum, [hit.path]: hit.count }), {})
         $pvMap.set(pvMap)
-    }, 500)
+    }
 
+}, 1000)
+
+export async function requestAllViewCount() {
     throttledFn()
 }

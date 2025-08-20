@@ -7,6 +7,7 @@ import {
   Text,
   Button,
   Divider,
+  Flex,
 } from "@mantine/core";
 import type { ReactNode } from "react";
 import classes from "./Hero.module.css";

@@ -18,37 +18,40 @@ export async function getAllPostByDateDesc() {
   return sortPostsByDate(posts)
 }
 
+function getCategoryFilterEntries(posts: T_POST[]) {
+  const categoryEntries = new Set<string>()
+  for (const post of posts) {
+    if (post.data.category) {
+      categoryEntries.add(post.data.category.toLowerCase())
+    }
+  }
+
+  return categoryEntries
+}
+
+const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, { getCacheKey: (posts: T_POST[]) => posts.length.toString() });
+
 export const getAllFilterEntries = async () => {
   const posts = await getAllPosts()
   const entries = new Set<string>(STATIC_ENTRIES)
-  const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, { getCacheKey: () => posts.length.toString() });
 
-  const categoryEntries = getMemorizedCategoryFilterEntries()
+  const categoryEntries = getMemorizedCategoryFilterEntries(posts)
 
   return [
     ...entries,
     ...categoryEntries,
   ]
-
-  function getCategoryFilterEntries() {
-    const categoryEntries = new Set<string>()
-    for (const post of posts) {
-      if (post.data.category) {
-        categoryEntries.add(post.data.category.toLowerCase())
-      }
-    }
-
-    return categoryEntries
-  }
 }
 
+
 let categoryPostMap = new Map<string, Set<T_POST>>()
-export function initCategoryPostMap(posts: Set<T_POST> | T_POST[]) {
-  const init = memoize(() => {
-    categoryPostMap = createPostMap(posts, (p) => [p.data.category])
-    return categoryPostMap
-  }, { getCacheKey: () => Array.from(posts).length })
-  return init()
+const _initCategoryPostMap = memoize((posts: T_POST[]) => {
+  categoryPostMap = createPostMap(posts, (p) => [p.data.category])
+  return categoryPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initCategoryPostMap(posts: T_POST[]) {
+  return _initCategoryPostMap(posts)
 }
 
 export const getFilterByCategoryPage = async () => {
@@ -85,12 +88,13 @@ export const isValidCategoryFilter = async (filter: string) => {
 }
 
 let tagPostMap = new Map<string, Set<T_POST>>()
-export function initTagPostMap(posts: Set<T_POST> | T_POST[]) {
-  const init = memoize(() => {
-    tagPostMap = createPostMap(posts, (p) => (p.data.tag ?? []).map((t: string) => t.toLowerCase()))
-    return tagPostMap
-  }, { getCacheKey: () => Array.from(posts).length })
-  return init()
+const _initTagPostMap = memoize((posts: T_POST[]) => {
+  tagPostMap = createPostMap(posts, (p) => (p.data.tag ?? []).map((t: string) => t.toLowerCase()))
+  return tagPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initTagPostMap(posts: T_POST[]) {
+  return _initTagPostMap(posts)
 }
 
 export const getFilterByTagPage = async () => {
@@ -116,14 +120,17 @@ export const isValidTagFilter = async (filter: string) => {
 
 
 let seriesPostMap = new Map<string, Set<T_POST>>()
-export function initSeriesPostMap(posts: Set<T_POST> | T_POST[]) {
-  const init = memoize(() => {
-    seriesPostMap = createPostMap(posts, (p) =>
-      p.data.series?.slug ? [p.data.series.slug] : []
-    )
-    return seriesPostMap
-  }, { getCacheKey: () => Array.from(posts).length })
-  return init()
+
+const _initSeriesPostMap = memoize((posts: T_POST[]) => {
+  seriesPostMap = createPostMap(posts, (p) =>
+    p.data.series?.slug ? [p.data.series.slug] : []
+  )
+  return seriesPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initSeriesPostMap(posts: T_POST[]) {
+
+  return _initSeriesPostMap(posts)
 }
 
 export const getFilterBySeriesPage = async () => {
@@ -203,31 +210,34 @@ export function createPostMap(posts: Set<T_POST> | T_POST[], filterFn: (p: T_POS
   return items
 }
 
-export function sortPostsByDate(posts: T_POST[]) {
-  const memSort = memoize((posts: T_POST[]) => {
-    return posts.toSorted((p1, p2) => {
-      const d1 = new Date(date(p1))
-      const d2 = new Date(date(p2))
-      return d1 > d2 ? -1 : 1
-    })
+const memSort = memoize((posts: T_POST[]) => {
+  return posts.toSorted((p1, p2) => {
+    const d1 = new Date(date(p1))
+    const d2 = new Date(date(p2))
+    return d1 > d2 ? -1 : 1
   })
+})
 
+export function sortPostsByDate(posts: T_POST[]) {
   return memSort(posts)
 }
 
 
 let yearPostMap = new Map<string, Set<T_POST>>()
-export function initYearPostMap(posts: Set<T_POST> | T_POST[]) {
-  const init = memoize(() => {
-    yearPostMap = createPostMap(posts, (p) => [dayjs(date(p)).format("YYYY")])
-    return yearPostMap
-  }, { getCacheKey: () => Array.from(posts).length })
-  return init()
+
+const _initYearPostMap = memoize((posts: T_POST[]) => {
+  yearPostMap = createPostMap(posts, (p) => [dayjs(date(p)).format("YYYY")])
+  return yearPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initYearPostMap(posts: T_POST[]) {
+
+  return _initYearPostMap(posts)
 }
 
 export const getFilterByYearPage = async () => {
   const posts = await getAllPosts()
-   initYearPostMap(posts)
+  initYearPostMap(posts)
   const yearResult = Array.from(yearPostMap, ([filter, postsSet]) => ({
     params: {
       filter,
@@ -240,14 +250,17 @@ export const getFilterByYearPage = async () => {
 
 
 let monthPostMap = new Map<string, Set<T_POST>>()
-export function initYearMonthPostMap(posts: Set<T_POST> | T_POST[]) {
-  const init = memoize(() => {
-    monthPostMap = createPostMap(posts, (p) =>
-      [dayjs(date(p)).format("YYYY-MM")]
-    )
-    return monthPostMap
-  }, { getCacheKey: () => Array.from(posts).length })
-  return init()
+
+const _initYearMonthPostMap = memoize((posts: T_POST[]) => {
+  monthPostMap = createPostMap(posts, (p) =>
+    [dayjs(date(p)).format("YYYY-MM")]
+  )
+  return monthPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initYearMonthPostMap(posts: T_POST[]) {
+
+  return _initYearMonthPostMap(posts)
 }
 
 export const getFilterByMonthPage = async () => {
