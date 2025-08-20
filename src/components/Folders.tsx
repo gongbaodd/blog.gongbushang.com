@@ -5,6 +5,7 @@ import { Heatmap } from "@mantine/charts";
 import dayjs from "dayjs";
 import { FILTER_ENTRY, POST_CARD_UNDERLINE_COLORS, TITLE_COLOR_MAP } from "@/packages/consts";
 import classes from "./Folder.module.css"
+import { File } from "lucide-react";
 
 interface IYearProps {
     heatmap: Record<string, number>
@@ -24,7 +25,10 @@ export default function Folders({ heatmap, counts }: IYearProps) {
                                     <Folder size={3}
                                         color={color}
                                         title={(
-                                            <Text size="xs" style={{ transform: "scale(.85)" }}>{year}</Text>
+                                            <Flex c="gray" align={"center"} style={{ transform: "scale(.85)" }}>
+                                                <File size={12} />
+                                                <Text size="xs" >{counts[year]}</Text>
+                                            </Flex>
                                         )}
                                         cover={(
                                             <Stack gap={0}
@@ -32,9 +36,10 @@ export default function Folders({ heatmap, counts }: IYearProps) {
                                                 justify="center"
                                                 align="center"
                                             >
-                                                <div style={{ overflow: "hidden", borderRadius: "var(--mantine-radius-sm)" }}>
+                                                <Text c={"gray"}>{year}</Text>
+                                                <Group display={"block"} style={{ overflow: "hidden", borderRadius: "var(--mantine-radius-sm)" }}>
                                                     {[`${year}-01-01`, `${year}-07-01`].map(day => (<Heat key={day} data={heatmap} startDate={day} />))}
-                                                </div>
+                                                </Group>
                                             </Stack>
                                         )}
                                     />
