@@ -44,7 +44,7 @@ export const TITLE_COLOR_MAP = Object.entries({
   "lime-2": "#d8f5a2",
   "dark-8": "#1f1f1f",
   "red-3": "#ffa8a8",
-  "gray-3": "#dee2e6"
+  "gray-2": "#e9ecef"
 })
 .reduce<Record<string, string>>((sum, [name, value]) => ({ ...sum, [prefix + name]: value }), {})
 

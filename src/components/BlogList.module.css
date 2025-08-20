@@ -10,7 +10,7 @@
 .item.with_bg {
   --underline-width: 28;
   --underline-color: var(--mantine-color-dark-8);
-  --mixed-underline-color: color-mix(in srgb, var(--underline-color) 85%, transparent);
+  --mixed-underline-color: var(--underline-color);
   --underline-offset-y: -4px;
   --cover-opacity: 0;
 

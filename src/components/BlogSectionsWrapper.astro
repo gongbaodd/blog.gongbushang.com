@@ -1,7 +1,7 @@
 ---
 import BlogSections from "./BlogSections";
 import dayjs from "dayjs";
-import { getAllPostByDateDesc, initYearPostMap } from "@/packages/utils/filter";
+import { getAllPostByDateDesc, initYearMonthPostMap } from "@/packages/utils/filter";
 import { date } from "@/packages/utils/extract";
 import { mapServerPostToClient } from "@/packages/utils/post";
 import { getCounts } from "@/packages/utils/heatmap";
@@ -15,7 +15,7 @@ const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));
 const buildYear = dayjs().format("YYYY");
 const buildMonth = dayjs().format("MM");
 const buildDay = dayjs().format("DD");
-const monthPostMap = initYearPostMap(_posts);
+const monthPostMap = initYearMonthPostMap(_posts);
 
 const sameMonthPosts: (T_POST)[] = [];
 
