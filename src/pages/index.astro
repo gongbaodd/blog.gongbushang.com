@@ -17,6 +17,7 @@ import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/components/Header.astro";
 import MantineHeatWrapper from "../components/MantineHeatWrapper.astro";
+import Lanyard from "../bits/Components/Lanyard/Lanyard";
 
 export const prerender = true;
 const badges = await getBadges()
@@ -26,9 +27,7 @@ const badges = await getBadges()
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header/>
   <MantineMain>
-    <Hero>
-      <Picture src={profile} alt="profile" decoding="async" slot="picture" />
-    </Hero>
+    <Hero client:load/>
     <MantineHeatWrapper />
     <BlogSectionsWrapper />
     <Tags client:load>

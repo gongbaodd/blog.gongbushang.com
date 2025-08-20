@@ -21,7 +21,7 @@ export default function ViewCount({ path }: IViewCountProps) {
             // multiple islands may cause hydration problem
             await requestAllViewCount()
             const pvMap = $pvMap.get()
-            setCount(pvMap[path].toString() ?? "")
+            setCount(pvMap[path]?.toString() ?? "")
         }
     }, [path])
 

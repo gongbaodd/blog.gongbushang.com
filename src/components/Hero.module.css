@@ -1,9 +1,18 @@
-.avatar img {
+.placeholder {
+    position: absolute;
     width: 100%;
     height: 100%;
+    top: 0;
+    left: 0;
+
+    color: var(--mantine-color-gray-6);
 }
 
-.avatar picture {
-    width: 100%;
-    height: 100%;
+.lanyard {
+    backdrop-filter: blur(5px) opacity(0);
+    transition: backdrop-filter 0.5s ease-in-out;
+}
+
+.lanyard.loaded {
+    backdrop-filter: blur(5px) opacity(1);
 }

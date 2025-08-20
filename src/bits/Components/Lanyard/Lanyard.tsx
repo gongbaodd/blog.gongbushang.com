@@ -1,3 +1,4 @@
+// @ts-nocheck
 /*
 	Installed from https://reactbits.dev/ts/tailwind/
 */
@@ -12,7 +13,7 @@ import {
   Environment,
   Lightformer,
 } from "@react-three/drei";
-import pkg, {type RigidBodyProps} from "@react-three/rapier";
+import * as Rapier from "@react-three/rapier";
 const {
   BallCollider,
   CuboidCollider,
@@ -20,14 +21,15 @@ const {
   RigidBody,
   useRopeJoint,
   useSphericalJoint,
-} = pkg
+} = Rapier
+type RigidBodyProps = Rapier.RigidBodyProps
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import * as THREE from "three";
 
 // replace with your own imports, see the usage snippet for details
 // import cardGLB from "./card.glb";
 const cardGLB = "/assets/bits/Components/Lenyard/card.glb"
-import lanyard from "./profile.jpg?raw";
+const lanyard = "/assets/bits/Components/Lenyard/texture.jpg"
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
@@ -36,6 +38,7 @@ interface LanyardProps {
   gravity?: [number, number, number];
   fov?: number;
   transparent?: boolean;
+  onLoad?: () => void
 }
 
 export default function Lanyard({
@@ -43,19 +46,19 @@ export default function Lanyard({
   gravity = [0, -40, 0],
   fov = 20,
   transparent = true,
+  onLoad
 }: LanyardProps) {
   return (
-    <div className="relative z-0 w-full h-screen flex justify-center items-center transform scale-100 origin-center">
       <Canvas
         camera={{ position, fov }}
         gl={{ alpha: transparent }}
-        onCreated={({ gl }) =>
+        onCreated={({ gl }) => 
           gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
         }
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={1 / 60}>
-          <Band />
+          <Band onLoad={onLoad} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer
@@ -88,16 +91,16 @@ export default function Lanyard({
           />
         </Environment>
       </Canvas>
-    </div>
   );
 }
 
 interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
+  onLoad: LanyardProps["onLoad"]
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
+function Band({ maxSpeed = 50, minSpeed = 0, onLoad }: BandProps) {
   // Using "any" for refs since the exact types depend on Rapier's internals
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
@@ -121,6 +124,11 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
 
   const { nodes, materials } = useGLTF(cardGLB) as any;
   const texture = useTexture(lanyard);
+
+  useEffect(() => {
+    onLoad && onLoad()
+  }, [])
+
   const [curve] = useState(
     () =>
       new THREE.CatmullRomCurve3([
@@ -130,6 +138,7 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
         new THREE.Vector3(),
       ]),
   );
+
   const [dragged, drag] = useState<false | THREE.Vector3>(false);
   const [hovered, hover] = useState(false);
 
@@ -139,15 +148,6 @@ function Band({ maxSpeed = 50, minSpeed = 0 }: BandProps) {
     }
     return false;
   });
-
-  useEffect(() => {
-    const handleResize = (): void => {
-      setIsSmall(window.innerWidth < 1024);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return (): void => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useRopeJoint(fixed, j1, [[0, 0, 0], [0, 0, 0], 1]);
   useRopeJoint(j1, j2, [[0, 0, 0], [0, 0, 0], 1]);
