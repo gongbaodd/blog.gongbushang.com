@@ -153,7 +153,7 @@ export async function isValidFilter(filter: string) {
 }
 
 
-export function page(filterFn: typeof getFilterByCategoryPage | typeof getFilterBySeriesPage | typeof getFilterByTagPage) {
+export function page(filterFn: typeof getFilterByCategoryPage | typeof getFilterBySeriesPage | typeof getFilterByTagPage | typeof getFilterByYearPage) {
   return async () => {
     const results = await filterFn();
     type T_RES = typeof results[0];
