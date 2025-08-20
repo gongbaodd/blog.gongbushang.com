@@ -1,9 +1,10 @@
-import { PV_URL } from "@/packages/consts";
+import { PV_URL, ROUTES } from "@/packages/consts";
 import { atom, computed } from "nanostores";
+import { throttle } from "es-toolkit"
 
-export const $pv = atom<Record<string, number>>({})
+export const $pvMap = atom<Record<string, number>>({})
 
-export const $pvText = computed($pv, obj => {
+export const $pvText = computed($pvMap, obj => {
     const result: Record<string, string> = {}
 
     for (const [k, v] of Object.entries(obj)) {
@@ -13,21 +14,26 @@ export const $pvText = computed($pv, obj => {
     return result
 })
 
-export async function requestViewCount(slug: string) {
-    const pvUrl = PV_URL + slug + "/pv"
-    const data = await fetch(pvUrl)
-    const { count } = await data.json() as { slug: string, count: number }
-    $pv.set({
-        ...$pv.get(),
-        [slug]: count
-    })
+type T_Hits = {
+    count: number,
+    path: string,
 }
 
-export const $pvMap = atom<Record<string, number>>({})
+interface IRespond {
+    hits: T_Hits[]
+}
 
 export async function requestAllViewCount() {
-    const pvUrl = PV_URL + "pv/all"
-    const data = await fetch(pvUrl)
-    const result = await data.json() as Record<string, number>
-    $pvMap.set(result)
+    const throttledFn = throttle(async () => {
+        const pvUrl = PV_URL + "pv"
+        const data = await fetch(pvUrl)
+        const result = await data.json() as IRespond
+        const { hits } = result
+
+        const pvMap = hits.reduce((sum, hit) =>  ({...sum, [hit.path]: hit.count }), {})
+
+        $pvMap.set(pvMap)
+    }, 500)
+
+    throttledFn()
 }

@@ -16,11 +16,6 @@ import v2ex from "../../src/icons/v2ex.svg?raw";
 import MantineFooter from "@/src/components/MantineFooter";
 import ViewCount from "@/src/components/ViewCount";
 
-interface Props {
-  slug: string
-}
-
-const slug = Astro.props.slug
 ---
 
 <MantineFooter>
@@ -129,7 +124,7 @@ const slug = Astro.props.slug
     fill="currentcolor"
     slot="iconV2ex"
   />
-  <ViewCount slug={slug} slot="viewCount" client:load />
+  <ViewCount path={Astro.url.pathname} slot="viewCount" client:load />
 </MantineFooter>
 <script data-goatcounter="https://gongbaodd.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 

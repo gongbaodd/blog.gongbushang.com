@@ -2,27 +2,26 @@
 import { useStore } from "@nanostores/react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Group, Flex, Text } from "@mantine/core";
-import { $pvText, requestViewCount } from "../stores/pv";
+import { $pvText, requestAllViewCount } from "../stores/pv";
 import { useEffect } from "react";
 import classes from "./ViewCount.module.css"
 
 interface IViewCountProps {
-    slug: string
+    path: string
 }
 
-export default function ViewCount({ slug: _slug }: IViewCountProps) {
+export default function ViewCount({ path }: IViewCountProps) {
     const pvMap = useStore($pvText)
-    const slug = _slug.replaceAll("/", "-")
 
     useEffect(() => {
-        requestViewCount(slug)
+        requestAllViewCount()
     }, [])
 
     return (
         <CustomMantineProvider>
             <Group style={{ position: "relative" }}>
                 <Flex style={{ position: "absolute", width: "100%", height: "100%" }} justify={"center"} align={"center"}>
-                    <Text size="xs" className={classes.count}>{pvMap[slug] ?? 0}</Text>
+                    <Text size="xs" className={classes.count}>{pvMap[path] ?? 0}</Text>
                 </Flex>
                 <Eye />
             </Group>

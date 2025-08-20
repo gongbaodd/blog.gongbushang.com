@@ -264,7 +264,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
                 className={classes.category}
                 p={0}
               >
-                <ViewCount slug={post.id} />
+                <ViewCount path={post.href} />
               </Avatar>
             </Flex>
 
