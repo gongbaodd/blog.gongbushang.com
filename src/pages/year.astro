@@ -7,10 +7,21 @@ import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../components/MantineMain";
 import Folders from "../components/Folders";
 import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
+import { initYearPostMap, sortPostsByDate } from "@/packages/utils/filter";
+import { getAllPosts, mapServerPostToClient, type TClientPost } from "@/packages/utils/post";
 
 
 const heatData = await getHeatmapData()
 const counts = await getCounts()
+const posts = await getAllPosts()
+const yearPostMap = initYearPostMap(posts)
+
+const yearCoverPostMap = new Map<string, TClientPost[]>()
+for (const [year, postsSet] of yearPostMap) {
+  const withCover =  Array.from(postsSet).filter(p => Boolean(p.data.cover))
+  const top3 = await mapServerPostToClient(withCover.slice(0, 3))
+  yearCoverPostMap.set(year, top3)
+}
 ---
 
 <Global>
@@ -21,7 +32,7 @@ const counts = await getCounts()
   />
   <Header/>
   <MantineMain>
-    <Folders heatmap={heatData} counts={counts} />
+    <Folders heatmap={heatData} counts={counts} top3s={yearCoverPostMap} client:load />
     <Footer />
   </MantineMain>
 </Global>

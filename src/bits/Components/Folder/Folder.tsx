@@ -3,7 +3,7 @@
 */
 
 import { darken } from "@mantine/core";
-import React, { useState, type ReactNode } from "react";
+import React, { useEffect, useState, type ReactNode } from "react";
 
 interface FolderProps {
   color?: string;
@@ -91,7 +91,7 @@ const Folder: React.FC<FolderProps> = ({
     if (index === 2) return "translate(-50%, -100%) rotate(5deg)";
     return "";
   };
-
+  
   return (
     <div style={scaleStyle} className={className}>
       <div
@@ -139,6 +139,7 @@ const Folder: React.FC<FolderProps> = ({
                   ...(!open ? {} : { transform: transformStyle }),
                   backgroundColor: i === 0 ? paper1 : i === 1 ? paper2 : paper3,
                   borderRadius: "10px",
+                  overflow: "hidden"
                 }}
               >
                 {item}
