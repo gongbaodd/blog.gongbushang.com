@@ -9,6 +9,7 @@ export enum FILTER_ENTRY {
     ALL = 'all',
     TAG = 'tag',
     SERIES = 'series',
+    YEAR = 'year',
 }
 
 export const ROUTES = [

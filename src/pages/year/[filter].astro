@@ -18,4 +18,4 @@ const isValid = Object.keys(counts).filter(k => k !== FILTER_ENTRY.ALL).includes
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.TAG} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.YEAR} /> : <NotFound />}
