@@ -2,8 +2,8 @@
 import { useStore } from "@nanostores/react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Group, Flex, Text } from "@mantine/core";
-import { $pvMap, $pvText, requestAllViewCount } from "../stores/pv";
-import { useEffect, useState } from "react";
+import { $pvMap, requestAllViewCount } from "../stores/pv";
+import { useCallback, useEffect, useState } from "react";
 import classes from "./ViewCount.module.css"
 import { Eye } from "lucide-react";
 
@@ -12,26 +12,33 @@ interface IViewCountProps {
 }
 
 export default function ViewCount({ path }: IViewCountProps) {
-    const [count, setCount] = useState("")
+    const pvMap = useStore($pvMap)
+    const [count, setCount] = useState(0)
 
     useEffect(() => {
-        solveHydrationProblem()
+        requestPV()
+    }, [])
 
-        async function solveHydrationProblem() {
-            // multiple islands may cause hydration problem
-            await requestAllViewCount()
-            const pvMap = $pvMap.get()
-            setCount(pvMap[path]?.toString() ?? "")
-        }
-    }, [path])
+    return (
+        <CustomMantineProvider>
+            <Skeleton count={count} />
+        </CustomMantineProvider>
+    )
 
+    async function requestPV() {
+        await requestAllViewCount()
+        setCount(pvMap[path])
+    }
+}
+
+function Skeleton({ count }: { count: number }) {
     return (
         <CustomMantineProvider>
             <Group style={{ position: "relative" }}>
                 <Flex style={{ position: "absolute", width: "100%", height: "100%" }} justify={"center"} align={"center"}>
                     <Text size="xs" className={classes.count}>{count}</Text>
                 </Flex>
-                {count ? <EmptyEye /> : <Eye />}
+                {count ? <EmptyEye /> : <Eye strokeWidth={1} />}
             </Group>
         </CustomMantineProvider>
     )

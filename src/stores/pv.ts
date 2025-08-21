@@ -1,6 +1,6 @@
 import { PV_URL, ROUTES } from "@/packages/consts";
 import { atom, computed } from "nanostores";
-import { throttle } from "es-toolkit"
+import { debounce, throttle } from "es-toolkit"
 
 export const $pvMap = atom<Record<string, number>>({})
 
@@ -23,7 +23,9 @@ interface IRespond {
     hits: T_Hits[]
 }
 
-const throttledFn = throttle(async () => {
+let pvPromise: null | Promise<void> = null
+
+async function _pvRequest() {
     const pvUrl = PV_URL + "pv"
     const data = await fetch(pvUrl)
     const result = await data.json() as IRespond
@@ -33,9 +35,12 @@ const throttledFn = throttle(async () => {
         const pvMap = hits.reduce((sum, hit) => ({ ...sum, [hit.path]: hit.count }), {})
         $pvMap.set(pvMap)
     }
-
-}, 1000)
+}
 
 export async function requestAllViewCount() {
-    throttledFn()
+    if (null == pvPromise) {
+        pvPromise = _pvRequest()
+        await pvPromise
+        pvPromise = null
+    }
 }
