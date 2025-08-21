@@ -6,17 +6,18 @@ import { $pvMap, requestAllViewCount } from "../stores/pv";
 import { useCallback, useEffect, useState } from "react";
 import classes from "./ViewCount.module.css"
 import { Eye } from "lucide-react";
+import { computed } from "nanostores";
 
 interface IViewCountProps {
     path: string
 }
 
 export default function ViewCount({ path }: IViewCountProps) {
-    const pvMap = useStore($pvMap)
-    const [count, setCount] = useState(0)
+    const $count = computed($pvMap, v => v[path])
+    const count = useStore($count)
 
     useEffect(() => {
-        requestPV()
+        requestAllViewCount()
     }, [])
 
     return (
@@ -24,11 +25,6 @@ export default function ViewCount({ path }: IViewCountProps) {
             <Skeleton count={count} />
         </CustomMantineProvider>
     )
-
-    async function requestPV() {
-        await requestAllViewCount()
-        setCount(pvMap[path])
-    }
 }
 
 function Skeleton({ count }: { count: number }) {
