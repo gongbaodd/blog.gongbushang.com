@@ -11,7 +11,6 @@ import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import potrace from "potrace"
 
-
 export interface IPost {
     id: string;
     href: string;
@@ -111,8 +110,35 @@ async function colorizePost(post: T_PROPS | T_EXT_POST, index: number): Promise<
     }
 
     const { url } = post.data.cover;
+    const coverUrl = isString(url) ? url : url.src;
 
-    const { bgColor, titleColor, trace } =  await getColorSet(isString(url) ? url : url.src)
+    try {
+        const metadataPath = path.join(process.cwd(), 'src', 'content', 'metadata.json');
+        if (fs.existsSync(metadataPath)) {
+            const metadataContent = fs.readFileSync(metadataPath, 'utf-8');
+            const metadata = JSON.parse(metadataContent);
+            
+            const matchingEntry = metadata.find((entry: any) =>{
+                return entry.file === post.id
+            });
+            
+            if (matchingEntry) {
+                return {
+                    get result() {
+                        const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor)
+                        const t = set(r, "data.trace", matchingEntry.colorSet.trace)
+                        return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor)
+                    }
+                }.result
+            }
+        }
+    } catch (error) {
+        // If metadata.json doesn't exist or there's an error reading it, continue with normal color generation
+        console.warn('Could not read metadata.json, falling back to color generation:', error);
+    }
+
+    // Fall back to generating colors if no metadata found
+    const { bgColor, titleColor, trace } = await getColorSet(coverUrl)
 
     return {
         get result() {
@@ -127,7 +153,7 @@ async function getColorSet(imagePathOrUrl: string) {
     function isRemote(url: string) {
         return /^https?:\/\//.test(url);
     }
-    
+
     let buffer: Buffer | undefined = undefined;
 
     if (isRemote(imagePathOrUrl)) {
@@ -199,7 +225,7 @@ function wordcount(text: string): number {
         try {
             const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
             const segments = segmenter.segment(text);  
-            
+
             return [...segments].filter(w => w.isWordLike).length;
         } catch (error) {
             console.warn('Intl.Segmenter failed, falling back to simple word counting:', error);

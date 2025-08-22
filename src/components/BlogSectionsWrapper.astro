@@ -54,10 +54,10 @@ const sortedByDayProximity = postsWithDayProximity.sort((a, b) => {
 const selectedMonthPosts = sortedByDayProximity
   .slice(0, 5)
   .map((item) => item.post);
-const historyPosts = (await mapServerPostToClient(selectedMonthPosts))
-  .sort((a, b) => {
-    return Number(a.date) - Number(b.date);
-  })
+let historyPosts = await mapServerPostToClient(selectedMonthPosts)
+const hPostWithCover = historyPosts.filter(p => p.data.cover).sort((a, b) => Number(a.date) - Number(b.date))
+const hPostNoCover = historyPosts.filter(p => !p.data.cover).sort((a, b) => Number(a.date) - Number(b.date))
+historyPosts = [...hPostWithCover, ...hPostNoCover]
 
 const counts = await getCounts();
 ---
