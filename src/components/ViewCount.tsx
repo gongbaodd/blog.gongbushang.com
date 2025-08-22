@@ -3,7 +3,7 @@ import { useStore } from "@nanostores/react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Group, Flex, Text } from "@mantine/core";
 import { $pvMap, requestAllViewCount } from "../stores/pv";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import classes from "./ViewCount.module.css"
 import { Eye } from "lucide-react";
 import { computed } from "nanostores";
@@ -12,12 +12,14 @@ interface IViewCountProps {
     path: string
 }
 
-export default function ViewCount({ path }: IViewCountProps) {
+export default function ViewCount({ path: _path }: IViewCountProps) {
+    const path = normalizePath(_path)
     const $count = computed($pvMap, v => v[path])
     const count = useStore($count)
 
     useEffect(() => {
         requestAllViewCount()
+        console.log(path)
     }, [])
 
     return (
@@ -25,6 +27,12 @@ export default function ViewCount({ path }: IViewCountProps) {
             <Skeleton count={count} />
         </CustomMantineProvider>
     )
+}
+
+function normalizePath(path: string) {
+  return path.endsWith('/') && path !== '/' 
+    ? path.slice(0, -1) 
+    : path;
 }
 
 function Skeleton({ count }: { count: number }) {
