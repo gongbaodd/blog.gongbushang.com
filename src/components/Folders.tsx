@@ -22,7 +22,7 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
 
     return (
         <CustomMantineProvider>
-            <Container fluid style={{ marginInline: "initial" }}>
+            <Container fluid style={{ marginInline: "initial" }} p={0}>
                 <Flex wrap={"wrap"}>
                     {Object.keys(counts).filter(year => year !== FILTER_ENTRY.ALL).reverse().map(year => {
                         const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)

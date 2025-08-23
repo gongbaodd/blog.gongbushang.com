@@ -61,7 +61,7 @@ export default function BlogList({
 }: Props) {
   return (
     <CustomMantineProvider>
-      <Container fluid style={{ marginInline: "initial" }}>
+      <Container fluid style={{ marginInline: "initial" }} p={0}>
         <Grid gutter="lg">
           <Grid.Col span={{ base: 12, md: 1.5 }}>
             <Stack gap="lg" style={{ position: "sticky", top: 100 }}>

@@ -124,7 +124,7 @@ export function SearchBanner() {
   }, [])
   return (
     <CustomMantineProvider>
-      <Container fluid style={{ marginInline: "initial" }}>
+      <Container fluid style={{ marginInline: "initial" }} p={0}>
         <Paper h={300} shadow="md" radius="lg" p={0} style={{ overflow: "hidden", position: "relative" }} >
           <LetterGlitch
             glitchColors={['#2b4539', '#61dca3', '#61b3dc']}
