@@ -1,7 +1,8 @@
-import { AppShell, Flex, Stack } from "@mantine/core";
+import { AppShell, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
-import layoutStore from "../stores/layout";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
+import layoutStore from "@/src/stores/layout";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import classes from "./MantineMain.module.css"
 
 export default function MantineMain({
   children,
@@ -14,7 +15,7 @@ export default function MantineMain({
 
   return (
     <CustomMantineProvider>
-      <AppShell header={{ height: headerHeight }} padding="md">
+      <AppShell header={{ height: headerHeight }} className={classes.app} >
         <AppShell.Main display={"flex"}>
           {isStacked ? (
               <Stack gap="xl" style={{ width: "100%"}} justify="space-between">{children}</Stack>
