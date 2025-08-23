@@ -15,7 +15,7 @@ export default function MantineHeat({ data, count }: IHeat) {
 
     return (
         <CustomMantineProvider>
-            <Flex direction={"row"} justify="center" wrap={"wrap"} gap={"lg"}>
+            <Flex direction={"row"} justify="space-between" wrap={"wrap"} gap={"lg"} px={"xl"}>
                 <Heatmap
                     rectSize={20}
                     rectRadius={20}

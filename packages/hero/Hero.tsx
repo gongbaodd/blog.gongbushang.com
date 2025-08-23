@@ -28,7 +28,7 @@ export default function Hero({}: IProps) {
       <Box py="xl">
         <Group align="center" gap={"xl"} justify="center">
           <Card p={0} radius={"lg"} shadow="lg">
-            <Flex maw={600} h={600} style={{ position: "relative", aspectRatio: "1 / 1" }}>
+            <Flex className={classes.avatarContainer}>
               <Center className={classes.placeholder} dangerouslySetInnerHTML={{__html: profile}}></Center>
               <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded: "")}>
                 <Lanyard position={[0, 0, 12]} gravity={[0, -40, 0]} onLoad={() => setModelLoaded(true)} />

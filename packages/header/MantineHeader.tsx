@@ -68,7 +68,7 @@ function NavDrawer() {
   const [opened, { open, close }] = useDisclosure(false);
   return (
     <>
-      <Drawer opened={opened} onClose={close} title="Navigation">
+      <Drawer opened={opened} onClose={close} title="Navigation" position="bottom"  overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}>
         <Divider />
         <Stack align="flex-start" gap="xl" mt={"xl"}>
           <NavLinks />
