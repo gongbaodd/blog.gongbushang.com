@@ -1,7 +1,7 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
 import Footer from "@/packages/components/Footer.astro";
-import Header from "@/packages/components/Header.astro";
+import Header from "@/packages/header/Header.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../components/MantineMain";
@@ -9,7 +9,7 @@ import Folders from "../components/Folders";
 import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
 import { initYearPostMap } from "@/packages/utils/filter";
 import { getAllPosts, mapServerPostToClient, type TClientPost } from "@/packages/utils/post";
-import { SearchBanner } from "../components/Search";
+import { SearchBanner } from "@/packages/search/Search";
 
 
 const heatData = await getHeatmapData()

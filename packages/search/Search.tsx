@@ -1,16 +1,15 @@
-import { Badge, Box, Button, Group, Loader, Modal, Paper, rem, Stack, Text, TextInput, Highlight, Center, Anchor, Flex, Kbd, Container } from "@mantine/core";
+import { Badge, Box, Button, Group, Loader, Paper, Text,  Highlight, Center, Kbd, Container } from "@mantine/core";
 import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks"
-import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { Suspense, use, useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { Calendar, Search as SearchIcon } from "lucide-react";
-import { $index, $posts, loadPostsToIndex, search } from "../stores/search";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
 import excerpt from "excerpt"
 import type { SearchResult } from "minisearch";
-import type { IPost } from "@/packages/utils/post";
 import { Spotlight, spotlight } from "@mantine/spotlight"
-import LetterGlitch from "../bits/Backgrounds/LetterGlitch/LetterGlitch";
+import LetterGlitch from "@/src/bits/Backgrounds/LetterGlitch/LetterGlitch";
+import { $index, $posts, loadPostsToIndex, search } from "@/src/stores/search";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 
 export default function Search() {
   const [_searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
@@ -35,9 +34,20 @@ export default function Search() {
         radius={"xl"} variant="outline" c="dimmed"
         style={{ borderColor: "var(--mantine-color-dimmed)" }}
         onClick={loadPosts}
+        visibleFrom="sm"
       >
         {isLoading ? "Loading..." : "Search..."}
         {!isLoading && <Text span c="dimmed" size="xs" ml="1em"><Kbd>⌘</Kbd>+<Kbd>K</Kbd></Text>}
+      </Button>
+      <Button 
+        hiddenFrom="sm" 
+        onClick={loadPosts}
+        c="dimmed"
+        radius={"xl"}
+        variant="outline"
+        style={{ borderColor: "var(--mantine-color-dimmed)" }}
+      >
+        {isLoading ? <Loader size="xs" c={"dimmed"} /> : <SearchIcon size={16} />}
       </Button>
       <SpotlightModal onSpotlightClose={closeSearch} />
     </CustomMantineProvider>

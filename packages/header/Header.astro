@@ -1,0 +1,12 @@
+---
+import MantineHeader from "@/packages/header/MantineHeader";
+import Search from "@/packages/search/Search";
+import HeaderNanoStore from "./store/HeaderNanoStore";
+
+const pathName = Astro.url.pathname
+---
+
+<HeaderNanoStore pathname={pathName} client:load />
+<MantineHeader client:load>
+  <Search slot={"searchNode"} client:idle />
+</MantineHeader>
