@@ -19,7 +19,6 @@ export default function ViewCount({ path: _path }: IViewCountProps) {
 
     useEffect(() => {
         requestAllViewCount()
-        console.log(path)
     }, [])
 
     return (

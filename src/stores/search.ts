@@ -44,7 +44,6 @@ async function filterHighestPvPost(posts: IPost[]) {
 
     await requestAllViewCount()
     const filteredPaths = Object.entries($pvMap.get())
-    console.log(filteredPaths)
     const filteredPosts = posts.filter(post => {
        return filteredPaths.some(([path]) => path === post.href)
     })

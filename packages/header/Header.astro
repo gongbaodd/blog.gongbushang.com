@@ -2,8 +2,10 @@
 import MantineHeader from "@/packages/header/MantineHeader";
 import Search from "@/packages/search/Search";
 import HeaderNanoStore from "./store/HeaderNanoStore";
+import { $pathname } from "./store/pathname";
 
 const pathName = Astro.url.pathname
+$pathname.set(pathName)
 ---
 
 <HeaderNanoStore pathname={pathName} client:load />

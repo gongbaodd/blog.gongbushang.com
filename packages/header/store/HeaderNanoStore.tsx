@@ -1,5 +1,5 @@
+import { useEffect } from "react";
 import { $pathname } from "./pathname";
-import { useIsomorphicEffect } from "@mantine/hooks";
 
 interface IProps {
     links?: Array<{ label: string; href: string }>;
@@ -10,7 +10,7 @@ interface IProps {
 export default function HeaderNanoStore({
     links, title, pathname
 }: IProps) {
-    useIsomorphicEffect(() => {
+    useEffect(() => {
         $pathname.set(pathname);
     }, [links, title, pathname])
     return <></>;
