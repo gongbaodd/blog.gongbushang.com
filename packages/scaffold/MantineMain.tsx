@@ -15,8 +15,8 @@ export default function MantineMain({
 
   return (
     <CustomMantineProvider>
-      <AppShell header={{ height: headerHeight }} className={classes.app} >
-        <AppShell.Main display={"flex"}>
+      <AppShell header={{ height: headerHeight }} >
+        <AppShell.Main display={"flex"} className={classes.app} >
           {isStacked ? (
               <Stack gap="xl" style={{ width: "100%"}} justify="space-between">{children}</Stack>
           ) : children}

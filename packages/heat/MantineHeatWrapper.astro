@@ -7,4 +7,4 @@ const counts = await getCounts()
 const year = dayjs().format("YYYY")
 
 ---
-<MantineHeat data={heatData} count={counts[year]} />
+<MantineHeat data={heatData} count={counts[year]} client:load />

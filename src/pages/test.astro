@@ -4,24 +4,15 @@ import Global from "../../packages/layouts/Global.astro";
 import BaseHead from "../../packages/components/BaseHead.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 
-import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../../packages/scaffold/MantineMain";
-import Hero from "../../packages/hero/Hero";
-import BlogSectionsWrapper from "../components/BlogSectionsWrapper.astro";
-import SpotifyPlayer from "../components/SpotifyPlayer";
-import Tags, { TagGroup } from "../components/Tags";
-import NewsLetter from "../components/NewsLetter";
-import Footer from "@/packages/components/Footer.astro";
-import Header from "@/packages/header/Header.astro";
-import MantineHeatWrapper from "../components/MantineHeatWrapper.astro";
+import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 
 export const prerender = true;
-const badges = await getBadges()
 ---
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <MantineMain>
-    <Hero client:load/>
+      <MantineHeatWrapper />
   </MantineMain>
 </Global>

@@ -1,11 +1,11 @@
-@media screen and (max-width: var(--mantine-breakpoint-sm)) {
-    .app {
-        padding: 0;
-    }
+.app {
+    padding-left: var(--mantine-spacing-md);
+    padding-right: var(--mantine-spacing-md);
 }
 
-@media screen and (min-width: var(--mantine-breakpoint-sm)) {
+@media screen and (max-width: 48em) {
     .app {
-        padding: var(--mantine-spacing-md);
+        padding-left: 0;
+        padding-right: 0;
     }
 }
