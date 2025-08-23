@@ -1,3 +1,13 @@
+.list {
+    align-items: flex-end;
+}
+
+@media screen and (max-width: 62em) {
+    .list {
+        align-items: center;
+    }
+}
+
 .item {
     position: relative;
 }

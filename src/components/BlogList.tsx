@@ -71,7 +71,7 @@ export default function BlogList({
             </Stack>
           </Grid.Col>
           <Grid.Col span={{ base: 12, md: 10.8 }}>
-            <Stack align={"flex-end"}>
+            <Stack className={classes.list}>
               <Fragment key={"xs"}>{blogGridxs}</Fragment>
               <Fragment key={"sm"}>{blogGridsm}</Fragment>
               <Fragment key={"md"}>{blogGridmd}</Fragment>
