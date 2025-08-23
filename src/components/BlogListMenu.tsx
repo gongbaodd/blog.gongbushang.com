@@ -26,7 +26,7 @@ function Menu({ title, children, loadFunc }: IMenuProps) {
 
     return (
         <CustomMantineProvider>
-            <Stack gap="xs">
+            <Stack gap="xs" visibleFrom="md">
                 <Group>
                     <IconFolder size={20} />
                     <Text fw={600} size="lg">{title}</Text>
