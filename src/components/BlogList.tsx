@@ -63,15 +63,15 @@ export default function BlogList({
     <CustomMantineProvider>
       <Container fluid style={{ marginInline: "initial" }} p={0}>
         <Grid gutter="lg">
-          <Grid.Col span={{ base: 12, md: 1.5 }}>
+          <Grid.Col span={{ base: 12, md: 1.2 }}>
             <Stack gap="lg" style={{ position: "sticky", top: 100 }}>
               <Fragment key={"category"}>{menuCategory}</Fragment>
               <Fragment key={"series"}>{menuSeries}</Fragment>
               <Fragment key={"tag"}>{menuTag}</Fragment>
             </Stack>
           </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 10.5 }}>
-            <Stack>
+          <Grid.Col span={{ base: 12, md: 10.8 }}>
+            <Stack align={"flex-end"}>
               <Fragment key={"xs"}>{blogGridxs}</Fragment>
               <Fragment key={"sm"}>{blogGridsm}</Fragment>
               <Fragment key={"md"}>{blogGridmd}</Fragment>
