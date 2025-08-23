@@ -1,0 +1,10 @@
+---
+import { getBadges } from "@/packages/utils/badges";
+import Tags, { TagGroup } from "./Tags";
+
+const badges = await getBadges();
+---
+
+<Tags client:load>
+  <TagGroup tags={badges} slot="tagGroup" />
+</Tags>

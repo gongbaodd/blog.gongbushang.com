@@ -13,7 +13,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
+import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 
 interface ITagsProps {
   tagGroup?: ReactNode;
@@ -46,6 +46,7 @@ export default function Tags({ tagGroup }: ITagsProps) {
             showLabel={""}
             hideLabel={""}
             expanded={expanded}
+
           >
             {tagGroup}
           </Spoiler>
