@@ -16,3 +16,10 @@
 .lanyard.loaded {
     backdrop-filter: blur(5px) opacity(1);
 }
+
+@media screen and (max-width: var(--mantine-breakpoint-sm)) {
+    .avatar {
+        margin: 0;
+    }
+    
+}

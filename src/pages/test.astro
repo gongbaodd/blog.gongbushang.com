@@ -21,16 +21,7 @@ const badges = await getBadges()
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header/>
   <MantineMain>
     <Hero client:load/>
-    <MantineHeatWrapper />
-    <BlogSectionsWrapper />
-    <Tags client:load>
-      <TagGroup tags={badges} slot="tagGroup" />
-    </Tags>
-    <SpotifyPlayer client:load />
-    <NewsLetter />
-    <Footer slug={"index"} />
   </MantineMain>
 </Global>

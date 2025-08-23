@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Box,
   Group,
   Stack,
@@ -12,9 +11,9 @@ import {
   Center,
 } from "@mantine/core";
 import classes from "./Hero.module.css";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
-import Lanyard from "../bits/Components/Lanyard/Lanyard";
-import profile from "../icons/profile.svg?raw"
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import Lanyard from "@/src/bits/Components/Lanyard/Lanyard";
+import profile from "@/src/icons/profile.svg?raw"
 import { useState } from "react";
 
 
@@ -29,7 +28,7 @@ export default function Hero({}: IProps) {
       <Box py="xl">
         <Group align="center" gap={"xl"} justify="center">
           <Card p={0} radius={"lg"} shadow="lg">
-            <Flex w={600} h={600} style={{ position: "relative" }}>
+            <Flex maw={600} h={600} style={{ position: "relative", aspectRatio: "1 / 1" }}>
               <Center className={classes.placeholder} dangerouslySetInnerHTML={{__html: profile}}></Center>
               <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded: "")}>
                 <Lanyard position={[0, 0, 12]} gravity={[0, -40, 0]} onLoad={() => setModelLoaded(true)} />
