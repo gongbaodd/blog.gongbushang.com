@@ -1,5 +1,4 @@
 ---
-import BlogSections from "./BlogSections";
 import dayjs from "dayjs";
 import {
   getAllPostByDateDesc,
@@ -10,6 +9,8 @@ import { mapServerPostToClient } from "@/packages/utils/post";
 import { getCounts } from "@/packages/utils/heatmap";
 import type { CollectionEntry } from "astro:content";
 import { FILTER_ENTRY } from "@/packages/consts";
+import GridHalf from "@/packages/scaffold/GridHalf";
+import BlogCarousel from "@/packages/carousel/BlogCarousel";
 type T_POST = CollectionEntry<"blog">;
 
 const _posts = await getAllPostByDateDesc();
@@ -62,9 +63,8 @@ historyPosts = [...hPostWithCover, ...hPostNoCover]
 const counts = await getCounts();
 ---
 
-<BlogSections
-  latestPosts={latestPosts}
-  historyPosts={historyPosts}
-  totalCount={counts[FILTER_ENTRY.ALL]}
-  client:load
-/>
+<GridHalf>
+  <BlogCarousel slot="left" title="Latest Posts" posts={latestPosts} link={{label: `View All ${counts[FILTER_ENTRY.ALL]} Posts`, href: "/all"}} client:load />
+  <BlogCarousel slot="right" title="Time Machine" posts={historyPosts} link={{label: "View Archivess", href: "/year"}} client:load />
+</GridHalf>
+

@@ -6,6 +6,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 
 import MantineMain from "../../packages/scaffold/MantineMain";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
+import BlogSections from "../components/BlogSections.astro";
 
 export const prerender = true;
 ---
@@ -13,6 +14,6 @@ export const prerender = true;
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <MantineMain>
-      <MantineHeatWrapper />
+        <BlogSections />
   </MantineMain>
 </Global>

@@ -7,7 +7,7 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import Hero from "../../packages/hero/Hero";
-import BlogSectionsWrapper from "../components/BlogSectionsWrapper.astro";
+import BlogSections from "../components/BlogSections.astro";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../components/Tags";
 import NewsLetter from "../components/NewsLetter";
@@ -25,7 +25,7 @@ const badges = await getBadges()
   <MantineMain>
     <Hero client:load/>
     <MantineHeatWrapper />
-    <BlogSectionsWrapper />
+    <BlogSections />
     <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />
     </Tags>

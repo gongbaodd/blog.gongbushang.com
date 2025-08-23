@@ -1,0 +1,11 @@
+.carousel {
+    max-width: 500px;
+    border-radius: var(--mantine-radius-md);
+}
+
+@media screen and (max-width: 88em) {
+    .carousel {
+        max-width: 100%;
+        border-radius: var(--mantine-radius-md);
+    }
+}
