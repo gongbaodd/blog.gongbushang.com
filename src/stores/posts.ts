@@ -38,3 +38,73 @@ export async function requestPosts() {
     $posts.set([..._posts, ...posts])
     $postsListParams.setKey("page", page)
 }
+
+export async function streamPosts() {
+    const { page: _page } = $postsListParams.get()
+    const page = _page + 1
+    for await (const post of _streamPosts()) {
+        const _posts = $posts.get()
+        $posts.set([..._posts, post])
+    }
+    $postsListParams.setKey("page", page)
+}
+
+async function* _streamPosts() {
+    const { filter, entryType, page: _page } = $postsListParams.get()
+    const page = _page + 1
+
+    const { url } = {
+        get url() {
+            if (entryType === FILTER_ENTRY.ALL) {
+                return `/api/all/${page}.ndjson`
+            }
+
+            if (entryType) {
+                return `/api/${entryType}/${filter}/${page}.ndjson`
+            }
+
+            return `/api/${filter}/${page}.ndjson`
+        }
+    }
+
+    const response  = await fetch(url)
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        let lines = buffer.split('\n');
+        buffer = lines.pop()!; // keep the last incomplete line
+
+        for (const line of lines) {
+            if (line.trim() === '') continue;
+            try {
+                const obj = JSON.parse(line);
+
+                await new Promise(res => setTimeout(() => {
+                    res(undefined)
+                }, 500))
+
+                yield obj
+            } catch (err) {
+                console.error('Invalid JSON line:', line);
+            }
+        }
+    }
+
+    // Parse the last line if any
+    if (buffer.trim()) {
+        try {
+            const obj = JSON.parse(buffer);
+            yield obj
+        } catch (err) {
+            console.error('Invalid JSON line:', buffer);
+        }
+    }
+
+}

@@ -6,11 +6,11 @@ import {
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useDeferredValue, useLayoutEffect, useRef, useState } from "react";
 import {
   $hasMorePosts,
   $posts,
-  requestPosts,
+  streamPosts,
 } from "@/src/stores/posts";
 import { useStore } from "@nanostores/react";
 import { PostCard, type IPost } from "@/packages/card/PostCard";
@@ -52,7 +52,7 @@ export function BlogGrid() {
         </Masonry>
         {$hasMorePosts.get() && (
           <Center w={"100%"}>
-            <Button variant="default" onClick={() => requestPosts()}>
+            <Button variant="default" onClick={() => streamPosts()}>
               Load More
             </Button>
           </Center>
@@ -63,7 +63,7 @@ export function BlogGrid() {
 
   return (
     <>
-    {showSSR && <BlogGridSSR />}
+    {/* {showSSR && <BlogGridSSR />} */}
     <Client />
     </>
   );

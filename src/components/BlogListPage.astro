@@ -22,6 +22,7 @@ import type { CollectionEntry } from "astro:content";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import { BlogGrid } from "@/packages/masonry/BlogList";
+import BlogMasonry from "./BlogMasonry";
 type T_POST = CollectionEntry<"blog">
 
 interface Props {
@@ -78,7 +79,8 @@ $series.set(series)
   <MantineMain>
     <GridWithMenu>
       <BlogListMenu slot="menuNode" client:idle />
-      <BlogGrid slot="gridContent" client:load />
+      <!-- <BlogGrid slot="gridContent" client:load /> -->
+       <BlogMasonry slot="gridContent" client:only />
     </GridWithMenu>
     <Footer slug={filter} />
   </MantineMain>

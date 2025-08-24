@@ -57,7 +57,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
   }
 
   return (
-    <Box>
+    <Box className="grid-item" w={300} m={"ml"}>
       <Anchor underline="never" href={post.href}>
         <Card
           key={post.id}
