@@ -55,6 +55,12 @@ export default function Lanyard({
         onCreated={({ gl }) => 
           gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
         }
+        ref={(canvas) => {
+          if (!canvas) return
+
+          const handler = (e) => e.preventDefault();
+          canvas.addEventListener("touchmove", handler, { passive: false });
+        }}
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={1 / 60}>
