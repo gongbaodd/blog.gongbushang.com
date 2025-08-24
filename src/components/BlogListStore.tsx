@@ -3,7 +3,7 @@ import { $posts, $postsListParams } from "../stores/posts";
 import { $category, $series, $tag } from "../stores/links";
 import type { FILTER_ENTRY } from "@/packages/consts";
 import type { TLink } from "@/packages/utils/extract";
-import type { IPost } from "./BlogList";
+import type { IPost } from "@/packages/card/PostCard";
 
 interface IStoreProps {
     posts: IPost[];

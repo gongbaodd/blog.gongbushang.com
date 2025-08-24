@@ -1,6 +1,4 @@
 import {
-  Container,
-  Grid,
   Stack,
   Button,
   Center,
@@ -8,8 +6,7 @@ import {
 import { Masonry } from "@mui/lab";
 import classes from "./BlogList.module.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
-import { Fragment } from "react/jsx-runtime";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   $hasMorePosts,
   $posts,
@@ -30,15 +27,18 @@ const COLUMNS_SSR_HEIGHT = {
 export function BlogGrid() {
   const ref = useRef<HTMLDivElement>(null);
   const posts = useStore($posts);
-  const [className, setClassName] = useState([classes.list, classes.hide].join(" "))
+  const [className, setClassName] = useState([classes.list, classes.invisible].join(" "))
+  const [showSSR, setShowSSR] = useState(true)
 
   useLayoutEffect(() => {
-          setClassName(classes.list)
-
+    setTimeout(() => {
+      setClassName(classes.list)
+      setShowSSR(false)
+    }, 0)
   }, [])
 
-  return (
-    <CustomMantineProvider>
+  const Client = () => (
+    <CustomMantineProvider key={"client"}>
       <Stack className={className}>
         <Masonry
           ref={ref}
@@ -59,44 +59,63 @@ export function BlogGrid() {
         )}
       </Stack>
     </CustomMantineProvider>
+  )
+
+  return (
+    <>
+    {showSSR && <BlogGridSSR />}
+    <Client />
+    </>
   );
 }
 
-type T_SIZE = "xs" | "sm" | "md" | "lg" | "xl";
+type T_SIZE = "sm" | "md" | "lg" | "xl";
 
-export function BlogGridSSR({ size, posts }: { size: T_SIZE, posts: IPost[] }) {
-  const { columns } = {
-    get columns() {
-      return COLUMNS_STYLE[size];
-    },
-  };
+export function BlogGridSSR() {
+  const posts = useStore($posts);
 
   const displays = {
-    xs: "none",
     sm: "none",
     md: "none",
     lg: "none",
     xl: "none",
   };
 
-  displays[size] = "flex";
-
   return (
-    <CustomMantineProvider>
-      <Masonry
-        columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
-        spacing={3}
-        sequential
-        defaultColumns={columns}
-        defaultHeight={COLUMNS_SSR_HEIGHT[size]}
-        defaultSpacing={3}
-        sx={{ display: displays }}
-        className={classes.masonrySSR}
-      >
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
-      </Masonry>
-    </CustomMantineProvider>
+    <>
+      {
+        Object.keys(displays).map(_size => {
+          const size: T_SIZE = _size as unknown as any
+
+          const { columns } = {
+            get columns() {
+              return COLUMNS_STYLE[size];
+            },
+          };
+
+          const ds = {...displays}
+          ds[size] = "flex";
+
+          return (
+            <CustomMantineProvider key={size}>
+              <Masonry
+                columns={{ xs: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+                spacing={3}
+                sequential
+                defaultColumns={columns}
+                defaultHeight={COLUMNS_SSR_HEIGHT[size]}
+                defaultSpacing={3}
+                sx={{ display: ds }}
+                className={classes.masonrySSR}
+              >
+                {posts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </Masonry>
+            </CustomMantineProvider>
+          )
+        })
+      }
+    </>
   );
 }

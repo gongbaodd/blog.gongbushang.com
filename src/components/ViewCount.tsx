@@ -3,7 +3,7 @@ import { useStore } from "@nanostores/react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Group, Flex, Text } from "@mantine/core";
 import { $pvMap, requestAllViewCount } from "../stores/pv";
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import classes from "./ViewCount.module.css"
 import { Eye } from "lucide-react";
 import { computed } from "nanostores";
@@ -17,7 +17,7 @@ export default function ViewCount({ path: _path }: IViewCountProps) {
     const $count = computed($pvMap, v => v[path])
     const count = useStore($count)
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         requestAllViewCount()
     }, [])
 

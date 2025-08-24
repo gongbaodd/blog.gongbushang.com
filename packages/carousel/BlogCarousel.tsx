@@ -1,8 +1,8 @@
 import { Anchor, Button, Card, Flex, Stack, Title } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
-import { PostCard, type IPost } from "@/src/components/BlogList";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import classes from "./BlogCarousel.module.css"
+import { PostCard, type IPost } from "../card/PostCard";
 
 export default function BlogCarousel({ title, posts, link: { label, href } }: { title: string, posts: IPost[], link: { label: string, href: string } }) {
     return (

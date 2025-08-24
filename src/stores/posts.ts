@@ -1,6 +1,6 @@
 import { atom, computed, map } from "nanostores"
-import type { IPost } from "../components/BlogList"
 import { FILTER_ENTRY } from "@/packages/consts";
+import type { IPost } from "@/packages/card/PostCard";
 
 export const $posts = atom<IPost[]>([])
 

@@ -12,3 +12,7 @@
 .hide, .masonrySSR.hide {
     display: none;
 }
+
+.invisible {
+    visibility: hidden;
+}

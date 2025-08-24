@@ -15,7 +15,7 @@ import {
 } from "@/packages/utils/badges";
 import { mapServerPostToClient } from "@/packages/utils/post";
 import { BlogListMenu } from "../../packages/menu/BlogListMenu";
-import { $posts } from "../stores/posts";
+import { $posts, $postsListParams } from "../stores/posts";
 import { BlogListNanoStore } from "./BlogListStore";
 import { $category, $series, $tag } from "../stores/links";
 import type { CollectionEntry } from "astro:content";
@@ -47,6 +47,12 @@ const [categories, series, tags] = await Promise.all([
 ]);
 
 $posts.set(posts)
+$postsListParams.set({
+  filter,
+  entryType,
+  page: 0,
+  totalCount,
+})
 $category.set(categories)
 $tag.set(tags)
 $series.set(series)

@@ -6,10 +6,10 @@ import dayjs from "dayjs";
 import { FILTER_ENTRY, POST_CARD_UNDERLINE_COLORS, TITLE_COLOR_MAP } from "@/packages/consts";
 import classes from "./Folder.module.css"
 import { File } from "lucide-react";
-import { type IPost } from "./BlogList";
 import { isString } from "es-toolkit";
 import { useEffect, useState } from "react";
 import { } from "lucide-react"
+import type { IPost } from "@/packages/card/PostCard";
 
 interface IYearProps {
     heatmap: Record<string, number>
