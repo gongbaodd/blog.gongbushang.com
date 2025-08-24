@@ -1,10 +1,10 @@
 import { Anchor, Badge, Button, Group, Loader, Spoiler, Stack, Text } from "@mantine/core";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
+import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 import { IconFolder } from "@tabler/icons-react";
 import { useCallback, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useStore } from "@nanostores/react";
-import { $category, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../stores/links";
+import { $category, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../../src/stores/links";
 
 interface IMenuProps {
     title: String;
@@ -47,7 +47,20 @@ function Menu({ title, children, loadFunc }: IMenuProps) {
     )
 }
 
-export function MenuCategory() {
+export function BlogListMenu() {
+    return (
+        <CustomMantineProvider>
+            <Stack gap="lg" style={{ position: "sticky", top: 100 }}>
+                <MenuCategory />
+                <MenuSeries />
+                <MenuTag />
+            </Stack>
+        </CustomMantineProvider>
+
+    )
+}
+
+function MenuCategory() {
     const categories = useStore($category)
     return (
         <Menu title={"Categories"} loadFunc={requestAllCategories}>
@@ -70,7 +83,7 @@ export function MenuCategory() {
     );
 }
 
-export function MenuSeries() {
+function MenuSeries() {
     const series = useStore($series)
     return (
         <Menu title={"Series"} loadFunc={requestAllSeries}>
@@ -93,7 +106,7 @@ export function MenuSeries() {
     );
 }
 
-export function MenuTag() {
+function MenuTag() {
     const tags = useStore($tag)
     return (
         <Menu title={"Tags"} loadFunc={requestAllTags}>

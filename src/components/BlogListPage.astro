@@ -7,10 +7,6 @@ import {
   FILTER_ENTRY,
 } from "../../packages/consts";
 import MantineMain from "../../packages/scaffold/MantineMain";
-import BlogList, {
-  BlogGrid,
-  BlogGridSSR,
-} from "./BlogList";
 import Footer from "@/packages/components/Footer.astro";
 import {
   getCategoriesFrom,
@@ -18,12 +14,14 @@ import {
   getTagsFrom,
 } from "@/packages/utils/badges";
 import { mapServerPostToClient } from "@/packages/utils/post";
-import { MenuCategory, MenuSeries, MenuTag } from "./BlogListMenu";
+import { BlogListMenu } from "../../packages/menu/BlogListMenu";
 import { $posts } from "../stores/posts";
 import { BlogListNanoStore } from "./BlogListStore";
 import { $category, $series, $tag } from "../stores/links";
 import type { CollectionEntry } from "astro:content";
 import Header from "@/packages/header/Header.astro";
+import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
+import { BlogGrid } from "@/packages/masonry/BlogList";
 type T_POST = CollectionEntry<"blog">
 
 interface Props {
@@ -72,17 +70,10 @@ $series.set(series)
   />
   <Header/>
   <MantineMain>
-    <BlogList posts={posts}>
-      <MenuCategory slot="menuCategory" client:load />
-      <MenuSeries slot="menuSeries" client:load />
-      <MenuTag slot="menuTag" client:load />
-      <BlogGridSSR slot="blogGridxs" posts={posts} size="xs" />
-      <BlogGridSSR slot="blogGridsm" posts={posts} size="sm" />
-      <BlogGridSSR slot="blogGridmd" posts={posts} size="md" />
-      <BlogGridSSR slot="blogGridlg" posts={posts} size="lg" />
-      <BlogGridSSR slot="blogGridxl" posts={posts} size="xl" />
-      <BlogGrid slot="blogGrid" client:only />
-    </BlogList>
+    <GridWithMenu>
+      <BlogListMenu slot="menuNode" client:idle />
+      <BlogGrid slot="gridContent" client:load />
+    </GridWithMenu>
     <Footer slug={filter} />
   </MantineMain>
 </Global>
