@@ -35,17 +35,22 @@ export default defineConfig({
     ],
     shikiConfig: {
       langAlias: {
-        "C": "c",
-        "plantuml": "PlantUML"
+        C: "c",
+        plantuml: "PlantUML",
       },
-      langs: [
-        ...Object.values(bundledLanguages),
-        plantumlGrammar,
-      ]
-    }
+      langs: [...Object.values(bundledLanguages), plantumlGrammar],
+    },
   },
   output: "static",
   adapter: vercel({
     isr: true,
-  })
+  }),
+  vite: {
+    optimizeDeps: {
+      include: ["react-plock"], // prebundle it
+    },
+    ssr: {
+      noExternal: ["react-plock"], // force SSR build to bundle as CJS
+    },
+  },
 });
