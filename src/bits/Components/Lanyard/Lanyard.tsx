@@ -5,7 +5,7 @@
 
 /* eslint-disable react/no-unknown-property */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, extend, useFrame } from "@react-three/fiber";
 import {
   useGLTF,
@@ -41,6 +41,10 @@ interface LanyardProps {
   onLoad?: () => void
 }
 
+const touchMoveHandler = (e) => {
+   e.preventDefault();
+}
+
 export default function Lanyard({
   position = [0, 0, 30],
   gravity = [0, -40, 0],
@@ -48,6 +52,18 @@ export default function Lanyard({
   transparent = true,
   onLoad
 }: LanyardProps) {
+  const canvasRef = useRef(null)
+  const onDrag = useCallback((dragging: boolean) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    if (dragging) {
+      canvas.addEventListener("touchmove", touchMoveHandler, { passive: false })
+    } else {
+      canvas.removeEventListener("touchmove", touchMoveHandler)
+    }
+  }, [])
+
   return (
       <Canvas
         camera={{ position, fov }}
@@ -55,16 +71,11 @@ export default function Lanyard({
         onCreated={({ gl }) => 
           gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
         }
-        ref={(canvas) => {
-          if (!canvas) return
-
-          const handler = (e) => e.preventDefault();
-          canvas.addEventListener("touchmove", handler, { passive: false });
-        }}
+        ref={canvasRef}
       >
         <ambientLight intensity={Math.PI} />
         <Physics gravity={gravity} timeStep={1 / 60}>
-          <Band onLoad={onLoad} />
+          <Band onLoad={onLoad} onDrag={onDrag} />
         </Physics>
         <Environment blur={0.75}>
           <Lightformer
@@ -104,9 +115,10 @@ interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
   onLoad: LanyardProps["onLoad"]
+  onDrag: (start: boolean) => void
 }
 
-function Band({ maxSpeed = 50, minSpeed = 0, onLoad }: BandProps) {
+function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
   // Using "any" for refs since the exact types depend on Rapier's internals
   const band = useRef<any>(null);
   const fixed = useRef<any>(null);
@@ -264,14 +276,15 @@ function Band({ maxSpeed = 50, minSpeed = 0, onLoad }: BandProps) {
             onPointerUp={(e: any) => {
               e.target.releasePointerCapture(e.pointerId);
               drag(false);
+              onDrag(false)
             }}
             onPointerDown={(e: any) => {
               e.target.setPointerCapture(e.pointerId);
-              drag(
-                new THREE.Vector3()
+              const distance =  new THREE.Vector3()
                   .copy(e.point)
-                  .sub(vec.copy(card.current.translation())),
-              );
+                  .sub(vec.copy(card.current.translation()))
+              drag(distance)
+              onDrag(distance)
             }}
           >
             <mesh geometry={nodes.card.geometry}>
