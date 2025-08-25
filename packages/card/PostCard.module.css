@@ -73,7 +73,7 @@
 }
 
 .item.xs {
-    aspect-ratio: 16/9;
+    aspect-ratio: 16/10;
 }
 
 .item.sm {
@@ -89,7 +89,7 @@
 }
 
 .item.xl {
-    aspect-ratio: 9/16;
+    aspect-ratio: 10/16;
 }
 
 .item.liquid_cheese {
