@@ -21,9 +21,7 @@ import { $category, $series, $tag } from "../stores/links";
 import type { CollectionEntry } from "astro:content";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
-import { BlogGrid } from "@/packages/masonry/BlogList";
-import BlogMasonry from "./BlogMasonry";
-import BlogPlock from "./BlogPlock";
+import BlogPlock from "../../packages/masonry/BlogPlock";
 type T_POST = CollectionEntry<"blog">
 
 interface Props {

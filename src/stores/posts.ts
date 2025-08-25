@@ -15,34 +15,14 @@ export const $postsListParams = map<PostPageParams>({ filter: FILTER_ENTRY.ALL, 
 
 export const $hasMorePosts = computed([$posts, $postsListParams], (posts, { totalCount }) => posts.length < totalCount)
 
-export async function requestPosts() {
-    const { filter, entryType, page: _page } = $postsListParams.get()
-    const page = _page + 1
-
-    const { url } = {
-        get url() {
-            if (entryType === FILTER_ENTRY.ALL) {
-                return `/api/all/${page}.json`
-            }
-
-            if (entryType) {
-                return `/api/${entryType}/${filter}/${page}.json`
-            }
-
-            return `/api/${filter}/${page}.json`
-        }
-    }
-
-    const data = await fetch(url)
-    const { posts } = await data.json() as { posts: IPost[] }
-    const _posts = $posts.get()
-    $posts.set([..._posts, ...posts])
-    $postsListParams.setKey("page", page)
-}
+export const $loading = atom(false)
 
 export async function streamPosts() {
     const { page: _page } = $postsListParams.get()
     const page = _page + 1
+
+    $loading.set(true)
+
     for await (const post of _streamPosts()) {
         const _posts = $posts.get()
 
@@ -50,7 +30,9 @@ export async function streamPosts() {
 
         $posts.set([..._posts, post])
     }
+    
     $postsListParams.setKey("page", page)
+    $loading.set(false)
 }
 
 async function* _streamPosts() {
