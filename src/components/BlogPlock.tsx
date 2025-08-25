@@ -13,7 +13,7 @@ export default function BlogPlock() {
     
         return (
             <CustomMantineProvider>
-                <Stack>
+                <Stack mih={"100vh"}>
                     <Masonry
                         items={posts}
                         config={{
