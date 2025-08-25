@@ -1,6 +1,6 @@
 import { Container, Flex, Stack, Group, Text, darken, Anchor, Card, Paper, Button, Center } from "@mantine/core";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
-import Folder from "../bits/Components/Folder/Folder";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import Folder from "@/src/bits/Components/Folder/Folder";
 import { Heatmap } from "@mantine/charts";
 import dayjs from "dayjs";
 import { FILTER_ENTRY, POST_CARD_UNDERLINE_COLORS, TITLE_COLOR_MAP } from "@/packages/consts";
@@ -8,7 +8,6 @@ import classes from "./Folder.module.css"
 import { File } from "lucide-react";
 import { isString } from "es-toolkit";
 import { useEffect, useState } from "react";
-import { } from "lucide-react"
 import type { IPost } from "@/packages/card/PostCard";
 
 interface IYearProps {
@@ -22,8 +21,8 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
 
     return (
         <CustomMantineProvider>
-            <Container fluid style={{ marginInline: "initial" }} p={0} mih={"100vh"}>
-                <Flex wrap={"wrap"}>
+            <Container fluid style={{ marginInline: "initial" }} p={0} mih={"50vh"}>
+                <Flex wrap={"wrap"} className={classes.grid}>
                     {Object.keys(counts).filter(year => year !== FILTER_ENTRY.ALL).reverse().map(year => {
                         const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
                         const { top3 } = {
@@ -44,7 +43,7 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
                         }
 
                         return (
-                            <Group w={400} h={400} justify="center" key={year} style={{ position: "relative" }}>
+                            <Group className={classes.folder} key={year}>
                                 <Folder size={3}
                                     color={color}
                                     title={<PostCountLabel text={counts[year].toString()} />}
