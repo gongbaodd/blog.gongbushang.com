@@ -1,4 +1,4 @@
-import { atom, computed, map } from "nanostores";
+import { atom, map } from "nanostores";
 import miniSearch, { type SearchResult } from "minisearch";
 import type { IPost } from "@/packages/utils/post";
 import { $pvMap, requestAllViewCount } from "./pv";

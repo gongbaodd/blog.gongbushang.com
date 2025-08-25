@@ -1,6 +1,7 @@
 import { atom, computed, map } from "nanostores"
 import { FILTER_ENTRY } from "@/packages/consts";
 import type { IPost } from "@/packages/card/PostCard";
+import { delay } from "es-toolkit";
 
 export const $posts = atom<IPost[]>([])
 
@@ -44,6 +45,9 @@ export async function streamPosts() {
     const page = _page + 1
     for await (const post of _streamPosts()) {
         const _posts = $posts.get()
+
+        await delay(100)
+
         $posts.set([..._posts, post])
     }
     $postsListParams.setKey("page", page)
@@ -85,11 +89,6 @@ async function* _streamPosts() {
             if (line.trim() === '') continue;
             try {
                 const obj = JSON.parse(line);
-
-                await new Promise(res => setTimeout(() => {
-                    res(undefined)
-                }, 500))
-
                 yield obj
             } catch (err) {
                 console.error('Invalid JSON line:', line);

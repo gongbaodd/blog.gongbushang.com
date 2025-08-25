@@ -18,8 +18,8 @@ export default function BlogPlock() {
                         items={posts}
                         config={{
                             columns,
-                            gap: [48, 32, 32, 32, 32],
-                            media: [25, 48, 75, 88, 110].map(i => i*16),
+                            gap: [48, 16, 32, 32, 32],
+                            media: [28, 48, 75, 88, 110].map(i => i*16),
                         }}
                         render={post => (
                              <PostCard key={post.id} post={post} />

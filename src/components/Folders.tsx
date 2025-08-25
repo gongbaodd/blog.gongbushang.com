@@ -22,7 +22,7 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
 
     return (
         <CustomMantineProvider>
-            <Container fluid style={{ marginInline: "initial" }} p={0}>
+            <Container fluid style={{ marginInline: "initial" }} p={0} mih={"100vh"}>
                 <Flex wrap={"wrap"}>
                     {Object.keys(counts).filter(year => year !== FILTER_ENTRY.ALL).reverse().map(year => {
                         const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
@@ -137,7 +137,7 @@ function FolderCover({ year, heatmap }: { year: string, heatmap: IYearProps["hea
             justify="center"
             align="center"
         >
-            <Text c={"gray"}>{year}</Text>
+            <Text c={"white"}>{year}</Text>
             <Group display={"block"} style={{ overflow: "hidden", borderRadius: "var(--mantine-radius-sm)" }}>
                 {[`${year}-01-01`, `${year}-07-01`].map(day => (<Heat key={day} data={heatmap} startDate={day} />))}
             </Group>
