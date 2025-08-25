@@ -8,7 +8,7 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: { 
     return (
         <CustomMantineProvider>
             <Card shadow="md" radius="lg" p="xl"  >
-                <Stack gap="md" justify="space-between" style={{ height: "100%" }}>
+                <Stack gap="md"  style={{ height: "100%" }}>
                     <Flex direction="row" justify={"space-between"} wrap={"wrap"}>
                         <Stack justify="space-between" maw={"100%"}>
                             <Title order={2} size="h2">{title}</Title>
