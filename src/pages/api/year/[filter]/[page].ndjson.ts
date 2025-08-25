@@ -8,11 +8,11 @@ export const getStaticPaths = page(getFilterByYearPage);
 type T_PROPS = Awaited<ReturnType<typeof getStaticPaths>>[0]["props"]
 
 export const GET: APIRoute<T_PROPS> = async ({ props }) => {
-    return new Response(JSON.stringify({
-        posts: await mapServerPostToClient(props.posts),
-    }), {
+    const posts = await mapServerPostToClient(props.posts)
+    const streamedPosts = posts.map(p => JSON.stringify(p)).join("\n")
+    return new Response(streamedPosts, {
         headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/x-ndjson; charset=utf-8"
         },
         status: 200,
     })
