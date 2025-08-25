@@ -3,9 +3,8 @@ import { TITLE_COLOR_MAP, POST_CARD_UNDERLINE_COLORS } from "@/packages/consts";
 import Folders from "@/packages/folder/Folders";
 import { initYearPostMap } from "@/packages/utils/filter";
 import { getHeatmapData, getCounts } from "@/packages/utils/heatmap";
-import { getAllPosts, type TClientPost, mapServerPostToClient } from "@/packages/utils/post";
+import { getAllPosts, mapServerPostToClient } from "@/packages/utils/post";
 import { darken } from "@mantine/core";
-import { undefined } from "astro:schema";
 import { isString } from "es-toolkit";
 
 
@@ -31,13 +30,13 @@ for (const [year, postsSet] of yearPostMap) {
   });
 
   const { top3 } = {
-    get top3(): (string|undefined)[] {
+    get top3() {
       if (t3?.length === 1) {
-        return [undefined, undefined, t3[0]] as any
+        return [undefined, undefined, t3[0]]
       }
 
       if (t3?.length === 2) {
-        return [t3[0], undefined, t3[1]] as any
+        return [t3[0], undefined, t3[1]]
       }
 
       return t3;
