@@ -34,6 +34,7 @@ interface ILink {
   label: string;
   href: string;
 }
+
 interface IProps {
   children: ReactNode;
   title: string;
@@ -53,120 +54,126 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
 
-  const coverUrl = isString(cover?.url) ? cover.url: cover?.url.src;
+  const coverUrl = isString(cover?.url) ? cover.url : cover?.url.src;
 
   return (
     <CustomMantineProvider>
-      <Container fluid>
-        <Grid gutter="xl">
-          <Grid.Col span={{ base: 12, md: 10 }}>
-            <Paper shadow="md" radius="lg" p="xl">
-              <Stack gap="xl">
-                <Stack gap="lg">
-                  <Group mb="sm">
-                    {links.map(({ label, href }) => (
-                      <Anchor href={href} key={label}>
-                        <Badge variant="outline">
-                          {label}
-                        </Badge>
-                      </Anchor>
-                    ))}
-                  </Group>
-                  <Group className="prose lg:prose-xl">
-                    <h1>
-                      {title}
-                    </h1>
-                  </Group>
+      <Paper shadow="md" radius="lg" p="xl">
+        <Stack gap="xl">
+          <Stack gap="lg">
+            <Group mb="sm">
+              {links.map(({ label, href }) => (
+                <Anchor href={href} key={label}>
+                  <Badge variant="outline">
+                    {label}
+                  </Badge>
+                </Anchor>
+              ))}
+            </Group>
+            <Group className="prose lg:prose-xl">
+              <h1>
+                {title}
+              </h1>
+            </Group>
 
-                </Stack>
+          </Stack>
 
-                <Group justify="space-between" mt={24}>
-                  <Group>
-                    <Avatar src="/profile.jpg" size="lg" radius="xl" />
-                    <div>
-                      <Text>J.Gong</Text>
-                      <Group gap="xs">
-                        <Group gap={4}>
-                          <IconCalendar size={14} />
-                          <Text size="sm" c="dimmed">
-                            {dayjs(date).format("YYYY-MM-DD")}
-                          </Text>
-                        </Group>
-                        <Group gap={4}>
-                          <IconClock size={14} />
-                          <Text size="sm" c="dimmed">
-                            {time}
-                          </Text>
-                        </Group>
-                      </Group>
-                    </div>
-                  </Group>
-
-                  <Group>
-                    <ActionIcon
-                      variant={liked ? "filled" : "subtle"}
-                      color="red"
-                      size="lg"
-                      onClick={() => setLiked(!liked)}
-                    >
-                      <IconHeart size={20} />
-                    </ActionIcon>
-                    <ActionIcon variant="subtle" size="lg">
-                      <IconShare size={20} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant={bookmarked ? "filled" : "subtle"}
-                      size="lg"
-                      onClick={() => setBookmarked(!bookmarked)}
-                    >
-                      <IconBookmark size={20} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
-
-                <Divider />                
-                {coverUrl && <Image src={coverUrl} alt={cover?.alt} radius={"lg"} />}
-                <Stack className={"prose lg:prose-xl " + classes.content}>
-                  {children}
-                </Stack>
-              </Stack>
-            </Paper>
-          </Grid.Col>
-
-          <Grid.Col span={{ base: 12, md: 2 }}>
-            <Stack gap="xl" style={{ position: 'sticky', top: 100 }}>
-              <Paper shadow="md" radius="lg" p="xl" >
-                <Group mb="lg">
-                  <IconList size={20} />
-                  <Title order={4}>Headings</Title>
-                </Group>
-                <Stack gap="xs">
-                  {headings.map(heading => (<Anchor key={heading.slug} href={`#${heading.slug}`} >
-                    {heading.text}
-                  </Anchor>))}
-                </Stack>
-              </Paper>
-              <Paper shadow="md" radius="lg" p="xl">
-                <Stack align="center" gap="md">
-                  <Avatar src="/profile.jpg" size={120} radius="xl" />
-                  <div style={{ textAlign: "center" }}>
-                    <Title order={4}>J.Gong</Title>
-                    <Text size="sm" lh={1.4}>
+          <Group justify="space-between" mt={24}>
+            <Group>
+              <Avatar src="/profile.jpg" size="lg" radius="xl" />
+              <div>
+                <Text>J.Gong</Text>
+                <Group gap="xs">
+                  <Group gap={4}>
+                    <IconCalendar size={14} />
+                    <Text size="sm" c="dimmed">
+                      {dayjs(date).format("YYYY-MM-DD")}
                     </Text>
-                  </div>
-                  <Button fullWidth variant="light">
-                    关注作者
-                  </Button>
-                </Stack>
-              </Paper>
+                  </Group>
+                  <Group gap={4}>
+                    <IconClock size={14} />
+                    <Text size="sm" c="dimmed">
+                      {time}
+                    </Text>
+                  </Group>
+                </Group>
+              </div>
+            </Group>
 
-              {/* 相关文章 */}
-              <Paper shadow="md" radius="lg" p="xl">
-                <Title order={4} mb="lg">
-                  相关文章
-                </Title>
-                <Stack gap="md">
-                  {/* {relatedArticles.map((article) => (
+            <Group>
+              <ActionIcon
+                variant={liked ? "filled" : "subtle"}
+                color="red"
+                size="lg"
+                onClick={() => setLiked(!liked)}
+              >
+                <IconHeart size={20} />
+              </ActionIcon>
+              <ActionIcon variant="subtle" size="lg">
+                <IconShare size={20} />
+              </ActionIcon>
+              <ActionIcon
+                variant={bookmarked ? "filled" : "subtle"}
+                size="lg"
+                onClick={() => setBookmarked(!bookmarked)}
+              >
+                <IconBookmark size={20} />
+              </ActionIcon>
+            </Group>
+          </Group>
+
+          <Divider />
+          {coverUrl && <Image src={coverUrl} alt={cover?.alt} radius={"lg"} />}
+          <Stack className={"prose lg:prose-xl " + classes.content}>
+            {children}
+          </Stack>
+        </Stack>
+      </Paper>
+    </CustomMantineProvider>
+  );
+};
+
+export default BlogContent;
+
+export function BlogMenu({ headings, links }: {
+  headings: MarkdownHeading[],
+  links: ILink[]
+}) {
+  return (
+    <CustomMantineProvider>
+      <Stack gap="xl" style={{ position: 'sticky', top: 100 }}>
+        <Paper shadow="md" radius="lg" p="xl" >
+          <Group mb="lg">
+            <IconList size={20} />
+            <Title order={4}>Headings</Title>
+          </Group>
+          <Stack gap="xs">
+            {headings.map(heading => (<Anchor key={heading.slug} href={`#${heading.slug}`} >
+              {heading.text}
+            </Anchor>))}
+          </Stack>
+        </Paper>
+        <Paper shadow="md" radius="lg" p="xl">
+          <Stack align="center" gap="md">
+            <Avatar src="/profile.jpg" size={120} radius="xl" />
+            <div style={{ textAlign: "center" }}>
+              <Title order={4}>J.Gong</Title>
+              <Text size="sm" lh={1.4}>
+              </Text>
+            </div>
+            <Button fullWidth variant="light">
+              关注作者
+            </Button>
+          </Stack>
+        </Paper>
+
+        {/* 相关文章 */}
+        <Paper shadow="md" radius="lg" p="xl">
+          <Title order={4} mb="lg">
+            相关文章
+          </Title>
+          <Stack gap="md">
+            {/* {relatedArticles.map((article) => (
                       <Card
                         key={article.id}
                         padding="md"
@@ -205,32 +212,27 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time, hea
                         </Stack>
                       </Card>
                     ))} */}
-                </Stack>
-              </Paper>
+          </Stack>
+        </Paper>
 
-              <Paper shadow="md" radius="lg" p="xl">
-                <Title order={4} mb="lg">
-                  Tags
-                </Title>
-                <Group gap="xs">
-                  {links.map(({ label, href }) => (
-                    <Badge
-                      key={label}
-                      variant="light"
-                      style={{ cursor: "pointer" }}
-                      leftSection={<IconTag size={12} />}
-                    >
-                      {label}
-                    </Badge>
-                  ))}
-                </Group>
-              </Paper>
-            </Stack>
-          </Grid.Col>
-        </Grid>
-      </Container>
+        <Paper shadow="md" radius="lg" p="xl">
+          <Title order={4} mb="lg">
+            Tags
+          </Title>
+          <Group gap="xs">
+            {links.map(({ label, href }) => (
+              <Badge
+                key={label}
+                variant="light"
+                style={{ cursor: "pointer" }}
+                leftSection={<IconTag size={12} />}
+              >
+                {label}
+              </Badge>
+            ))}
+          </Group>
+        </Paper>
+      </Stack>
     </CustomMantineProvider>
-  );
-};
-
-export default BlogContent;
+  )
+}

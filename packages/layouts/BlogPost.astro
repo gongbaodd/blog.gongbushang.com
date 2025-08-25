@@ -3,22 +3,23 @@ import { getEntry, type CollectionEntry } from "astro:content";
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Global from "./Global.astro";
-import { category, excerpt, tags, title , date, series} from "../utils/extract";
+import { category, excerpt, tags, title, date, series } from "../utils/extract";
 import { SITE_TITLE } from "../consts";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import BlogContent from "@/src/components/BlogContent";
+import BlogContent, { BlogMenu } from "@/src/components/BlogContent";
 import { getReadingTime } from "../utils/readingTime";
 import { render } from "astro:content";
 import Header from "../header/Header.astro";
+import { GridWithMenu } from "../scaffold/GridWithMenu";
 
-type Props = CollectionEntry<"blog">
+type Props = CollectionEntry<"blog">;
 const post = Astro.props;
 
-const entry = await getEntry("blog", post.id)
+const entry = await getEntry("blog", post.id);
 if (!entry) {
-  return Astro.redirect("/404")
+  return Astro.redirect("/404");
 }
-const { headings } = await render(entry)
+const { headings } = await render(entry);
 
 const postTitle = await title(post);
 const postExcerpt = await excerpt(post);
@@ -46,11 +47,26 @@ async function getLinks() {
     description={postExcerpt}
     slot="head"
   />
-  <Header/>
+  <Header />
   <MantineMain>
-    <BlogContent title={postTitle} links={links} date={createDate} time={minutes + "min"} headings={headings} cover={post.data.cover}>
-      <slot />
-    </BlogContent>
+    <GridWithMenu>
+      <BlogMenu 
+        links={links}
+        headings={headings}
+        slot="menuNode"
+      />
+      <BlogContent
+        title={postTitle}
+        links={links}
+        date={createDate}
+        time={minutes + "min"}
+        headings={headings}
+        cover={post.data.cover}
+        slot="gridContent"
+      >
+        <slot />
+      </BlogContent>
+    </GridWithMenu>
     <Footer slug={post.id} />
   </MantineMain>
 </Global>

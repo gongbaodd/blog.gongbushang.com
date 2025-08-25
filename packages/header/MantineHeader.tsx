@@ -54,14 +54,15 @@ function NavLinks() {
   const pathname = useStore($pathname)
 
   return links.map((link) => (
-        <Anchor
-          className={classes.link + (link.href === pathname ? ` ${classes.active}` : "")}
-          key={link.label}
-          href={link.href}
-        >
-          {link.label}
-        </Anchor>
-      ))
+      <Anchor
+        className={classes.link + (link.href === pathname ? ` ${classes.active}` : "")}
+        key={link.label}
+        href={link.href}
+        py="xs"
+      >
+        {link.label}
+      </Anchor>
+    ))
 }
 
 function NavDrawer() {
@@ -70,7 +71,7 @@ function NavDrawer() {
     <>
       <Drawer opened={opened} onClose={close} title="Navigation" position="bottom"  overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}>
         <Divider />
-        <Stack align="flex-start" gap="xl" mt={"xl"}>
+        <Stack w={"100%"} gap="xl" mt={"xl"}>
           <NavLinks />
         </Stack>
       </Drawer>
