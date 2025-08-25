@@ -13,10 +13,11 @@ import type { IPost } from "@/packages/card/PostCard";
 interface IYearProps {
     heatmap: Record<string, number>
     counts: Record<string, number>
-    top3s: Map<string, IPost[]>
+    top3s: Record<string, (IPost|undefined)[]>
+    colors: Record<string, string>
 }
 
-export default function Folders({ heatmap, counts, top3s }: IYearProps) {
+export default function Folders({ heatmap, counts, top3s, colors }: IYearProps) {
     const [openedYear, setOpenedYear] = useState<null | string>(null)
 
     return (
@@ -24,23 +25,8 @@ export default function Folders({ heatmap, counts, top3s }: IYearProps) {
             <Container fluid style={{ marginInline: "initial" }} p={0} mih={"50vh"}>
                 <Flex wrap={"wrap"} className={classes.grid}>
                     {Object.keys(counts).filter(year => year !== FILTER_ENTRY.ALL).reverse().map(year => {
-                        const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
-                        const { top3 } = {
-                            get top3() {
-                                const t3 = top3s.get(year)
-
-                                if (t3?.length === 1) {
-                                    return [undefined, undefined, t3[0]]
-                                }
-
-                                
-                                if (t3?.length === 2) {
-                                    return [t3[0], undefined, t3[1]]
-                                }
-
-                                return t3
-                            }
-                        }
+                        const color = colors[year]
+                        const top3 = top3s[year] 
 
                         return (
                             <Group className={classes.folder} key={year}>

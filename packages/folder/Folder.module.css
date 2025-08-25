@@ -12,8 +12,6 @@
     fill: var(--mantine-color-dark-2);
 }
 
-.grid {}
-
 .folder {
     max-width: 400px;
     min-width: 320px;
@@ -23,7 +21,7 @@
     position: relative;
 }
 
-@media screen and (max-width: 512px) {
+@media screen and (max-width: 720px) {
     .grid {
         justify-content: center;
     }
@@ -33,7 +31,7 @@
     }
 }
 
-@media screen and (min-width: 512px) and (max-width: 1024px) {
+@media screen and (min-width: 720px) and (max-width: 1024px) {
     .grid {
         justify-content: space-between;
     }
@@ -51,5 +49,25 @@
 
     .folder {
         width: 30%;
+    }
+}
+
+@media screen and (min-width: 1280px) and (max-width: 1720px) {
+    .grid {
+        justify-content: flex-start;
+    }
+
+    .folder {
+        width: 25%;
+    }
+}
+
+@media screen and (min-width: 1720px) and (max-width: 2160px) {
+    .grid {
+        justify-content: flex-start;
+    }
+
+    .folder {
+        width: 20%;
     }
 }

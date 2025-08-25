@@ -2,26 +2,49 @@
 import BaseHead from "@/packages/components/BaseHead.astro";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import { POST_CARD_UNDERLINE_COLORS, SITE_DESCRIPTION, SITE_TITLE, TITLE_COLOR_MAP } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import { getCounts, getHeatmapData } from "@/packages/utils/heatmap";
 import { initYearPostMap } from "@/packages/utils/filter";
-import { getAllPosts, mapServerPostToClient, type TClientPost } from "@/packages/utils/post";
+import {
+  getAllPosts,
+  mapServerPostToClient,
+  type TClientPost,
+} from "@/packages/utils/post";
 import { SearchBanner } from "@/packages/search/Search";
 import Folders from "@/packages/folder/Folders";
+import { darken } from "@mantine/core";
 
+const heatData = await getHeatmapData();
+const counts = await getCounts();
+const posts = await getAllPosts();
+const yearPostMap = initYearPostMap(posts);
 
-const heatData = await getHeatmapData()
-const counts = await getCounts()
-const posts = await getAllPosts()
-const yearPostMap = initYearPostMap(posts)
-
-const yearCoverPostMap = new Map<string, TClientPost[]>()
+const yearCoverPostMap: Record<string, (TClientPost | undefined)[]> = {};
+const colors: Record<string, string> = {}
 for (const [year, postsSet] of yearPostMap) {
-  const withCover =  Array.from(postsSet).filter(p => Boolean(p.data.cover))
-  const top3 = await mapServerPostToClient(withCover.slice(0, 3))
-  yearCoverPostMap.set(year, top3)
+  const withCover = Array.from(postsSet).filter((p) => Boolean(p.data.cover));
+  const t3 = await mapServerPostToClient(withCover.slice(0, 3));
+
+  const { top3 } = {
+    get top3() {
+      if (t3?.length === 1) {
+        return [undefined, undefined, t3[0]];
+      }
+
+      if (t3?.length === 2) {
+        return [t3[0], undefined, t3[1]];
+      }
+
+      return t3;
+    },
+  };
+
+  yearCoverPostMap[year] = top3;
+
+  const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
+  colors[year] = color;
 }
 ---
 
@@ -31,10 +54,16 @@ for (const [year, postsSet] of yearPostMap) {
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <Header/>
+  <Header />
   <MantineMain>
-    <SearchBanner client:idle/>
-    <Folders heatmap={heatData} counts={counts} top3s={yearCoverPostMap} client:load />
+    <SearchBanner client:idle />
+    <Folders
+      heatmap={heatData}
+      counts={counts}
+      top3s={yearCoverPostMap}
+      colors={colors}
+      client:load
+    />
     <Footer />
   </MantineMain>
 </Global>
