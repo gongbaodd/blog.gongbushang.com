@@ -1,0 +1,60 @@
+---
+import { TITLE_COLOR_MAP, POST_CARD_UNDERLINE_COLORS } from "@/packages/consts";
+import Folders from "@/packages/folder/Folders";
+import { initYearPostMap } from "@/packages/utils/filter";
+import { getHeatmapData, getCounts } from "@/packages/utils/heatmap";
+import { getAllPosts, type TClientPost, mapServerPostToClient } from "@/packages/utils/post";
+import { darken } from "@mantine/core";
+import { undefined } from "astro:schema";
+import { isString } from "es-toolkit";
+
+
+const heatData = await getHeatmapData();
+const counts = await getCounts();
+const posts = await getAllPosts();
+const yearPostMap = initYearPostMap(posts);
+
+const yearCoverPostMap: Record<string, (string | undefined)[]> = {};
+const colors: Record<string, string> = {}
+for (const [year, postsSet] of yearPostMap) {
+  const withCover = Array.from(postsSet).filter((p) => Boolean(p.data.cover));
+  const t3 = (await mapServerPostToClient(withCover.slice(0, 3))).map(p => {
+    if (p.data.cover) {
+        if (isString(p.data.cover.url)) {
+            return p.data.cover.url as string
+        }
+
+        return p.data.cover.url.src
+    }
+
+    return ""
+  });
+
+  const { top3 } = {
+    get top3(): (string|undefined)[] {
+      if (t3?.length === 1) {
+        return [undefined, undefined, t3[0]] as any
+      }
+
+      if (t3?.length === 2) {
+        return [t3[0], undefined, t3[1]] as any
+      }
+
+      return t3;
+    },
+  };
+
+  yearCoverPostMap[year] = top3;
+
+  const color = darken(TITLE_COLOR_MAP[POST_CARD_UNDERLINE_COLORS[parseInt(year, 10) % POST_CARD_UNDERLINE_COLORS.length]], .3)
+  colors[year] = color;
+}
+---
+
+<Folders
+  heatmap={heatData}
+  counts={counts}
+  top3s={yearCoverPostMap}
+  colors={colors}
+  client:load
+/>

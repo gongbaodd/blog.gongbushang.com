@@ -1,19 +1,17 @@
-import { Container, Flex, Stack, Group, Text, darken, Anchor, Card, Paper, Button, Center } from "@mantine/core";
+import { Container, Flex, Stack, Group, Text, Anchor, Button, Center } from "@mantine/core";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import Folder from "@/src/bits/Components/Folder/Folder";
 import { Heatmap } from "@mantine/charts";
 import dayjs from "dayjs";
-import { FILTER_ENTRY, POST_CARD_UNDERLINE_COLORS, TITLE_COLOR_MAP } from "@/packages/consts";
+import { FILTER_ENTRY } from "@/packages/consts";
 import classes from "./Folder.module.css"
 import { File } from "lucide-react";
-import { isString } from "es-toolkit";
 import { useEffect, useState } from "react";
-import type { IPost } from "@/packages/card/PostCard";
 
 interface IYearProps {
     heatmap: Record<string, number>
     counts: Record<string, number>
-    top3s: Record<string, (IPost|undefined)[]>
+    top3s: Record<string, (string|undefined)[]>
     colors: Record<string, string>
 }
 
@@ -34,7 +32,7 @@ export default function Folders({ heatmap, counts, top3s, colors }: IYearProps) 
                                     color={color}
                                     title={<PostCountLabel text={counts[year].toString()} />}
                                     cover={<FolderCover year={year} heatmap={heatmap} />}
-                                    items={top3?.map(post => post && <FileItem post={post} />)}
+                                    items={top3?.map(img => img && <FileItem coverUrl={img} />)}
                                     setOpen={open => {
                                         if (open) {
                                             setOpenedYear(year)
@@ -60,16 +58,19 @@ export default function Folders({ heatmap, counts, top3s, colors }: IYearProps) 
     )
 }
 
-function FileItem({ post }: { post: IPost}) {
+interface IFileItem {
+    coverUrl: string
+}
+
+function FileItem({ coverUrl: _url }: IFileItem) {
     const [url, setUrl] = useState("")
 
     useEffect(() => {
-        const coverUrl = isString(post.data.cover?.url) ? post.data.cover?.url : post.data.cover?.url.src
-        if (!coverUrl) return
+        if (!_url) return
         const imgEl = new Image()
-        imgEl.onload = () => setUrl(coverUrl)
-        imgEl.src = coverUrl
-    }, [post])
+        imgEl.onload = () => setUrl(_url)
+        imgEl.src = _url
+    }, [_url])
 
     return url ? <Group w={"100%"} h={"100%"} style={{
         position: "absolute",
