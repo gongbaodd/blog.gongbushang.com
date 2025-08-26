@@ -17,9 +17,9 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: { 
                             </Anchor>
                         </Stack>
                         <Carousel
-                            slideSize="70%"
-                            height={480}
-                            slideGap="sm"
+                            slideSize="80%"
+                            height={560}
+                            slideGap="lg"
                             controlsOffset="lg"
                             controlSize={40}
                             withControls
@@ -28,7 +28,7 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: { 
                             className={classes.carousel}
                         >
                             {posts.map((post) => (
-                                <Carousel.Slide maw={250} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
+                                <Carousel.Slide maw={300} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
                                     <PostCard key={post.id} post={post} hideExcerpt />
                                 </Carousel.Slide>
                             ))}

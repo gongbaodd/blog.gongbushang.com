@@ -90,7 +90,7 @@ async function layoutPost(post:T_PROPS | T_EXT_POST) {
     
     const { layoutCls } = {
         get layoutCls() {
-            const count = wordcount(title) + (post.data.tag?.length ?? 0);      
+            const count = wordcount(title) + (post.data.tag?.length ?? 0) + 1;      
 
             if (count < 3) return POST_CARD_LAYOUT.xs;
             if (count < 4) return POST_CARD_LAYOUT.sm;
