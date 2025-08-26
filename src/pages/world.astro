@@ -9,6 +9,7 @@ import { initCityPostMap } from "@/packages/utils/filter";
 import { getAllPosts } from "@/packages/utils/post";
 import fs from "node:fs";
 import path from "node:path";
+import Footer from "@/packages/components/Footer.astro";
 
 export const prerender = true;
 const posts = await getAllPosts();
@@ -48,7 +49,7 @@ const { metaData } = {
 
 const data: IMapData[] = []
 for(const [city, postSet] of cityPostMap.entries()) {
-  const [post, ...rest] = [...postSet]
+  const [post, ..._] = [...postSet]
   const file = post.id
   const meta = metaData?.find(d => d.file === file)
   if (meta) {
@@ -70,5 +71,6 @@ for(const [city, postSet] of cityPostMap.entries()) {
   <Header />
   <MantineMain>
     <GLMap data={data} client:load />
+    <Footer slug={"world"} />
   </MantineMain>
 </Global>
