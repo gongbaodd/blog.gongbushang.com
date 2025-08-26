@@ -60,6 +60,7 @@
     "react-plock": "^3.5.1",
     "rehype-external-links": "^3.0.0",
     "rehype-katex": "^7.0.0",
+    "remark-attributes": "^0.3.2",
     "remark-math": "^6.0.0",
     "shiki-plantuml": "file:./packages/shiki-plantuml",
     "swr": "^2.3.5",

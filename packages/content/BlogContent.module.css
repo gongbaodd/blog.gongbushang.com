@@ -1,5 +1,14 @@
-.content > h1 {
+.content>h1 {
     display: none;
+}
+
+.content iframe {
+    aspect-ratio: 4/3;
+    border-radius: var(--mantine-radius-lg);
+}
+
+.content img {
+    border-radius: var(--mantine-radius-lg);
 }
 
 .relates {
@@ -9,4 +18,9 @@
 
 .relates:hover {
     opacity: 1;
+}
+
+.content blockquote {
+    background-color: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
 }

@@ -139,7 +139,7 @@ export function BlogMenu({ headings, links, post }: {
 
   function Headings() {
     return (
-      <Card shadow="md" radius="lg" p="lg" visibleFrom="md" >
+      <Card shadow="md" radius="lg" p="lg" visibleFrom="lg" >
         <Group mb="lg">
           <IconList size={20} />
           <Title order={4}>Headings</Title>
@@ -161,7 +161,7 @@ export function BlogMenu({ headings, links, post }: {
 
   function Tags() {
     return (
-      <Card shadow="md" radius="lg" p="lg" visibleFrom="md">
+      <Card shadow="md" radius="lg" p="lg" visibleFrom="lg">
         <Title order={4} mb="lg">
           Tags
         </Title>

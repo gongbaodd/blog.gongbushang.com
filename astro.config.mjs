@@ -5,6 +5,7 @@ import react from "@astrojs/react";
 import tailwind from "@astrojs/tailwind";
 
 import remarkMath from "remark-math";
+import remarkAttributes  from "remark-attributes";
 import rehypeKatex from "rehype-katex";
 import rehypeExternalLinks from "rehype-external-links";
 
@@ -17,7 +18,10 @@ export default defineConfig({
   site: "https://growgen.xyz",
   integrations: [
     mdx({
-      extendMarkdownConfig: true
+      extendMarkdownConfig: true,
+      optimize: {
+        ignoreElementNames: ["h1"]
+      }
     }),
     sitemap(),
     react(),
@@ -26,7 +30,10 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkMath],
+    remarkPlugins: [
+      remarkAttributes,
+      remarkMath,
+    ],
     rehypePlugins: [
       [rehypeKatex, { strict: false }],
       [
@@ -40,7 +47,7 @@ export default defineConfig({
         plantuml: "PlantUML",
       },
       langs: [...Object.values(bundledLanguages), plantumlGrammar],
-    },
+    }
   },
   output: "static",
   adapter: vercel({
