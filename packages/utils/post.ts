@@ -10,6 +10,7 @@ import fs from "node:fs"
 import path, { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import potrace from "potrace"
+import dayjs from "dayjs";
 
 export interface IPost {
     id: string;
@@ -53,7 +54,7 @@ export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
 export async function mapServerPostToClient(posts: T_PROPS[]) {
   return await Promise.all(
       posts.map(async (post, i) => {
-          const cPost = await colorizePost(post, i)
+          const cPost = await colorizePost(post)
           const clientPost = await layoutPost(cPost)
           const result = {
               id: clientPost.id,
@@ -102,8 +103,13 @@ async function layoutPost(post:T_PROPS | T_EXT_POST) {
     return set<T_EXT_POST>(post, "data.layout", layoutCls)
 }
 
-async function colorizePost(post: T_PROPS | T_EXT_POST, index: number): Promise<T_EXT_POST> {
+async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
     if (!post.data.cover) {
+        const title = await titleFrom(post)
+        const count = title.length
+        const date =  dateFrom(post)
+        const index = dayjs(date).date() + dayjs(date).month() + dayjs(date).year() + count;
+
         const bgClass = POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]
         const result = set<T_EXT_POST>({ ...post }, "data.bgClass", bgClass)
         return result
