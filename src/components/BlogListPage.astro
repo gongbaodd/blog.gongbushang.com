@@ -76,7 +76,7 @@ $series.set(series)
   />
   <Header/>
   <MantineMain>
-    <GridWithMenu>
+    <GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
       <BlogListMenu slot="menuNode" client:idle />
       <BlogPlock slot="gridContent" client:load />
     </GridWithMenu>

@@ -1,0 +1,12 @@
+.content > h1 {
+    display: none;
+}
+
+.relates {
+    transition: opacity .2s ease-in-out;
+    opacity: .5;
+}
+
+.relates:hover {
+    opacity: 1;
+}

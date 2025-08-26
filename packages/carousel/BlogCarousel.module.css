@@ -1,5 +1,4 @@
 .carousel {
-    max-width: 500px;
     border-radius: var(--mantine-radius-md);
 }
 
@@ -11,7 +10,7 @@
 }
 
 @media screen and (min-width: 88em) {
-    .carousel {
+    .carousel.titled {
         flex: 1;
         max-width: calc(100% - 12em);
         border-radius: var(--mantine-radius-md);
