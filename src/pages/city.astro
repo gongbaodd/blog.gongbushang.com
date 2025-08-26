@@ -1,0 +1,74 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import Header from "@/packages/header/Header.astro";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import GLMap, { type IMapData } from "../components/GLMap";
+import { initCityPostMap } from "@/packages/utils/filter";
+import { getAllPosts } from "@/packages/utils/post";
+import fs from "node:fs";
+import path from "node:path";
+
+export const prerender = true;
+const posts = await getAllPosts();
+const cityPostMap = await initCityPostMap(posts);
+
+interface IMeta {
+  file: string;
+  city: string[];
+  locations: {
+    latitude: number;
+    longitude: number;
+  }[];
+}
+
+const { metaData } = {
+  get metaData() {
+    try {
+      const metadataPath = path.join(
+        process.cwd(),
+        "src",
+        "content",
+        "metadata.json"
+      );
+      if (fs.existsSync(metadataPath)) {
+        const metadataContent = fs.readFileSync(metadataPath, "utf-8");
+        return JSON.parse(metadataContent) as IMeta[];
+      }
+    } catch (error) {
+      // If metadata.json doesn't exist or there's an error reading it, continue with normal color generation
+      console.warn(
+        "Could not read metadata.json, falling back to color generation:",
+        error
+      );
+    }
+  },
+};
+
+const data: IMapData[] = []
+for(const [city, postSet] of cityPostMap.entries()) {
+  const [post, ...rest] = [...postSet]
+  const file = post.id
+  const meta = metaData?.find(d => d.file === file)
+  if (meta) {
+    const index = meta.city.map(c => c.toLowerCase()).indexOf(city)
+    if (index > -1) {
+      const location = meta.locations[index]
+      data.push({
+        name: city,
+        location: location,
+        id: file,
+      })
+    }
+  }
+}
+---
+
+<Global>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header />
+  <MantineMain>
+    <GLMap data={data} client:load />
+  </MantineMain>
+</Global>

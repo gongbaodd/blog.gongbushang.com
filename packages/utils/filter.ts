@@ -110,6 +110,31 @@ export const getFilterByTagPage = async () => {
   return tagResult
 }
 
+
+let cityPostMap = new Map<string, Set<T_POST>>()
+const _initCityPostMap = memoize((posts: T_POST[]) => {
+  cityPostMap = createPostMap(posts, (p) => (p.data.city ?? []).map((t: string) => t.toLowerCase()))
+  return cityPostMap
+}, { getCacheKey: (posts) => Array.from(posts).length })
+
+export function initCityPostMap(posts: T_POST[]) {
+  return _initCityPostMap(posts)
+}
+
+export const getFilterByCityPage = async () => {
+  const posts = await getAllPosts()
+  const cityPostMap = initCityPostMap(posts)
+  const cityResult = Array.from(cityPostMap, ([filter, postsSet]) => ({
+    params: {
+      filter,
+    },
+    props: { posts: sortPostsByDate(Array.from(postsSet)) },
+  }))
+
+  return cityResult
+}
+
+
 export const isValidTagFilter = async (filter: string) => {
   const posts = await getAllPosts()
   const tagPostMap = initTagPostMap(posts)
