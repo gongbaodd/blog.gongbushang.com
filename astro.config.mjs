@@ -10,14 +10,15 @@ import rehypeExternalLinks from "rehype-external-links";
 
 import {bundledLanguages } from "shiki"
 import plantumlGrammar from "shiki-plantuml"
-import extractColor from "./plugins/extract-color.mjs"
 
 import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: "https://growgen.xyz",
   integrations: [
-    mdx(),
+    mdx({
+      extendMarkdownConfig: true
+    }),
     sitemap(),
     react(),
     tailwind({
