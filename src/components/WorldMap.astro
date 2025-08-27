@@ -5,7 +5,7 @@ import { getAllPosts } from "@/packages/utils/post";
 import fs from "node:fs";
 import path from "node:path";
 
-const showButton = Astro.url.pathname !== "/world"
+const showButton = Astro.url.pathname.indexOf("/world") == -1
 
 interface IMeta {
   file: string;

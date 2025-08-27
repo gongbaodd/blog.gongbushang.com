@@ -1,3 +1,4 @@
+// @ts-ignore
 import { body } from "@/src/fragments/description.mdx"
 
 export const SITE_TITLE = 'GrowGen | 给我整';
