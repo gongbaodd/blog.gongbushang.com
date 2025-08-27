@@ -1,10 +1,9 @@
 import Map, { Marker } from 'react-map-gl/maplibre';
 import CustomMantineProvider from '@/src/stores/CustomMantineProvider';
-import { Anchor, Button, Card, Center, Group, Stack } from '@mantine/core';
+import { Anchor, Button, Card, Center, Group } from '@mantine/core';
 import "maplibre-gl/dist/maplibre-gl.css"
 import { MapPin } from 'lucide-react';
 import { useMediaQuery } from '@mantine/hooks';
-import type { ReactNode } from 'react';
 
 
 export interface IMapData {

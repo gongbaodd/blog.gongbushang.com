@@ -37,7 +37,7 @@ export default function Hero({ children }: IProps) {
           </Card>
 
           <Stack gap="xl">
-            <Typography>
+            <Typography p={"md"}>
               {children}
             </Typography>
             <Group>
