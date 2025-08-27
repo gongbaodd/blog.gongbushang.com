@@ -15,6 +15,7 @@ import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
+import { Content } from "../fragments/description.mdx"
 
 export const prerender = true;
 const badges = await getBadges()
@@ -24,7 +25,9 @@ const badges = await getBadges()
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header/>
   <MantineMain>
-    <Hero client:load/>
+    <Hero client:load>
+      <Content />
+    </Hero>
     <MantineHeatWrapper />
     <BlogSections />
     <WorldMap />

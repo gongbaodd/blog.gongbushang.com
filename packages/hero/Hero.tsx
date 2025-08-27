@@ -2,25 +2,25 @@ import {
   Box,
   Group,
   Stack,
-  Title,
-  Text,
   Button,
   Divider,
   Flex,
   Card,
   Center,
+  Typography
 } from "@mantine/core";
 import classes from "./Hero.module.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import Lanyard from "@/src/bits/Components/Lanyard/Lanyard";
 import profile from "@/src/icons/profile.svg?raw"
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 
 interface IProps {
+  children: ReactNode
 }
 
-export default function Hero({}: IProps) {
+export default function Hero({ children }: IProps) {
   const [ modelLoaded, setModelLoaded ] = useState(false)
 
   return (
@@ -36,13 +36,10 @@ export default function Hero({}: IProps) {
             </Flex>
           </Card>
 
-          <Stack gap="md">
-            <Title order={1} size="h1">
-              You found my secret garden!
-            </Title>
-            <Text size="lg" c="dimmed">
-              Sorry, making a little rebuilding, many functions are not available yet.
-            </Text>
+          <Stack gap="xl">
+            <Typography>
+              {children}
+            </Typography>
             <Group>
               <Button>订阅更新</Button>
               <Button variant="outline">关注我</Button>
