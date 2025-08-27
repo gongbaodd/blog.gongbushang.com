@@ -14,6 +14,7 @@ import NewsLetter from "../components/NewsLetter";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
+import WorldMap from "../components/WorldMap.astro";
 
 export const prerender = true;
 const badges = await getBadges()
@@ -26,6 +27,7 @@ const badges = await getBadges()
     <Hero client:load/>
     <MantineHeatWrapper />
     <BlogSections />
+    <WorldMap />
     <Tags client:load>
       <TagGroup tags={badges} slot="tagGroup" />
     </Tags>

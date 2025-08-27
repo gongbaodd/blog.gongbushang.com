@@ -4,10 +4,8 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Header from "@/packages/header/Header.astro";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import { initCityPostMap, sortPostsByDate } from "@/packages/utils/filter";
+import { sortPostsByDate } from "@/packages/utils/filter";
 import { getAllPosts, mapServerPostToClient } from "@/packages/utils/post";
-import fs from "node:fs";
-import path from "node:path";
 import Footer from "@/packages/components/Footer.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import { BlogListMenu } from "@/packages/menu/BlogListMenu";
@@ -17,64 +15,11 @@ import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
 import { $category, $series, $tag } from "../stores/links";
 import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
 import { FILTER_ENTRY } from "@/packages/consts";
-import GLMap, { type IMapData } from "@/packages/map/GLMap";
+import WorkdMap from "../components/WorldMap.astro";
 
 export const prerender = true;
 const posts = await getAllPosts();
 const allPosts = sortPostsByDate(posts.filter(p => !!p.data.city))
-
-const cityPostMap = initCityPostMap(allPosts);
-
-interface IMeta {
-  file: string;
-  city: string[];
-  locations: {
-    latitude: number;
-    longitude: number;
-  }[];
-}
-
-const { metaData } = {
-  get metaData() {
-    try {
-      const metadataPath = path.join(
-        process.cwd(),
-        "src",
-        "content",
-        "metadata.json"
-      );
-      if (fs.existsSync(metadataPath)) {
-        const metadataContent = fs.readFileSync(metadataPath, "utf-8");
-        return JSON.parse(metadataContent) as IMeta[];
-      }
-    } catch (error) {
-      // If metadata.json doesn't exist or there's an error reading it, continue with normal color generation
-      console.warn(
-        "Could not read metadata.json, falling back to color generation:",
-        error
-      );
-    }
-  },
-};
-
-const data: IMapData[] = [];
-for (const [city, postSet] of cityPostMap.entries()) {
-  const [post, ..._] = [...postSet];
-  const file = post.id;
-  const meta = metaData?.find((d) => d.file === file);
-  if (meta) {
-    const index = meta.city.map((c) => c.toLowerCase()).indexOf(city);
-    if (index > -1) {
-      const location = meta.locations[index];
-      data.push({
-        name: city,
-        location: location,
-        id: file,
-      });
-    }
-  }
-
-}
 
 const [categories, series, tags] = await Promise.all([
   getCategoriesFrom(allPosts),
@@ -120,7 +65,7 @@ $series.set(series)
     >
       <BlogListMenu slot="menuNode" client:idle />
       <section slot="gridContent" class="flex flex-col gap-8">
-        <GLMap data={data} client:load />
+        <WorkdMap />
         <BlogPlock client:load />
       </section>
     </GridWithMenu>

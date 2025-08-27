@@ -1,9 +1,10 @@
 import Map, { Marker } from 'react-map-gl/maplibre';
 import CustomMantineProvider from '@/src/stores/CustomMantineProvider';
-import { Anchor, Card } from '@mantine/core';
+import { Anchor, Button, Card, Center, Group, Stack } from '@mantine/core';
 import "maplibre-gl/dist/maplibre-gl.css"
 import { MapPin } from 'lucide-react';
 import { useMediaQuery } from '@mantine/hooks';
+import type { ReactNode } from 'react';
 
 
 export interface IMapData {
@@ -17,9 +18,10 @@ export interface IMapData {
 
 interface IMapProps {
     data: IMapData[]
+    showButton?: boolean
 }
 
-export default function GLMap({ data }: IMapProps) {
+export default function GLMap({ data, showButton }: IMapProps) {
     const sm = useMediaQuery('(max-width: 48em)');
     const { zoom } = {
         get zoom() {
@@ -35,6 +37,7 @@ export default function GLMap({ data }: IMapProps) {
                 padding={0}
                 radius="lg"
                 h={"40vh"}
+                style={{ position: "relative" }}
             >
                 <Map
                     initialViewState={{ longitude: 50, latitude: 58, zoom }}
@@ -56,6 +59,15 @@ export default function GLMap({ data }: IMapProps) {
                     })}
 
                 </Map>
+                {showButton &&
+                    <Group justify='center' style={{ position: 'absolute', left: 0, top: 0, width: "100%", height: "100%" }}>
+                        <Center>
+                            <Anchor href={"/world"}>
+                                <Button size='xl'>See {data.length} Desinations</Button>
+                            </Anchor>
+                        </Center>
+                    </Group>
+                }
             </Card>
         </CustomMantineProvider>
     );
