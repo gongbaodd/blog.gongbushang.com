@@ -16,12 +16,12 @@ import {
 import { mapServerPostToClient } from "@/packages/utils/post";
 import { BlogListMenu } from "../../packages/menu/BlogListMenu";
 import { $posts, $postsListParams } from "../stores/posts";
-import { BlogListNanoStore } from "./BlogListStore";
 import { $category, $series, $tag } from "../stores/links";
 import type { CollectionEntry } from "astro:content";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "../../packages/masonry/BlogPlock";
+import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
 type T_POST = CollectionEntry<"blog">
 
 interface Props {

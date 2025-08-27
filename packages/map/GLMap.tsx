@@ -1,8 +1,10 @@
 import Map, { Marker } from 'react-map-gl/maplibre';
-import CustomMantineProvider from '../stores/CustomMantineProvider';
+import CustomMantineProvider from '@/src/stores/CustomMantineProvider';
 import { Anchor, Card } from '@mantine/core';
 import "maplibre-gl/dist/maplibre-gl.css"
 import { MapPin } from 'lucide-react';
+import { useMediaQuery } from '@mantine/hooks';
+
 
 export interface IMapData {
     name: string
@@ -18,16 +20,24 @@ interface IMapProps {
 }
 
 export default function GLMap({ data }: IMapProps) {
+    const sm = useMediaQuery('(max-width: 48em)');
+    const { zoom } = {
+        get zoom() {
+            if (sm) return 8
+            return 2
+        }
+    }
+
     return (
         <CustomMantineProvider>
             <Card
                 shadow="sm"
                 padding={0}
                 radius="lg"
-                h={"80vh"}
+                h={"40vh"}
             >
                 <Map
-                    initialViewState={{ longitude: 60, latitude: 45, zoom: 3 }}
+                    initialViewState={{ longitude: 50, latitude: 58, zoom }}
                     style={{ width: "100%", height: "100%" }}
                     mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
                 >

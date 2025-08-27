@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { $posts, $postsListParams } from "../stores/posts";
-import { $category, $series, $tag } from "../stores/links";
 import type { FILTER_ENTRY } from "@/packages/consts";
 import type { TLink } from "@/packages/utils/extract";
 import type { IPost } from "@/packages/card/PostCard";
+import { $posts, $postsListParams } from "@/src/stores/posts";
+import { $category, $series, $tag } from "@/src/stores/links";
 
 interface IStoreProps {
     posts: IPost[];

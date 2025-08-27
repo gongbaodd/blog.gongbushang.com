@@ -4,16 +4,26 @@ import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Header from "@/packages/header/Header.astro";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import GLMap, { type IMapData } from "../components/GLMap";
-import { initCityPostMap } from "@/packages/utils/filter";
-import { getAllPosts } from "@/packages/utils/post";
+import { initCityPostMap, sortPostsByDate } from "@/packages/utils/filter";
+import { getAllPosts, mapServerPostToClient } from "@/packages/utils/post";
 import fs from "node:fs";
 import path from "node:path";
 import Footer from "@/packages/components/Footer.astro";
+import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
+import { BlogListMenu } from "@/packages/menu/BlogListMenu";
+import BlogPlock from "@/packages/masonry/BlogPlock";
+import { $posts, $postsListParams } from "../stores/posts";
+import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
+import { $category, $series, $tag } from "../stores/links";
+import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
+import { FILTER_ENTRY } from "@/packages/consts";
+import GLMap, { type IMapData } from "@/packages/map/GLMap";
 
 export const prerender = true;
 const posts = await getAllPosts();
-const cityPostMap = await initCityPostMap(posts);
+const allPosts = sortPostsByDate(posts.filter(p => !!p.data.city))
+
+const cityPostMap = initCityPostMap(allPosts);
 
 interface IMeta {
   file: string;
@@ -47,30 +57,73 @@ const { metaData } = {
   },
 };
 
-const data: IMapData[] = []
-for(const [city, postSet] of cityPostMap.entries()) {
-  const [post, ..._] = [...postSet]
-  const file = post.id
-  const meta = metaData?.find(d => d.file === file)
+const data: IMapData[] = [];
+for (const [city, postSet] of cityPostMap.entries()) {
+  const [post, ..._] = [...postSet];
+  const file = post.id;
+  const meta = metaData?.find((d) => d.file === file);
   if (meta) {
-    const index = meta.city.map(c => c.toLowerCase()).indexOf(city)
+    const index = meta.city.map((c) => c.toLowerCase()).indexOf(city);
     if (index > -1) {
-      const location = meta.locations[index]
+      const location = meta.locations[index];
       data.push({
         name: city,
         location: location,
         id: file,
-      })
+      });
     }
   }
+
 }
+
+const [categories, series, tags] = await Promise.all([
+  getCategoriesFrom(allPosts),
+  getSeriesFrom(allPosts),
+  getTagsFrom(allPosts),
+]);
+
+const clientPosts = await mapServerPostToClient(allPosts)
+
+const filter = ""
+const entryType = FILTER_ENTRY.WORLD
+const totalCount = clientPosts.length
+
+$posts.set(clientPosts);
+$postsListParams.set({
+  filter,
+  entryType,
+  page: 0,
+  totalCount,
+})
+$category.set(categories)
+$tag.set(tags)
+$series.set(series)
 ---
 
 <Global>
-  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead title={SITE_TITLE + " | World"} description={SITE_DESCRIPTION} slot="head" />
+  <BlogListNanoStore
+    posts={clientPosts}
+    tags={tags}
+    series={series}
+    categories={categories}
+    filter={filter}
+    entryType={entryType}
+    totalCount={totalCount}
+    client:load
+  />
   <Header />
   <MantineMain>
-    <GLMap data={data} client:load />
+    <GridWithMenu
+      menuCol={{ base: 12, md: 1.2 }}
+      contentCol={{ base: 12, md: 10.8 }}
+    >
+      <BlogListMenu slot="menuNode" client:idle />
+      <section slot="gridContent" class="flex flex-col gap-8">
+        <GLMap data={data} client:load />
+        <BlogPlock client:load />
+      </section>
+    </GridWithMenu>
     <Footer slug={"world"} />
   </MantineMain>
 </Global>

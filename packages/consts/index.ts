@@ -6,16 +6,17 @@ export const SITE_TITLE_NICK = "GrowGen | 整";
 export const SITE_DESCRIPTION = `生命在于折腾`;
 
 export enum FILTER_ENTRY {
-    ALL = 'all',
-    TAG = 'tag',
-    SERIES = 'series',
-    YEAR = 'year',
+  ALL = 'all',
+  TAG = 'tag',
+  SERIES = 'series',
+  YEAR = 'year',
+  WORLD = "world"
 }
 
 export const ROUTES = [
     { label: "Home", href: "/" },
     { label: "Blog", href: "/all" },
-    { label: "Travel", href: "/world" },
+    { label: "World", href: "/world" },
     { label: "Archive", href: "/year" },
 ]
 
