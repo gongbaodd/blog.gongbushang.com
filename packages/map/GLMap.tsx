@@ -40,7 +40,7 @@ export default function GLMap({ data, showButton }: IMapProps) {
                 style={{ position: "relative" }}
             >
                 <Map
-                    initialViewState={{ longitude: 50, latitude: 58, zoom }}
+                    initialViewState={{ longitude: 50, latitude: 45, zoom }}
                     style={{ width: "100%", height: "100%" }}
                     mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
                 >
