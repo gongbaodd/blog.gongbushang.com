@@ -22,6 +22,8 @@ import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "../../packages/masonry/BlogPlock";
 import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
+import { slide } from "astro:transitions";
+import Main from "./Main.astro";
 type T_POST = CollectionEntry<"blog">
 
 interface Props {
@@ -71,12 +73,12 @@ $postsListParams.set({
     totalCount={totalCount}
     client:load
   />
-  <Header/>
-  <MantineMain>
+  <Header transition:persist/>
+  <Main>
     <GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
       <BlogListMenu slot="menuNode" client:idle />
       <BlogPlock slot="gridContent" client:load />
     </GridWithMenu>
     <Footer slug={filter} />
-  </MantineMain>
+  </Main>
 </Global>

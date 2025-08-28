@@ -16,9 +16,7 @@ import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: "https://growgen.xyz",
-  prefetch: {
-     prefetchAll: true,
-  },
+  prefetch: true,
   integrations: [
     mdx({
       extendMarkdownConfig: true,

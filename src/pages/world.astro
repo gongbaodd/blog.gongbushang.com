@@ -16,6 +16,8 @@ import { $category, $series, $tag } from "../stores/links";
 import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
 import { FILTER_ENTRY } from "@/packages/consts";
 import WorkdMap from "../components/WorldMap.astro";
+import { slide } from "astro:transitions";
+import Main from "../components/Main.astro";
 
 export const prerender = true;
 const posts = await getAllPosts();
@@ -54,8 +56,8 @@ $postsListParams.set({
     totalCount={totalCount}
     client:load
   />
-  <Header />
-  <MantineMain>
+  <Header transition:persist/>
+  <Main>
     <GridWithMenu
       menuCol={{ base: 12, md: 1.2 }}
       contentCol={{ base: 12, md: 10.8 }}
@@ -67,5 +69,5 @@ $postsListParams.set({
       </section>
     </GridWithMenu>
     <Footer slug={"world"} />
-  </MantineMain>
+  </Main>
 </Global>

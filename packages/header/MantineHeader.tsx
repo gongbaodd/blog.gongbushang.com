@@ -9,16 +9,21 @@ import {
   Group,
   Stack,
   Title,
+  Text,
+  Loader,
 } from "@mantine/core";
 import classes from "./MantineHeader.module.css";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../../src/stores/layout";
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
-import { Menu } from "lucide-react";
+import { Notebook, Folder, Home, Menu, Plane } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
-import { $links } from "./store/links";
+import { $links, type ILink } from "./store/links";
 import { $pathname } from "./store/pathname";
 import { $title } from "./store/title";
+import { useCallback, useEffect, useState } from "react";
+import { prefetch } from "astro:prefetch";
+import { navigate } from "astro:transitions/client";
 
 interface IProps {
   searchNode?: React.ReactNode;
@@ -49,20 +54,63 @@ export default function MantineHeader({ searchNode }: IProps) {
   );
 }
 
+const Icons: Record<string, JSX.Element> = {
+  Home: <Home size="16" />,
+  Blog: <Notebook size="16" />,
+  World: <Plane size="16" />,
+  Archive: <Folder size="16" />,
+}
+
 function NavLinks() {
   const links = useStore($links)
-  const pathname = useStore($pathname)
+  return links.map((link, i) => <NavLink key={i} link={link} />)
+}
 
-  return links.map((link) => (
+function NavLink({ link }: { link: ILink }) {
+  const pathname = useStore($pathname)
+  const isCurrent = link.href === pathname
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setTimeout(() => {
+      const isCurrent = link.href === pathname
+      if (!isCurrent) prefetch(link.href)
+    }, 100)
+  }, [link])
+
+  const onClickHandler = useCallback(async (e: any) => {
+    e.preventDefault()
+    setIsLoading(true)
+    await navigate(link.href)
+    setIsLoading(false)
+  }, [link])
+
+  const Content = () => (
+  <Flex gap="xs" align={"center"}>
+    {isLoading ? <Loader size={16} /> : Icons[link.label]}
+    <Text>{link.label}</Text>
+  </Flex>)
+
+  if (isCurrent) {
+    return (
+      <Group key={link.label} className={[classes.link, classes.active].join(" ")}>
+        <Content />
+      </Group>
+    )
+  } else {
+    return (
       <Anchor
-        className={classes.link + (link.href === pathname ? ` ${classes.active}` : "")}
+        className={classes.link}
         key={link.label}
         href={link.href}
         py="xs"
+        onClick={onClickHandler}
       >
-        {link.label}
+        <Content />
       </Anchor>
-    ))
+    )
+  }
+
 }
 
 function NavDrawer() {

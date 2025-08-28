@@ -16,6 +16,8 @@ import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
 import { Content } from "../fragments/description.mdx"
+import { slide } from "astro:transitions";
+import Main from "../components/Main.astro";
 
 export const prerender = true;
 const badges = await getBadges()
@@ -23,8 +25,8 @@ const badges = await getBadges()
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header transition:persist/>
-  <MantineMain transition:animate="slide">
+  <Header/>
+  <Main >
     <Hero client:load>
       <Content />
     </Hero>
@@ -37,5 +39,5 @@ const badges = await getBadges()
     <SpotifyPlayer client:load />
     <NewsLetter />
     <Footer slug={"index"} />
-  </MantineMain>
+  </Main>
 </Global>

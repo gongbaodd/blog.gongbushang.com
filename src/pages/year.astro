@@ -7,6 +7,8 @@ import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import { SearchBanner } from "@/packages/search/Search";
 import YearFolders from "../components/YearFolders.astro";
+import { slide } from "astro:transitions";
+import Main from "../components/Main.astro";
 
 export const prerender = true;
 
@@ -18,10 +20,10 @@ export const prerender = true;
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <Header />
-  <MantineMain>
+  <Header transition:persist/>
+  <Main>
     <SearchBanner client:idle />
     <YearFolders />
     <Footer />
-  </MantineMain>
+  </Main>
 </Global>
