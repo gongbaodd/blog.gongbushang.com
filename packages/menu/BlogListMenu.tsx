@@ -5,6 +5,7 @@ import { useCallback, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useStore } from "@nanostores/react";
 import { $category, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../../src/stores/links";
+import { useMounted } from "@mantine/hooks";
 
 interface IMenuProps {
     title: String;
@@ -48,17 +49,19 @@ function Menu({ title, children, loadFunc }: IMenuProps) {
 }
 
 export function BlogListMenu() {
+    const isMounted = useMounted()
+
     return (
         <CustomMantineProvider>
-            <Stack gap="lg" style={{ position: "sticky", top: 100 }}>
+            {isMounted && <Stack gap="lg" style={{ position: "sticky", top: 100 }}>
                 <MenuCategory />
                 <MenuSeries />
                 <MenuTag />
-            </Stack>
+            </Stack>}
         </CustomMantineProvider>
-
     )
 }
+
 
 function MenuCategory() {
     const categories = useStore($category)

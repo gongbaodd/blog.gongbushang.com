@@ -3,10 +3,11 @@ import { useStore } from "@nanostores/react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import { Group, Flex, Text } from "@mantine/core";
 import { $pvMap, requestAllViewCount } from "../stores/pv";
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import classes from "./ViewCount.module.css"
 import { Eye } from "lucide-react";
 import { computed } from "nanostores";
+import { useMounted } from "@mantine/hooks";
 
 interface IViewCountProps {
     path: string
@@ -17,7 +18,7 @@ export default function ViewCount({ path: _path }: IViewCountProps) {
     const $count = computed($pvMap, v => v[path])
     const count = useStore($count)
 
-    useLayoutEffect(() => {
+    useEffect(() => {
         requestAllViewCount()
     }, [])
 
@@ -29,21 +30,24 @@ export default function ViewCount({ path: _path }: IViewCountProps) {
 }
 
 function normalizePath(path: string) {
-  return path.endsWith('/') && path !== '/' 
-    ? path.slice(0, -1) 
-    : path;
+    return path.endsWith('/') && path !== '/'
+        ? path.slice(0, -1)
+        : path;
 }
 
 function Skeleton({ count }: { count: number }) {
+    const mounted = useMounted()
+
     return (
         <CustomMantineProvider>
+            {mounted && 
             <Group style={{ position: "relative" }}>
                 <Flex style={{ position: "absolute", width: "100%", height: "100%" }} justify={"center"} align={"center"}>
                     <Text size="xs" className={classes.count}>{count}</Text>
                 </Flex>
                 {count ? <EmptyEye /> : <Eye strokeWidth={1} />}
-            </Group>
-        </CustomMantineProvider>
+            </Group>}
+        </CustomMantineProvider> 
     )
 }
 

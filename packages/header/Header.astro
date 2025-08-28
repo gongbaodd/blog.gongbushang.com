@@ -4,8 +4,15 @@ import Search from "@/packages/search/Search";
 import HeaderNanoStore from "./store/HeaderNanoStore";
 import { $pathname } from "./store/pathname";
 
-const pathName = Astro.url.pathname
+const pathName = normalizePath(Astro.url.pathname)
 $pathname.set(pathName)
+
+function normalizePath(path: string) {
+  return path.endsWith('/') && path !== '/' 
+    ? path.slice(0, -1) 
+    : path;
+}
+
 ---
 
 <HeaderNanoStore pathname={pathName} client:load />

@@ -1,0 +1,7 @@
+---
+import { ClientRouter } from "astro:transitions";
+const { title = "Demo", description = "View Transitions demo" } = Astro.props;
+---
+<title>{title}</title>
+<meta name="description" content={description} />
+<ClientRouter />

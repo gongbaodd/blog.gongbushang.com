@@ -1,0 +1,13 @@
+---
+import { slide } from "astro:transitions";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+<BaseLayout title="About">
+  <main transition:animate={slide({ duration: "1.2s" })}>
+
+  <h1 transition:name="page-title">ℹ️ About</h1>
+  <p>This is the about page.</p>
+  <p><a href="/home">Back Home →</a></p>
+  </main>
+
+</BaseLayout>

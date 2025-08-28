@@ -23,8 +23,8 @@ const badges = await getBadges()
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header/>
-  <MantineMain>
+  <Header transition:persist/>
+  <MantineMain transition:animate="slide">
     <Hero client:load>
       <Content />
     </Hero>
