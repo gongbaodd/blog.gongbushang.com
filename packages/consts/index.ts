@@ -24,7 +24,7 @@ export const ROUTES = [
     { label: ROUTE_LABEL.Home, href: "/" },
     { label: ROUTE_LABEL.Blog, href: "/all" },
     { label: ROUTE_LABEL.World, href: "/world" },
-    { label: ROUTE_LABEL.World, href: "/year" },
+    { label: ROUTE_LABEL.Archive, href: "/year" },
 ]
 
 export const PV_URL = "https://pv.growgen.xyz/"

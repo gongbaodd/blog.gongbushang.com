@@ -3,6 +3,8 @@ import MantineHeader from "@/packages/header/MantineHeader";
 import Search from "@/packages/search/Search";
 import HeaderNanoStore from "./store/HeaderNanoStore";
 import { $pathname } from "./store/pathname";
+import { ROUTE_LABEL } from "../consts";
+import MantineLoader from "@/src/components/MantineLoader";
 
 const pathName = normalizePath(Astro.url.pathname);
 $pathname.set(pathName);
@@ -16,5 +18,17 @@ function normalizePath(path: string) {
   <HeaderNanoStore pathname={pathName} client:load />
   <MantineHeader client:load>
     <Search slot={"searchNode"} client:idle />
+    <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
+      <MantineLoader />
+    </section>
+    <section transition:name={ROUTE_LABEL.Blog} slot={"loaderBlog"}>
+      <MantineLoader />
+    </section>
+    <section transition:name={ROUTE_LABEL.World} slot={"loaderWorld"}>
+      <MantineLoader />
+    </section>
+    <section transition:name={ROUTE_LABEL.Archive} slot={"loaderArchive"}>
+      <MantineLoader />
+    </section>
   </MantineHeader>
 </header>

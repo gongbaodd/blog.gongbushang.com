@@ -24,3 +24,9 @@
   color: var(--mantine-color-blue-6);
   font-weight: bold;
 }
+
+.loader {
+  position: absolute;
+  bottom: -1.5em;
+  left: 50%;
+}
