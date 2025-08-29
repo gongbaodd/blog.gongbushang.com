@@ -15,7 +15,6 @@ import Lanyard from "@/src/bits/Components/Lanyard/Lanyard";
 import profile from "@/src/icons/profile.svg?raw"
 import { useState, type ReactNode } from "react";
 
-
 interface IProps {
   children: ReactNode
 }
@@ -25,7 +24,7 @@ export default function Hero({ children }: IProps) {
 
   return (
     <CustomMantineProvider>
-      <Box py="xl">
+      <Box py="xl" className={classes.hero}>
         <Group align="center" gap={"xl"} justify="center">
           <Card p={0} radius={"lg"} shadow="lg">
             <Flex className={classes.avatarContainer}>

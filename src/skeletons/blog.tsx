@@ -1,4 +1,4 @@
-import { Card, Center, Flex, Skeleton, Stack } from "@mantine/core";
+import { Card, Flex, Skeleton, Stack } from "@mantine/core";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function BlogSkeleton() {
