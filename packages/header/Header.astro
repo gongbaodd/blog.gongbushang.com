@@ -22,16 +22,16 @@ function normalizePath(path: string) {
   <MantineHeader client:load>
     <Search slot={"searchNode"} client:idle />
     <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
-      <HomeSkeleton client:only/>
+      <HomeSkeleton/>
     </section>
     <section transition:name={ROUTE_LABEL.Blog} slot={"loaderBlog"}>
-      <BlogSkeleton client:only />
+      <BlogSkeleton/>
     </section>
     <section transition:name={ROUTE_LABEL.World} slot={"loaderWorld"}>
-      <WorldSkeleton client:only />
+      <WorldSkeleton/>
     </section>
     <section transition:name={ROUTE_LABEL.Archive} slot={"loaderArchive"}>
-      <ArchiveSkeleton client:only/>
+      <ArchiveSkeleton/>
     </section>
   </MantineHeader>
 </header>

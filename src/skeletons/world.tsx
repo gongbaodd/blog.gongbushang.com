@@ -3,7 +3,7 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function WorldSkeleton() {
     return <CustomMantineProvider>
-        <Card w={240} h={140} shadow="xl" radius={"md"} p={"md"}>
+        <Card w={240} h={140} shadow="xl" radius={"md"} p={"md"} visibleFrom="md">
             <Flex gap={"xs"} justify={"space-evenly"}>
                 <Skeleton height={50} w={15} />
                 <Stack gap={"xs"}>
@@ -20,6 +20,16 @@ export default function WorldSkeleton() {
                     </Flex>
                 </Stack>
             </Flex>
+        </Card>
+
+        <Card w={100} h={140} shadow="xl" radius={"md"} p={"md"} hiddenFrom="md">
+            <Stack align="center">
+                <Skeleton height={40} w={"100%"} animate={false} />
+                <Skeleton height={30} w={40} animate={false} />
+                <Skeleton height={40} w={40} animate={false} />
+                <Skeleton height={20} w={40} animate={false} />
+                <Skeleton height={30} w={40} animate={false} />
+            </Stack>
         </Card>
     </CustomMantineProvider>
 }
