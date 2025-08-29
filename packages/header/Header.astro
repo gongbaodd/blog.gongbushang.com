@@ -4,7 +4,10 @@ import Search from "@/packages/search/Search";
 import HeaderNanoStore from "./store/HeaderNanoStore";
 import { $pathname } from "./store/pathname";
 import { ROUTE_LABEL } from "../consts";
-import MantineLoader from "@/src/components/MantineLoader";
+import HomeSkeleton from "@/src/skeletons/home";
+import BlogSkeleton from "@/src/skeletons/blog";
+import WorldSkeleton from "@/src/skeletons/world";
+import ArchiveSkeleton from "@/src/skeletons/archive";
 
 const pathName = normalizePath(Astro.url.pathname);
 $pathname.set(pathName);
@@ -19,16 +22,16 @@ function normalizePath(path: string) {
   <MantineHeader client:load>
     <Search slot={"searchNode"} client:idle />
     <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
-      <MantineLoader />
+      <HomeSkeleton client:only/>
     </section>
     <section transition:name={ROUTE_LABEL.Blog} slot={"loaderBlog"}>
-      <MantineLoader />
+      <BlogSkeleton client:only />
     </section>
     <section transition:name={ROUTE_LABEL.World} slot={"loaderWorld"}>
-      <MantineLoader />
+      <WorldSkeleton client:only />
     </section>
     <section transition:name={ROUTE_LABEL.Archive} slot={"loaderArchive"}>
-      <MantineLoader />
+      <ArchiveSkeleton client:only/>
     </section>
   </MantineHeader>
 </header>

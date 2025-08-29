@@ -59,9 +59,7 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
           <Container h="100%" fluid>
             <Flex justify="space-between" align="center" h="100%">
               <NavDrawer />
-              <Anchor href="/">
-                <Title> {title} </Title>
-              </Anchor>
+              <TitleNode />
               <Group gap="lg" visibleFrom="sm">
                 <NavLinks />
               </Group>
@@ -72,6 +70,18 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
       </AppShell>
     </CustomMantineProvider>
   );
+
+  function TitleNode() {
+    const pathname = useStore($pathname)
+    if (pathname == "/") {
+      return <Title> {title} </Title>
+    } else {
+      return (
+        <Anchor href="/">
+          <Title> {title} </Title>
+        </Anchor>)
+    }
+  }
 
   function NavLinks() {
     const links = useStore($links)
@@ -100,7 +110,7 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
 
     const Content = () => (
       <Flex gap="xs" align={"center"}>
-        {Icons[link.label]}
+        {isLoading? <Loader size={16}/>:Icons[link.label]}
         <Text>{link.label}</Text>
       </Flex>)
 
