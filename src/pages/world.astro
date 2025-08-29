@@ -1,6 +1,6 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import { ROUTE_LABEL, SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Header from "@/packages/header/Header.astro";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
@@ -13,15 +13,18 @@ import BlogPlock from "@/packages/masonry/BlogPlock";
 import { $posts, $postsListParams } from "../stores/posts";
 import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
 import { $category, $series, $tag } from "../stores/links";
-import { getCategoriesFrom, getSeriesFrom, getTagsFrom } from "@/packages/utils/badges";
+import {
+  getCategoriesFrom,
+  getSeriesFrom,
+  getTagsFrom,
+} from "@/packages/utils/badges";
 import { FILTER_ENTRY } from "@/packages/consts";
 import WorkdMap from "../components/WorldMap.astro";
 import { slide } from "astro:transitions";
-import Main from "../components/Main.astro";
 
 export const prerender = true;
 const posts = await getAllPosts();
-const allPosts = sortPostsByDate(posts.filter(p => !!p.data.city))
+const allPosts = sortPostsByDate(posts.filter((p) => !!p.data.city));
 
 const [categories, series, tags] = await Promise.all([
   getCategoriesFrom(allPosts),
@@ -29,11 +32,11 @@ const [categories, series, tags] = await Promise.all([
   getTagsFrom(allPosts),
 ]);
 
-const clientPosts = await mapServerPostToClient(allPosts)
+const clientPosts = await mapServerPostToClient(allPosts);
 
-const filter = ""
-const entryType = FILTER_ENTRY.WORLD
-const totalCount = clientPosts.length
+const filter = "";
+const entryType = FILTER_ENTRY.WORLD;
+const totalCount = clientPosts.length;
 
 $posts.set(clientPosts);
 $postsListParams.set({
@@ -41,11 +44,15 @@ $postsListParams.set({
   entryType,
   page: 0,
   totalCount,
-})
+});
 ---
 
 <Global>
-  <BaseHead title={SITE_TITLE + " | World"} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead
+    title={SITE_TITLE + " | World"}
+    description={SITE_DESCRIPTION}
+    slot="head"
+  />
   <BlogListNanoStore
     posts={clientPosts}
     tags={tags}
@@ -56,18 +63,20 @@ $postsListParams.set({
     totalCount={totalCount}
     client:load
   />
-  <Header transition:persist/>
-  <Main>
-    <GridWithMenu
-      menuCol={{ base: 12, md: 1.2 }}
-      contentCol={{ base: 12, md: 10.8 }}
-    >
-      <BlogListMenu slot="menuNode" client:idle />
-      <section slot="gridContent" class="flex flex-col gap-8">
-        <WorkdMap />
-        <BlogPlock client:load />
-      </section>
-    </GridWithMenu>
-    <Footer slug={"world"} />
-  </Main>
+  <Header transition:persist />
+  <section transition:name={ROUTE_LABEL.World}>
+    <MantineMain>
+      <GridWithMenu
+        menuCol={{ base: 12, md: 1.2 }}
+        contentCol={{ base: 12, md: 10.8 }}
+      >
+        <BlogListMenu slot="menuNode" client:idle />
+        <section slot="gridContent" class="flex flex-col gap-8">
+          <WorkdMap />
+          <BlogPlock client:load />
+        </section>
+      </GridWithMenu>
+      <Footer slug={"world"} />
+    </MantineMain>
+  </section>
 </Global>

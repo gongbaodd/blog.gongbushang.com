@@ -2,16 +2,13 @@
 import BaseHead from "@/packages/components/BaseHead.astro";
 import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
+import { ROUTE_LABEL, SITE_DESCRIPTION, SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import { SearchBanner } from "@/packages/search/Search";
 import YearFolders from "../components/YearFolders.astro";
-import { slide } from "astro:transitions";
-import Main from "../components/Main.astro";
 
 export const prerender = true;
-
 ---
 
 <Global>
@@ -20,10 +17,12 @@ export const prerender = true;
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <Header transition:persist/>
-  <Main>
-    <SearchBanner client:idle />
-    <YearFolders />
-    <Footer />
-  </Main>
+  <Header transition:persist />
+  <section transition:name={ROUTE_LABEL.Archive}>
+    <MantineMain>
+      <SearchBanner client:idle />
+      <YearFolders />
+      <Footer />
+    </MantineMain>
+  </section>
 </Global>

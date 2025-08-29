@@ -13,11 +13,18 @@ export enum FILTER_ENTRY {
   WORLD = "world"
 }
 
+export enum ROUTE_LABEL {
+  Home = "Home",
+  Blog = "Blog",
+  World = "World",
+  Archive = "Archive"
+}
+
 export const ROUTES = [
-    { label: "Home", href: "/" },
-    { label: "Blog", href: "/all" },
-    { label: "World", href: "/world" },
-    { label: "Archive", href: "/year" },
+    { label: ROUTE_LABEL.Home, href: "/" },
+    { label: ROUTE_LABEL.Blog, href: "/all" },
+    { label: ROUTE_LABEL.World, href: "/world" },
+    { label: ROUTE_LABEL.World, href: "/year" },
 ]
 
 export const PV_URL = "https://pv.growgen.xyz/"

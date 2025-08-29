@@ -24,6 +24,7 @@ import { $title } from "./store/title";
 import { useCallback, useEffect, useState } from "react";
 import { prefetch } from "astro:prefetch";
 import { navigate } from "astro:transitions/client";
+import { ROUTE_LABEL } from "../consts";
 
 interface IProps {
   searchNode?: React.ReactNode;
@@ -55,10 +56,10 @@ export default function MantineHeader({ searchNode }: IProps) {
 }
 
 const Icons: Record<string, JSX.Element> = {
-  Home: <Home size="16" />,
-  Blog: <Notebook size="16" />,
-  World: <Plane size="16" />,
-  Archive: <Folder size="16" />,
+  [ROUTE_LABEL.Home]: <Home size="16" />,
+  [ROUTE_LABEL.Blog]: <Notebook size="16" />,
+  [ROUTE_LABEL.World]: <Plane size="16" />,
+  [ROUTE_LABEL.Archive]: <Folder size="16" />,
 }
 
 function NavLinks() {

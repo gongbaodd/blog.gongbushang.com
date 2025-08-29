@@ -2,7 +2,7 @@
 import Global from "../../packages/layouts/Global.astro";
 
 import BaseHead from "../../packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
+import { SITE_TITLE, SITE_DESCRIPTION, ROUTE_LABEL } from "@/packages/consts";
 
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../../packages/scaffold/MantineMain";
@@ -15,29 +15,29 @@ import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
-import { Content } from "../fragments/description.mdx"
-import { slide } from "astro:transitions";
-import Main from "../components/Main.astro";
+import { Content } from "../fragments/description.mdx";
 
 export const prerender = true;
-const badges = await getBadges()
+const badges = await getBadges();
 ---
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <Header/>
-  <Main >
-    <Hero client:load>
-      <Content />
-    </Hero>
-    <MantineHeatWrapper />
-    <BlogSections />
-    <WorldMap />
-    <Tags client:load>
-      <TagGroup tags={badges} slot="tagGroup" />
-    </Tags>
-    <SpotifyPlayer client:load />
-    <NewsLetter />
-    <Footer slug={"index"} />
-  </Main>
+  <Header />
+  <section transition:name={ROUTE_LABEL.Home}>
+    <MantineMain>
+      <Hero client:load>
+        <Content />
+      </Hero>
+      <MantineHeatWrapper />
+      <BlogSections />
+      <WorldMap />
+      <Tags client:load>
+        <TagGroup tags={badges} slot="tagGroup" />
+      </Tags>
+      <SpotifyPlayer client:load />
+      <NewsLetter />
+      <Footer slug={"index"} />
+    </MantineMain>
+  </section>
 </Global>

@@ -5,6 +5,7 @@ import {
   SITE_DESCRIPTION,
   SITE_TITLE,
   FILTER_ENTRY,
+  ROUTE_LABEL,
 } from "../../packages/consts";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import Footer from "@/packages/components/Footer.astro";
@@ -23,8 +24,7 @@ import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "../../packages/masonry/BlogPlock";
 import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
 import { slide } from "astro:transitions";
-import Main from "./Main.astro";
-type T_POST = CollectionEntry<"blog">
+type T_POST = CollectionEntry<"blog">;
 
 interface Props {
   subTitle: string;
@@ -48,13 +48,13 @@ const [categories, series, tags] = await Promise.all([
   getTagsFrom(limitedPosts),
 ]);
 
-$posts.set(posts)
+$posts.set(posts);
 $postsListParams.set({
   filter,
   entryType,
   page: 0,
   totalCount,
-})
+});
 ---
 
 <Global>
@@ -73,12 +73,17 @@ $postsListParams.set({
     totalCount={totalCount}
     client:load
   />
-  <Header transition:persist/>
-  <Main>
-    <GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
-      <BlogListMenu slot="menuNode" client:idle />
-      <BlogPlock slot="gridContent" client:load />
-    </GridWithMenu>
-    <Footer slug={filter} />
-  </Main>
+  <Header transition:persist />
+  <section transition:name={ROUTE_LABEL.Blog}>
+    <MantineMain>
+      <GridWithMenu
+        menuCol={{ base: 12, md: 1.2 }}
+        contentCol={{ base: 12, md: 10.8 }}
+      >
+        <BlogListMenu slot="menuNode" client:idle />
+        <BlogPlock slot="gridContent" client:load />
+      </GridWithMenu>
+      <Footer slug={filter} />
+    </MantineMain>
+  </section>
 </Global>
