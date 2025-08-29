@@ -21,10 +21,10 @@ import { useDisclosure } from "@mantine/hooks";
 import { $links, type ILink } from "./store/links";
 import { $pathname } from "./store/pathname";
 import { $title } from "./store/title";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useDeferredValue, useEffect, useState, type ReactNode } from "react";
 import { prefetch } from "astro:prefetch";
 import { navigate } from "astro:transitions/client";
-import { ROUTE_LABEL } from "../consts";
+import { ROUTE_LABEL, ROUTES } from "../consts";
 
 
 const Icons: Record<string, JSX.Element> = {
@@ -72,14 +72,25 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
   );
 
   function TitleNode() {
-    const pathname = useStore($pathname)
-    if (pathname == "/") {
+    const loaderHome = loaders.Home
+    const { isLoading, onClickHandler } = usePreFetch(ROUTES[0])
+    const [hover, setHover] = useState(false)
+
+    if (!loaderHome) {
       return <Title> {title} </Title>
     } else {
       return (
-        <Anchor href="/">
-          <Title> {title} </Title>
-        </Anchor>)
+        <Group style={{position: "relative"}}>
+          <Anchor href="/"
+            onClick={onClickHandler}
+            onPointerEnter={_ => setHover(true)}
+            onPointerOut={_ => setHover(false)}
+          >
+            <Title> {title} {isLoading ? <Loader size={28} /> : null} </Title>
+          </Anchor>
+          {(hover || isLoading) && <div className={classes.loader}>{loaderHome}</div>}
+        </Group>
+      )
     }
   }
 
@@ -89,28 +100,13 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
   }
 
   function NavLink({ link }: { link: ILink }) {
-    const pathname = useStore($pathname)
-    const isCurrent = link.href === pathname
-    const [isLoading, setIsLoading] = useState(false)
     const loader = loaders && loaders[link.label]
-
-    useEffect(() => {
-      setTimeout(() => {
-        const isCurrent = link.href === pathname
-        if (!isCurrent) prefetch(link.href)
-      }, 100)
-    }, [link])
-
-    const onClickHandler = useCallback(async (e: any) => {
-      e.preventDefault()
-      setIsLoading(true)
-      await navigate(link.href)
-      setIsLoading(false)
-    }, [link])
+    const [hover, setHover] = useState(false)
+    const { isCurrent, isLoading, onClickHandler } = usePreFetch(link)
 
     const Content = () => (
       <Flex gap="xs" align={"center"}>
-        {isLoading? <Loader size={16}/>:Icons[link.label]}
+        {isLoading ? <Loader size={16} /> : Icons[link.label]}
         <Text>{link.label}</Text>
       </Flex>)
 
@@ -129,10 +125,12 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
             href={link.href}
             py="xs"
             onClick={onClickHandler}
+            onPointerEnter={_ => setHover(true)}
+            onPointerOut={_ => setHover(false)}
           >
             <Content />
           </Anchor>
-          {isLoading && <div className={classes.loader}>{loader}</div>}
+          {(hover || isLoading) && <div className={classes.loader}>{loader}</div>}
         </Group>
       )
     }
@@ -162,4 +160,29 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
     )
   }
 
+}
+
+
+function usePreFetch(link: ILink) {
+  const pathname = useStore($pathname)
+  const isCurrent = link.href === pathname
+  const [isLoading, setIsLoading] = useState(false)
+  const onClickHandler = useCallback(async (e: any) => {
+    e.preventDefault()
+    setIsLoading(true)
+    await navigate(link.href)
+    setIsLoading(false)
+  }, [link])
+
+  useEffect(() => {
+    setTimeout(() => {
+      if (!isCurrent) prefetch(link.href)
+    }, 100)
+  }, [link])
+
+  return {
+    isCurrent,
+    isLoading,
+    onClickHandler,
+  }
 }
