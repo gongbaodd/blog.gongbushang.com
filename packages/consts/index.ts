@@ -1,5 +1,5 @@
 // @ts-ignore
-import { body } from "@/src/fragments/description.mdx"
+import { body } from "@/packages/hero/fragments/description.mdx"
 
 export const SITE_TITLE = 'GrowGen | 给我整';
 export const SITE_TITLE_NICK = "GrowGen | 整";

@@ -1,0 +1,9 @@
+---
+import MantineAnchor from "./MantineAnchor.tsx"
+
+const props = Astro.props;
+---
+
+<MantineAnchor href={props.href}>
+    <slot />
+</MantineAnchor>

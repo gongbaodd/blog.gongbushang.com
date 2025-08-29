@@ -23,7 +23,7 @@ export default defineConfig({
     mdx({
       extendMarkdownConfig: true,
       optimize: {
-        ignoreElementNames: ["h1"],
+        ignoreElementNames: ["a"],
       },
     }),
     sitemap(),

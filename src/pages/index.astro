@@ -6,7 +6,7 @@ import { SITE_TITLE, SITE_DESCRIPTION, ROUTE_LABEL } from "@/packages/consts";
 
 import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../../packages/scaffold/MantineMain";
-import Hero from "../../packages/hero/Hero";
+import Hero from "../../packages/hero/Hero.astro";
 import BlogSections from "../components/BlogSections.astro";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../../packages/tags/Tags";
@@ -15,7 +15,6 @@ import Footer from "@/packages/components/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
-import { Content } from "../fragments/description.mdx";
 
 export const prerender = true;
 const badges = await getBadges();
@@ -26,9 +25,7 @@ const badges = await getBadges();
   <Header />
   <section transition:name={ROUTE_LABEL.Home}>
     <MantineMain>
-      <Hero client:load>
-        <Content />
-      </Hero>
+      <Hero />
       <MantineHeatWrapper />
       <BlogSections />
       <WorldMap />

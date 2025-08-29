@@ -1,0 +1,12 @@
+---
+import Anchor from "./Anchor.astro"
+import MantineHero from "./MantineHero.tsx"
+import { Content, components } from "./fragments/description.mdx"
+---
+
+<MantineHero client:load>
+  <Content components={{
+    ...components,
+    a: Anchor
+  }} />
+</MantineHero>
