@@ -19,12 +19,13 @@ import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 import { Notebook, Folder, Home, Menu, Plane } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
 import { $links, type ILink } from "./store/links";
-import { $pathname } from "./store/pathname";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { prefetch } from "astro:prefetch";
 import { navigate } from "astro:transitions/client";
-import { ROUTE_LABEL, ROUTES } from "../consts";
+import { ROUTE_HREF, ROUTE_LABEL, ROUTES } from "../consts";
 import { Carousel as MantineCarousel } from "@mantine/carousel";
+import { $pathnameNormalized } from "./store/pathname";
+import MantineAnchor from "@/src/components/MantineAnchor";
 
 const Icons: Record<string, JSX.Element> = {
   [ROUTE_LABEL.Home]: <Home size="16" />,
@@ -68,40 +69,21 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
   );
 
   function TitleNode() {
-    const loaderHome = loaders.Home
-    const { isCurrent, isLoading, onClickHandler } = usePreFetch(ROUTES[0])
-    const [hover, setHover] = useState(false)
     const title = "GrowGen"
-    const Zheng = () => (
-      <Flex pl="xs" className="">
-        <Title visibleFrom="md">给我</Title>
-        {isLoading ? <Flex align={"center"} px={"xs"}><Loader size={28} /></Flex> : <Title>整</Title>}
-      </Flex>
-    )
 
-    const Content = () => {
-      return <Flex align={"center"}>
-        <Title> {title}</Title>
-        <Zheng />
-      </Flex>
-    }
-
-    if (isCurrent) {
-      return <Content />
-    } else {
+    return <MantineAnchor href={ROUTE_HREF.Home} render={({ isLoading }) => {
       return (
-        <Group style={{ position: "relative" }}>
-          <Anchor href="/"
-            onClick={onClickHandler}
-            onPointerEnter={_ => setHover(true)}
-            onPointerOut={_ => setHover(false)}
-          >
-            <Content />
-          </Anchor>
-          {(hover || isLoading) && <Flex className={classes.loader}>{loaderHome}</Flex>}
-        </Group>
-      )
-    }
+        <Flex align={"center"}>
+          <Title> {title}</Title>
+          <Flex pl="xs" className="">
+            <Title visibleFrom="md">给我</Title>
+            {isLoading ?
+              <Flex align={"center"} px={"xs"}><Loader size={28} /></Flex> :
+              <Title>整</Title>
+            }
+          </Flex>
+        </Flex>)
+    }} />
   }
 
   function NavLinks() {
@@ -114,47 +96,26 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
   }
 
   function NavLink({ link }: { link: ILink }) {
-    const loader = loaders && loaders[link.label]
-    const [hover, setHover] = useState(false)
-    const { isCurrent, isLoading, onClickHandler } = usePreFetch(link)
+    return <MantineAnchor
+      key={link.label}
+      href={link.href as ROUTE_HREF}
+      render={({ isLoading, isCurrent }) => {
+        const className = isCurrent ? [classes.link, classes.active].join(" ") : classes.link
 
-    const Content = () => (
-      <Flex gap="xs" align={"center"}>
-        {isLoading ? <Loader size={16} /> : Icons[link.label]}
-        <Text>{link.label}</Text>
-      </Flex>)
-
-    if (isCurrent) {
-      return (
-        <Group key={link.label} className={[classes.link, classes.active].join(" ")}>
-          <Content />
-        </Group>
-      )
-    } else {
-      return (
-        <Group style={{ position: "relative" }}>
-          <Anchor
-            className={classes.link}
-            key={link.label}
-            href={link.href}
-            py="xs"
-            onClick={onClickHandler}
-            onPointerEnter={_ => setHover(true)}
-            onPointerOut={_ => setHover(false)}
-          >
-            <Content />
-          </Anchor>
-          {(hover || isLoading) && <Flex className={classes.loader}>{loader}</Flex>}
-        </Group>
-      )
-    }
-
+        return (<Group className={className}>
+          <Flex gap="xs" align={"center"}>
+            {isLoading ? <Loader size={16} /> : Icons[link.label]}
+            <Text>{link.label}</Text>
+          </Flex>
+        </Group>)
+      }}
+    />
   }
 
   function NavDrawer() {
     const [opened, { open, close }] = useDisclosure(false);
     const links = useStore($links)
-    const pathname = useStore($pathname)
+    const pathname = useStore($pathnameNormalized)
     return (
       <>
         <Drawer opened={opened} onClose={close} title="Navigation" position="bottom" overlayProps={{ backgroundOpacity: 0.5, blur: 4 }}>
@@ -216,7 +177,7 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
 
 
 function usePreFetch(link: ILink) {
-  const pathname = useStore($pathname)
+  const pathname = useStore($pathnameNormalized)
   const isCurrent = link.href === pathname
   const [isLoading, setIsLoading] = useState(false)
   const onClickHandler = useCallback(async (e: any) => {

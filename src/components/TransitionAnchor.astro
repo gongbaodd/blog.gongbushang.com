@@ -1,0 +1,14 @@
+---
+import type { AstroComponentFactory } from "astro/runtime/server/index.js";
+import MantineAnchor from "./MantineAnchor";
+
+interface Props {
+  href: string;
+}
+
+const { href } = Astro.props
+---
+
+<MantineAnchor {href} client:load>
+  <slot />
+</MantineAnchor>

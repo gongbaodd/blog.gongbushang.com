@@ -1,21 +1,18 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION, ROUTE_LABEL } from "@/packages/consts";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import BlogSkeleton from "../skeletons/blog";
-import HomeSkeleton from "../skeletons/home";
-import WorldSkeleton from "../skeletons/world";
-import ArchiveSkeleton from "../skeletons/archive";
+import TransitionFrom from "../components/TransitionFrom.astro";
+import Header from "@/packages/header/Header.astro";
 ---
+
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
-  <section transition:name={ROUTE_LABEL.Home}>
+  <section>
+    <Header/>
     <MantineMain>
-      <HomeSkeleton client:load />
-      <BlogSkeleton client:load />
-      <WorldSkeleton client:load />
-      <ArchiveSkeleton client:load />
+      <p>Hello</p>
     </MantineMain>
   </section>
 </Global>

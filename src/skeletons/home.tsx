@@ -3,7 +3,7 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function HomeSkeleton() {
     return <CustomMantineProvider>
-        <Card w={240} h={140} shadow="xl" radius={"md"} p={"md"} visibleFrom="md">
+        <Card w={240} h={140} visibleFrom="md">
             <Flex justify={"center"} align="center" gap={"md"} mb={"md"}>
                 <Skeleton height={50} w={50} />
                 <Stack align="flex-start" gap={"xs"}>

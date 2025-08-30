@@ -22,9 +22,6 @@ export default defineConfig({
   integrations: [
     mdx({
       extendMarkdownConfig: true,
-      optimize: {
-        ignoreElementNames: ["a"],
-      },
     }),
     sitemap(),
     react(),

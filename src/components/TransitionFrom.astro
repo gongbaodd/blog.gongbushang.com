@@ -1,0 +1,22 @@
+---
+import { ROUTE_LABEL } from "@/packages/consts";
+import BlogSkeleton from "../skeletons/blog";
+import HomeSkeleton from "../skeletons/home";
+import WorldSkeleton from "../skeletons/world";
+import { TransitionSkeletons } from "./TransitionSkeletons";
+---
+
+<TransitionSkeletons client:only>
+  <section transition:name={ROUTE_LABEL.Home} slot="home">
+    <HomeSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.Blog} slot="blog">
+    <BlogSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.World} slot="world">
+    <WorldSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.Archive} slot="archive">
+    <WorldSkeleton />
+  </section>
+</TransitionSkeletons>

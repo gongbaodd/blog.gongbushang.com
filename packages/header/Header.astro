@@ -9,12 +9,8 @@ import BlogSkeleton from "@/src/skeletons/blog";
 import WorldSkeleton from "@/src/skeletons/world";
 import ArchiveSkeleton from "@/src/skeletons/archive";
 
-const pathName = normalizePath(Astro.url.pathname);
+const pathName = Astro.url.pathname
 $pathname.set(pathName);
-
-function normalizePath(path: string) {
-  return path.endsWith("/") && path !== "/" ? path.slice(0, -1) : path;
-}
 ---
 
 <header transition:persist>

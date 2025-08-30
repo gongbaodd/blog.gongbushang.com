@@ -3,7 +3,7 @@ import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function ArchiveSkeleton() {
     return <CustomMantineProvider>
-        <Card w={240} h={140} shadow="xl" radius={"md"} p={"md"} visibleFrom="md">
+        <Card w={240} h={140} visibleFrom="md">
 
             <Stack gap={"xs"}>
                 <Skeleton height={40} w={"100%"} />

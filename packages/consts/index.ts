@@ -20,12 +20,36 @@ export enum ROUTE_LABEL {
   Archive = "Archive"
 }
 
-export const ROUTES = [
-    { label: ROUTE_LABEL.Home, href: "/" },
-    { label: ROUTE_LABEL.Blog, href: "/all" },
-    { label: ROUTE_LABEL.World, href: "/world" },
-    { label: ROUTE_LABEL.Archive, href: "/year" },
+export enum ROUTE_HREF {
+  Home = "/",
+  Blog = "/all",
+  World = "/world",
+  Archive = "/year"
+}
+
+export const ALL_ROUTE_LABEL = [
+  ROUTE_LABEL.Home,
+  ROUTE_LABEL.Blog,
+  ROUTE_LABEL.World,
+  ROUTE_LABEL.Archive,
 ]
+
+export const ALL_ROUTE_HREF = [
+  ROUTE_HREF.Home,
+  ROUTE_HREF.Blog,
+  ROUTE_HREF.World,
+  ROUTE_HREF.Archive,
+]
+
+export const ROUTES = [
+  ROUTE_LABEL.Home,
+  ROUTE_LABEL.Blog,
+  ROUTE_LABEL.World,
+  ROUTE_LABEL.Archive
+].map(label => ({
+  label,
+  href: ROUTE_HREF[label]!
+}))
 
 export const PV_URL = "https://pv.growgen.xyz/"
 
@@ -57,7 +81,7 @@ export const TITLE_COLOR_MAP = Object.entries({
   "red-3": "#ffa8a8",
   "gray-2": "#e9ecef"
 })
-.reduce<Record<string, string>>((sum, [name, value]) => ({ ...sum, [prefix + name]: value }), {})
+  .reduce<Record<string, string>>((sum, [name, value]) => ({ ...sum, [prefix + name]: value }), {})
 
 export const POST_CARD_UNDERLINE_COLORS = Object.keys(TITLE_COLOR_MAP)
 
