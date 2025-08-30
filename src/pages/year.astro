@@ -19,7 +19,7 @@ export const prerender = true;
   />
   <Header transition:persist />
   <section transition:name={ROUTE_LABEL.Archive}>
-    <MantineMain>
+    <MantineMain client:load>
       <SearchBanner client:idle />
       <YearFolders />
       <Footer />

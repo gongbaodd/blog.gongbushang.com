@@ -50,7 +50,7 @@ async function getLinks() {
     slot="head"
   />
   <Header />
-  <MantineMain>
+  <MantineMain client:load>
     <GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }}>
       <BlogMenu
         post={clientPost}

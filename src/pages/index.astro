@@ -24,7 +24,7 @@ const badges = await getBadges();
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header />
   <section transition:name={ROUTE_LABEL.Home}>
-    <MantineMain>
+    <MantineMain client:load>
       <Hero />
       <MantineHeatWrapper />
       <BlogSections />

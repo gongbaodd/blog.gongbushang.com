@@ -8,6 +8,7 @@ import HomeSkeleton from "@/src/skeletons/home";
 import BlogSkeleton from "@/src/skeletons/blog";
 import WorldSkeleton from "@/src/skeletons/world";
 import ArchiveSkeleton from "@/src/skeletons/archive";
+import TransitionFrom from "@/src/components/TransitionFrom.astro";
 
 const pathName = Astro.url.pathname
 $pathname.set(pathName);
@@ -31,3 +32,5 @@ $pathname.set(pathName);
     </section>
   </MantineHeader>
 </header>
+<TransitionFrom />
+

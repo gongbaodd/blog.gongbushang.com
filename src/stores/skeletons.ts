@@ -1,5 +1,5 @@
 import { ALL_ROUTE_HREF, ROUTE_HREF } from "@/packages/consts";
-import { $pathnameNormalized } from "@/packages/header/store/pathname";
+import { $pathname, $pathnameNormalized } from "@/packages/header/store/pathname";
 import { computed, map } from "nanostores";
 import type { ReactNode } from "react";
 
@@ -16,6 +16,8 @@ const originUseMap = ALL_ROUTE_HREF.reduce((sum, href) => ({
 }), {} as Record<ROUTE_HREF, null | HTMLAnchorElement>)
 
 export const $isInUse = map(originUseMap)
+
+$pathname.subscribe(() => $isInUse.set(originUseMap))
 
 export const $skeletonsInPage = computed([$skeletons, $pathnameNormalized], (smap, path) => {
     return (Object.keys(smap) as (keyof typeof smap)[]).reduce((sum, key) => {

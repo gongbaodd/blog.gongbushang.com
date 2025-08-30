@@ -20,7 +20,7 @@ interface IProps {
 }
 
 export default function Hero({ children }: IProps) {
-  const [ modelLoaded, setModelLoaded ] = useState(false)
+  const [modelLoaded, setModelLoaded] = useState(false)
 
   return (
     <CustomMantineProvider>
@@ -28,17 +28,17 @@ export default function Hero({ children }: IProps) {
         <Group align="center" gap={"xl"} justify="center">
           <Card p={0} radius={"lg"} shadow="lg">
             <Flex className={classes.avatarContainer}>
-              <Center className={classes.placeholder} dangerouslySetInnerHTML={{__html: profile}}></Center>
-              <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded: "")}>
+              <Center className={classes.placeholder} dangerouslySetInnerHTML={{ __html: profile }}></Center>
+              <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded : "")}>
                 <Lanyard position={[0, 0, 12]} gravity={[0, -40, 0]} onLoad={() => setModelLoaded(true)} />
               </Flex>
             </Flex>
           </Card>
 
           <Stack gap="xl">
-            <Typography p={"md"}>
+            <HeroContent>
               {children}
-            </Typography>
+            </HeroContent>
             <Group>
               <Button>订阅更新</Button>
               <Button variant="outline">关注我</Button>
@@ -49,4 +49,12 @@ export default function Hero({ children }: IProps) {
       <Divider />
     </CustomMantineProvider>
   );
+}
+
+function HeroContent({ children }: { children: ReactNode }) {
+  return (
+    <Typography p={"md"}>
+      {children}
+    </Typography>
+  )
 }

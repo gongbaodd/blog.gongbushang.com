@@ -36,12 +36,6 @@
     transform: translateX(-300px);
 }
 
-/* @media screen and (max-width: 600px) {
-    .avatarContainer {
-        max-width: 100%;
-    }
-} */
-
 @media screen and (max-width: 48em) {
     .avatar {
         margin: 0;

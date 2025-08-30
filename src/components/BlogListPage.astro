@@ -74,8 +74,8 @@ $postsListParams.set({
     client:load
   />
   <Header transition:persist />
-  <section transition:name={ROUTE_LABEL.Blog}>
-    <MantineMain>
+  <section transition:name={ROUTE_LABEL.Blog} transition:animate="slide">
+    <MantineMain client:load>
       <GridWithMenu
         menuCol={{ base: 12, md: 1.2 }}
         contentCol={{ base: 12, md: 10.8 }}

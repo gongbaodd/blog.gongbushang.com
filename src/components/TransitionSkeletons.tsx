@@ -11,7 +11,7 @@ interface ISkeletons {
 }
 
 export function TransitionSkeletons(props: ISkeletons) {
-    const skeletons = useStore($skeletonsNotInUse)
+    const skeletons = useStore($skeletonsNotInUse)    
 
     useEffect(() => {
         initSkeletons(props)

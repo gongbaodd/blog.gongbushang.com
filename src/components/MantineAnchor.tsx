@@ -30,13 +30,6 @@ export default function MantineAnchor({ href, render }: IProps) {
     }
   }, [opened, isLoading])
 
-  useEffect(() => {
-    () => {
-      if (!ref.current) return
-      releaseSkeleton(ref.current, href)
-    }
-  }, [])
-
   const { openState } = {
     get openState() {
       if (opened || isLoading) {
