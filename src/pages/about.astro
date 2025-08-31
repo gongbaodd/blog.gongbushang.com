@@ -3,16 +3,16 @@ import BaseHead from "@/packages/components/BaseHead.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import TransitionFrom from "../components/TransitionFrom.astro";
 import Header from "@/packages/header/Header.astro";
+import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 ---
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <section>
-    <Header/>
+    <Header />
     <MantineMain>
-      <p>Hello</p>
+      <MantineHeatWrapper />
     </MantineMain>
   </section>
 </Global>

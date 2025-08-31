@@ -1,17 +1,25 @@
 import { Heatmap } from '@mantine/charts';
 import CustomMantineProvider from '@/src/stores/CustomMantineProvider';
-import { Anchor, Button, Flex, ScrollArea, Stack, Title } from '@mantine/core';
+import { Anchor, Button, Flex, Stack, Title } from '@mantine/core';
 import dayjs from 'dayjs';
-import { Box } from 'lucide-react';
+import { useStore } from '@nanostores/react';
+import { $countsMap, $currentYear, $heatmap, requestHeatData } from './store/heatmap';
+import { useEffect } from 'react';
 
-interface IHeat {
-    data: Record<string, number>
-    count: number
-}
+interface IHeat {}
 
-export default function MantineHeat({ data, count }: IHeat) {
-    const startDate = dayjs().startOf("year").format("YYYY-MM-DD")
-    const endDate = dayjs().endOf("year").format("YYYY-MM-DD")
+export default function MantineHeat({}: IHeat) {
+    const data = useStore($heatmap)
+    const countsMap = useStore($countsMap)
+    const currentYear = useStore($currentYear)
+    const count = countsMap[currentYear] ?? 0
+
+    const startDate = dayjs(currentYear).startOf("year").format("YYYY-MM-DD")
+    const endDate = dayjs(currentYear).endOf("year").format("YYYY-MM-DD")
+
+    useEffect(() => {
+        requestHeatData()
+    }, [])
 
     return (
         <CustomMantineProvider>
