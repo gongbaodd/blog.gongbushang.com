@@ -1,9 +1,12 @@
 // @ts-ignore
 import { body } from "@/packages/hero/fragments/description.mdx"
+import type { DataEntryMap } from "astro:content";
 
 export const SITE_TITLE = 'GrowGen | 给我整';
 export const SITE_TITLE_NICK = "GrowGen | 整";
 export const SITE_DESCRIPTION = body;
+
+export const BLOG_SOURCE: keyof DataEntryMap = import.meta.env.BLOG_SOURCE ?? "blog"
 
 export enum FILTER_ENTRY {
   ALL = 'all',

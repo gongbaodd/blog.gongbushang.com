@@ -11,9 +11,9 @@ import { getReadingTime } from "../utils/readingTime";
 import { render } from "astro:content";
 import Header from "../header/Header.astro";
 import { GridWithMenu } from "../scaffold/GridWithMenu";
-import { mapServerPostToClient } from "../utils/post";
+import { mapServerPostToClient, type T_PROPS } from "../utils/post";
 
-type Props = CollectionEntry<"blog">;
+type Props = T_PROPS;
 const post = Astro.props;
 const [clientPost] = await mapServerPostToClient([post]);
 

@@ -1,8 +1,8 @@
 import { type CollectionEntry } from "astro:content";
 import { memoize } from "es-toolkit"
-import { getAllPosts } from "./post";
+import { getAllPosts, type T_PROPS } from "./post";
 
-type T_POST = CollectionEntry<"blog">;
+type T_POST = T_PROPS;
 type T_Link = { label: string; href: string, count: number };
 
 let categoryMap = new Map<string, Set<T_POST>>();

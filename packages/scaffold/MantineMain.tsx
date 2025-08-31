@@ -43,7 +43,7 @@ export default function MantineMain({
             <Stack gap="xl" style={{ width: "100%" }} justify="space-between">{children}</Stack>
           ) : children}
 
-          {loading && <Overlay color="#000" backgroundOpacity={0.35} blur={15} style={{ position: "fixed" }} />}
+          {loading && <Overlay color="#000" backgroundOpacity={0.35} blur={5} style={{ position: "fixed" }} />}
         </AppShell.Main>
       </AppShell>
     </CustomMantineProvider>

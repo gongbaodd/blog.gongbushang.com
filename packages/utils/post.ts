@@ -2,7 +2,7 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { isString, memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
-import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT, TITLE_COLOR_MAP } from "../consts";
+import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT, TITLE_COLOR_MAP } from "../consts";
 import { Vibrant } from "node-vibrant/node";
 import sharp from "sharp"
 import chroma from "chroma-js"
@@ -26,7 +26,7 @@ export interface IPost {
     };
 }
 
-type T_PROPS = CollectionEntry<"blog">
+export type T_PROPS = CollectionEntry<"blog"> | CollectionEntry<"example">
 type T_EXT = {
     layout: string;
     bgClass: string;
@@ -49,6 +49,7 @@ export async function mapServerPostToJSON(post: T_PROPS) {
     } as IPost
 }
 
+type Unpromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
 export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
 
 export async function mapServerPostToClient(posts: T_PROPS[]) {
@@ -82,7 +83,7 @@ export async function getAllClientPostsForSearch() {
     return posts
 }
 export async function getAllPosts() {
-    const posts = await getCollection("blog")
+    const posts = await getCollection(BLOG_SOURCE) 
     return posts
 }
 

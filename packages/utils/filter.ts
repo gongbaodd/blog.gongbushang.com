@@ -2,10 +2,9 @@ import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
-import { getAllPosts } from "./post"
-import type { CollectionEntry } from "astro:content"
+import { getAllPosts, type T_PROPS } from "./post"
 
-type T_POST = CollectionEntry<"blog">;
+type T_POST = T_PROPS;
 
 const STATIC_ENTRIES = [
   FILTER_ENTRY.ALL,

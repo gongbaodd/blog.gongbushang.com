@@ -5,13 +5,13 @@ import {
   initYearMonthPostMap,
 } from "@/packages/utils/filter";
 import { date } from "@/packages/utils/extract";
-import { mapServerPostToClient } from "@/packages/utils/post";
+import { mapServerPostToClient, type T_PROPS } from "@/packages/utils/post";
 import { getCounts } from "@/packages/utils/heatmap";
 import type { CollectionEntry } from "astro:content";
 import { FILTER_ENTRY } from "@/packages/consts";
 import GridHalf from "@/packages/scaffold/GridHalf";
 import BlogCarousel from "@/packages/carousel/BlogCarousel";
-type T_POST = CollectionEntry<"blog">;
+type T_POST = T_PROPS;
 
 const _posts = await getAllPostByDateDesc();
 const latestPosts = await mapServerPostToClient(_posts.slice(0, 5));

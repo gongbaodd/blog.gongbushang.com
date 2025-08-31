@@ -1,8 +1,6 @@
-import { getAllClientPostsForSearch } from "@/packages/utils/post";
+import { getAllClientPostsForSearch, type T_PROPS } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 import type { CollectionEntry } from "astro:content";
-
-type T_PROPS = CollectionEntry<"blog">
 
 export const prerender = true;
 

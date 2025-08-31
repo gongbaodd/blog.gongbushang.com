@@ -2,11 +2,13 @@ import { remark } from "remark"
 import strip from "strip-markdown"
 import { getEntry, render, type CollectionEntry } from "astro:content"
 import { getSeries } from "./badges"
+import { type T_PROPS } from "./post"
+import { BLOG_SOURCE } from "../consts"
 
-type T_POST = CollectionEntry<"blog">
+type T_POST = T_PROPS
 
 export async function title(post: T_POST) {
-  const entry = await getEntry("blog", post.id)
+  const entry = await getEntry(BLOG_SOURCE, post.id)
   if (!entry) throw new Error("Not a valid post!")
 
   const { headings } = await render(entry)
@@ -47,7 +49,7 @@ export function tags(post: T_POST): TLink[] {
   const { tag } = post.data
   if (!tag) return []
 
-  return tag.map(_t => {
+  return tag.map((_t: string) => {
     const t = _t.toLocaleLowerCase()
     return ({
       label: t,

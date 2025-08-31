@@ -14,7 +14,7 @@ import {
   getSeriesFrom,
   getTagsFrom,
 } from "@/packages/utils/badges";
-import { mapServerPostToClient } from "@/packages/utils/post";
+import { mapServerPostToClient, type T_PROPS } from "@/packages/utils/post";
 import { BlogListMenu } from "../../packages/menu/BlogListMenu";
 import { $posts, $postsListParams } from "../stores/posts";
 import { $category, $series, $tag } from "../stores/links";
@@ -24,7 +24,7 @@ import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "../../packages/masonry/BlogPlock";
 import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
 import { slide } from "astro:transitions";
-type T_POST = CollectionEntry<"blog">;
+type T_POST = T_PROPS;
 
 interface Props {
   subTitle: string;
