@@ -4,6 +4,11 @@ import { Anchor, Button, Card, Center, Group } from '@mantine/core';
 import "maplibre-gl/dist/maplibre-gl.css"
 import { MapPin } from 'lucide-react';
 import { useMediaQuery } from '@mantine/hooks';
+import { useStore } from '@nanostores/react';
+import { $cities, requestCitiesData } from './store/city';
+import { useEffect } from 'react';
+import { $pathnameNormalized } from '../header/store/pathname';
+import { ROUTE_HREF } from '../consts';
 
 
 export interface IMapData {
@@ -16,11 +21,14 @@ export interface IMapData {
 }
 
 interface IMapProps {
-    data: IMapData[]
     showButton?: boolean
 }
 
-export default function GLMap({ data, showButton }: IMapProps) {
+export default function GLMap({}: IMapProps) {
+    const data = useStore($cities)
+    const pathname = useStore($pathnameNormalized)
+    const showButton = pathname !== ROUTE_HREF.World
+
     const sm = useMediaQuery('(max-width: 48em)');
     const { zoom } = {
         get zoom() {
@@ -28,6 +36,10 @@ export default function GLMap({ data, showButton }: IMapProps) {
             return 2
         }
     }
+
+    useEffect(() => {
+        requestCitiesData()
+    }, [])
 
     return (
         <CustomMantineProvider>
