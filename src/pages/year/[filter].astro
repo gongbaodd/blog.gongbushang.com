@@ -8,8 +8,6 @@ import { getCounts } from '@/packages/utils/heatmap';
 export const prerender = true;
 export const getStaticPaths = getFilterByYearPage;
 
-const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
-
 const { filter } = Astro.params;
 
 const subTitle = filter.replaceAll("/", " | ");
@@ -18,4 +16,4 @@ const isValid = Object.keys(counts).filter(k => k !== FILTER_ENTRY.ALL).includes
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.YEAR} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.YEAR} /> : <NotFound />}

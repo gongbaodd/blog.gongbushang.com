@@ -4,7 +4,7 @@ import { IconFolder } from "@tabler/icons-react";
 import { useCallback, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useStore } from "@nanostores/react";
-import { $category, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../../src/stores/links";
+import { $category, $clientCategory, $clientSeries, $clientTag, $series, $tag, requestAllCategories, requestAllSeries, requestAllTags } from "../../src/stores/links";
 import { useMounted } from "@mantine/hooks";
 
 interface IMenuProps {
@@ -64,7 +64,7 @@ export function BlogListMenu() {
 
 
 function MenuCategory() {
-    const categories = useStore($category)
+    const categories = useStore($clientCategory)
     return (
         <Menu title={"Categories"} loadFunc={requestAllCategories}>
             <Stack>
@@ -87,7 +87,7 @@ function MenuCategory() {
 }
 
 function MenuSeries() {
-    const series = useStore($series)
+    const series = useStore($clientSeries)
     return (
         <Menu title={"Series"} loadFunc={requestAllSeries}>
             <Stack gap="xs">
@@ -110,7 +110,7 @@ function MenuSeries() {
 }
 
 function MenuTag() {
-    const tags = useStore($tag)
+    const tags = useStore($clientTag)
     return (
         <Menu title={"Tags"} loadFunc={requestAllTags}>
             <Group gap="xs">

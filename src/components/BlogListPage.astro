@@ -9,26 +9,13 @@ import {
 } from "../../packages/consts";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import Footer from "@/packages/components/Footer.astro";
-import {
-  getCategoriesFrom,
-  getSeriesFrom,
-  getTagsFrom,
-} from "@/packages/utils/badges";
-import { mapServerPostToClient, type T_PROPS } from "@/packages/utils/post";
 import { BlogListMenu } from "../../packages/menu/BlogListMenu";
-import { $posts, $postsListParams } from "../stores/posts";
-import { $category, $series, $tag } from "../stores/links";
-import type { CollectionEntry } from "astro:content";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "../../packages/masonry/BlogPlock";
-import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
-import { slide } from "astro:transitions";
-type T_POST = T_PROPS;
 
 interface Props {
   subTitle: string;
-  posts: T_POST[];
   totalCount: number;
   filter: string;
   entryType?: FILTER_ENTRY;
@@ -36,25 +23,10 @@ interface Props {
 
 const {
   subTitle,
-  posts: limitedPosts,
   filter,
   entryType,
   totalCount,
 } = Astro.props;
-const posts = await mapServerPostToClient(limitedPosts);
-const [categories, series, tags] = await Promise.all([
-  getCategoriesFrom(limitedPosts),
-  getSeriesFrom(limitedPosts),
-  getTagsFrom(limitedPosts),
-]);
-
-$posts.set(posts);
-$postsListParams.set({
-  filter,
-  entryType,
-  page: 0,
-  totalCount,
-});
 ---
 
 <Global>
@@ -63,16 +35,6 @@ $postsListParams.set({
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <BlogListNanoStore
-    posts={posts}
-    tags={tags}
-    series={series}
-    categories={categories}
-    filter={filter}
-    entryType={entryType}
-    totalCount={totalCount}
-    client:load
-  />
   <Header transition:persist />
   <section transition:name={ROUTE_LABEL.Blog} transition:animate="slide">
     <MantineMain client:load>
@@ -80,8 +42,15 @@ $postsListParams.set({
         menuCol={{ base: 12, md: 1.2 }}
         contentCol={{ base: 12, md: 10.8 }}
       >
-        <BlogListMenu slot="menuNode" client:idle />
-        <BlogPlock slot="gridContent" client:load />
+        <BlogListMenu slot="menuNode" client:load />
+        <BlogPlock 
+          totalCount={totalCount} 
+          entryType={entryType}
+          filter={filter}
+          page={0}
+          slot="gridContent" 
+          client:load 
+        />
       </GridWithMenu>
       <Footer slug={filter} />
     </MantineMain>

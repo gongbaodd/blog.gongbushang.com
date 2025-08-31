@@ -198,9 +198,8 @@ export function page(filterFn: typeof getFilterByCategoryPage | typeof getFilter
 
     for (let i = 0; i < results.length; i++) {
       const result = results[i];
-      if (result.props.posts.length <= POST_COUNT_PER_PAGE) continue; // no need to be paged
 
-      for (let j = POST_COUNT_PER_PAGE; j < result.props.posts.length; j += POST_COUNT_PER_PAGE) {
+      for (let j = 0; j < result.props.posts.length; j += POST_COUNT_PER_PAGE) {
         pagedResults.push({
           ...result,
           params: {

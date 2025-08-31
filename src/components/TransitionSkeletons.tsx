@@ -1,7 +1,6 @@
 import { useStore } from "@nanostores/react"
 import { useEffect, type ReactNode } from "react"
 import { $skeletonsNotInUse, initSkeletons } from "../stores/skeletons"
-import classes from "./TransitionSkeletons.module.css"
 
 interface ISkeletons {
     home?: ReactNode
@@ -19,7 +18,7 @@ export function TransitionSkeletons(props: ISkeletons) {
 
     return <>
         {(Object.keys(skeletons) as (keyof typeof skeletons)[]).map(key => {
-            return (<div key={key} className={classes.container}>{skeletons[key]}</div>)
+            return (<div key={key} style={{ width: 0, height: 0, position: "absolute", overflow: "hidden" }}>{skeletons[key]}</div>)
         })}
     </>
 }

@@ -13,31 +13,36 @@ interface PostPageParams {
 }
 export const $postsListParams = map<PostPageParams>({ filter: FILTER_ENTRY.ALL, page: 0, totalCount: 0 })
 
-export const $hasMorePosts = computed([$posts, $postsListParams], (posts, { totalCount }) => posts.length < totalCount)
 
 export const $loading = atom(false)
 
-export async function streamPosts() {
-    const { page: _page } = $postsListParams.get()
-    const page = _page + 1
+export interface IPostStreamParams {
+    page: number
+    filter: string
+    entryType?: FILTER_ENTRY;
+}
 
+export async function streamPosts(param: IPostStreamParams) {
+
+    const oldPosts = $posts.get()
     $loading.set(true)
 
-    for await (const post of _streamPosts()) {
+    for await (const post of _streamPosts(param)) {
         const _posts = $posts.get()
 
         await delay(100)
 
-        $posts.set([..._posts, post])
+        const existed = oldPosts.find(p => p.id === post.id)
+        if (!existed) {
+            $posts.set([..._posts, post])
+        }
     }
     
-    $postsListParams.setKey("page", page)
     $loading.set(false)
 }
 
-async function* _streamPosts() {
-    const { filter, entryType, page: _page } = $postsListParams.get()
-    const page = _page + 1
+async function* _streamPosts(param: IPostStreamParams) {
+    const { entryType, filter, page } = param
 
     const { url } = {
         get url() {

@@ -10,9 +10,7 @@ import Footer from "@/packages/components/Footer.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import { BlogListMenu } from "@/packages/menu/BlogListMenu";
 import BlogPlock from "@/packages/masonry/BlogPlock";
-import { $posts, $postsListParams } from "../stores/posts";
-import { BlogListNanoStore } from "@/packages/masonry/BlogListStore";
-import { $category, $series, $tag } from "../stores/links";
+import { $posts, $postsListParams } from "../../packages/masonry/store/posts";
 import {
   getCategoriesFrom,
   getSeriesFrom,
@@ -25,12 +23,6 @@ import { slide } from "astro:transitions";
 export const prerender = true;
 const posts = await getAllPosts();
 const allPosts = sortPostsByDate(posts.filter((p) => !!p.data.city));
-
-const [categories, series, tags] = await Promise.all([
-  getCategoriesFrom(allPosts),
-  getSeriesFrom(allPosts),
-  getTagsFrom(allPosts),
-]);
 
 const clientPosts = await mapServerPostToClient(allPosts);
 
@@ -53,16 +45,6 @@ $postsListParams.set({
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <BlogListNanoStore
-    posts={clientPosts}
-    tags={tags}
-    series={series}
-    categories={categories}
-    filter={filter}
-    entryType={entryType}
-    totalCount={totalCount}
-    client:load
-  />
   <Header transition:persist />
   <section transition:name={ROUTE_LABEL.World}>
     <MantineMain>
@@ -73,7 +55,13 @@ $postsListParams.set({
         <BlogListMenu slot="menuNode" client:idle />
         <section slot="gridContent" class="flex flex-col gap-8">
           <WorkdMap />
-          <BlogPlock client:load />
+          <BlogPlock
+            totalCount={totalCount}
+            entryType={entryType}
+            filter={filter}
+            page={0}
+            client:load
+          />
         </section>
       </GridWithMenu>
       <Footer slug={"world"} />

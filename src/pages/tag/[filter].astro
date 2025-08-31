@@ -8,8 +8,6 @@ import NotFound from "../404.astro";
 export const prerender = true;
 export const getStaticPaths = getFilterByTagPage;
 
-const limitedPosts = Astro.props.posts.slice(0, POST_COUNT_PER_PAGE);
-
 const { filter } = Astro.params;
 const subTitle = filter.replaceAll("/", " | ");
 const isValid = await isValidTagFilter(filter);
@@ -17,4 +15,4 @@ const isValid = await isValidTagFilter(filter);
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} posts={limitedPosts} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.TAG} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.TAG} /> : <NotFound />}
