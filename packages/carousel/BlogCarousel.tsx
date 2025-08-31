@@ -3,6 +3,10 @@ import { Carousel as MantineCarousel } from "@mantine/carousel";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import classes from "./BlogCarousel.module.css"
 import { PostCard, type IPost } from "../card/PostCard";
+import { useStore } from "@nanostores/react";
+import { $latest, $totalCounts, requestLatestPosts } from "@/packages/carousel/latest";
+import { useEffect } from "react";
+import { $history, requestHistoryPosts } from "@/packages/carousel/history";
 
 interface IBlogCarousel {
     title: string
@@ -28,6 +32,35 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: IB
             </Card>
         </CustomMantineProvider>
     )
+}
+
+export function LatestCarousel() {
+    const posts = useStore($latest)
+    const totalCounts = useStore($totalCounts)
+
+    useEffect(() => {
+        requestLatestPosts()
+    }, [])
+
+    return <BlogCarousel 
+        title="Latest Posts" 
+        posts={posts} 
+        link={{ label: `View All ${totalCounts} Posts`, href: "/all" }} 
+    />
+}
+
+export function HistoryCarousel() {
+    const posts = useStore($history)
+
+    useEffect(() => {
+        requestHistoryPosts()
+    }, [])
+
+    return <BlogCarousel 
+        title="Time Machine" 
+        posts={posts} 
+        link={{label: "View Archivess", href: "/year"}} 
+    />
 }
 
 export function Carousel({ posts, className }: { posts: IPost[]; className?: string }) {
