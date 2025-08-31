@@ -1,4 +1,4 @@
-import { AppShell, Overlay, Stack } from "@mantine/core";
+import { AppShell, LoadingOverlay, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
 import layoutStore from "@/src/stores/layout";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
@@ -43,7 +43,12 @@ export default function MantineMain({
             <Stack gap="xl" style={{ width: "100%" }} justify="space-between">{children}</Stack>
           ) : children}
 
-          {loading && <Overlay color="#000" backgroundOpacity={0.35} blur={5} style={{ position: "fixed" }} />}
+          <LoadingOverlay 
+            visible={loading}
+            overlayProps={{ radius: 'sm', blur: 2 }}
+            loaderProps={{ color: 'blue', type: 'bars' }}
+            style={{ position: "fixed" }}
+          />
         </AppShell.Main>
       </AppShell>
     </CustomMantineProvider>
