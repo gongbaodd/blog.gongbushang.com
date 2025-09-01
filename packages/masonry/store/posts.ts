@@ -1,28 +1,23 @@
 import { atom, computed, map } from "nanostores"
-import { FILTER_ENTRY } from "@/packages/consts";
+import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "@/packages/consts";
 import type { IPost } from "@/packages/card/PostCard";
 import { delay } from "es-toolkit";
+import { $pathname } from "@/packages/header/store/pathname";
 
 export const $posts = atom<IPost[]>([])
-
-let lastPostsListParams: IPostStreamParams | null = null
-
+export const $nextPage = computed([$posts], ps => Math.floor(ps.length/POST_COUNT_PER_PAGE))
 export const $loading = atom(false)
 
+$pathname.subscribe(() => {
+    $posts.set([])
+})
+
 export interface IPostStreamParams {
-    page: number
     filter: string
     entryType?: FILTER_ENTRY;
 }
 
 export async function streamPosts(param: IPostStreamParams) {
-    if (lastPostsListParams) {
-        if (lastPostsListParams.filter !== param.filter || lastPostsListParams.entryType !== param.entryType) {
-            $posts.set([])
-            lastPostsListParams = param
-        } 
-    }
-
     const oldPosts = $posts.get()
     $loading.set(true)
 
@@ -41,7 +36,8 @@ export async function streamPosts(param: IPostStreamParams) {
 }
 
 async function* _streamPosts(param: IPostStreamParams) {
-    const { entryType, filter, page } = param
+    const { entryType, filter } = param
+    const page = $nextPage.get()
 
     const { url } = {
         get url() {

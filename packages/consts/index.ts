@@ -56,7 +56,7 @@ export const ROUTES = [
 
 export const PV_URL = "https://pv.growgen.xyz/"
 
-export const POST_COUNT_PER_PAGE = 20;
+export const POST_COUNT_PER_PAGE = 12;
 
 
 export enum POST_CARD_LAYOUT {

@@ -22,11 +22,6 @@ const blog = defineCollection({
 	schema
 });
 
-const example = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/example/_docs" }),
-	schema,
-});
 
-
-export const collections = { blog, example };
+export const collections = { blog };
 

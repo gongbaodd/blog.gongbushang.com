@@ -14,7 +14,6 @@ export default function BlogPlock({ totalCount, ...param }: IPlockProps) {
     const posts = useStore($posts)
     const isLoading = useStore($loading)
     const hasMorePosts = posts.length < totalCount
-    const [nextPage, setNextPage] = useState(param.page + 1)
 
     const columns = [1, 2, 3, 4, 5]
 
@@ -23,9 +22,8 @@ export default function BlogPlock({ totalCount, ...param }: IPlockProps) {
     }, [])
 
     const loadMore = useCallback(async () => {
-       await streamPosts({...param, page: nextPage})
-       setNextPage(p => p+1)
-    }, [param, nextPage])
+       await streamPosts({...param })
+    }, [param])
 
     return (
         <CustomMantineProvider>

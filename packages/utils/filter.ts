@@ -1,6 +1,6 @@
 import { date, excerpt, title } from "./extract"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
-import { flatMap, memoize } from "es-toolkit"
+import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
 import { getAllPosts, type T_PROPS } from "./post"
 
@@ -194,21 +194,23 @@ export function page(filterFn: typeof getFilterByCityPage | typeof getFilterByCa
       };
     }
 
-    const posts = sortPostsByDate(flatMap(results, res => res.props.posts))
-
     const pagedResults: T_PAGED_RES[] = [];
 
-    for (let j = 0; j < posts.length; j += POST_COUNT_PER_PAGE) {
-      pagedResults.push({
-        ...results[0],
-        params: {
-          ...results[0].params,
-          page: Math.floor(j / POST_COUNT_PER_PAGE)
-        },
-        props: {
-          posts: posts.slice(j, j + POST_COUNT_PER_PAGE)
-        }
-      })
+    for (let i = 0; i < results.length; i++) {
+      const result = results[i];
+
+      for (let j = 0; j < result.props.posts.length; j += POST_COUNT_PER_PAGE) {
+        pagedResults.push({
+          ...result,
+          params: {
+            ...result.params,
+            page: Math.floor(j / POST_COUNT_PER_PAGE)
+          },
+          props: {
+            posts: result.props.posts.slice(j, j + POST_COUNT_PER_PAGE)
+          }
+        })
+      }
     }
 
     return pagedResults;
