@@ -5,14 +5,14 @@ import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
+import { BentoDemo } from "../components/Bento";
 ---
 
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <section>
-    <Header />
     <MantineMain>
-      <MantineHeatWrapper />
+      <BentoDemo />
     </MantineMain>
   </section>
 </Global>

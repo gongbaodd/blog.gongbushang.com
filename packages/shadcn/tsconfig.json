@@ -5,7 +5,7 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "jsx": "react"
+    "jsx": "react-jsx"
   },
   "include": ["components/**/*", "lib/**/*", "./types.d.ts"]
 }
