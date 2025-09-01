@@ -7,16 +7,24 @@ import { FILTER_ENTRY } from "@/packages/consts";
 import classes from "./Folder.module.css"
 import { File } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useStore } from "@nanostores/react";
+import { $countsMap, $heatmap, requestHeatData, type IHeatResult } from "../heat/store/heatmap";
+import { $colors, $covers, requestCovers } from "@/src/stores/yearCovers";
 
 interface IYearProps {
-    heatmap: Record<string, number>
-    counts: Record<string, number>
-    top3s: Record<string, (string|undefined)[]>
-    colors: Record<string, string>
 }
 
-export default function Folders({ heatmap, counts, top3s, colors }: IYearProps) {
+export default function Folders({}: IYearProps) {
     const [openedYear, setOpenedYear] = useState<null | string>(null)
+    const heatmap = useStore($heatmap)
+    const counts = useStore($countsMap)
+    const top3s = useStore($covers)
+    const colors = useStore($colors)
+
+    useEffect(() => {
+        requestCovers()
+        requestHeatData()
+    }, [])
 
     return (
         <CustomMantineProvider>
@@ -29,7 +37,7 @@ export default function Folders({ heatmap, counts, top3s, colors }: IYearProps) 
                         return (
                             <Group className={classes.folder} key={year}>
                                 <Folder size={3}
-                                    color={color}
+                                    color={color ?? "rgba(163, 165, 167, 1)"}
                                     title={<PostCountLabel text={counts[year].toString()} />}
                                     cover={<FolderCover year={year} heatmap={heatmap} />}
                                     items={top3?.map(img => img && <FileItem coverUrl={img} />)}
@@ -82,7 +90,7 @@ function FileItem({ coverUrl: _url }: IFileItem) {
 }
 
 interface IHeat {
-    data: IYearProps["heatmap"]
+    data: IHeatResult["heatData"]
     startDate: string
 }
 
@@ -116,7 +124,7 @@ function PostCountLabel({text}: {text: string}) {
     )
 }
 
-function FolderCover({ year, heatmap }: { year: string, heatmap: IYearProps["heatmap"] }) {
+function FolderCover({ year, heatmap }: { year: string, heatmap: IHeatResult["heatData"] }) {
     return (
         <Stack gap={0}
             className={classes.cover}
