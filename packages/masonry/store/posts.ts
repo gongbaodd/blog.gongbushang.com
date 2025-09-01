@@ -5,14 +5,7 @@ import { delay } from "es-toolkit";
 
 export const $posts = atom<IPost[]>([])
 
-interface PostPageParams {
-    filter: string;
-    entryType?: FILTER_ENTRY;
-    page: number;
-    totalCount: number;
-}
-export const $postsListParams = map<PostPageParams>({ filter: FILTER_ENTRY.ALL, page: 0, totalCount: 0 })
-
+let lastPostsListParams: IPostStreamParams | null = null
 
 export const $loading = atom(false)
 
@@ -23,6 +16,12 @@ export interface IPostStreamParams {
 }
 
 export async function streamPosts(param: IPostStreamParams) {
+    if (lastPostsListParams) {
+        if (lastPostsListParams.filter !== param.filter || lastPostsListParams.entryType !== param.entryType) {
+            $posts.set([])
+            lastPostsListParams = param
+        } 
+    }
 
     const oldPosts = $posts.get()
     $loading.set(true)
@@ -51,7 +50,7 @@ async function* _streamPosts(param: IPostStreamParams) {
             }
 
             if (entryType) {
-                return `/api/${entryType}/${filter}/${page}.ndjson`
+                return "/" + ["api", entryType, filter, `${page}.ndjson`].filter(p => p !== "").join("/")
             }
 
             return `/api/${filter}/${page}.ndjson`
@@ -59,6 +58,10 @@ async function* _streamPosts(param: IPostStreamParams) {
     }
 
     const response  = await fetch(url)
+    if (response.status >= 400) {
+        return;
+    }
+
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = '';

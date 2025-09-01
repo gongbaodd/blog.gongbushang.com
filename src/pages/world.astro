@@ -10,15 +10,8 @@ import Footer from "@/packages/components/Footer.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import { BlogListMenu } from "@/packages/menu/BlogListMenu";
 import BlogPlock from "@/packages/masonry/BlogPlock";
-import { $posts, $postsListParams } from "../../packages/masonry/store/posts";
-import {
-  getCategoriesFrom,
-  getSeriesFrom,
-  getTagsFrom,
-} from "@/packages/utils/badges";
 import { FILTER_ENTRY } from "@/packages/consts";
 import WorkdMap from "../components/WorldMap.astro";
-import { slide } from "astro:transitions";
 
 export const prerender = true;
 const posts = await getAllPosts();
@@ -29,14 +22,6 @@ const clientPosts = await mapServerPostToClient(allPosts);
 const filter = "";
 const entryType = FILTER_ENTRY.WORLD;
 const totalCount = clientPosts.length;
-
-$posts.set(clientPosts);
-$postsListParams.set({
-  filter,
-  entryType,
-  page: 0,
-  totalCount,
-});
 ---
 
 <Global>
