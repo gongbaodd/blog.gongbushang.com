@@ -26,7 +26,7 @@ export interface IPost {
     };
 }
 
-export type T_PROPS = CollectionEntry<"blog"> | CollectionEntry<"example">
+export type T_PROPS = CollectionEntry<"blog">
 type T_EXT = {
     layout: string;
     bgClass: string;
