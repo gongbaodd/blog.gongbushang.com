@@ -2,27 +2,29 @@ import { Masonry } from 'react-plock';
 import CustomMantineProvider from '../../src/stores/CustomMantineProvider';
 import { Button, Center, Loader, Stack } from '@mantine/core';
 import { useStore } from '@nanostores/react';
-import { $loading, $posts, streamPosts, type IPostStreamParams } from './store/posts';
+import { $key, $loading, $posts, getKey, streamPosts, type IPostStreamParams } from './store/posts';
 import { PostCard } from '@/packages/card/PostCard';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export interface IPlockProps extends IPostStreamParams {
     totalCount: number
 }
 
 export default function BlogPlock({ totalCount, ...param }: IPlockProps) {
-    const posts = useStore($posts)
+    const key = getKey(param)
+    const posts = useStore($posts)[key] ?? []
     const isLoading = useStore($loading)
     const hasMorePosts = posts.length < totalCount
 
     const columns = [1, 2, 3, 4, 5]
 
     useEffect(() => {
-        streamPosts(param)
+        $key.set(key)
+        streamPosts(key)
     }, [])
 
     const loadMore = useCallback(async () => {
-       await streamPosts({...param })
+       await streamPosts(key)
     }, [param])
 
     return (

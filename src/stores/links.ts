@@ -1,4 +1,4 @@
-import { $posts } from "@/packages/masonry/store/posts";
+import { $key, $posts } from "@/packages/masonry/store/posts";
 import type { TLink } from "@/packages/utils/extract";
 import { atom, computed } from "nanostores";
 
@@ -6,8 +6,9 @@ export const $category = atom<TLink[]>([])
 export const $tag = atom<TLink[]>([])
 export const $series = atom<TLink[]>([])
 
-export const $clientCategory = computed([$posts, $category], (posts, category) => {
-    const postCategories = posts.map(post => {
+export const $clientCategory = computed([$posts, $category, $key], (posts, category, key) => {
+    const postList = posts[key] ?? []
+    const postCategories = postList.map(post => {
         const categoryPath = post.href.split('/')[1] // Get the category part
         return {
             label: categoryPath,
@@ -15,7 +16,7 @@ export const $clientCategory = computed([$posts, $category], (posts, category) =
         }
     })
 
-    const allCategories = [...category, ...postCategories]
+    const allCategories = [...postCategories, ...category]
     
     const uniqueCategories = allCategories.filter((cat, index, self) =>
         index === self.findIndex(c => c.href === cat.href)
@@ -24,8 +25,9 @@ export const $clientCategory = computed([$posts, $category], (posts, category) =
     return uniqueCategories
 })
 
-export const $clientTag = computed([$posts, $tag], (posts, tag) => {
-    const postTags = posts.flatMap(post => {
+export const $clientTag = computed([$posts, $tag, $key], (posts, tag, key) => {
+    const postList = posts[key] ?? []
+    const postTags = postList.flatMap(post => {
         if (post.data?.tag && Array.isArray(post.data.tag)) {
             return post.data.tag.map((tagName: string) => ({
                 label: tagName,
@@ -35,7 +37,7 @@ export const $clientTag = computed([$posts, $tag], (posts, tag) => {
         return []
     })
 
-    const allTags = [...tag, ...postTags]
+    const allTags = [...postTags, ...tag]
     
     const uniqueTags = allTags.filter((t, index, self) =>
         index === self.findIndex(ct => ct.href === t.href)
@@ -44,8 +46,9 @@ export const $clientTag = computed([$posts, $tag], (posts, tag) => {
     return uniqueTags
 })
 
-export const $clientSeries = computed([$posts, $series], (posts, series) => {
-    const postSeries = posts.flatMap(post => {
+export const $clientSeries = computed([$posts, $series, $key], (posts, series, key) => {
+    const postList = posts[key] ?? []
+    const postSeries = postList.flatMap(post => {
         if (post.data?.series?.name) {
             return [{
                 label: post.data.series.name ?? post.data.series.slug,
@@ -55,7 +58,7 @@ export const $clientSeries = computed([$posts, $series], (posts, series) => {
         return []
     })
 
-    const allSeries = [...series, ...postSeries]
+    const allSeries = [...postSeries, ...series]
     
     const uniqueSeries = allSeries.filter((s, index, self) =>
         index === self.findIndex(cs => cs.href === s.href)
