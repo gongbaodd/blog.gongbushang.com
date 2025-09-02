@@ -7,16 +7,15 @@ import { TransitionSkeletons } from "./TransitionSkeletons";
 ---
 
 <TransitionSkeletons client:only>
-  <section transition:name={ROUTE_LABEL.Home} slot="home">
+  <section slot="home" style="view-transition-name: home;">
     <HomeSkeleton />
   </section>
-  <section transition:name={ROUTE_LABEL.Blog} slot="blog">
+  <section slot="blog">
     <BlogSkeleton />
   </section>
-  <section transition:name={ROUTE_LABEL.World} slot="world">
+  <section slot="world">
     <WorldSkeleton />
-  </section>
-  <section transition:name={ROUTE_LABEL.Archive} slot="archive">
+  </section slot="archive">
     <WorldSkeleton />
   </section>
 </TransitionSkeletons>

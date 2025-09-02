@@ -23,7 +23,7 @@ const badges = await getBadges();
 <Global>
   <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
   <Header />
-  <section transition:name={ROUTE_LABEL.Home}>
+  <section style="view-transition-name: home;">
     <MantineMain client:load>
       <Hero />
       <MantineHeatWrapper />

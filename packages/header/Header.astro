@@ -10,27 +10,24 @@ import WorldSkeleton from "@/src/skeletons/world";
 import ArchiveSkeleton from "@/src/skeletons/archive";
 import TransitionFrom from "@/src/components/TransitionFrom.astro";
 
-const pathName = Astro.url.pathname
+const pathName = Astro.url.pathname;
 $pathname.set(pathName);
 ---
 
-<header transition:persist>
-  <HeaderNanoStore pathname={pathName} client:load />
-  <MantineHeader client:load>
-    <Search slot={"searchNode"} client:idle />
-    <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
-      <HomeSkeleton/>
-    </section>
-    <section transition:name={ROUTE_LABEL.Blog} slot={"loaderBlog"}>
-      <BlogSkeleton/>
-    </section>
-    <section transition:name={ROUTE_LABEL.World} slot={"loaderWorld"}>
-      <WorldSkeleton/>
-    </section>
-    <section transition:name={ROUTE_LABEL.Archive} slot={"loaderArchive"}>
-      <ArchiveSkeleton/>
-    </section>
-  </MantineHeader>
-</header>
+<HeaderNanoStore pathname={pathName} client:load />
+<MantineHeader client:load>
+  <Search slot={"searchNode"} client:idle />
+  <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
+    <HomeSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.Blog} slot={"loaderBlog"}>
+    <BlogSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.World} slot={"loaderWorld"}>
+    <WorldSkeleton />
+  </section>
+  <section transition:name={ROUTE_LABEL.Archive} slot={"loaderArchive"}>
+    <ArchiveSkeleton />
+  </section>
+</MantineHeader>
 <TransitionFrom />
-

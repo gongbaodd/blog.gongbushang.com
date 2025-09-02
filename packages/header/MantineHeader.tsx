@@ -56,7 +56,7 @@ export default function MantineHeader({ searchNode, loaderHome, loaderArchive, l
       <AppShell header={{ height: headerHeight }} padding="md" >
         <AppShell.Header className={classes.header}>
           <Container h="100%" fluid>
-            <Flex justify="space-between" align="center" h="100%">
+            <Flex justify="space-between" align="center" h="100%" style={{ viewTransitionName: "header" }}>
               <NavDrawer />
               <TitleNode />
               <NavLinks />
