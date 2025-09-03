@@ -20,7 +20,6 @@ import { Notebook, Folder, Home, Menu, Plane } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
 import { $links, type ILink } from "./store/links";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { prefetch } from "astro:prefetch";
 import { navigate } from "astro:transitions/client";
 import { ROUTE_HREF, ROUTE_LABEL, ROUTES } from "../consts";
 import { Carousel as MantineCarousel } from "@mantine/carousel";
@@ -187,11 +186,11 @@ function usePreFetch(link: ILink) {
     setIsLoading(false)
   }, [link])
 
-  useEffect(() => {
-    setTimeout(() => {
-      if (!isCurrent) prefetch(link.href)
-    }, 100)
-  }, [link])
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     if (!isCurrent) prefetch(link.href)
+  //   }, 100)
+  // }, [link])
 
   return {
     isCurrent,
