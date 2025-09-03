@@ -6,6 +6,11 @@ import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import { BentoDemo } from "../components/Bento";
+import { getAllPosts, mapServerPostToClient } from "@/packages/utils/post";
+import { PostCard } from "@/packages/card/PostCard";
+
+const [_post, ..._rest] = await getAllPosts();
+const [post] = await mapServerPostToClient([_post]);
 ---
 
 <Global>
@@ -13,8 +18,7 @@ import { BentoDemo } from "../components/Bento";
   <section>
     <MantineMain>
       <BentoDemo />
-
-      <a href="/">Home</a>
+      <PostCard post={post} />
     </MantineMain>
   </section>
 </Global>
