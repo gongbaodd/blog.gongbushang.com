@@ -7,15 +7,16 @@ import { TransitionSkeletons } from "./TransitionSkeletons";
 ---
 
 <TransitionSkeletons client:only>
-  <section slot="home" style="view-transition-name: home;">
+  <section slot="home" id="home-page-skeleton">
     <HomeSkeleton />
   </section>
-  <section slot="blog">
+  <section slot="blog" id="blog-page-skeleton">
     <BlogSkeleton />
   </section>
-  <section slot="world">
+  <section slot="world" id="world-page-skeleton">
     <WorldSkeleton />
-  </section slot="archive">
+  </section>
+  <section slot="archive" id="year-page-skeleton">
     <WorldSkeleton />
   </section>
 </TransitionSkeletons>

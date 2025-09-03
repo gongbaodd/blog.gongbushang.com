@@ -18,7 +18,7 @@ export const prerender = true;
     slot="head"
   />
   <Header transition:persist />
-  <section transition:name={ROUTE_LABEL.Archive}>
+  <section id="year-page">
     <MantineMain client:load>
       <SearchBanner client:idle />
       <YearFolders />

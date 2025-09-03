@@ -2,7 +2,6 @@ import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { Anchor, Popover, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useStore } from "@nanostores/react";
-import { navigate } from "astro:transitions/client";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { $isInUse, $skeletons, occupySkeleton, releaseSkeleton } from "../stores/skeletons";
 import { $pathnameNormalized } from "@/packages/header/store/pathname";
@@ -47,6 +46,7 @@ export default function MantineAnchor({ href, render }: IProps) {
             href={href}
             onMouseEnter={open} 
             onMouseLeave={close}
+            onClick={onClickHandler}
           >
             {render({isLoading, isCurrent})}
           </Anchor>
@@ -64,17 +64,11 @@ function usePreFetch(href: ROUTE_HREF) {
   const isCurrent = href === pathname
   const [isLoading, setIsLoading] = useState(false)
   const onClickHandler = useCallback(async (e: any) => {
+    // do not stop loading in MPAs
+    setIsLoading(true) 
     e.preventDefault()
-    setIsLoading(true)
-    await navigate(href)
-    setIsLoading(false)
+    location.href = href
   }, [href])
-
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     if (!isCurrent) prefetch(href)
-  //   }, 100)
-  // }, [href])
 
   return {
     isCurrent,

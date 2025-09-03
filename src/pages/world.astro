@@ -30,8 +30,8 @@ const totalCount = clientPosts.length;
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <Header transition:persist />
-  <section transition:name={ROUTE_LABEL.World}>
+  <Header/>
+  <section id="world-page">
     <MantineMain>
       <GridWithMenu
         menuCol={{ base: 12, md: 1.2 }}

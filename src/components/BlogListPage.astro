@@ -36,7 +36,7 @@ const {
     slot="head"
   />
   <Header transition:persist />
-  <section transition:name={ROUTE_LABEL.Blog} transition:animate="slide">
+  <section id="blog-page">
     <MantineMain client:load>
       <GridWithMenu
         menuCol={{ base: 12, md: 1.2 }}
