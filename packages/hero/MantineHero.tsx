@@ -40,8 +40,8 @@ export default function Hero({ children }: IProps) {
               {children}
             </HeroContent>
             <Group>
-              <Button>订阅更新</Button>
-              <Button variant="outline">关注我</Button>
+              {/* <Button>订阅更新</Button> */}
+              <Button  onClick={_ => location.href = "/#socials"}>Follow me in social media</Button>
             </Group>
           </Stack>
         </Group>

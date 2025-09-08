@@ -11,7 +11,7 @@ import BlogSections from "../components/BlogSections.astro";
 import SpotifyPlayer from "../components/SpotifyPlayer";
 import Tags, { TagGroup } from "../../packages/tags/Tags";
 import NewsLetter from "../components/NewsLetter";
-import Footer from "@/packages/components/Footer.astro";
+import Footer from "@/packages/footer/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
@@ -33,7 +33,7 @@ const badges = await getBadges();
         <TagGroup tags={badges} slot="tagGroup" />
       </Tags>
       <SpotifyPlayer client:load />
-      <NewsLetter />
+      <!-- <NewsLetter /> -->
       <Footer slug={"index"} />
     </MantineMain>
   </section>

@@ -9,11 +9,12 @@ import {
   SimpleGrid,
   Stack,
   Text,
+  Typography,
 } from "@mantine/core";
 import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
-import CustomMantineProvider from "../stores/CustomMantineProvider";
-import ViewCount from "./ViewCount";
+import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
+import classes from "./Footer.module.css"
 
 interface IFooterProps {
   children?: ReactNode;
@@ -32,6 +33,7 @@ interface IFooterProps {
   iconV2ex?: ReactNode;
   picture?: ReactNode;
   viewCount?: ReactNode;
+  openSource?: ReactNode;
 }
 
 export default function MantineFooter({
@@ -49,6 +51,7 @@ export default function MantineFooter({
   iconBilibili,
   iconV2ex,
   viewCount,
+  openSource,
 }: IFooterProps) {
   return (
     <CustomMantineProvider>
@@ -57,6 +60,7 @@ export default function MantineFooter({
         mt="xl"
         pt="xl"
         style={{ borderTop: "1px solid var(--mantine-color-gray-3)" }}
+        id="socials"
       >
         <Container size="xl">
           <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg" mb="xl">
@@ -280,9 +284,9 @@ export default function MantineFooter({
                   {iconV2ex}
                 </ActionIcon>
               </Group>
-              <Text size="sm" c="dimmed">
+              {/* <Text size="sm" c="dimmed">
                 订阅我的博客，获取最新技术文章和编程技巧
-              </Text>
+              </Text> */}
             </Stack>
           </SimpleGrid>
 
@@ -292,7 +296,7 @@ export default function MantineFooter({
             <Group align="center" gap="xs">
               {viewCount}
               <Text size="sm" c="dimmed">
-                © 2025 我的技术博客. 保留所有权利.
+                © 2025 All rights reserved..
               </Text>
             </Group>
 
@@ -309,9 +313,9 @@ export default function MantineFooter({
             </Group>
           </Group>
 
-          <Text ta="center" size="xs" c="dimmed" py="sm">
-            使用 Astro.build + Mantine 构建 | 部署在 Vercel
-          </Text>
+          <Typography className={classes.opensource} ta="center" c="dimmed" py="sm" style={{ fontSize: "var(--mantine-font-size-xs)"}} >
+            {openSource}
+          </Typography>
         </Container>
       </Box>
     </CustomMantineProvider>

@@ -13,8 +13,9 @@ import Xiaohongshu from "../../src/icons/xiaohongshu.svg?raw";
 import Facebook from "../../src/icons/facebook.svg?raw";
 import Bilibili from "../../src/icons/bilibili.svg?raw";
 import v2ex from "../../src/icons/v2ex.svg?raw";
-import MantineFooter from "@/src/components/MantineFooter";
+import MantineFooter from "@/packages/footer/MantineFooter";
 import ViewCount from "@/src/components/ViewCount";
+import OpenSource from "./fragments/opensource.mdx"
 
 ---
 
@@ -125,6 +126,7 @@ import ViewCount from "@/src/components/ViewCount";
     slot="iconV2ex"
   />
   <ViewCount path={Astro.url.pathname} slot="viewCount" client:load />
+  <OpenSource slot="openSource" />
 </MantineFooter>
 <script data-goatcounter="https://gongbaodd.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 
