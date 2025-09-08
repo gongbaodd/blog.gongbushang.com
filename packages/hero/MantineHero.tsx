@@ -39,7 +39,7 @@ export default function Hero({ children }: IProps) {
             <HeroContent>
               {children}
             </HeroContent>
-            <Group>
+            <Group align="center" justify="center">
               {/* <Button>订阅更新</Button> */}
               <Button  onClick={_ => location.href = "/#socials"}>Follow me in social media</Button>
             </Group>

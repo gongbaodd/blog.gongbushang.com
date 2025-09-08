@@ -11,14 +11,12 @@ import rehypeExternalLinks from "rehype-external-links";
 
 import { bundledLanguages } from "shiki";
 import plantumlGrammar from "shiki-plantuml";
+import mermaid from 'astro-mermaid';
 
 import vercel from "@astrojs/vercel";
 
 export default defineConfig({
   site: "https://growgen.xyz",
-  // prefetch: {
-  //   prefetchAll: false,
-  // },
   integrations: [
     mdx({
       extendMarkdownConfig: true,
@@ -27,6 +25,10 @@ export default defineConfig({
     react(),
     tailwind({
       applyBaseStyles: false,
+    }),
+    mermaid({
+      theme: "default",
+      autoTheme: true
     }),
   ],
   markdown: {
