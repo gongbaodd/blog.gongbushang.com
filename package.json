@@ -50,6 +50,7 @@
     "excerpt": "^0.0.1",
     "fs": "0.0.1-security",
     "gsap": "^3.13.0",
+    "katex": "^0.16.22",
     "lucide-react": "^0.323.0",
     "mapbox-gl": "^3.14.0",
     "maplibre-gl": "^5.7.0",
