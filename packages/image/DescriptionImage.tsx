@@ -6,12 +6,13 @@ interface Props {
     src: string
     alt: string
     children: ReactNode
+    mah?: number
 }
 
-export default function DescriptionImage({ src, alt, children }: Props) {
+export default function DescriptionImage({ src, alt, children, mah }: Props) {
     return <CustomMantineProvider>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={"md"}>
-            <Image src={src} alt={alt} mah={500} />
+            <Image src={src} alt={alt} mah={mah || 400} fit="contain" />
             <Stack gap={"lg"} pt="lg">
                 {children}
             </Stack>
