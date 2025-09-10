@@ -109,7 +109,7 @@ export default function MantineFooter({
                 Resources
               </Text>
               <Stack gap="xs">
-                <Anchor href="/rss" size="sm" c="dimmed" td="none">
+                <Anchor href="/rss.xml" size="sm" c="dimmed" td="none">
                   RSS
                 </Anchor>
                 <Anchor href="#sitemap" size="sm" c="dimmed" td="none">
