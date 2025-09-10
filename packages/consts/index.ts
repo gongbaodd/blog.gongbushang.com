@@ -19,6 +19,7 @@ export enum FILTER_ENTRY {
 export enum ROUTE_LABEL {
   Home = "Home",
   Blog = "Blog",
+  Lab = "Lab",
   World = "World",
   Archive = "Archive"
 }
@@ -26,6 +27,7 @@ export enum ROUTE_LABEL {
 export enum ROUTE_HREF {
   Home = "/",
   Blog = "/all",
+  Lab = "/lab",
   World = "/world",
   Archive = "/year"
 }
@@ -33,6 +35,7 @@ export enum ROUTE_HREF {
 export const ALL_ROUTE_LABEL = [
   ROUTE_LABEL.Home,
   ROUTE_LABEL.Blog,
+  ROUTE_LABEL.Lab,
   ROUTE_LABEL.World,
   ROUTE_LABEL.Archive,
 ]
@@ -40,6 +43,7 @@ export const ALL_ROUTE_LABEL = [
 export const ALL_ROUTE_HREF = [
   ROUTE_HREF.Home,
   ROUTE_HREF.Blog,
+  ROUTE_HREF.Lab,
   ROUTE_HREF.World,
   ROUTE_HREF.Archive,
 ]
@@ -47,6 +51,7 @@ export const ALL_ROUTE_HREF = [
 export const ROUTES = [
   ROUTE_LABEL.Home,
   ROUTE_LABEL.Blog,
+  ROUTE_LABEL.Lab,
   ROUTE_LABEL.World,
   ROUTE_LABEL.Archive
 ].map(label => ({

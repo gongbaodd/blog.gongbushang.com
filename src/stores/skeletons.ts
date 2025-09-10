@@ -37,13 +37,15 @@ export const $skeletonsNotInUse = computed([$skeletonsInPage, $isInUse], (smap, 
 interface ISkeletons {
     home?: ReactNode
     blog?: ReactNode
+    lab?: ReactNode
     world?: ReactNode
     archive?: ReactNode
 }
 
-export function initSkeletons({ home, blog, world, archive }: ISkeletons) {
+export function initSkeletons({ home, blog, lab, world, archive }: ISkeletons) {
     $skeletons.setKey(ROUTE_HREF.Home, home)
     $skeletons.setKey(ROUTE_HREF.Blog, blog)
+    $skeletons.setKey(ROUTE_HREF.Lab, lab)
     $skeletons.setKey(ROUTE_HREF.World, world)
     $skeletons.setKey(ROUTE_HREF.Archive, archive)
 }

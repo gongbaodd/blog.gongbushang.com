@@ -5,6 +5,7 @@ import { $skeletonsNotInUse, initSkeletons } from "../stores/skeletons"
 interface ISkeletons {
     home?: ReactNode
     blog?: ReactNode
+    lab?: ReactNode
     world?: ReactNode
     archive?: ReactNode
 }

@@ -16,7 +16,7 @@ import classes from "./MantineHeader.module.css";
 import { useStore } from "@nanostores/react";
 import layoutStore from "../../src/stores/layout";
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
-import { Notebook, Folder, Home, Menu, Plane } from "lucide-react";
+import { Notebook, Folder, Home, Menu, Plane, FlaskConical } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
 import { $links, type ILink } from "./store/links";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
@@ -29,6 +29,7 @@ import MantineAnchor from "@/src/components/MantineAnchor";
 const Icons: Record<string, JSX.Element> = {
   [ROUTE_LABEL.Home]: <Home size="16" />,
   [ROUTE_LABEL.Blog]: <Notebook size="16" />,
+  [ROUTE_LABEL.Lab]: <FlaskConical size="16" />,
   [ROUTE_LABEL.World]: <Plane size="16" />,
   [ROUTE_LABEL.Archive]: <Folder size="16" />,
 }
@@ -39,12 +40,14 @@ interface IProps {
   loaderBlog?: ReactNode;
   loaderWorld?: ReactNode;
   loaderArchive?: ReactNode;
+  loaderLab?: ReactNode;
 }
 
-export default function MantineHeader({ searchNode, loaderHome, loaderArchive, loaderBlog, loaderWorld }: IProps) {
+export default function MantineHeader({ searchNode, loaderHome, loaderArchive, loaderBlog, loaderLab, loaderWorld }: IProps) {
   const loaders: Record<ROUTE_LABEL, ReactNode | undefined> = {
     [ROUTE_LABEL.Home]: loaderHome,
     [ROUTE_LABEL.Blog]: loaderBlog,
+    [ROUTE_LABEL.Lab]: loaderLab,
     [ROUTE_LABEL.World]: loaderWorld,
     [ROUTE_LABEL.Archive]: loaderArchive,
   }
