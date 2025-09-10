@@ -66,60 +66,60 @@ export default function MantineFooter({
           <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="lg" mb="xl">
             <Stack gap="md">
               <Text fw={600} size="lg">
-                关于博客
+                About
               </Text>
               <Stack gap="xs">
                 <Anchor href="/about" size="sm" c="dimmed" td="none">
-                  关于我
+                  About me
                 </Anchor>
-                <Anchor href="/contact" size="sm" c="dimmed" td="none">
-                  联系方式
+                <Anchor href="#socials" size="sm" c="dimmed" td="none">
+                  Contact
                 </Anchor>
                 <Anchor href="/resume" size="sm" c="dimmed" td="none">
-                  个人简历
+                  Resume
                 </Anchor>
-                <Anchor href="/projects" size="sm" c="dimmed" td="none">
-                  项目展示
+                <Anchor href="/lab" size="sm" c="dimmed" td="none">
+                  Portfolio
                 </Anchor>
               </Stack>
             </Stack>
 
             <Stack gap="md">
               <Text fw={600} size="lg">
-                内容分类
+                Categories
               </Text>
               <Stack gap="xs">
-                <Anchor href="/posts/frontend" size="sm" c="dimmed" td="none">
-                  前端开发
+                <Anchor href="/fe" size="sm" c="dimmed" td="none">
+                  Web
                 </Anchor>
-                <Anchor href="/posts/backend" size="sm" c="dimmed" td="none">
-                  后端技术
+                <Anchor href="/world" size="sm" c="dimmed" td="none">
+                  Travel
                 </Anchor>
-                <Anchor href="/posts/ai" size="sm" c="dimmed" td="none">
-                  人工智能
+                <Anchor href="/plan" size="sm" c="dimmed" td="none">
+                  Todos
                 </Anchor>
-                <Anchor href="/posts/tutorials" size="sm" c="dimmed" td="none">
-                  技术教程
+                <Anchor href="/lab" size="sm" c="dimmed" td="none">
+                  Lab
                 </Anchor>
               </Stack>
             </Stack>
 
             <Stack gap="md">
               <Text fw={600} size="lg">
-                资源链接
+                Resources
               </Text>
               <Stack gap="xs">
                 <Anchor href="/rss" size="sm" c="dimmed" td="none">
-                  RSS订阅
+                  RSS
                 </Anchor>
-                <Anchor href="/sitemap" size="sm" c="dimmed" td="none">
-                  网站地图
+                <Anchor href="#sitemap" size="sm" c="dimmed" td="none">
+                  Sitemap
                 </Anchor>
                 <Anchor href="/archive" size="sm" c="dimmed" td="none">
-                  文章归档
+                  Archive
                 </Anchor>
-                <Anchor href="/tags" size="sm" c="dimmed" td="none">
-                  标签云
+                <Anchor href="#tags" size="sm" c="dimmed" td="none">
+                  Tags
                 </Anchor>
               </Stack>
             </Stack>
@@ -301,14 +301,8 @@ export default function MantineFooter({
             </Group>
 
             <Group gap="md" visibleFrom="sm">
-              <Anchor href="/privacy" size="sm" c="dimmed" td="none">
-                隐私政策
-              </Anchor>
-              <Anchor href="/terms" size="sm" c="dimmed" td="none">
-                使用条款
-              </Anchor>
-              <Anchor href="/cookies" size="sm" c="dimmed" td="none">
-                Cookie政策
+              <Anchor href="#cookies" size="sm" c="dimmed" td="none">
+                About Cookie
               </Anchor>
             </Group>
           </Group>
