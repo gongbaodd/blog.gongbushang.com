@@ -1,0 +1,92 @@
+# Jian Gong
+
+> Last update 2025-09-11
+
+| | | |
+|--|--|--|
+| gongbaodd@gmail.com  |  [github.com/gongbaodd](https://github.com/gongbaodd) | 📍Tallinn, Estonia  |
+|[growgen.xyz](https://www.growgen.xyz)| [LinkedIn](www.linkedin.com/in/jian-gong-27762aa8/) |  Nationality: China |
+
+---
+
+## Key Skills
+
+| | | | |
+|--|--|--| -- |
+| JavaScript | Advanced | 10+ years | jQuery, Rx.js, Node and React Native |
+| TypeScript | Advanced | 8 years  | Current Most used Language, React, Vue |
+| Linux/Unix | Intermediate | 10+ years | Alpine, Arch, Ubuntu, Debian |
+| Python | Intermediate | 2 years | Crawlers during working in [Aftership.com](https://www.aftership.com/) |
+| C#  | Intermediate | 1 year | Unity Develop |
+| Standard practices |  | 10+ years | Good knowledge of standard tools, such as git, agile development, CI/CD, Docker, K8S, TDD, AWS, GCP etc. |
+| Other | | | Occasionally use many other technologies including: C, C++, Kotlin, SwiftUI, MongoDB, Elastic Search, Tensor Flow, Rust, Godot, Unreal Engine, Arduino etc.  |
+
+## Languages
+
+| | |
+|--|--|
+| Mandarin | Native Language |
+| English  | C1 |
+| Japanese | Entry Level, Learned from Bachelor |
+| Thai     | Entry Level, speaking only |
+| Estonian | A1 |
+| Russian  | A1 |
+| German   | A1 studying |
+
+## Work Experiences
+
+### Feb 2015 - Current | GrowGen.xyz
+
+Personal website, Jekyll -> Gatsby -> Astro.
+
+### Aug 2024 - Current | Studying in Tallinn University
+
+- Aug 2025, Hearing Aid, ESP32 wearable with ML support using MFCC and 2DCNN(Edge Impulse).
+- Jul 2025, Landlord Simulation, 2D Godot Game, A* Enemy AI and dialogue system.
+- May 2025, Ninja Paws, Unity 3D game using Behavior Tree as Enemy AI.
+- May 2025, WebXR Tallinn University Tour.
+- May 2025, Baltic Kitchen Kaos, hand Tracking Unity 2D Game, using Google's Media Pipe.
+- Mar 2025, Taltech Game Jam, Espresso. Unity 2D Platformer game. Lead a full non-experience team finishing the game.
+- Feb 2025, Godot XR Game Jam, Enchanted Wizard. XR shooting game.
+- Feb 2025, Global Game Jam, DisCoin. Unity 2D Game, real time data visualization.
+- Jan 2025, Pipe Worker, P5.js resource management game.
+- Dec 2024, P5.js 3D Missile Command.
+- Oct 2024, P5.js Sound Visualization.
+
+### Jan 2024 - May 2024
+
+Pasa-Thai, a Duolingo like Thai learning Application using ionic.
+
+### Jan 2024 - Feb 2024
+
+Cost Count, a cross platform expense tracker using Expo.
+
+### Nov 2023 - Dec 2023
+
+Transfer personal website from Gatsby to Astro.
+
+### Apr 2021 - Oct 2023
+
+COVID, Traveled around China.
+
+### Sep 2019 - Mar 2021 | Aftership.com
+
+- Courier Information System, Node Backend Developer. Transfer company service from AWS to GCP.
+- Courier Crawler
+- Analytics Dashboard
+
+### Jun 2019 - Aug 2019
+
+- Surf Helper
+
+### Jul 2015- May 2019 | Qunar.com
+
+- Cahier Service
+
+- Withdraw Service
+
+- BackCard Management
+
+- Frontend Analytics
+
+- Testing Tool
