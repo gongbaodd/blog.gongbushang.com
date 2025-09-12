@@ -31,6 +31,12 @@ body { margin: 0 }
   font-size: 12px;
 }
 
+.printer {
+  position: absolute;
+  top: 1em;
+  left: 1em;
+}
+
 /** For screen preview **/
 @media screen {
   .sheet {

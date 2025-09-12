@@ -6,14 +6,20 @@ import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
 import ResumeCom from "@/packages/resume/Resume.astro";
+import PrintButton from "@/packages/resume/components/print";
 ---
 
 <Global>
-  <BaseHead title={"Resume - Jian Gong - Web & Game Dev"} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead
+    title={"Resume - Jian Gong - Web & Game Dev"}
+    description={SITE_DESCRIPTION}
+    slot="head"
+  />
   <Header />
 
   <section>
     <MantineMain>
+      <PrintButton client:idle />
       <ResumeCom />
       <Footer slug={"resume"} />
     </MantineMain>
