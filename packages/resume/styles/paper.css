@@ -46,5 +46,6 @@ body { margin: 0 }
   .A4.landscape { width: 297mm }
   .A4 {
     width: 210mm;
+    display: block;
   }
 }
