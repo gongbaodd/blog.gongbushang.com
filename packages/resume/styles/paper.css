@@ -49,3 +49,8 @@ body { margin: 0 }
     display: block;
   }
 }
+
+@page {
+  size: a4;
+  margin: 0cm;
+}
