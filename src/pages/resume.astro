@@ -3,9 +3,9 @@ import BaseHead from "@/packages/components/BaseHead.astro";
 import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import Hero from "../../packages/hero/Hero.astro";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
+import ResumeCom from "@/packages/resume/Resume.astro";
 ---
 
 <Global>
@@ -14,7 +14,7 @@ import Footer from "@/packages/footer/Footer.astro";
 
   <section>
     <MantineMain>
-      <Hero />
+      <ResumeCom />
       <Footer slug={"resume"} />
     </MantineMain>
   </section>
