@@ -61,6 +61,7 @@
     "minisearch": "^7.1.2",
     "nanostores": "^1.0.1",
     "node-vibrant": "^4.0.3",
+    "paper-css": "^0.4.1",
     "path": "^0.12.7",
     "potrace": "^2.1.8",
     "react": "^19.1.1",

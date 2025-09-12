@@ -1,8 +1,9 @@
 ---
 import { Content } from "./fragments/resume.mdx";
 import MantineResume from "./MantineResume.tsx";
+import "./styles/paper.css"
 ---
 
-<MantineResume>
+<MantineResume client:load>
   <Content />
 </MantineResume>

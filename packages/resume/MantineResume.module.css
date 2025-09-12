@@ -1,0 +1,33 @@
+.content {
+    color: var(--mantine-color-black);
+}
+
+.content table {
+  width: 100%; 
+}
+
+.content table td {
+  width: 120px;
+}
+
+.content table td:last-child {
+  width: auto;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    .content {
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+
+    .content,
+    .content * {
+        visibility: visible;
+
+    }
+}
