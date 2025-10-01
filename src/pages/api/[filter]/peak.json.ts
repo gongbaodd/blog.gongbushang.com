@@ -4,7 +4,16 @@ import { mapServerPostToClient } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 
 export const prerender = true;
-export const getStaticPaths = getFilterByCategoryPage;
+export const getStaticPaths = async () => {
+    const props = await getFilterByCategoryPage()
+
+    return props.map(p => {
+        // This is a patch for slow build
+        if (p.params.filter === "all") return {...p, props: { posts: [] }} 
+
+        return p
+    })
+}
 
 type T_PROPS = Awaited<ReturnType<typeof getStaticPaths>>[0]["props"]
 
