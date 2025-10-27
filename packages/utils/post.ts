@@ -131,8 +131,7 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
             });
             
             if (matchingEntry) {
-
-                const coverPath = path.join(coverFolderPath, `${post.id}.svg`);
+                const coverPath = path.join(coverFolderPath, `${post.id.replaceAll("/", "-")}.svg`);
                 if (fs.existsSync(coverPath)) {
                     return {
                         get result() {
