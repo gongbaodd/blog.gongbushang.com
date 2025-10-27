@@ -121,22 +121,28 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
 
     try {
         const metadataPath = path.join(process.cwd(), 'src', 'content', 'metadata.json');
+        const coverFolderPath = path.join(process.cwd(), 'src', 'content', 'cover');
         if (fs.existsSync(metadataPath)) {
             const metadataContent = fs.readFileSync(metadataPath, 'utf-8');
             const metadata = JSON.parse(metadataContent);
-            
+
             const matchingEntry = metadata.find((entry: any) =>{
                 return entry.file === post.id
             });
             
             if (matchingEntry) {
-                return {
-                    get result() {
-                        const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor)
-                        const t = set(r, "data.trace", matchingEntry.colorSet.trace)
-                        return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor)
-                    }
-                }.result
+
+                const coverPath = path.join(coverFolderPath, `${post.id}.svg`);
+                if (fs.existsSync(coverPath)) {
+                    return {
+                        get result() {
+                            const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor)
+                            const t = set(r, "data.trace", fs.readFileSync(coverPath, 'utf-8'))
+                            return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor)
+                        }
+                    }.result
+                }
+
             }
         }
     } catch (error) {
