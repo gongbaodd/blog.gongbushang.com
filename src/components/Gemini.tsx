@@ -26,7 +26,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { useEffect, useRef, type FormEvent } from "react";
 import { useState } from "react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
-import { requestModel, requestRecords } from "../stores/gemini";
+import { createGeminiSession, requestModel, requestRecords } from "../stores/gemini";
 
 dayjs.extend(relativeTime);
 
@@ -61,6 +61,7 @@ export default function Gemini() {
     useEffect(() => {
         requestModel();
         requestRecords();
+        createGeminiSession();
     }, []);
 
     const scrollToBottom = () => {
