@@ -1,15 +1,10 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
-import { isString, memoize } from "es-toolkit";
+import { memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
-import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT, TITLE_COLOR_MAP } from "../consts";
-import { Vibrant } from "node-vibrant/node";
-import sharp from "sharp"
-import chroma from "chroma-js"
+import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import fs from "node:fs"
-import path, { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import potrace from "potrace"
+import path from "node:path";
 import dayjs from "dayjs";
 
 export interface IPost {
@@ -116,9 +111,6 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
         return result
     }
 
-    const { url } = post.data.cover;
-    const coverUrl = isString(url) ? url : url.src;
-
     try {
         const metadataPath = path.join(process.cwd(), 'src', 'content', 'metadata.json');
         const coverFolderPath = path.join(process.cwd(), 'src', 'content', 'cover');
@@ -149,86 +141,11 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
         console.warn('Could not read metadata.json, falling back to color generation:', error);
     }
 
-    // Fall back to generating colors if no metadata found
-    const { bgColor, titleColor, trace } = await getColorSet(coverUrl)
 
-    return {
-        get result() {
-            const r = set({ ...post }, "data.bgColor", bgColor)
-            const t = set(r, "data.trace", trace)
-            return set<T_EXT_POST>(t, "data.titleColor", titleColor)
-        }
-    }.result
+    return {...post}
 }
 
-async function getColorSet(imagePathOrUrl: string) {
-    function isRemote(url: string) {
-        return /^https?:\/\//.test(url);
-    }
 
-    let buffer: Buffer | undefined = undefined;
-
-    if (isRemote(imagePathOrUrl)) {
-        const res = await fetch(imagePathOrUrl);
-        if (!res.ok) throw new Error(`Failed to fetch ${imagePathOrUrl}`);
-        buffer = Buffer.from(await res.arrayBuffer());
-        buffer = await sharp(buffer).png().toBuffer();
-    } else {
-        let url = imagePathOrUrl
-        const devPattern = /^\/@fs\/|(\?.*)$/g
-        if (devPattern.test(imagePathOrUrl)) {
-            url = imagePathOrUrl.replace(/^\/@fs\/|(\?.*)$/g, "")
-        } else {
-            const root = fileURLToPath(new URL(".", import.meta.url));
-            url = join(root, "..", imagePathOrUrl);
-        }
-        buffer = fs.readFileSync(path.resolve(url));
-    }
-
-
-    const vibrantBuilder = Vibrant.from(buffer)
-    const palette = await vibrantBuilder.getPalette()
-    const trace = await new Promise<string>((res, rej) => {
-        potrace.trace(buffer, {
-            turdSize: 100,
-            optCurve: true,
-            optTolerance: 0.4,
-        }, (err, svg) => {
-            if (err) return rej(err)
-            res(svg)
-        })
-    })
-    return {
-        get bgColor() {
-            const hex = palette.Muted?.hex
-            if (hex) {
-                return hex
-            }
-            return ""
-        },
-
-        get titleColor() {
-            const hex = palette.Vibrant?.hex
-            if (hex) {
-                return findNearestTitleColor(hex)
-            }
-            return ""
-        },
-
-        trace
-    }
-}
-
-function findNearestTitleColor(color: string) {
-    let distance = Infinity
-    let nearestColor = ""
-    for(const [name, value] of Object.entries(TITLE_COLOR_MAP)) {
-        const dis = chroma.deltaE(color, value)
-        distance = distance < dis ? distance: dis
-        if (distance === dis) nearestColor = name
-    }
-    return nearestColor
-}
 
 function wordcount(text: string): number {
     if (!text || typeof text !== 'string') return 0;
