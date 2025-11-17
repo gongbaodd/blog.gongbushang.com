@@ -56,7 +56,7 @@ export default defineConfig({
   vite: {
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
-      exclude: ["onnxruntime-node", "sharp"],
+      exclude: ["onnxruntime-node"],
     },
     ssr: {
       noExternal: ["react-plock"], // force SSR build to bundle as CJS
@@ -64,7 +64,6 @@ export default defineConfig({
     resolve: {
       alias: {
         "onnxruntime-node": path.resolve(import.meta.dirname, "src/empty-module.js"),
-        sharp: path.resolve(import.meta.dirname, "src/empty-module.js"),
       },
     },
   },
