@@ -11,9 +11,10 @@ import rehypeExternalLinks from "rehype-external-links";
 
 import { bundledLanguages } from "shiki";
 import plantumlGrammar from "shiki-plantuml";
-import mermaid from 'astro-mermaid';
+import mermaid from "astro-mermaid";
 
 import vercel from "@astrojs/vercel";
+import path from "node:path";
 
 export default defineConfig({
   site: "https://growgen.xyz",
@@ -28,7 +29,7 @@ export default defineConfig({
     }),
     mermaid({
       theme: "default",
-      autoTheme: true
+      autoTheme: true,
     }),
   ],
   markdown: {
@@ -55,9 +56,16 @@ export default defineConfig({
   vite: {
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
+      exclude: ["onnxruntime-node", "sharp"],
     },
     ssr: {
       noExternal: ["react-plock"], // force SSR build to bundle as CJS
+    },
+    resolve: {
+      alias: {
+        "onnxruntime-node": path.resolve(import.meta.dirname, "src/empty-module.js"),
+        sharp: path.resolve(import.meta.dirname, "src/empty-module.js"),
+      },
     },
   },
 });
