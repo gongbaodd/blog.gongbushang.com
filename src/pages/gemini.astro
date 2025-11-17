@@ -1,0 +1,20 @@
+---
+import Global from "../../packages/layouts/Global.astro";
+import BaseHead from "../../packages/components/BaseHead.astro";
+import { SITE_TITLE, SITE_DESCRIPTION, ROUTE_LABEL } from "@/packages/consts";
+import Header from "@/packages/header/Header.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import MantineMain from "../../packages/scaffold/MantineMain";
+import GeminiChat from "@/src/components/Gemini";
+---
+
+<Global>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header />
+  <section id="gemini" class="main">
+    <MantineMain client:load>
+      <GeminiChat client:load />
+      <Footer slug={"gemini"} />
+    </MantineMain>
+  </section>
+</Global>
