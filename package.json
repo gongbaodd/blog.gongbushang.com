@@ -90,7 +90,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/chroma-js": "^3.1.1",
     "dts-bundle-generator": "^9.5.1",
-    "sharp": "^0.32.6",
+    "sharp": "^0.34.3",
     "shiki": "^3.8.1"
   }
 }
