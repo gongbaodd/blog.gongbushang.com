@@ -49,17 +49,17 @@ export default function MantineHeat({}: IHeat) {
 
 
                 <Flex justify="center" hiddenFrom='xl' w="100%">
-                    <Anchor href="/year/2025">
-                        <Button size="md" variant="outline">View {count} posts in 2025</Button>
+                    <Anchor href="/year/2026">
+                        <Button size="md" variant="outline">View {count} posts in 2026</Button>
                     </Anchor>
                 </Flex>
 
                 
                 <Stack justify="space-around" visibleFrom='xl'>
                     <Title order={2} size="h2" fw={600}>
-                        {count} posts in 2025
+                        {count} posts in 2026
                     </Title>
-                    <Anchor href="/year/2025">
+                    <Anchor href="/year/2026">
                         <Button size="md" variant="outline">View Them</Button>
                     </Anchor>
                 </Stack>

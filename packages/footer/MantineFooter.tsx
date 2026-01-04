@@ -296,7 +296,7 @@ export default function MantineFooter({
             <Group align="center" gap="xs">
               {viewCount}
               <Text size="sm" c="dimmed">
-                © 2025 All rights reserved..
+                © 2026 All rights reserved..
               </Text>
             </Group>
 
