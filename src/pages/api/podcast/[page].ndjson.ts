@@ -1,10 +1,30 @@
 import type { APIRoute } from "astro";
-import data from "../../../data/podcast.json";
+import fs from "node:fs";
+import path from "node:path";
+import data from "../../../content/podcast.json";
 import { POST_COUNT_PER_PAGE } from "@/packages/consts";
 
 export const prerender = true;
 
-const episodes = data.episodes as Array<Record<string, unknown>>;
+function episodeSlug(id: string): string {
+  const part = id.split("/").pop();
+  return part || id.replace(/[^a-zA-Z0-9-]/g, "-");
+}
+
+const rawEpisodes = data.episodes as Array<Record<string, unknown>>;
+const podcastDir = path.join(process.cwd(), "src", "content", "podcast");
+
+const episodes = rawEpisodes.map((ep) => {
+  if (!ep.image) return ep;
+  const slug = episodeSlug(ep.id as string);
+  const svgPath = path.join(podcastDir, `${slug}.svg`);
+  try {
+    const trace = fs.readFileSync(svgPath, "utf-8");
+    return { ...ep, trace };
+  } catch {
+    return ep;
+  }
+});
 const totalPages = Math.ceil(episodes.length / POST_COUNT_PER_PAGE);
 
 export async function getStaticPaths() {
