@@ -8,7 +8,8 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "clone": "bash ./packages/scripts/clone.sh"
+    "clone": "bash ./packages/scripts/clone.sh",
+    "fetch:podcast": "node ./scripts/fetch-podcast.mjs"
   },
   "dependencies": {
     "@astrojs/check": "0.9.4",
