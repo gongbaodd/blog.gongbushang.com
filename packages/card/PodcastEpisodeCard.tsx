@@ -53,11 +53,13 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
     classes.md,
   ].join(" ");
 
-  const tracedCover = episode.image
-    ? `url("data:image/svg+xml,${encodeURIComponent(
-        `<svg xmlns="http://www.w3.org/2000/svg"><rect fill="%23e9ecef" width="100" height="100"/></svg>`
-      )}")`
-    : "";
+  const tracedCover = episode.trace
+    ? `url("data:image/svg+xml,${encodeURIComponent(episode.trace)}")`
+    : episode.image
+      ? `url("data:image/svg+xml,${encodeURIComponent(
+          `<svg xmlns="http://www.w3.org/2000/svg"><rect fill="%23e9ecef" width="100" height="100"/></svg>`
+        )}")`
+      : "";
 
   return (
     <CustomMantineProvider>
@@ -71,8 +73,11 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
               withBorder
               className={className}
               style={{
-                backgroundColor: "var(--mantine-color-gray-2)",
-                "--underline-color": "var(--mantine-color-dark-8)",
+                backgroundColor:
+                  episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
+                "--underline-color": episode.colorSet?.titleColor
+                  ? `var(${episode.colorSet.titleColor})`
+                  : "var(--mantine-color-dark-8)",
                 "--cover-opacity": coverOpacity,
                 "--cover-image": episode.image ? `url(${episode.image})` : "none",
                 "--cover-trace": tracedCover,

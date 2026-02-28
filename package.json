@@ -8,8 +8,7 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "clone": "bash ./packages/scripts/clone.sh",
-    "fetch:podcast": "node ./scripts/fetch-podcast.mjs"
+    "clone": "bash ./packages/scripts/clone.sh"
   },
   "dependencies": {
     "@astrojs/check": "0.9.4",
@@ -28,6 +27,7 @@
     "@mantine/core": "^8.2.2",
     "@mantine/hooks": "^8.2.4",
     "@mantine/spotlight": "^8.2.4",
+    "@musical-sniffle/sobel-edge-detection": "1.0.0-beta.1",
     "@mediapipe/tasks-text": "0.10.22-rc.20250304",
     "@mui/lab": "7.0.0-beta.16",
     "@mui/material": "^7.3.1",
