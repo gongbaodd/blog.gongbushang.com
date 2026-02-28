@@ -1,44 +1,49 @@
-# Astro Starter Kit: Basics
+# Grow Gen – A Personal Space for Tech & Life
 
-```sh
-npm create astro@latest -- --template basics
-```
+Hi, I'm **J. Gong** 👋 – A web developer from China with a passion for continuous learning and creative expression.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## About This Site
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+This is my digital space to share:
 
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
+- 🛠️ **[Tech journals](/tech)** – Web development insights and technical reflections
+- ✍️ **[Daily life notes](/plan)** – Thoughts and observations from everyday life
+- ✈️ **[Travel stories](/world)** – Adventures and experiences around the globe
+- 📚 **[Study reflections](/fe)** – Learning notes and educational explorations
 
-## 🚀 Project Structure
+## About Me
 
-Inside of your Astro project, you'll see the following folders and files:
+💻 **Web Developer** – Coding since the jQuery era through React, with expertise in TypeScript and JavaScript  
+🎮 **Game Programmer** – Exploring game development with Unity, Godot, and p5.js  
+🎙️ **Podcaster** | 🏋🏻‍♂️ **Crossfitter** | 🎨 **Tattoo artist** | 🎵 **Harmonica player**  
+🌍 **Traveler** | 🌊 **Surfer** | 🐦 **Language learner** (Duolingo addict)
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+Currently studying **Digital Learning Games** at **Tallinn University, Estonia**.
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+### The Name "Grow Gen"
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+- Inspired by Northeastern Chinese slang **"给我整" (gěi wǒ zhěng)"** – "Just do it" 💡
+- Millennial generations are always learning and evolving 🌱
+- Sounds like my name in Mandarin 🎶
 
-Any static assets, like images, can be placed in the `public/` directory.
+### What I Believe In
+
+The future of human–computer interaction lies in **gamification**. Learning should be engaging, interactive, and fun.
+
+## Technical Stack
+
+This site is built with:
+
+- **[Astro](https://astro.build)** – Fast, modern static site builder
+- **React** – Interactive components
+- **TypeScript** – Type-safe development
+- **Tailwind CSS** – Utility-first styling
+- **Vercel** – Hosting and CI/CD
+- **Cloudflare Workers** – RESTful API backend
 
 ## 🧞 Commands
 
-All commands are run from the root of the project, from a terminal:
+All commands are run from the root of the project:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
@@ -49,6 +54,8 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## 📖 Learn More
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- [Astro Documentation](https://docs.astro.build)
+- [View my CV](/resume)
+- [Visit my site](https://growgen.xyz)
