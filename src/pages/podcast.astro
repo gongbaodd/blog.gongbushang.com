@@ -5,9 +5,15 @@ import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
-import PodcastList from "../components/PodcastList";
+import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
+import PodcastPlock from "@/packages/masonry/PodcastPlock";
+import PodcastSidebar from "../components/PodcastSidebar";
+import data from "../content/podcast.json";
 
 export const prerender = true;
+
+const totalCount = (data.episodes as unknown[]).length;
+const channel = data.channel as { title: string; description?: string; link?: string; image?: string };
 ---
 
 <Global>
@@ -16,11 +22,24 @@ export const prerender = true;
     description={SITE_DESCRIPTION}
     slot="head"
   />
-  <Header />
+  <Header transition:persist />
   <section id="podcast-page" class="main">
     <MantineMain client:load>
-      <PodcastList client:load />
-      <Footer slug={"podcast"} />
+      <GridWithMenu
+        menuCol={{ base: 12, md: 1.2 }}
+        contentCol={{ base: 12, md: 10.8 }}
+      >
+        <PodcastSidebar
+          slot="menuNode"
+          client:load
+          title={channel.title}
+          description={channel.description}
+          link={channel.link}
+          image={channel.image}
+        />
+        <PodcastPlock totalCount={totalCount} slot="gridContent" client:load />
+      </GridWithMenu>
+      <Footer slug="podcast" />
     </MantineMain>
   </section>
 </Global>
