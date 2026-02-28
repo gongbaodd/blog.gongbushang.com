@@ -57,5 +57,5 @@ All commands are run from the root of the project:
 ## 📖 Learn More
 
 - [Astro Documentation](https://docs.astro.build)
-- [View my CV](/resume)
+- [View my CV](https://www.growgen.xyz/resume)
 - [Visit my site](https://growgen.xyz)
