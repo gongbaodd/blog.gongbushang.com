@@ -2,6 +2,16 @@
 
 This document provides guidelines for agents working on this codebase.
 
+## Project skills
+
+When working with Astro (pages, components, content collections, or framework integrations), use the project skill for authoritative patterns and links to [astro.build](https://docs.astro.build):
+
+- **Astro**: [.agent/skills/astro-build/SKILL.md](.agent/skills/astro-build/SKILL.md) — pages, routing, `.astro` components, content collections, React/framework components, endpoints.
+
+When working with Mantine UI (React components from `@mantine/core`, `@mantine/hooks`, etc.), use the project skill for Mantine patterns and this repo’s Astro adapt layer:
+
+- **Mantine UI**: [.agent/skills/mantine-ui/SKILL.md](.agent/skills/mantine-ui/SKILL.md) — Mantine usage, **CustomMantineProvider** from `@/src/stores/CustomMantineProvider` as the adapt layer (Mantine does not support Astro natively; wrap each React island that uses Mantine with this provider).
+
 ## Project Overview
 
 This is an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).
@@ -49,7 +59,7 @@ export const $derived = computed($state, v => transform(v));
 
 ### Styling
 - **Tailwind CSS** for utility classes
-- **Mantine** for UI components
+- **Mantine** for UI components — wrap any React component that uses Mantine with `CustomMantineProvider` from `@/src/stores/CustomMantineProvider` (see [.agent/skills/mantine-ui/SKILL.md](.agent/skills/mantine-ui/SKILL.md))
 - **shadcn/ui** components in `@/packages/shadcn/`
 - **CSS Modules** for component-specific styles
 
