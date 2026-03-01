@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import data from "../../src/content/podcast.json";
+import type { T_PROPS } from "./post";
 
 export interface PodcastEpisode extends Record<string, unknown> {
   id: string;
@@ -49,4 +50,32 @@ export function processPodcastEpisodes(): PodcastEpisode[] {
       return ep as PodcastEpisode;
     }
   });
+}
+
+/**
+ * Maps podcast episodes to post structure for filtering.
+ * Each episode is transformed into a post-like object with category='podcast'.
+ *
+ * @returns Array of podcast episodes mapped to post structure
+ */
+export function mapPodcastEpisodesToPosts(): T_PROPS[] {
+  const episodes = processPodcastEpisodes();
+
+  return episodes.map((episode) => ({
+    id: episode.id,
+    collection: "blog",
+    data: {
+      title: episode.title,
+      category: "podcast",
+      description: episode.description || episode.summary || "",
+      summary: episode.summary,
+      date: new Date(episode.pubDate),
+      duration: episode.duration,
+      audioUrl: episode.audioUrl,
+      image: episode.image,
+      colorSet: episode.colorSet,
+      trace: episode.trace,
+      body: episode.description || episode.summary || "",
+    },
+  }));
 }

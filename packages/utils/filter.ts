@@ -3,6 +3,7 @@ import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
 import { getAllPosts, type T_PROPS } from "./post"
+import { mapPodcastEpisodesToPosts } from "./podcast"
 
 type T_POST = T_PROPS;
 
@@ -14,7 +15,9 @@ const STATIC_ENTRIES = [
 
 export async function getAllPostByDateDesc() {
   const posts = await getAllPosts()
-  return sortPostsByDate(posts)
+  const podcastPosts = mapPodcastEpisodesToPosts()
+  const allPosts = [...posts, ...podcastPosts]
+  return sortPostsByDate(allPosts)
 }
 
 function getCategoryFilterEntries(posts: T_POST[]) {
@@ -32,9 +35,11 @@ const getMemorizedCategoryFilterEntries = memoize(getCategoryFilterEntries, { ge
 
 export const getAllFilterEntries = async () => {
   const posts = await getAllPosts()
+  const podcastPosts = mapPodcastEpisodesToPosts()
+  const allPosts = [...posts, ...podcastPosts]
   const entries = new Set<string>(STATIC_ENTRIES)
 
-  const categoryEntries = getMemorizedCategoryFilterEntries(posts)
+  const categoryEntries = getMemorizedCategoryFilterEntries(allPosts)
 
   return [
     ...entries,
@@ -55,7 +60,9 @@ export function initCategoryPostMap(posts: T_POST[]) {
 
 export const getFilterByCategoryPage = async () => {
   const posts = await getAllPosts()
-  const categoryPostMap = initCategoryPostMap(posts)
+  const podcastPosts = mapPodcastEpisodesToPosts()
+  const allPosts = [...posts, ...podcastPosts]
+  const categoryPostMap = initCategoryPostMap(allPosts)
   const categoryResult = Array.from(categoryPostMap, ([filter, postsSet]) => ({
     params: {
       filter,
@@ -69,7 +76,7 @@ export const getFilterByCategoryPage = async () => {
         filter: FILTER_ENTRY.ALL,
       },
       props: {
-        posts: sortPostsByDate(posts),
+        posts: sortPostsByDate(allPosts),
       },
     },
     ...categoryResult,
@@ -80,7 +87,9 @@ export const isValidCategoryFilter = async (filter: string) => {
   if (filter === FILTER_ENTRY.ALL) return true
 
   const posts = await getAllPosts()
-  const categoryPostMap = initCategoryPostMap(posts)
+  const podcastPosts = mapPodcastEpisodesToPosts()
+  const allPosts = [...posts, ...podcastPosts]
+  const categoryPostMap = initCategoryPostMap(allPosts)
   const categoryEntries = Array.from(categoryPostMap, ([filter]) => filter)
 
   return categoryEntries.some(v => filter === v)

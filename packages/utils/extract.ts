@@ -9,7 +9,13 @@ type T_POST = T_PROPS
 
 export async function title(post: T_POST) {
   const entry = await getEntry(BLOG_SOURCE, post.id)
-  if (!entry) throw new Error("Not a valid post!")
+  if (!entry) {
+    // Synthetic posts (e.g. podcast) not in content collection — use data.title or id fallback
+    const dataTitle = (post as { data?: { title?: string } }).data?.title
+    if (dataTitle) return dataTitle
+    const lastIndex = post.id?.lastIndexOf("/")
+    return lastIndex >= 0 ? post.id.slice(lastIndex + 1).replace(/-/g, " ") : post.id
+  }
 
   const { headings } = await render(entry)
 
@@ -22,6 +28,10 @@ export async function title(post: T_POST) {
 }
 
 export function date(post: T_POST) {
+  // Synthetic posts (e.g. podcast) have data.date set
+  const dataDate = (post as { data?: { date?: Date } }).data?.date
+  if (dataDate instanceof Date && !Number.isNaN(dataDate.getTime())) return dataDate
+
   const info = post.id.split("/")
   const date = new Date(
     parseInt(info[0], 10),
