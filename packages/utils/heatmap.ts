@@ -13,7 +13,7 @@ export async function getHeatmapData() {
     }).reduce((sum, {key, count } ) => {
         return ({
             ...sum,
-            [key]: sum[key] ?? 0 + count
+            [key]: (sum[key] ?? 0) + count
         })
     }, {} as Record<string, number>)
 
