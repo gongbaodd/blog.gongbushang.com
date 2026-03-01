@@ -12,6 +12,10 @@ When working with Mantine UI (React components from `@mantine/core`, `@mantine/h
 
 - **Mantine UI**: [.agent/skills/mantine-ui/SKILL.md](.agent/skills/mantine-ui/SKILL.md) — Mantine usage, **CustomMantineProvider** from `@/src/stores/CustomMantineProvider` as the adapt layer (Mantine does not support Astro natively; wrap each React island that uses Mantine with this provider).
 
+When writing or running tests, use the project skill for Vitest:
+
+- **Vitest (testing)**: [.agent/skills/vitest-testing/SKILL.md](.agent/skills/vitest-testing/SKILL.md) — Vitest setup, test API (`test`/`describe`/`expect`), config (Vite shared), CLI, mocking (`vi`), snapshots, coverage.
+
 ## Project Overview
 
 This is an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).
