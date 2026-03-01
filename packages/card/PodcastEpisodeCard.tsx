@@ -17,19 +17,7 @@ import { useEffect, useState } from "react";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import type { IPodcastEpisode } from "@/src/stores/podcast";
 import classes from "./PostCard.module.css";
-
-function stripHtml(html: string): string {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-}
+import { stripHtml } from "./stripHtml";
 
 interface IPodcastEpisodeCardProps {
   episode: IPodcastEpisode;
