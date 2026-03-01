@@ -4,6 +4,7 @@ import { Button, Center, Loader, Stack } from '@mantine/core';
 import { useStore } from '@nanostores/react';
 import { $key, $loading, $posts, getKey, streamPosts, type IPostStreamParams } from './store/posts';
 import { PostCard } from '@/packages/card/PostCard';
+import { PodcastCardFromPost } from '@/packages/masonry/PodcastPlock';
 import { useCallback, useEffect } from 'react';
 
 export interface IPlockProps extends IPostStreamParams {
@@ -37,9 +38,13 @@ export default function BlogPlock({ totalCount, ...param }: IPlockProps) {
                         gap: [48, 16, 32, 32, 32],
                         media: [28, 48, 75, 88, 110].map(i => i * 16),
                     }}
-                    render={post => (
-                        <PostCard key={post.id} post={post} />
-                    )}
+                    render={post =>
+                        post.data.category === 'podcast' ? (
+                            <PodcastCardFromPost key={post.id} post={post} />
+                        ) : (
+                            <PostCard key={post.id} post={post} />
+                        )
+                    }
                 />
             </Stack>
             {hasMorePosts && (

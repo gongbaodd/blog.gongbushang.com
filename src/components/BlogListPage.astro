@@ -1,18 +1,18 @@
 ---
-import Global from "../../packages/layouts/Global.astro";
-import BaseHead from "../../packages/components/BaseHead.astro";
+import Global from "@/packages/layouts/Global.astro";
+import BaseHead from "@/packages/components/BaseHead.astro";
 import {
   SITE_DESCRIPTION,
   SITE_TITLE,
   FILTER_ENTRY,
   ROUTE_LABEL,
-} from "../../packages/consts";
-import MantineMain from "../../packages/scaffold/MantineMain";
+} from "@/packages/consts";
+import MantineMain from "@/packages/scaffold/MantineMain";
 import Footer from "@/packages/footer/Footer.astro";
-import { BlogListMenu } from "../../packages/menu/BlogListMenu";
+import { BlogListMenu } from "@/packages/menu/BlogListMenu";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
-import BlogPlock from "../../packages/masonry/BlogPlock";
+import BlogPlock from "@/packages/masonry/BlogPlock";
 
 interface Props {
   subTitle: string;
