@@ -3,6 +3,7 @@ import { Carousel as MantineCarousel } from "@mantine/carousel";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import classes from "./BlogCarousel.module.css"
 import { PostCard, type IPost } from "../card/PostCard";
+import { PodcastCardFromPost } from "@/packages/masonry/PodcastPlock";
 import { useStore } from "@nanostores/react";
 import { $latest, $totalCounts, requestLatestPosts } from "@/packages/carousel/latest";
 import { useEffect } from "react";
@@ -78,7 +79,11 @@ export function Carousel({ posts, className }: { posts: IPost[]; className?: str
         >
             {posts.map((post) => (
                 <MantineCarousel.Slide maw={300} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
-                    <PostCard key={post.id} post={post} hideExcerpt />
+                    {post.data.category === "podcast" ? (
+                        <PodcastCardFromPost post={post} />
+                    ) : (
+                        <PostCard post={post} hideExcerpt />
+                    )}
                 </MantineCarousel.Slide>
             ))}
         </MantineCarousel>
