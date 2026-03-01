@@ -11,22 +11,31 @@ const PODCAST_KEY = "podcast";
 
 /** Map a blog post with category podcast to IPodcastEpisode for PodcastEpisodeCard */
 export function postToEpisode(post: IPost): IPodcastEpisode {
+  const data = post.data as Record<string, unknown> | undefined;
   const cover = post.data?.cover;
   const image =
-    typeof cover?.url === "string" ? cover.url : (cover?.url as { src?: string })?.src;
+    (data?.image as string) ??
+    (typeof cover?.url === "string" ? cover.url : (cover?.url as { src?: string })?.src);
+  const colorSetRaw = (data?.colorSet as { bgColor?: string; titleColor?: string } | undefined) ??
+    (post.data?.bgColor && post.data?.titleColor
+      ? { bgColor: post.data.bgColor, titleColor: post.data.titleColor }
+      : undefined);
+  const colorSet =
+    colorSetRaw?.bgColor && colorSetRaw?.titleColor
+      ? { bgColor: colorSetRaw.bgColor, titleColor: colorSetRaw.titleColor }
+      : undefined;
   return {
     id: post.id,
     title: post.title,
-    link: post.href,
+    link: (data?.link as string) ?? post.href,
     pubDate: typeof post.date === "string" ? post.date : new Date(post.date).toISOString(),
-    summary: post.excerpt,
-    description: post.excerpt,
+    summary: (data?.summary as string) ?? post.excerpt,
+    description: (data?.description as string) ?? post.excerpt,
+    duration: data?.duration as string | undefined,
+    audioUrl: data?.audioUrl as string | undefined,
     image,
-    colorSet:
-      post.data?.bgColor && post.data?.titleColor
-        ? { bgColor: post.data.bgColor, titleColor: post.data.titleColor }
-        : undefined,
-    trace: post.data?.trace,
+    colorSet,
+    trace: (data?.trace as string) ?? post.data?.trace,
   };
 }
 

@@ -126,9 +126,6 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
                 </Anchor>
 
                 <Group gap="xs">
-                  <Anchor href={episode.link} target="_blank" size="xs">
-                    Spotify
-                  </Anchor>
                   {episode.audioUrl && (
                     <Anchor href={episode.audioUrl} target="_blank" size="xs">
                       Listen

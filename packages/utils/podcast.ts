@@ -73,6 +73,7 @@ export function mapPodcastEpisodesToPosts(): T_PROPS[] {
       duration: episode.duration,
       audioUrl: episode.audioUrl,
       image: episode.image,
+      link: episode.link,
       colorSet: episode.colorSet,
       trace: episode.trace,
       body: episode.description || episode.summary || "",
