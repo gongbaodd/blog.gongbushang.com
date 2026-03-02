@@ -80,7 +80,7 @@ export function Carousel({ posts, className }: { posts: IPost[]; className?: str
             {posts.map((post) => (
                 <MantineCarousel.Slide maw={300} key={post.id} display={"flex"} style={{ justifyContent: "center", alignItems: "center" }}>
                     {post.data.category === "podcast" ? (
-                        <PodcastCardFromPost post={post} />
+                        <PodcastCardFromPost post={post} hideExcerpt />
                     ) : (
                         <PostCard post={post} hideExcerpt />
                     )}
