@@ -40,7 +40,7 @@ export function postToEpisode(post: IPost): IPodcastEpisode {
 }
 
 export function PodcastCardFromPost({ post, hideExcerpt }: { post: IPost, hideExcerpt?: boolean }) {
-  return <PodcastEpisodeCard episode={postToEpisode(post)} hideExcerpt/>;
+  return <PodcastEpisodeCard episode={postToEpisode(post)} hideExcerpt={hideExcerpt}/>;
 }
 
 export interface IPodcastPlockProps {
