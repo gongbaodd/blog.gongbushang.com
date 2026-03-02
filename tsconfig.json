@@ -13,5 +13,13 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
-  "exclude": ["packages/pv-counter", "dist", "public"]
+  "exclude": [
+    "packages/pv-counter",
+    "dist",
+    "public",
+    "**/*.test.ts", 
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/__tests__/*"
+  ]
 }
