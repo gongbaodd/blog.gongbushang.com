@@ -1,7 +1,10 @@
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, type MantineColorScheme } from "@mantine/core";
 
-export default function CustomMantineProvider({ children }: { children: React.ReactNode }) {
+export default function CustomMantineProvider({ children, theme }: { 
+  children: React.ReactNode,
+  theme?: MantineColorScheme
+}) {
   return (
-    <MantineProvider defaultColorScheme="auto">{children}</MantineProvider>
+    <MantineProvider defaultColorScheme={theme ?? "auto"}>{children}</MantineProvider>
   );
 }

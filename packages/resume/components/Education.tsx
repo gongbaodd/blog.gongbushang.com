@@ -57,7 +57,7 @@ export default function Education() {
     <CustomMantineProvider>
       <Flex justify="space-between" align="center" direction="row" gap={10}>
         {data.map((i) => {
-          return <SchoolCard img={i.img} date={i.date} name={i.name} content={i.content} />;
+          return <SchoolCard key={i.key!} img={i.img} date={i.date} name={i.name} content={i.content} />;
         })}
       </Flex>
     </CustomMantineProvider>
@@ -82,7 +82,9 @@ function SchoolCard(opts: IProps) {
               color="gray"
               size="sm"
               variant="default"
-              style={{ textOverflow: "none" }}
+              style={{ 
+                textOverflow: "none",
+              }}
             >
               <Group gap={6}>
                 <Calendar size={12} />
@@ -91,7 +93,7 @@ function SchoolCard(opts: IProps) {
             </Badge>
           </Flex>
         </Card>
-        <Stack gap={"sm"}>
+        <Stack gap={0}>
           <Text size="md" style={{ fontWeight: 500, marginBottom: 0 }}>{opts.name}</Text>
           <Text size="xs">{opts.content}</Text>
         </Stack>
