@@ -37,6 +37,14 @@ body { margin: 0 }
   left: 1em;
 }
 
+.sheet h2 {
+  margin-top:  var(--mantine-spacing-sm);
+}
+
+#key-skills {
+  margin-top: 0;
+}
+
 /** For screen preview **/
 @media screen {
   .sheet {
