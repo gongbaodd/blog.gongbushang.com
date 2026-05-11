@@ -1,27 +1,30 @@
 import profile from "@/src/icons/profile.svg?raw"
 import PrintButton from "../components/print"
 import Education from "../components/Education"
+import Job from "../components/Job"
 import Work from "../components/Work"
 
 <div class="A4">
 
-<section class="sheet padding-10mm">
+<section class="sheet padding-10mm page-1">
 
 <div className="lastUpdate">
-Last update 2026-05-10
+Last update 2026-05-11
 </div>
 
-<div class="flex flex-row gap-4">
-    <img src={"data:image/svg+xml," + encodeURIComponent(profile)} width={120} />
+<div class="flex flex-row gap-4 items-baseline">
     <div>
         # Jian Gong
-         宫健
-
-        💻 Web developer | 🎮 Game Programmer
+    </div>
+    <div>
+        <span>(宫健)</span>
+    </div>
+    <div>
+        💻 Full-Stack Web developer | 🎮 Game Programmer
     </div>
 </div>
 
-<div class="grid grid-cols-3 grid-rows-2 pt-6">
+<div class="grid grid-cols-3 grid-rows-2 pt-6 subsection intro">
     <div> gongbaodd@gmail.com </div>
     <div> [github.com/gongbaodd](https://github.com/gongbaodd) </div>
     <div> 📍Tallinn, Estonia </div>
@@ -33,6 +36,8 @@ Last update 2026-05-10
 
 ## Key Skills
 
+<div class="subsection">
+
 | Skill | Proficiency | |
 |--|--|-- |
 | TS & JS | Advanced      | Current Most used Language, React, Vue |
@@ -41,9 +46,10 @@ Last update 2026-05-10
 | Python | Intermediate      | Crawlers, Scipy, ML-Agents |
 | Standard practices |       | Good knowledge of standard tools, such as git, agile development, CI/CD, Docker, K8S, TDD, AWS, GCP, Cloudflare Worker etc. |
 
-## Languages
+</div>
 
-<div class="grid grid-cols-4 grid-rows-2 pt-2">
+
+<div class="grid grid-cols-4 grid-rows-2 pt-2 language subsection">
     <div>普通话（母语）</div>
     <div>English (C1)</div>
     <div>日本語 （初級）</div>
@@ -55,14 +61,20 @@ Last update 2026-05-10
 
 ## Education
 
-<Education />
+<div class="subsection edu">
+    <Education />
+</div>
+
+## Work Experiences
+
+<div class="subsection job">
+    <Job />
+</div>
 
 </section>
 
 
 <section class="sheet padding-10mm">
-
-## Work Experiences
 
 <Work />
 

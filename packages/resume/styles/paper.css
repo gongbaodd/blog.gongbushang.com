@@ -73,3 +73,38 @@ a.work {
   size: a4;
   margin: 0cm;
 }
+
+
+.page-1 > h2 {
+  transform: rotate(90deg);
+  transform-origin: left bottom;
+  color: var(--mantine-color-dark-3);
+}
+
+.page-1 hr {
+  margin-bottom: 0;
+}
+
+.page-1 .subsection {
+  margin-top: -1.5em;
+  margin-left: 2em;
+}
+
+.page-1 .subsection.intro{
+  margin-top: -.5em;
+  margin-left: 2em;
+}
+
+.page-1 .subsection.language {
+  margin-top: 1em;
+  margin-left: 2.2em;
+}
+
+.page-1 .subsection.edu {
+  margin-left: 2.2em;
+  height: 224px;
+}
+
+.page-1 .subsection.job {
+  margin-top: 1em;
+}
