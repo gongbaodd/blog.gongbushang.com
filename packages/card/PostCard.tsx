@@ -15,10 +15,11 @@ interface ICardProp { post: IPost; hideExcerpt?: boolean }
 
 export function PostCard({ post, hideExcerpt }: ICardProp) {
   const title = post.title;
+  const hasCover = !!post.data.cover;
 
   const className = [
     classes.item,
-    post.data.cover ? classes.with_bg : classes[post.data.bgClass],
+    hasCover ? classes.with_bg : classes[post.data.bgClass],
     classes[post.data.layout]
   ].join(" ")
 
@@ -57,6 +58,115 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
     }
   }
 
+  const cardStyle = {
+    ...(hasCover ? {} : { backgroundColor: post.data.bgColor }),
+    "--underline-color": `var(${post.data.titleColor})`,
+    "--transition-name": "p-" + post.id.replaceAll("/", "-"),
+  } as React.CSSProperties
+
+  const coverAreaStyle = {
+    backgroundColor: post.data.bgColor,
+    "--cover-opacity": coverOpacity,
+    "--cover-image": `url(${coverImage})`,
+    "--cover-trace": tracedCover,
+  } as React.CSSProperties
+
+  const badgeRow = (
+    <Flex justify={"space-between"} align={"center"}>
+      <Badge
+        color="gray"
+        variant="default"
+        size="sm"
+        className={classes.category}
+      >
+        <Group gap={6}>
+          <Calendar size={12} />
+          <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
+        </Group>
+      </Badge>
+      <Avatar
+        color="gray"
+        variant="default"
+        size="sm"
+        className={classes.category}
+        p={0}
+      >
+        <ViewCount path={post.href} />
+      </Avatar>
+    </Flex>
+  );
+
+  const metaRow = (
+    <Flex gap="xs" justify={"space-between"} align={"end"}>
+      <Group flex={1}>
+        <Badge
+          color="gray"
+          variant="default"
+          size="sm"
+          className={classes.category}
+        >
+          {post.data.category}
+        </Badge>
+      </Group>
+
+      <Group gap="xs" flex={0} miw="5em">
+        {post.data.series && (
+          <Badge
+            key={post.data.series.slug}
+            color="gray"
+            variant="default"
+            size="xs"
+            className={classes.category}
+          >
+            {post.data.series.name ?? post.data.series.slug}
+          </Badge>
+        )}
+
+        {post.data.tag?.map((tag: string) => (
+          <Badge
+            key={tag}
+            color="gray"
+            variant="default"
+            size="xs"
+            className={classes.category}
+          >
+            #{tag}
+          </Badge>
+        ))}
+      </Group>
+    </Flex>
+  );
+
+  const titleBlock = (
+    <Title className={classes.title}>
+      <span>{title}</span>
+    </Title>
+  );
+
+  const cardBody = hasCover ? (
+    <>
+      <Box className={classes.cover_area} style={coverAreaStyle}>
+        <Flex
+          direction="column"
+          justify="space-between"
+          p="lg"
+          flex={1}
+          className={classes.cover_content}
+        >
+          {badgeRow}
+          {metaRow}
+        </Flex>
+      </Box>
+      <Box className={classes.cover_footer}>{titleBlock}</Box>
+    </>
+  ) : (
+    <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
+      {badgeRow}
+      {titleBlock}
+      {metaRow}
+    </Flex>
+  );
+
   return (
     <CustomMantineProvider>
       <Stack justify={"center"} align={"center"}>
@@ -65,87 +175,13 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
             <Card
               key={post.id}
               shadow="sm"
-              padding="lg"
+              padding={hasCover ? 0 : "lg"}
               radius="lg"
               withBorder
               className={className}
-              style={{
-                backgroundColor: post.data.bgColor,
-                "--underline-color": `var(${post.data.titleColor})`,
-                "--cover-opacity": coverOpacity,
-                "--cover-image": `url(${coverImage})`,
-                "--cover-trace": tracedCover,
-                "--transition-name": "p-" + post.id.replaceAll("/", "-"),
-              }}
+              style={cardStyle}
             >
-              <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
-                <Flex justify={"space-between"} align={"center"}>
-                  <Badge
-                    color="gray"
-                    variant="default"
-                    size="sm"
-                    className={classes.category}
-                  >
-                    <Group gap={6}>
-                      <Calendar size={12} />
-                      <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
-                    </Group>
-                  </Badge>
-                  <Avatar
-                    color="gray"
-                    variant="default"
-                    size="sm"
-                    className={classes.category}
-                    p={0}
-                  >
-                    <ViewCount path={post.href} />
-                  </Avatar>
-                </Flex>
-
-
-                <Title className={classes.title}>
-                  <span>{title}</span>
-                </Title>
-
-                <Flex gap="xs" justify={"space-between"} align={"end"}>
-                  <Group flex={1}>
-                    <Badge
-                      color="gray"
-                      variant="default"
-                      size="sm"
-                      className={classes.category}
-                    >
-                      {post.data.category}
-                    </Badge>
-                  </Group>
-
-                  <Group gap="xs" flex={0} miw="5em">
-                    {post.data.series && (
-                      <Badge
-                        key={post.data.series.slug}
-                        color="gray"
-                        variant="default"
-                        size="xs"
-                        className={classes.category}
-                      >
-                        {post.data.series.name ?? post.data.series.slug}
-                      </Badge>
-                    )}
-
-                    {post.data.tag?.map((tag: string) => (
-                      <Badge
-                        key={tag}
-                        color="gray"
-                        variant="default"
-                        size="xs"
-                        className={classes.category}
-                      >
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </Group>
-                </Flex>
-              </Flex>
+              {cardBody}
             </Card>
           </Anchor>
           {!hideExcerpt && (

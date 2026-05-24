@@ -27,6 +27,7 @@ interface IPodcastEpisodeCardProps {
 export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCardProps) {
   const excerpt = stripHtml(episode.summary || episode.description || "");
   const [coverOpacity, setCoverOpacity] = useState(0);
+  const hasCover = !!episode.image;
 
   useEffect(() => {
     if (!episode.image) return;
@@ -37,7 +38,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
 
   const className = [
     classes.item,
-    episode.image ? classes.with_bg : classes.liquid_cheese,
+    hasCover ? classes.with_bg : classes.liquid_cheese,
     classes.md,
   ].join(" ");
 
@@ -49,79 +50,107 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
         )}")`
       : "";
 
+  const cardStyle = {
+    "--underline-color": episode.colorSet?.titleColor
+      ? `var(${episode.colorSet.titleColor})`
+      : "var(--mantine-color-dark-8)",
+    "--transition-name": "podcast-" + episode.id.replaceAll("/", "-"),
+  } as React.CSSProperties;
+
+  const coverAreaStyle = {
+    backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
+    "--cover-opacity": coverOpacity,
+    "--cover-image": `url(${episode.image})`,
+    "--cover-trace": tracedCover,
+  } as React.CSSProperties;
+
+  const badgeRow = (
+    <Flex justify="space-between" align="center">
+      <Badge color="gray" variant="default" size="sm" className={classes.category}>
+        <Group gap={6}>
+          <Calendar size={12} />
+          <Text size="xs">{dayjs(episode.pubDate).format("YYYY-MM-DD")}</Text>
+        </Group>
+      </Badge>
+      {episode.duration && (
+        <Badge color="gray" variant="default" size="sm" className={classes.category}>
+          <Group gap={6}>
+            <Headphones size={12} />
+            <Text size="xs">{episode.duration}</Text>
+          </Group>
+        </Badge>
+      )}
+    </Flex>
+  );
+
+  const titleBlock = (
+    <Anchor underline="never" href={episode.link} target="_blank">
+      <Title className={classes.title}>
+        <span>{episode.title}</span>
+      </Title>
+    </Anchor>
+  );
+
   return (
     <CustomMantineProvider>
       <Stack justify="center" align="center">
         <Box maw={360}>
           <Card
-              key={episode.id}
-              shadow="sm"
-              padding="lg"
-              radius="lg"
-              withBorder
-              className={className}
-              style={{
-                backgroundColor:
-                  episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
-                "--underline-color": episode.colorSet?.titleColor
-                  ? `var(${episode.colorSet.titleColor})`
-                  : "var(--mantine-color-dark-8)",
-                "--cover-opacity": coverOpacity,
-                "--cover-image": episode.image ? `url(${episode.image})` : "none",
-                "--cover-trace": tracedCover,
-                "--transition-name": "podcast-" + episode.id.replaceAll("/", "-"),
-              } as React.CSSProperties}
-            >
+            key={episode.id}
+            shadow="sm"
+            padding={hasCover ? 0 : "lg"}
+            radius="lg"
+            withBorder
+            className={className}
+            style={{
+              ...cardStyle,
+              ...(hasCover
+                ? {}
+                : {
+                    backgroundColor:
+                      episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
+                  }),
+            }}
+          >
+            {hasCover ? (
+              <>
+                <Box className={classes.cover_area} style={coverAreaStyle}>
+                  <Flex
+                    direction="column"
+                    justify="space-between"
+                    p="lg"
+                    flex={1}
+                    className={classes.cover_content}
+                  >
+                    {badgeRow}
+                    {episode.audioUrl && (
+                      <Anchor href={episode.audioUrl} target="_blank" size="xs">
+                        Listen
+                      </Anchor>
+                    )}
+                  </Flex>
+                </Box>
+                <Box className={classes.cover_footer}>{titleBlock}</Box>
+              </>
+            ) : (
               <Flex
                 direction="column"
                 justify="space-between"
                 flex={1}
                 className={classes.content}
               >
-                <Flex justify="space-between" align="center">
-                  <Badge
-                    color="gray"
-                    variant="default"
-                    size="sm"
-                    className={classes.category}
-                  >
-                    <Group gap={6}>
-                      <Calendar size={12} />
-                      <Text size="xs">
-                        {dayjs(episode.pubDate).format("YYYY-MM-DD")}
-                      </Text>
-                    </Group>
-                  </Badge>
-                  {episode.duration && (
-                    <Badge
-                      color="gray"
-                      variant="default"
-                      size="sm"
-                      className={classes.category}
-                    >
-                      <Group gap={6}>
-                        <Headphones size={12} />
-                        <Text size="xs">{episode.duration}</Text>
-                      </Group>
-                    </Badge>
-                  )}
-                </Flex>
-
-                <Anchor underline="never" href={episode.link} target="_blank">
-                  <Title className={classes.title}>
-                    <span>{episode.title}</span>
-                  </Title>
-                </Anchor>
-
-                <Group gap="xs">
-                  {episode.audioUrl && (
+                {badgeRow}
+                {titleBlock}
+                {episode.audioUrl && (
+                  <Group gap="xs">
                     <Anchor href={episode.audioUrl} target="_blank" size="xs">
                       Listen
                     </Anchor>
-                  )}
-                </Group>
+                  </Group>
+                )}
               </Flex>
-            </Card>
+            )}
+          </Card>
           {!hideExcerpt && excerpt && (
             <Flex pl={5} pr={10} pt={5}>
               <Avatar
