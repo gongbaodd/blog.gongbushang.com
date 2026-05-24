@@ -13,6 +13,7 @@ import { ROUTE_HREF } from '../consts';
 
 export interface IMapData {
     name: string
+    slug: string
     location: {
         latitude: number
         longitude: number
@@ -57,9 +58,9 @@ export default function GLMap({}: IMapProps) {
                 >
                     {data.map(d => {
                         return (
-                            <Marker longitude={d.location.longitude} latitude={d.location.latitude} key={d.name}>
+                            <Marker longitude={d.location.longitude} latitude={d.location.latitude} key={d.slug}>
                                 <Anchor
-                                    onClick={() => { }}
+                                    href={`/world/${d.slug}`}
                                     style={{ fontSize: "24px", cursor: "pointer" }}
                                     c={"red"}
                                 >

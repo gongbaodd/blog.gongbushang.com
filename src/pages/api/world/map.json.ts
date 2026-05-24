@@ -1,5 +1,6 @@
 import type { IMapData } from "@/packages/map/GLMap";
 import { sortPostsByDate, initCityPostMap } from "@/packages/utils/filter";
+import { citySlug, findCityBySlug } from "@/packages/utils/city";
 import { getAllPosts, type T_PROPS } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 import fs from "node:fs";
@@ -52,11 +53,13 @@ export const GET: APIRoute<T_PROPS> = async () => {
         const file = post.id;
         const meta = metaData?.find((d) => d.file === file);
         if (meta) {
-            const index = meta.city.map((c) => c.toLowerCase()).indexOf(city);
+            const index = meta.city.map((c) => citySlug(c)).indexOf(city);
             if (index > -1) {
                 const location = meta.locations[index];
+                const name = findCityBySlug(meta.city, city) ?? city;
                 data.push({
-                    name: city,
+                    name,
+                    slug: city,
                     location: location,
                     id: file,
                 });

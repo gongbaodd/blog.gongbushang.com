@@ -1,4 +1,5 @@
 import { date, excerpt, title } from "./extract"
+import { citySlug, findCityBySlug } from "./city"
 import { FILTER_ENTRY, POST_COUNT_PER_PAGE } from "../consts"
 import { memoize } from "es-toolkit"
 import dayjs from "dayjs"
@@ -121,7 +122,7 @@ export const getFilterByTagPage = async () => {
 
 let cityPostMap = new Map<string, Set<T_POST>>()
 const _initCityPostMap = memoize((posts: T_POST[]) => {
-  cityPostMap = createPostMap(posts, (p) => (p.data.city ?? []).map((t: string) => t.toLowerCase()))
+  cityPostMap = createPostMap(posts, (p) => (p.data.city ?? []).map((t: string) => citySlug(t)))
   return cityPostMap
 }, { getCacheKey: (posts) => Array.from(posts).length })
 
@@ -132,14 +133,27 @@ export function initCityPostMap(posts: T_POST[]) {
 export const getFilterByCityPage = async () => {
   const posts = await getAllPosts()
   const cityPostMap = initCityPostMap(posts)
-  const cityResult = Array.from(cityPostMap, ([filter, postsSet]) => ({
-    params: {
-      filter,
-    },
-    props: { posts: sortPostsByDate(Array.from(postsSet)) },
-  }))
+  const cityResult = Array.from(cityPostMap, ([city, postsSet]) => {
+    const sortedPosts = sortPostsByDate(Array.from(postsSet))
+    const cityName = findCityBySlug(sortedPosts[0]?.data.city ?? [], city) ?? city
+
+    return {
+      params: {
+        city,
+      },
+      props: { posts: sortedPosts, cityName },
+    }
+  })
 
   return cityResult
+}
+
+export const isValidCityFilter = async (city: string) => {
+  const posts = await getAllPosts()
+  const cityPostMap = initCityPostMap(posts)
+  const cityEntries = Array.from(cityPostMap, ([city]) => city)
+
+  return cityEntries.some(v => city === v)
 }
 
 
@@ -218,7 +232,7 @@ export function page(filterFn: typeof getFilterByCityPage | typeof getFilterByCa
           props: {
             posts: result.props.posts.slice(j, j + POST_COUNT_PER_PAGE)
           }
-        })
+        } as any)
       }
     }
 

@@ -1,0 +1,17 @@
+---
+import { FILTER_ENTRY } from '@/packages/consts';
+import { getFilterByCityPage, isValidCityFilter } from '@/packages/utils/filter';
+import BlogListPage from '@/src/components/BlogListPage.astro';
+import NotFound from "../404.astro";
+
+export const prerender = true;
+export const getStaticPaths = getFilterByCityPage;
+
+const { city } = Astro.params;
+const { cityName } = Astro.props;
+const subTitle = cityName.replaceAll("/", " | ");
+const isValid = await isValidCityFilter(city);
+const totalPostsCount = Astro.props.posts.length;
+---
+
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={city} entryType={FILTER_ENTRY.WORLD} /> : <NotFound />}
