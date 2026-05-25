@@ -22,7 +22,7 @@ const datas = [
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1778517285/header_xgzuqo.jpg",
     date: "2025-2026",
     name: "Kickstart Now",
-    content:  "Automated the cloud-to-local translation pipeline, enabling support for 12 languages."
+    content:  "Automated the translation pipeline, enabling support for 12 languages; engineered cross-platform compatibility for Windows, macOS, and Linux."
   },
 ];
 
