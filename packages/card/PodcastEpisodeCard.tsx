@@ -51,8 +51,8 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
       : "";
 
   const cardStyle = {
-    "--underline-color": episode.colorSet?.bgColor
-      ? `var(${episode.colorSet.bgColor})`
+    "--underline-color": episode.colorSet?.titleColor
+      ? `var(${episode.colorSet.titleColor})`
       : "var(--mantine-color-dark-8)",
     "--transition-name": "podcast-" + episode.id.replaceAll("/", "-"),
   } as React.CSSProperties;
