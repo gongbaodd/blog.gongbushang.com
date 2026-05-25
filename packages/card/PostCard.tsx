@@ -60,7 +60,7 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
 
   const cardStyle = {
     ...(hasCover ? {} : { backgroundColor: post.data.bgColor }),
-    "--underline-color": `var(${post.data.titleColor})`,
+    "--underline-color": `var(${post.data.bgColor})`,
     "--transition-name": "p-" + post.id.replaceAll("/", "-"),
   } as React.CSSProperties
 
