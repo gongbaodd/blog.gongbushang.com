@@ -19,6 +19,7 @@ export interface IPost {
         label: string;
         href: string;
     };
+    city?: string[];
 }
 
 export type T_PROPS = CollectionEntry<"blog">
@@ -41,6 +42,7 @@ export async function mapServerPostToJSON(post: T_PROPS) {
         category: categoryFrom(post),
         tags: tagsFrom(post),
         series: await seriesFrom(post),
+        city: post.data.city,
     } as IPost
 }
 
