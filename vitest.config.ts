@@ -12,6 +12,8 @@ export default defineConfig({
       "packages/carousel/**/*.test.tsx",
       "packages/content/**/*.test.ts",
       "packages/content/**/*.test.tsx",
+      "packages/image-metadata/**/*.test.ts",
+      "packages/content-prepare/**/*.test.ts",
     ],
     environment: "node",
   },

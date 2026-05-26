@@ -1,0 +1,20 @@
+{
+  "name": "image-metadata",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@musical-sniffle/sobel-edge-detection": "1.0.0-beta.1",
+    "chroma-js": "^3.1.2",
+    "node-vibrant": "^4.0.3",
+    "potrace": "^2.1.8",
+    "sharp": "^0.34.3"
+  },
+  "devDependencies": {
+    "@types/chroma-js": "^3.1.1",
+    "@types/potrace": "^2.1.5"
+  }
+}

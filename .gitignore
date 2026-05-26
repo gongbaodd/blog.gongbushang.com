@@ -24,3 +24,4 @@ pnpm-debug.log*
 tmp
 src/content/blog/
 .pnpm-store/
+.env
