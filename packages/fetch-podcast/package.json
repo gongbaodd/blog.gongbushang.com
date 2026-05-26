@@ -1,0 +1,19 @@
+{
+  "name": "fetch-podcast",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "fetch-podcast": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "image-metadata": "workspace:*",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4"
+  }
+}
