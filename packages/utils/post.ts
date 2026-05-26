@@ -79,6 +79,7 @@ export async function getAllClientPostsForSearch() {
     posts = await Promise.all(memMap())
     return posts
 }
+
 export async function getAllPosts() {
     const posts = await getCollection(BLOG_SOURCE) 
     return posts

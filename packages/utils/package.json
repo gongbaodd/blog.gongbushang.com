@@ -2,9 +2,11 @@
     "name": "utils",
     "version": "0.0.1",
     "dependencies": {
+        "@types/mdast": "^4.0.4",
         "fs": "0.0.1-security",
         "path": "^0.12.7",
         "remark": "^15.0.1",
-        "strip-markdown": "^6.0.0"
+        "strip-markdown": "^6.0.0",
+        "unist-util-visit": "^5.0.0"
     }
 }
