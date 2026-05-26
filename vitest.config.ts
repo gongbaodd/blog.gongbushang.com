@@ -14,6 +14,7 @@ export default defineConfig({
       "packages/content/**/*.test.tsx",
       "packages/image-metadata/**/*.test.ts",
       "packages/content-prepare/**/*.test.ts",
+      "packages/post-embedding/**/*.test.ts",
     ],
     environment: "node",
   },
