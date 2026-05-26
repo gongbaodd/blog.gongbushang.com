@@ -6,6 +6,7 @@ import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
+import { md2txt } from "./md2txt";
 
 export interface IPost {
     id: string;
@@ -38,7 +39,7 @@ export async function mapServerPostToJSON(post: T_PROPS) {
         href: `/${post.data.category}/${post.id}`,
         title: await titleFrom(post),
         date: dateFrom(post),
-        content: post.body ?? "",
+        content: await md2txt(post.body ?? ""),
         category: categoryFrom(post),
         tags: tagsFrom(post),
         series: await seriesFrom(post),
