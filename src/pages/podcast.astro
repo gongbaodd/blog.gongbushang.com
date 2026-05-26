@@ -8,12 +8,13 @@ import Footer from "@/packages/footer/Footer.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import PodcastPlock from "@/packages/masonry/PodcastPlock";
 import PodcastSidebar from "../components/PodcastSidebar";
-import data from "../content/podcast.json";
+import { readPodcastData } from "@/packages/utils/podcast";
 
 export const prerender = true;
 
-const totalCount = (data.episodes as unknown[]).length;
-const channel = data.channel as { title: string; description?: string; link?: string; image?: string };
+const data = readPodcastData();
+const totalCount = data.episodes.length;
+const channel = data.channel;
 ---
 
 <Global>

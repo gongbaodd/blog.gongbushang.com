@@ -10,6 +10,7 @@
     "prepare-metadata": "tsx src/cli.ts"
   },
   "dependencies": {
+    "consts": "workspace:*",
     "dotenv": "^17.2.1",
     "fast-glob": "^3.3.3",
     "gray-matter": "^4.0.3",

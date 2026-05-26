@@ -77,6 +77,14 @@ export {
   TITLE_COLOR_MAP,
 } from "./colors.ts";
 
+export {
+  CONTENT_GENERATED_DIR,
+  POST_COVER_DIR,
+  POST_METADATA_JSON,
+  PODCAST_COVER_DIR,
+  PODCAST_JSON,
+} from "./config.js";
+
 
 export const POST_CARD_CLASSNAMES = [
   "liquid_cheese",

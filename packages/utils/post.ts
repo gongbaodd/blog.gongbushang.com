@@ -3,10 +3,43 @@ import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as
 import { memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
+import { POST_COVER_DIR, POST_METADATA_JSON } from "../consts/config.js";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
 import { md2txt } from "./md2txt";
+
+export interface PostMetadataEntry {
+    file: string;
+    city: string[];
+    locations: { latitude: number; longitude: number }[];
+    colorSet?: { bgColor: string; titleColor: string };
+}
+
+export function readPostMetadata(): PostMetadataEntry[] | undefined {
+    try {
+        const metadataPath = path.join(process.cwd(), POST_METADATA_JSON);
+        if (!fs.existsSync(metadataPath)) return undefined;
+        return JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry[];
+    } catch (error) {
+        console.warn("Could not read metadata.json:", error);
+        return undefined;
+    }
+}
+
+export function readPostCoverSvg(postId: string): string | undefined {
+    try {
+        const coverPath = path.join(
+            process.cwd(),
+            POST_COVER_DIR,
+            `${postId.replaceAll("/", "-")}.svg`,
+        );
+        if (!fs.existsSync(coverPath)) return undefined;
+        return fs.readFileSync(coverPath, "utf-8");
+    } catch {
+        return undefined;
+    }
+}
 
 export interface IPost {
     id: string;
@@ -116,32 +149,18 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
     }
 
     try {
-        const metadataPath = path.join(process.cwd(), 'src', 'content', 'metadata.json');
-        const coverFolderPath = path.join(process.cwd(), 'src', 'content', 'cover');
-        if (fs.existsSync(metadataPath)) {
-            const metadataContent = fs.readFileSync(metadataPath, 'utf-8');
-            const metadata = JSON.parse(metadataContent);
+        const metadata = readPostMetadata();
+        const matchingEntry = metadata?.find((entry) => entry.file === post.id);
 
-            const matchingEntry = metadata.find((entry: any) =>{
-                return entry.file === post.id
-            });
-            
-            if (matchingEntry) {
-                const coverPath = path.join(coverFolderPath, `${post.id.replaceAll("/", "-")}.svg`);
-                if (fs.existsSync(coverPath)) {
-                    return {
-                        get result() {
-                            const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor)
-                            const t = set(r, "data.trace", fs.readFileSync(coverPath, 'utf-8'))
-                            return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor)
-                        }
-                    }.result
-                }
-
+        if (matchingEntry?.colorSet) {
+            const trace = readPostCoverSvg(post.id);
+            if (trace) {
+                const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor);
+                const t = set(r, "data.trace", trace);
+                return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor);
             }
         }
     } catch (error) {
-        // If metadata.json doesn't exist or there's an error reading it, continue with normal color generation
         console.warn('Could not read metadata.json, falling back to color generation:', error);
     }
 

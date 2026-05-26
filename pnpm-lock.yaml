@@ -258,6 +258,9 @@ importers:
 
   packages/content-prepare:
     dependencies:
+      consts:
+        specifier: workspace:*
+        version: link:../consts
       dotenv:
         specifier: ^17.2.1
         version: 17.4.2
@@ -277,6 +280,9 @@ importers:
 
   packages/fetch-podcast:
     dependencies:
+      consts:
+        specifier: workspace:*
+        version: link:../consts
       image-metadata:
         specifier: workspace:*
         version: link:../image-metadata

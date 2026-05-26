@@ -10,6 +10,7 @@
     "fetch-podcast": "tsx src/cli.ts"
   },
   "dependencies": {
+    "consts": "workspace:*",
     "image-metadata": "workspace:*",
     "xml2js": "^0.6.2"
   },

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import "dotenv/config";
+import { POST_COVER_DIR, POST_METADATA_JSON } from "consts/config.js";
 
 export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
   let dir = startDir;
@@ -56,9 +57,9 @@ export async function resolveCollectOptions(cli: CliOptions = {}) {
     docsDir: path.resolve(repoRoot, cli.docsDir ?? "src/content/_docs"),
     outputFile: path.resolve(
       repoRoot,
-      cli.output ?? "src/content/metadata.json",
+      cli.output ?? POST_METADATA_JSON,
     ),
-    traceDir: path.resolve(repoRoot, cli.traceDir ?? "src/content/cover"),
+    traceDir: path.resolve(repoRoot, cli.traceDir ?? POST_COVER_DIR),
     googleApiKey: process.env.GOOGLE_API_KEY,
   };
 }

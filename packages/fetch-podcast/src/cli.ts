@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PODCAST_COVER_DIR, PODCAST_JSON } from "consts/config.js";
 import { fetchAndProcessPodcast } from "./fetch-podcast.ts";
 
 export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
@@ -56,9 +57,9 @@ export async function resolveFetchOptions(cli: CliOptions = {}) {
     rssUrl: cli.rssUrl,
     outputFile: path.resolve(
       repoRoot,
-      cli.output ?? "src/content/podcast.json",
+      cli.output ?? PODCAST_JSON,
     ),
-    traceDir: path.resolve(repoRoot, cli.traceDir ?? "src/content/podcast"),
+    traceDir: path.resolve(repoRoot, cli.traceDir ?? PODCAST_COVER_DIR),
     baseDir: repoRoot,
   };
 }
