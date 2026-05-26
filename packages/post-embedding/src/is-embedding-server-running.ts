@@ -14,8 +14,12 @@ export async function isEmbeddingServerRunning(
       model,
     });
     const embedding = response.data[0]?.embedding;
+
+    console.log("embedding", embedding);
+    console.log("embedding length", embedding?.length);
+    console.log("embedding dimensions", EMBEDDING_DIMENSIONS);
     return embedding?.length === EMBEDDING_DIMENSIONS;
-  } catch {
+  } catch (error) {
     return false;
   }
 }

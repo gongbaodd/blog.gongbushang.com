@@ -3,8 +3,10 @@ import type { EmbeddingOptions } from "./types.ts";
 
 export const DEFAULT_BASE_URL = "http://localhost:1234/v1";
 export const DEFAULT_API_KEY = "lm-studio";
-export const DEFAULT_MODEL = "text-embedding-nomic-embed-text-v1.5";
-export const EMBEDDING_DIMENSIONS = 768;
+// export const DEFAULT_MODEL = "text-embedding-qwen3-embedding-0.6b";
+export const DEFAULT_MODEL = "Qwen3-Embedding-0.6B-GGUF";
+
+export const EMBEDDING_DIMENSIONS = 1024;
 
 export function resolveBaseUrl(options?: EmbeddingOptions): string {
   return options?.baseUrl ?? process.env.EMBEDDING_BASE_URL ?? DEFAULT_BASE_URL;
@@ -19,8 +21,9 @@ export function resolveModel(options?: EmbeddingOptions): string {
 }
 
 export function createEmbeddingClient(options?: EmbeddingOptions): OpenAI {
-  return new OpenAI({
+  const opts = {
     baseURL: resolveBaseUrl(options),
     apiKey: resolveApiKey(options),
-  });
+  }
+  return new OpenAI(opts);
 }
