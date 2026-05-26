@@ -1,6 +1,6 @@
 import { date } from "@/packages/utils/extract";
 import { getAllPostByDateDesc, initYearMonthPostMap } from "@/packages/utils/filter";
-import { mapServerPostToClient, type T_PROPS } from "@/packages/utils/post";
+import { mapServerPostToClient, type TClientPost, type T_PROPS } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 import dayjs from "dayjs";
 
@@ -51,8 +51,16 @@ export const GET: APIRoute<T_PROPS> = async () => {
         .slice(0, 5)
         .map((item) => item.post);
     let posts = await mapServerPostToClient(selectedMonthPosts)
-    const hPostWithCover = posts.filter(p => p.data.cover).sort((a, b) => Number(a.date) - Number(b.date))
-    const hPostNoCover = posts.filter(p => !p.data.cover).sort((a, b) => Number(a.date) - Number(b.date))
+    const sortByDateAsc = (a: TClientPost, b: TClientPost) => Number(a.date) - Number(b.date)
+    const isPodcast = (p: TClientPost) => p.data.category === "podcast"
+    const hPostWithCover = posts.filter(p => p.data.cover).sort(sortByDateAsc)
+    const hPostNoCover = posts
+        .filter(p => !p.data.cover)
+        .sort((a, b) => {
+            const podcastOrder = Number(isPodcast(b)) - Number(isPodcast(a))
+            if (podcastOrder !== 0) return podcastOrder
+            return sortByDateAsc(a, b)
+        })
     posts = [...hPostWithCover, ...hPostNoCover]
 
     return new Response(JSON.stringify({ posts }))
