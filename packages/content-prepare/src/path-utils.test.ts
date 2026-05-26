@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { toMetadataFileBasename, toMetadataSlug, toUnixPath } from "./src/path-utils.ts";
+import { toMetadataFileBasename, toMetadataSlug, toUnixPath } from "./path-utils.ts";
 
 describe("toUnixPath", () => {
   test("normalizes separators", () => {
