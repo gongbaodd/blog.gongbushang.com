@@ -25,3 +25,10 @@ tmp
 src/content/blog/
 .pnpm-store/
 .env
+
+# python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/

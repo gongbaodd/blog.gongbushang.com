@@ -13,7 +13,9 @@
     "astro": "astro",
     "clone": "bash ./packages/scripts/clone.sh",
     "content:prepare": "pnpm --filter content-prepare prepare-metadata",
-    "fetch:podcast": "pnpm --filter fetch-podcast fetch-podcast"
+    "fetch:podcast": "pnpm --filter fetch-podcast fetch-podcast",
+    "embedding:sync": "uv sync",
+    "embedding:hello": "uv run --package embedding python -c \"from embedding import get_embedding; print(len(get_embedding('Hello, world!')))\""
   },
   "dependencies": {
     "@astrojs/check": "0.9.4",
