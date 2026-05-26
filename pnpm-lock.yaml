@@ -273,6 +273,9 @@ importers:
       image-metadata:
         specifier: workspace:*
         version: link:../image-metadata
+      post-embedding:
+        specifier: workspace:*
+        version: link:../post-embedding
       utils:
         specifier: workspace:*
         version: link:../utils

@@ -22,6 +22,7 @@ export interface PostMetadataEntry {
     locations?: { latitude: number; longitude: number }[];
     cover?: { url: string; alt?: string };
     colorSet?: { bgColor: string; titleColor: string };
+    embeddings?: number[];
 }
 
 function metadataFileBasename(postId: string): string {

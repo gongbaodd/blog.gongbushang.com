@@ -1,3 +1,5 @@
+import type { EmbeddingOptions } from "post-embedding";
+
 export interface Location {
   latitude: number;
   longitude: number;
@@ -33,6 +35,7 @@ export interface MetadataEntry {
   locations?: Location[];
   cover?: Cover;
   colorSet?: ColorSet;
+  embeddings?: number[];
 }
 
 export interface CollectMetadataOptions {
@@ -40,4 +43,5 @@ export interface CollectMetadataOptions {
   outputDir: string;
   traceDir: string;
   googleApiKey?: string;
+  embeddingOptions?: EmbeddingOptions;
 }

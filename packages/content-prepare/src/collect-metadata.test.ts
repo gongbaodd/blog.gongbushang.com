@@ -19,13 +19,33 @@ vi.mock("image-metadata", () => ({
   getColorSet: vi.fn(),
 }));
 
+vi.mock("post-embedding", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("post-embedding")>();
+  return {
+    ...actual,
+    isEmbeddingServerRunning: vi.fn(),
+    getEmbedding: vi.fn(),
+  };
+});
+
 import { collectMetadata } from "./collect-metadata.ts";
 import { geocodeCities } from "./geocode.ts";
 import { getColorSet } from "image-metadata";
+import {
+  EMBEDDING_DIMENSIONS,
+  getEmbedding,
+  isEmbeddingServerRunning,
+} from "post-embedding";
 import type { MetadataEntry } from "./types.ts";
 
 const geocodeCitiesMock = geocodeCities as Mock;
 const getColorSetMock = getColorSet as Mock;
+const isEmbeddingServerRunningMock = isEmbeddingServerRunning as Mock;
+const getEmbeddingMock = getEmbedding as Mock;
+
+function mockEmbeddingVector(length = EMBEDDING_DIMENSIONS): number[] {
+  return Array.from({ length }, (_, index) => index / length);
+}
 
 let tmpRoot = "";
 let docsDir = "";
@@ -59,6 +79,8 @@ describe("collectMetadata", () => {
       bgColor: "#111111",
       titleColor: "#eeeeee",
     });
+    isEmbeddingServerRunningMock.mockResolvedValue(true);
+    getEmbeddingMock.mockResolvedValue(mockEmbeddingVector());
 
     vi.spyOn(console, "log").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -104,8 +126,28 @@ cover:
       bgColor: "#111111",
       titleColor: "#eeeeee",
     });
+    expect(entry.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
     expect(geocodeCitiesMock).toHaveBeenCalled();
     expect(getColorSetMock).toHaveBeenCalled();
+    expect(getEmbeddingMock).toHaveBeenCalled();
+  });
+
+  test("throws when embedding server is not running", async () => {
+    isEmbeddingServerRunningMock.mockResolvedValue(false);
+
+    await writePost(
+      "2024/01/07/offline.md",
+      `---
+category: blog
+---
+
+# Offline
+`,
+    );
+
+    await expect(
+      collectMetadata({ docsDir, outputDir, traceDir }),
+    ).rejects.toThrow("Embedding server is not running");
   });
 
   test("skips posts whose content hash is unchanged", async () => {
@@ -171,7 +213,38 @@ cover:
       titleColor: "#eeeeee",
     });
     expect(entry.title).toBe("Cover updated");
+    expect(entry.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
     expect(getColorSetMock).not.toHaveBeenCalled();
+    expect(getEmbeddingMock).toHaveBeenCalled();
+  });
+
+  test("backfills embeddings when hash is unchanged but embeddings are missing", async () => {
+    const content = `---
+category: blog
+---
+
+# Stable
+`;
+    await writePost("2024/01/08/embed-backfill.md", content);
+    await collectMetadata({ docsDir, outputDir, traceDir });
+    const first = await readMetadata("2024/01/08/embed-backfill");
+
+    await fs.writeFile(
+      path.join(outputDir, "2024-01-08-embed-backfill.json"),
+      JSON.stringify({
+        ...first,
+        embeddings: undefined,
+      }),
+      "utf-8",
+    );
+
+    getEmbeddingMock.mockClear();
+
+    await collectMetadata({ docsDir, outputDir, traceDir });
+    const second = await readMetadata("2024/01/08/embed-backfill");
+
+    expect(second.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
+    expect(getEmbeddingMock).toHaveBeenCalled();
   });
 
   test("backfills data fields without re-geocoding when hash is unchanged", async () => {
@@ -215,8 +288,10 @@ cover:
       bgColor: "#111111",
       titleColor: "#eeeeee",
     });
+    expect(entry.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
     expect(geocodeCitiesMock).not.toHaveBeenCalled();
     expect(getColorSetMock).not.toHaveBeenCalled();
+    expect(getEmbeddingMock).toHaveBeenCalled();
   });
 
   test("loads legacy metadata.json and removes orphaned per-post files", async () => {

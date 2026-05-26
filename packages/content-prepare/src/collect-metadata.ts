@@ -4,11 +4,13 @@ import path from "node:path";
 import matter from "gray-matter";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
+import { isEmbeddingServerRunning } from "post-embedding";
 import {
   buildSeriesNameMap,
   extractDataFields,
   type FrontmatterData,
 } from "./data-field.ts";
+import { embedMetadata } from "./embedding.ts";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
 import type {
@@ -26,6 +28,10 @@ function metadataFilePath(outputDir: string, slug: string): string {
 
 function hasDataFields(entry: MetadataEntry | undefined): boolean {
   return Boolean(entry?.id && entry.content != null);
+}
+
+function hasEmbeddings(entry: MetadataEntry | undefined): boolean {
+  return Array.isArray(entry?.embeddings) && entry.embeddings.length > 0;
 }
 
 async function loadExistingMetadata(
@@ -140,8 +146,17 @@ async function writeMetadataEntry(
 export async function collectMetadata(
   options: CollectMetadataOptions,
 ): Promise<void> {
-  const { docsDir, outputDir, traceDir, googleApiKey } = options;
+  const { docsDir, outputDir, traceDir, googleApiKey, embeddingOptions } =
+    options;
   const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
+
+  const embeddingServerRunning =
+    await isEmbeddingServerRunning(embeddingOptions);
+  if (!embeddingServerRunning) {
+    throw new Error(
+      "Embedding server is not running. Start LM Studio (or set EMBEDDING_BASE_URL) and ensure the embedding model is loaded.",
+    );
+  }
 
   await fs.mkdir(outputDir, { recursive: true });
 
@@ -159,7 +174,7 @@ export async function collectMetadata(
     const old = oldData[relPath];
     const hashUnchanged = old?.hash === contentHash;
 
-    if (hashUnchanged && hasDataFields(old)) {
+    if (hashUnchanged && hasDataFields(old) && hasEmbeddings(old)) {
       continue;
     }
 
@@ -175,6 +190,7 @@ export async function collectMetadata(
         ...old,
         ...dataFields,
       };
+      merged.embeddings = await embedMetadata(merged, embeddingOptions);
       await writeMetadataEntry(outputDir, merged);
       changedCount++;
       console.log(`✅ Backfilled data fields: ${relPath}`);
@@ -215,6 +231,8 @@ export async function collectMetadata(
         merged.colorSet = old.colorSet;
       }
     }
+
+    merged.embeddings = await embedMetadata(merged, embeddingOptions);
 
     await writeMetadataEntry(outputDir, merged);
     changedCount++;
