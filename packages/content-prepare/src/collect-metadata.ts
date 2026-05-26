@@ -154,7 +154,7 @@ export async function collectMetadata(
     await isEmbeddingServerRunning(embeddingOptions);
   if (!embeddingServerRunning) {
     throw new Error(
-      "Embedding server is not running. Start LM Studio (or set EMBEDDING_BASE_URL) and ensure the embedding model is loaded.",
+      "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.",
     );
   }
 
