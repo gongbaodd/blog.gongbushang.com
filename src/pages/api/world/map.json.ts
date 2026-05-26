@@ -19,7 +19,7 @@ export const GET: APIRoute<T_PROPS> = async () => {
         const [post, ..._] = [...postSet];
         const file = post.id;
         const meta = metaData?.find((d) => d.file === file);
-        if (meta) {
+        if (meta?.city && meta.locations) {
             const index = meta.city.map((c) => citySlug(c)).indexOf(city);
             if (index > -1) {
                 const location = meta.locations[index];

@@ -15,6 +15,7 @@ export interface ColorSet {
 
 export interface MetadataEntry {
   file: string;
+  hash: string;
   city?: string[];
   locations?: Location[];
   cover?: Cover;
@@ -23,7 +24,7 @@ export interface MetadataEntry {
 
 export interface CollectMetadataOptions {
   docsDir: string;
-  outputFile: string;
+  outputDir: string;
   traceDir: string;
   googleApiKey?: string;
 }

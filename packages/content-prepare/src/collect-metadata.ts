@@ -1,10 +1,11 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import matter from "gray-matter";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
 import { geocodeCities } from "./geocode.ts";
-import { toMetadataSlug } from "./path-utils.ts";
+import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
 import type {
   CollectMetadataOptions,
   MetadataEntry,
@@ -13,6 +14,44 @@ import type {
 interface FrontmatterData {
   city?: string | string[];
   cover?: { url: string; alt?: string };
+}
+
+function hashContent(content: string): string {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+function metadataFilePath(outputDir: string, slug: string): string {
+  return path.join(outputDir, toMetadataFileBasename(slug));
+}
+
+async function loadExistingMetadata(
+  outputDir: string,
+  legacyJsonPath: string,
+): Promise<Record<string, MetadataEntry>> {
+  const oldData: Record<string, MetadataEntry> = {};
+
+  try {
+    const raw = await fs.readFile(legacyJsonPath, "utf-8");
+    const arr = JSON.parse(raw) as MetadataEntry[];
+    for (const item of arr) {
+      oldData[item.file] = item;
+    }
+  } catch {
+    // no legacy metadata.json
+  }
+
+  try {
+    const files = await fs.readdir(outputDir);
+    for (const file of files.filter((f) => f.endsWith(".json"))) {
+      const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
+      const entry = JSON.parse(raw) as MetadataEntry;
+      oldData[entry.file] = entry;
+    }
+  } catch {
+    // metadata dir does not exist yet
+  }
+
+  return oldData;
 }
 
 async function processLocation(
@@ -52,79 +91,93 @@ async function processCover(
 export async function collectMetadata(
   options: CollectMetadataOptions,
 ): Promise<void> {
-  const { docsDir, outputFile, traceDir, googleApiKey } = options;
+  const { docsDir, outputDir, traceDir, googleApiKey } = options;
+  const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
+
+  await fs.mkdir(outputDir, { recursive: true });
+
+  const oldData = await loadExistingMetadata(outputDir, legacyJsonPath);
   const files = await fg("**/*.md", { cwd: docsDir, absolute: true });
-
-  let oldData: Record<string, MetadataEntry> = {};
-  try {
-    const raw = await fs.readFile(outputFile, "utf-8");
-    const arr = JSON.parse(raw) as MetadataEntry[];
-    oldData = Object.fromEntries(arr.map((item) => [item.file, item]));
-  } catch {
-    console.log("ℹ️ No existing metadata.json found, starting fresh.");
-  }
-
-  const results = Object.values(oldData);
-  const indexByFile = Object.fromEntries(
-    results.map((item, idx) => [item.file, idx]),
-  );
+  const activeSlugs = new Set<string>();
+  let changedCount = 0;
 
   for (const file of files) {
     try {
       const raw = await fs.readFile(file, "utf-8");
+      const contentHash = hashContent(raw);
       const { data } = matter(raw);
       const frontmatter = data as FrontmatterData;
       const relPath = toMetadataSlug(path.relative(docsDir, file));
+      activeSlugs.add(relPath);
       const old = oldData[relPath];
-      const locationPart = await processLocation(
-        frontmatter,
-        old,
-        googleApiKey,
-      );
-      const coverPart = await processCover(
-        frontmatter,
-        old,
-        file,
-        relPath,
-        traceDir,
-      );
 
-      let didChange = false;
-      if (locationPart || coverPart || !old) {
-        const merged: MetadataEntry = old ? { ...old } : { file: relPath };
+      if (old?.hash === contentHash) {
+        continue;
+      }
+
+      const merged: MetadataEntry = { file: relPath, hash: contentHash };
+
+      if (frontmatter.city) {
+        const locationPart = await processLocation(
+          frontmatter,
+          old,
+          googleApiKey,
+        );
         if (locationPart) {
           merged.city = locationPart.city;
           merged.locations = locationPart.locations;
         }
+      }
+
+      if (frontmatter.cover?.url) {
+        const coverPart = await processCover(
+          frontmatter,
+          old,
+          file,
+          relPath,
+          traceDir,
+        );
         if (coverPart) {
           merged.cover = coverPart.cover;
           merged.colorSet = coverPart.colorSet;
-        }
-
-        const idx = indexByFile[relPath];
-        if (typeof idx === "number") {
-          const before = JSON.stringify(results[idx]);
-          const after = JSON.stringify(merged);
-          if (before !== after) {
-            results[idx] = merged;
-            didChange = true;
-          }
-        } else {
-          indexByFile[relPath] = results.length;
-          results.push(merged);
-          didChange = true;
+        } else if (old?.cover?.url === frontmatter.cover.url) {
+          merged.cover = old.cover;
+          merged.colorSet = old.colorSet;
         }
       }
 
-      if (didChange) {
-        console.log(`✅ Processed: ${relPath}`);
-      }
+      const outPath = metadataFilePath(outputDir, relPath);
+      await fs.writeFile(outPath, JSON.stringify(merged, null, 2), "utf-8");
+      changedCount++;
+      console.log(`✅ Processed: ${relPath}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`❌ Error parsing ${file}:`, message);
     }
   }
 
-  await fs.writeFile(outputFile, JSON.stringify(results, null, 2), "utf-8");
-  console.log(`\n📦 Metadata updated in ${outputFile}`);
+  try {
+    const existing = await fs.readdir(outputDir);
+    for (const file of existing.filter((f) => f.endsWith(".json"))) {
+      const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
+      const entry = JSON.parse(raw) as MetadataEntry;
+      if (!activeSlugs.has(entry.file)) {
+        await fs.unlink(path.join(outputDir, file));
+        console.log(`🗑️ Removed orphaned metadata: ${entry.file}`);
+      }
+    }
+  } catch {
+    // ignore cleanup errors
+  }
+
+  try {
+    await fs.unlink(legacyJsonPath);
+    console.log("ℹ️ Removed legacy metadata.json");
+  } catch {
+    // legacy file not present
+  }
+
+  console.log(
+    `\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`,
+  );
 }

@@ -80,7 +80,7 @@ export {
 export {
   CONTENT_GENERATED_DIR,
   POST_COVER_DIR,
-  POST_METADATA_JSON,
+  POST_METADATA_DIR,
   PODCAST_COVER_DIR,
   PODCAST_JSON,
 } from "./config.js";

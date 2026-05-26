@@ -3,7 +3,7 @@ import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as
 import { memoize } from "es-toolkit";
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
-import { POST_COVER_DIR, POST_METADATA_JSON } from "../consts/config.js";
+import { POST_COVER_DIR, POST_METADATA_DIR } from "../consts/config.js";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
@@ -11,18 +11,41 @@ import { md2txt } from "./md2txt";
 
 export interface PostMetadataEntry {
     file: string;
-    city: string[];
-    locations: { latitude: number; longitude: number }[];
+    hash: string;
+    city?: string[];
+    locations?: { latitude: number; longitude: number }[];
     colorSet?: { bgColor: string; titleColor: string };
+}
+
+function metadataFileBasename(postId: string): string {
+    return `${postId.replaceAll("/", "-")}.json`;
+}
+
+export function readPostMetadataEntry(postId: string): PostMetadataEntry | undefined {
+    try {
+        const metadataPath = path.join(
+            process.cwd(),
+            POST_METADATA_DIR,
+            metadataFileBasename(postId),
+        );
+        if (!fs.existsSync(metadataPath)) return undefined;
+        return JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry;
+    } catch {
+        return undefined;
+    }
 }
 
 export function readPostMetadata(): PostMetadataEntry[] | undefined {
     try {
-        const metadataPath = path.join(process.cwd(), POST_METADATA_JSON);
-        if (!fs.existsSync(metadataPath)) return undefined;
-        return JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry[];
+        const metadataDir = path.join(process.cwd(), POST_METADATA_DIR);
+        if (!fs.existsSync(metadataDir)) return undefined;
+        const files = fs.readdirSync(metadataDir).filter((f) => f.endsWith(".json"));
+        return files.map((file) => {
+            const raw = fs.readFileSync(path.join(metadataDir, file), "utf-8");
+            return JSON.parse(raw) as PostMetadataEntry;
+        });
     } catch (error) {
-        console.warn("Could not read metadata.json:", error);
+        console.warn("Could not read post metadata:", error);
         return undefined;
     }
 }
@@ -149,8 +172,7 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
     }
 
     try {
-        const metadata = readPostMetadata();
-        const matchingEntry = metadata?.find((entry) => entry.file === post.id);
+        const matchingEntry = readPostMetadataEntry(post.id);
 
         if (matchingEntry?.colorSet) {
             const trace = readPostCoverSvg(post.id);
@@ -161,7 +183,7 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
             }
         }
     } catch (error) {
-        console.warn('Could not read metadata.json, falling back to color generation:', error);
+        console.warn('Could not read post metadata, falling back to color generation:', error);
     }
 
 

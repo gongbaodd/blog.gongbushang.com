@@ -1,6 +1,6 @@
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { toMetadataSlug, toUnixPath } from "./src/path-utils.ts";
+import { toMetadataFileBasename, toMetadataSlug, toUnixPath } from "./src/path-utils.ts";
 
 describe("toUnixPath", () => {
   test("normalizes separators", () => {
@@ -21,5 +21,13 @@ describe("toMetadataSlug", () => {
 
   test("collapses slashes and trims hyphens", () => {
     expect(toMetadataSlug("--foo//bar--.md")).toBe("foo/bar");
+  });
+});
+
+describe("toMetadataFileBasename", () => {
+  test("maps post slug to metadata filename", () => {
+    expect(toMetadataFileBasename("2015/04/12/apocalypse-of-the-bohai-sea")).toBe(
+      "2015-04-12-apocalypse-of-the-bohai-sea.json",
+    );
   });
 });

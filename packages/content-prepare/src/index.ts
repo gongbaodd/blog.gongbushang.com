@@ -5,7 +5,7 @@ export {
   resolveCollectOptions,
   runCli,
 } from "./cli.ts";
-export { toMetadataSlug, toUnixPath } from "./path-utils.ts";
+export { toMetadataFileBasename, toMetadataSlug, toUnixPath } from "./path-utils.ts";
 export type {
   CollectMetadataOptions,
   Cover,

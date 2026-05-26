@@ -2,7 +2,7 @@
 name: generated-content
 description: >-
   Post cover metadata, SVG traces, and podcast generated data for this blog.
-  Use when working with metadata.json, podcast.json, cover SVGs, content-prepare,
+  Use when working with metadata/, podcast.json, cover SVGs, content-prepare,
   fetch-podcast, post card colorization, world map geodata, or paths under
   src/content/generated/.
 ---
@@ -17,7 +17,7 @@ Generated artifacts live under `src/content/generated/` inside the `src/content`
 src/content/
 ├── _docs/                    # source blog posts (not generated)
 └── generated/
-    ├── metadata.json         # post metadata (city, geocode, colorSet)
+    ├── metadata/               # per-post metadata JSON (city, geocode, colorSet, hash)
     ├── podcast.json          # podcast RSS feed snapshot
     ├── cover/                # post cover SVG traces
     └── podcast/              # podcast episode SVG traces
@@ -30,7 +30,7 @@ All paths are defined in [`packages/consts/config.js`](../../../packages/consts/
 | Constant | Path |
 |----------|------|
 | `CONTENT_GENERATED_DIR` | `src/content/generated` |
-| `POST_METADATA_JSON` | `src/content/generated/metadata.json` |
+| `POST_METADATA_DIR` | `src/content/generated/metadata/` |
 | `POST_COVER_DIR` | `src/content/generated/cover` |
 | `PODCAST_JSON` | `src/content/generated/podcast.json` |
 | `PODCAST_COVER_DIR` | `src/content/generated/podcast` |
@@ -44,7 +44,7 @@ Re-exported from `@/packages/consts`. **Never hardcode these paths elsewhere.**
 
 | Package | Command | Output |
 |---------|---------|--------|
-| `content-prepare` | `pnpm content:prepare` | `metadata.json` + `cover/*.svg` |
+| `content-prepare` | `pnpm content:prepare` | `metadata/*.json` + `cover/*.svg` |
 | `fetch-podcast` | `pnpm fetch:podcast` | `podcast.json` + `podcast/*.svg` |
 
 Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and write SVG edge traces. JSON stores `colorSet` (bg/title colors); SVG content is stored separately on disk.
@@ -53,7 +53,9 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 
 - Input: `src/content/_docs/**/*.md` frontmatter (`city`, `cover`)
 - Geocodes cities via `GOOGLE_API_KEY`
-- Writes `MetadataEntry[]` to `metadata.json` keyed by post slug (`file` field = post id)
+- Writes one `MetadataEntry` JSON per post under `metadata/` (basename mirrors cover SVG naming)
+- Each entry includes a SHA-256 `hash` of the source markdown; unchanged posts are skipped
+- `file` field = post id (slug under `_docs/`)
 - Generates cover SVG when cover URL is new/changed
 
 ### Podcast data (`fetch-podcast`)
@@ -70,11 +72,13 @@ Do **not** read generated files with inline `fs`/`path` in pages or API routes. 
 
 ```ts
 readPostMetadata(): PostMetadataEntry[] | undefined
+readPostMetadataEntry(postId: string): PostMetadataEntry | undefined
 readPostCoverSvg(postId: string): string | undefined
 ```
 
-- `PostMetadataEntry`: `{ file, city, locations, colorSet? }`
-- SVG filename: `{postId with / → -}.svg` (e.g. `2017-01-26-dalian-modern-museum.svg`)
+- `PostMetadataEntry`: `{ file, hash, city?, locations?, colorSet? }`
+- Metadata filename: `{postId with / → -}.json` (e.g. `2017-01-26-dalian-modern-museum.json`)
+- Cover SVG filename: `{postId with / → -}.svg` (e.g. `2017-01-26-dalian-modern-museum.svg`)
 
 Used by `colorizePost()` (post card styling) and `src/pages/api/world/map.json.ts`.
 
@@ -94,7 +98,7 @@ mapPodcastEpisodesToPosts(): T_PROPS[]       // maps to post shape for filters
 
 ```mermaid
 flowchart LR
-  JSON[metadata.json / podcast.json] --> Reader[readPostMetadata / readPodcastData]
+  JSON[metadata/*.json / podcast.json] --> Reader[readPostMetadata / readPodcastData]
   SVG[cover/ or podcast/ SVG] --> Reader2[readPostCoverSvg / readPodcastCoverSvg]
   Reader --> Transform[colorizePost / processPodcastEpisodes]
   Reader2 --> Transform

@@ -13,3 +13,8 @@ export function toMetadataSlug(relativePath: string): string {
     .replace(/^-+/, "")
     .replace(/-+$/, "");
 }
+
+/** Basename for per-post metadata JSON (matches cover SVG naming). */
+export function toMetadataFileBasename(slug: string): string {
+  return `${slug.replaceAll("/", "-")}.json`;
+}
