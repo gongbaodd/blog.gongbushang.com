@@ -16,6 +16,10 @@ When writing or running tests, use the project skill for Vitest:
 
 - **Vitest (testing)**: [.agent/skills/vitest-testing/SKILL.md](.agent/skills/vitest-testing/SKILL.md) — Vitest setup, test API (`test`/`describe`/`expect`), config (Vite shared), CLI, mocking (`vi`), snapshots, coverage.
 
+When working with generated post covers, metadata, podcast data, or the `content-prepare` / `fetch-podcast` pipelines:
+
+- **Generated content**: [.agent/skills/generated-content/SKILL.md](.agent/skills/generated-content/SKILL.md) — paths in `packages/consts/config.js`, reader functions in `packages/utils/post.ts` and `packages/utils/podcast.ts`, SVG trace layout under `src/content/generated/`.
+
 ## Project Overview
 
 This is an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).
@@ -73,7 +77,7 @@ src/
 ├── components/     # React/Astro components
 ├── pages/          # Astro pages and API routes
 ├── stores/         # Nanostores state management
-├── content/        # Blog content (MDX)
+├── content/        # Blog content submodule (_docs source + generated/ artifacts)
 packages/           # Workspace packages
 ├── shadcn/         # UI component library
 ├── react/          # Shared React utilities
