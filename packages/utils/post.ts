@@ -1,19 +1,26 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import { date as dateFrom, title as titleFrom, category as categoryFrom, tags as tagsFrom, series as seriesFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
-import { memoize } from "es-toolkit";
+import { date as dateFrom, title as titleFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import { POST_COVER_DIR, POST_METADATA_DIR } from "../consts/config.js";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
-import { md2txt } from "./md2txt";
 
 export interface PostMetadataEntry {
     file: string;
     hash: string;
+    id: string;
+    href: string;
+    title: string;
+    date: string;
+    content: string;
+    category: TLink;
+    tags: TLink[];
+    series?: TLink;
     city?: string[];
     locations?: { latitude: number; longitude: number }[];
+    cover?: { url: string; alt?: string };
     colorSet?: { bgColor: string; titleColor: string };
 }
 
@@ -89,20 +96,6 @@ type T_EXT = {
 }
 type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
 
-export async function mapServerPostToJSON(post: T_PROPS) {
-    return {
-        id: post.id,
-        href: `/${post.data.category}/${post.id}`,
-        title: await titleFrom(post),
-        date: dateFrom(post),
-        content: await md2txt(post.body ?? ""),
-        category: categoryFrom(post),
-        tags: tagsFrom(post),
-        series: await seriesFrom(post),
-        city: post.data.city,
-    } as IPost
-}
-
 type Unpromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
 export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
 
@@ -125,16 +118,21 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
 }
 
 
-let posts: IPost[]
-
-export async function getAllClientPostsForSearch() {
-    const _posts = await getAllPosts()
-    const memMap = memoize(() => {
-        const ps = _posts.map(async (post) => mapServerPostToJSON(post))
-        return ps
-    }, { getCacheKey: () => _posts.length.toString() })
-    posts = await Promise.all(memMap())
-    return posts
+export async function getAllClientPostsForSearch(): Promise<IPost[]> {
+    const entries = readPostMetadata() ?? [];
+    return entries
+        .map((entry) => ({
+            id: entry.id,
+            href: entry.href,
+            title: entry.title,
+            date: new Date(entry.date),
+            content: entry.content,
+            category: entry.category,
+            tags: entry.tags,
+            series: entry.series,
+            city: entry.city,
+        }))
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
 export async function getAllPosts() {

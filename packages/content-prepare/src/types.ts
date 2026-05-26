@@ -13,9 +13,22 @@ export interface ColorSet {
   titleColor: string;
 }
 
+export interface Link {
+  label: string;
+  href: string;
+}
+
 export interface MetadataEntry {
   file: string;
   hash: string;
+  id: string;
+  href: string;
+  title: string;
+  date: string;
+  content: string;
+  category: Link;
+  tags: Link[];
+  series?: Link;
   city?: string[];
   locations?: Location[];
   cover?: Cover;

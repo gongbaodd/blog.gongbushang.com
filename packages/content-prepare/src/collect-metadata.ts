@@ -4,6 +4,11 @@ import path from "node:path";
 import matter from "gray-matter";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
+import {
+  buildSeriesNameMap,
+  extractDataFields,
+  type FrontmatterData,
+} from "./data-field.ts";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
 import type {
@@ -11,17 +16,16 @@ import type {
   MetadataEntry,
 } from "./types.ts";
 
-interface FrontmatterData {
-  city?: string | string[];
-  cover?: { url: string; alt?: string };
-}
-
 function hashContent(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
 function metadataFilePath(outputDir: string, slug: string): string {
   return path.join(outputDir, toMetadataFileBasename(slug));
+}
+
+function hasDataFields(entry: MetadataEntry | undefined): boolean {
+  return Boolean(entry?.id && entry.content != null);
 }
 
 async function loadExistingMetadata(
@@ -88,6 +92,51 @@ async function processCover(
   };
 }
 
+interface ParsedPost {
+  file: string;
+  raw: string;
+  contentHash: string;
+  frontmatter: FrontmatterData;
+  body: string;
+  relPath: string;
+}
+
+async function parsePosts(docsDir: string, files: string[]): Promise<ParsedPost[]> {
+  const parsed: ParsedPost[] = [];
+
+  for (const file of files) {
+    try {
+      const raw = await fs.readFile(file, "utf-8");
+      const contentHash = hashContent(raw);
+      const { data, content: body } = matter(raw);
+      const frontmatter = data as FrontmatterData;
+      const relPath = toMetadataSlug(path.relative(docsDir, file));
+
+      parsed.push({
+        file,
+        raw,
+        contentHash,
+        frontmatter,
+        body,
+        relPath,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`❌ Error parsing ${file}:`, message);
+    }
+  }
+
+  return parsed;
+}
+
+async function writeMetadataEntry(
+  outputDir: string,
+  merged: MetadataEntry,
+): Promise<void> {
+  const outPath = metadataFilePath(outputDir, merged.file);
+  await fs.writeFile(outPath, JSON.stringify(merged, null, 2), "utf-8");
+}
+
 export async function collectMetadata(
   options: CollectMetadataOptions,
 ): Promise<void> {
@@ -98,62 +147,78 @@ export async function collectMetadata(
 
   const oldData = await loadExistingMetadata(outputDir, legacyJsonPath);
   const files = await fg("**/*.md", { cwd: docsDir, absolute: true });
-  const activeSlugs = new Set<string>();
+  const parsedPosts = await parsePosts(docsDir, files);
+  const seriesNameMap = buildSeriesNameMap(
+    parsedPosts.map(({ frontmatter }) => frontmatter),
+  );
+  const activeSlugs = new Set(parsedPosts.map((post) => post.relPath));
   let changedCount = 0;
 
-  for (const file of files) {
-    try {
-      const raw = await fs.readFile(file, "utf-8");
-      const contentHash = hashContent(raw);
-      const { data } = matter(raw);
-      const frontmatter = data as FrontmatterData;
-      const relPath = toMetadataSlug(path.relative(docsDir, file));
-      activeSlugs.add(relPath);
-      const old = oldData[relPath];
+  for (const post of parsedPosts) {
+    const { file, contentHash, frontmatter, body, relPath } = post;
+    const old = oldData[relPath];
+    const hashUnchanged = old?.hash === contentHash;
 
-      if (old?.hash === contentHash) {
-        continue;
-      }
-
-      const merged: MetadataEntry = { file: relPath, hash: contentHash };
-
-      if (frontmatter.city) {
-        const locationPart = await processLocation(
-          frontmatter,
-          old,
-          googleApiKey,
-        );
-        if (locationPart) {
-          merged.city = locationPart.city;
-          merged.locations = locationPart.locations;
-        }
-      }
-
-      if (frontmatter.cover?.url) {
-        const coverPart = await processCover(
-          frontmatter,
-          old,
-          file,
-          relPath,
-          traceDir,
-        );
-        if (coverPart) {
-          merged.cover = coverPart.cover;
-          merged.colorSet = coverPart.colorSet;
-        } else if (old?.cover?.url === frontmatter.cover.url) {
-          merged.cover = old.cover;
-          merged.colorSet = old.colorSet;
-        }
-      }
-
-      const outPath = metadataFilePath(outputDir, relPath);
-      await fs.writeFile(outPath, JSON.stringify(merged, null, 2), "utf-8");
-      changedCount++;
-      console.log(`✅ Processed: ${relPath}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`❌ Error parsing ${file}:`, message);
+    if (hashUnchanged && hasDataFields(old)) {
+      continue;
     }
+
+    const dataFields = await extractDataFields(
+      relPath,
+      frontmatter,
+      body,
+      seriesNameMap,
+    );
+
+    if (hashUnchanged && old) {
+      const merged: MetadataEntry = {
+        ...old,
+        ...dataFields,
+      };
+      await writeMetadataEntry(outputDir, merged);
+      changedCount++;
+      console.log(`✅ Backfilled data fields: ${relPath}`);
+      continue;
+    }
+
+    const merged: MetadataEntry = {
+      file: relPath,
+      hash: contentHash,
+      ...dataFields,
+    };
+
+    if (frontmatter.city) {
+      const locationPart = await processLocation(
+        frontmatter,
+        old,
+        googleApiKey,
+      );
+      if (locationPart) {
+        merged.city = locationPart.city;
+        merged.locations = locationPart.locations;
+      }
+    }
+
+    if (frontmatter.cover?.url) {
+      const coverPart = await processCover(
+        frontmatter,
+        old,
+        file,
+        relPath,
+        traceDir,
+      );
+      if (coverPart) {
+        merged.cover = coverPart.cover;
+        merged.colorSet = coverPart.colorSet;
+      } else if (old?.cover?.url === frontmatter.cover.url) {
+        merged.cover = old.cover;
+        merged.colorSet = old.colorSet;
+      }
+    }
+
+    await writeMetadataEntry(outputDir, merged);
+    changedCount++;
+    console.log(`✅ Processed: ${relPath}`);
   }
 
   try {

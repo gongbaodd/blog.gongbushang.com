@@ -1,6 +1,10 @@
 {
     "name": "utils",
     "version": "0.0.1",
+    "type": "module",
+    "exports": {
+        "./md2txt": "./md2txt.ts"
+    },
     "dependencies": {
         "@types/mdast": "^4.0.4",
         "fs": "0.0.1-security",

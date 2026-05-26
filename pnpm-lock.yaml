@@ -273,6 +273,9 @@ importers:
       image-metadata:
         specifier: workspace:*
         version: link:../image-metadata
+      utils:
+        specifier: workspace:*
+        version: link:../utils
     devDependencies:
       tsx:
         specifier: ^4.19.4

@@ -73,6 +73,7 @@ describe("collectMetadata", () => {
     await writePost(
       "2024/01/01/hello-world.md",
       `---
+category: travel
 city: Tokyo
 cover:
   url: ./cover.png
@@ -88,6 +89,12 @@ cover:
     const entry = await readMetadata("2024/01/01/hello-world");
     expect(entry.file).toBe("2024/01/01/hello-world");
     expect(entry.hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(entry.id).toBe("2024/01/01/hello-world");
+    expect(entry.href).toBe("/travel/2024/01/01/hello-world");
+    expect(entry.title).toBe("Hello");
+    expect(entry.content).toContain("Hello");
+    expect(entry.category).toEqual({ label: "travel", href: "/travel" });
+    expect(entry.tags).toEqual([]);
     expect(entry.city).toEqual(["Tokyo"]);
     expect(entry.locations).toEqual([
       { latitude: 35.6762, longitude: 139.6503 },
@@ -103,6 +110,7 @@ cover:
 
   test("skips posts whose content hash is unchanged", async () => {
     const content = `---
+category: blog
 title: Stable
 ---
 
@@ -130,6 +138,7 @@ title: Stable
     await writePost(
       "2024/01/03/with-cover.md",
       `---
+category: blog
 cover:
   url: ./same-cover.png
 ---
@@ -144,6 +153,7 @@ cover:
     await writePost(
       "2024/01/03/with-cover.md",
       `---
+category: blog
 cover:
   url: ./same-cover.png
 ---
@@ -160,11 +170,65 @@ cover:
       bgColor: "#111111",
       titleColor: "#eeeeee",
     });
+    expect(entry.title).toBe("Cover updated");
+    expect(getColorSetMock).not.toHaveBeenCalled();
+  });
+
+  test("backfills data fields without re-geocoding when hash is unchanged", async () => {
+    const content = `---
+category: travel
+city: Tokyo
+cover:
+  url: ./cover.png
+---
+
+# Hello
+`;
+    await writePost("2024/01/06/backfill.md", content);
+    await collectMetadata({ docsDir, outputDir, traceDir, googleApiKey: "key" });
+
+    const hash = (await readMetadata("2024/01/06/backfill")).hash;
+    await fs.writeFile(
+      path.join(outputDir, "2024-01-06-backfill.json"),
+      JSON.stringify({
+        file: "2024/01/06/backfill",
+        hash,
+        city: ["Tokyo"],
+        locations: [{ latitude: 35.6762, longitude: 139.6503 }],
+        cover: { url: "./cover.png" },
+        colorSet: { bgColor: "#111111", titleColor: "#eeeeee" },
+      }),
+      "utf-8",
+    );
+
+    geocodeCitiesMock.mockClear();
+    getColorSetMock.mockClear();
+
+    await collectMetadata({ docsDir, outputDir, traceDir, googleApiKey: "key" });
+    const entry = await readMetadata("2024/01/06/backfill");
+
+    expect(entry.id).toBe("2024/01/06/backfill");
+    expect(entry.title).toBe("Hello");
+    expect(entry.content).toContain("Hello");
+    expect(entry.city).toEqual(["Tokyo"]);
+    expect(entry.colorSet).toEqual({
+      bgColor: "#111111",
+      titleColor: "#eeeeee",
+    });
+    expect(geocodeCitiesMock).not.toHaveBeenCalled();
     expect(getColorSetMock).not.toHaveBeenCalled();
   });
 
   test("loads legacy metadata.json and removes orphaned per-post files", async () => {
-    await writePost("2024/01/04/active.md", "# Active\n");
+    await writePost(
+      "2024/01/04/active.md",
+      `---
+category: blog
+---
+
+# Active
+`,
+    );
 
     const legacyPath = path.join(tmpRoot, "metadata.json");
     await fs.writeFile(
@@ -192,6 +256,8 @@ cover:
     const entry = await readMetadata("2024/01/04/active");
     expect(entry.hash).not.toBe("legacy-hash");
     expect(entry.file).toBe("2024/01/04/active");
+    expect(entry.id).toBe("2024/01/04/active");
+    expect(entry.title).toBe("Active");
 
     await expect(
       fs.access(path.join(outputDir, "2024-01-05-removed.json")),
