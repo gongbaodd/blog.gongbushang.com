@@ -18,9 +18,9 @@ src/content/
 ├── _docs/                    # source blog posts (not generated)
 └── generated/
     ├── metadata/               # per-post metadata JSON (city, geocode, colorSet, hash)
-    ├── podcast.json          # podcast RSS feed snapshot
+    ├── podcast.json          # podcast channel manifest (channel, lastUpdated)
     ├── cover/                # post cover SVG traces
-    └── podcast/              # podcast episode SVG traces
+    └── podcast/              # per-episode JSON + SVG traces
 ```
 
 ## Path constants (single source of truth)
@@ -45,7 +45,7 @@ Re-exported from `@/packages/consts`. **Never hardcode these paths elsewhere.**
 | Package | Command | Output |
 |---------|---------|--------|
 | `content-prepare` | `pnpm content:prepare` | `metadata/*.json` + `cover/*.svg` |
-| `fetch-podcast` | `pnpm fetch:podcast` | `podcast.json` + `podcast/*.svg` |
+| `fetch-podcast` | `pnpm fetch:podcast` | `podcast.json` + `podcast/{id}.json` + `podcast/*.svg` |
 
 Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and write SVG edge traces. JSON stores `colorSet` (bg/title colors); SVG content is stored separately on disk.
 
@@ -62,7 +62,7 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 
 - Input: Anchor RSS feed (default URL in `fetch-podcast.ts`)
 - Only processes **new** episodes; skips write if none
-- Writes `{ channel, episodes, lastUpdated }` to `podcast.json`
+- Writes channel manifest to `podcast.json` and one JSON per episode under `podcast/` (filename = episode `id`, e.g. `Canva-e3jc78i.json`)
 
 ## Reader functions (only access layer for reads)
 
@@ -91,6 +91,7 @@ processPodcastEpisodes(): PodcastEpisode[]   // enriches with trace SVGs
 mapPodcastEpisodesToPosts(): T_PROPS[]       // maps to post shape for filters
 ```
 
+- Episode JSON filename: `{episode.id}.json` (e.g. `Canva-e3jc78i.json`)
 - SVG filename: last URL path segment of episode id (e.g. `787-e2k41n4.svg`)
 - Used by `src/pages/podcast.astro` and podcast filter/card components
 
@@ -98,7 +99,7 @@ mapPodcastEpisodesToPosts(): T_PROPS[]       // maps to post shape for filters
 
 ```mermaid
 flowchart LR
-  JSON[metadata/*.json / podcast.json] --> Reader[readPostMetadata / readPodcastData]
+  JSON[metadata/*.json / podcast.json + podcast/*.json] --> Reader[readPostMetadata / readPodcastData]
   SVG[cover/ or podcast/ SVG] --> Reader2[readPostCoverSvg / readPodcastCoverSvg]
   Reader --> Transform[colorizePost / processPodcastEpisodes]
   Reader2 --> Transform

@@ -32,13 +32,42 @@ const EMPTY_PODCAST_DATA: PodcastData = {
   episodes: [],
 };
 
+function readPodcastEpisodes(): PodcastEpisode[] {
+  const podcastDir = path.join(process.cwd(), PODCAST_COVER_DIR);
+  if (!fs.existsSync(podcastDir)) return [];
+
+  return fs
+    .readdirSync(podcastDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => {
+      const raw = fs.readFileSync(path.join(podcastDir, file), "utf-8");
+      return JSON.parse(raw) as PodcastEpisode;
+    })
+    .sort(
+      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
+    );
+}
+
 export function readPodcastData(): PodcastData {
   try {
     const podcastPath = path.join(process.cwd(), PODCAST_JSON);
     if (!fs.existsSync(podcastPath)) return EMPTY_PODCAST_DATA;
-    return JSON.parse(fs.readFileSync(podcastPath, "utf-8")) as PodcastData;
+
+    const manifest = JSON.parse(
+      fs.readFileSync(podcastPath, "utf-8"),
+    ) as Partial<PodcastData>;
+    const episodes =
+      manifest.episodes && manifest.episodes.length > 0
+        ? manifest.episodes
+        : readPodcastEpisodes();
+
+    return {
+      channel: manifest.channel ?? EMPTY_PODCAST_DATA.channel,
+      episodes,
+      lastUpdated: manifest.lastUpdated,
+    };
   } catch (error) {
-    console.warn("Could not read podcast.json:", error);
+    console.warn("Could not read podcast data:", error);
     return EMPTY_PODCAST_DATA;
   }
 }

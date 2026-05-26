@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import { parseStringPromise } from "xml2js";
 import { getColorSet } from "image-metadata";
 import type {
@@ -126,14 +127,33 @@ async function enrichEpisodesWithColors(
 
 async function loadExistingPodcast(
   outputFile: string,
+  episodeDir: string,
 ): Promise<PodcastData | null> {
   try {
     const raw = await fs.readFile(outputFile, "utf-8");
-    const data = JSON.parse(raw) as PodcastData;
-    if (data.episodes && Array.isArray(data.episodes)) {
-      return data;
+    const manifest = JSON.parse(raw) as Partial<PodcastData>;
+    if (!manifest.channel) return null;
+
+    let episodes: Episode[] = [];
+    if (manifest.episodes && Array.isArray(manifest.episodes)) {
+      episodes = manifest.episodes;
+    } else {
+      const files = await fs.readdir(episodeDir);
+      for (const file of files) {
+        if (!file.endsWith(".json")) continue;
+        const episodeRaw = await fs.readFile(
+          path.join(episodeDir, file),
+          "utf-8",
+        );
+        episodes.push(JSON.parse(episodeRaw) as Episode);
+      }
     }
-    return null;
+
+    return {
+      channel: manifest.channel,
+      episodes,
+      lastUpdated: manifest.lastUpdated,
+    };
   } catch {
     return null;
   }
@@ -163,7 +183,10 @@ export async function fetchAndProcessPodcast(
   );
   console.log(`📻 Found ${rssEpisodes.length} episodes in RSS`);
 
-  const existing = await loadExistingPodcast(options.outputFile);
+  const existing = await loadExistingPodcast(
+    options.outputFile,
+    options.traceDir,
+  );
   const existingIds = existing
     ? new Set(existing.episodes.map((ep) => ep.id))
     : new Set<string>();
@@ -176,7 +199,7 @@ export async function fetchAndProcessPodcast(
     : [];
 
   if (newEpisodes.length === 0) {
-    console.log("✅ No new episodes; podcast.json unchanged.");
+    console.log("✅ No new episodes; podcast data unchanged.");
     return;
   }
 
@@ -189,28 +212,28 @@ export async function fetchAndProcessPodcast(
     traceDir: options.traceDir,
   });
 
-  const mergedEpisodes = rssEpisodes
-    .map((rss : Episode) => {
-      const existingEp = existingEpisodes.find((e) => e.id === rss.id);
-      if (existingEp) return existingEp;
-      const newEp = enrichedNew.find((e) => e.id === rss.id);
-      return newEp;
-    })
-    .filter(Boolean) as Episode[];
-
-  const output: PodcastData = {
+  const manifest = {
     channel: channelData,
-    episodes: mergedEpisodes,
     lastUpdated: new Date().toISOString(),
   };
 
   await fs.writeFile(
     options.outputFile,
-    JSON.stringify(output, null, 2),
+    JSON.stringify(manifest, null, 2),
     "utf-8",
   );
+
+  for (const episode of enrichedNew) {
+    const episodePath = path.join(options.traceDir, `${episode.id}.json`);
+    await fs.writeFile(
+      episodePath,
+      JSON.stringify(episode, null, 2),
+      "utf-8",
+    );
+  }
+
   console.log(
-    `\n✨ Podcast data saved to ${options.outputFile} (${newEpisodes.length} new episode(s) added)`,
+    `\n✨ Podcast manifest saved to ${options.outputFile} (${newEpisodes.length} new episode(s) added)`,
   );
-  console.log(`📁 Trace SVGs saved to ${options.traceDir}/`);
+  console.log(`📁 Episode JSON + trace SVGs saved to ${options.traceDir}/`);
 }
