@@ -4,9 +4,9 @@ use rag_umap::{convert_to_2d_with_config, Umap2dConfig};
 
 /// Keep in sync with `UMAP_2D_CONFIG` in `packages/content-prepare/src/umap-params.ts`.
 const UMAP_2D_CONFIG: Umap2dConfig = Umap2dConfig {
-    n_neighbors: 5,
-    min_dist: 0.01,
-    spread: 2.5,
+    n_neighbors: 20,  
+    min_dist: 0.01, 
+    spread: 1.0,
 };
 
 /// Reduce high-dimensional embeddings to 2D coordinates using UMAP.
