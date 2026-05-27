@@ -1,0 +1,21 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import Header from "@/packages/header/Header.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import UmapComponent from "../components/Umap.tsx";
+---
+
+<Global>
+  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <Header />
+
+  <section>
+    <MantineMain>
+      <UmapComponent client:load />
+      <Footer slug={"umap"} />
+    </MantineMain>
+  </section>
+</Global>
