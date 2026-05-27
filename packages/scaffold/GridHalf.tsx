@@ -6,7 +6,7 @@ export default function GridHalf({left, right}: {left?: ReactNode, right?: React
     return (
         <CustomMantineProvider>
             <Container fluid p={0} style={{ marginInline: "initial" }}>
-                <Grid gutter="xl">
+                <Grid gap="xl">
                     <Grid.Col span={{ base: 12, md: 6 }}>{left}</Grid.Col>
                     <Grid.Col span={{ base: 12, md: 6 }}>{right}</Grid.Col>
                 </Grid>

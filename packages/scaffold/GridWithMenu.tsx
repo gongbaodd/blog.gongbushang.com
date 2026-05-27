@@ -14,7 +14,7 @@ export function GridWithMenu({ menuNode, gridContent, menuCol, contentCol }: IGr
     return (
         <CustomMantineProvider>
             <Container fluid style={{ marginInline: "initial" }} p={0}>
-                <Grid gutter="lg">
+                <Grid gap="lg">
                     <Grid.Col span={menuCol}>
                         {menuNode}
                     </Grid.Col>
