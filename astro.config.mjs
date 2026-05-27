@@ -2,8 +2,6 @@ import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import react from "@astrojs/react";
-import tailwind from "@astrojs/tailwind";
-
 import remarkMath from "remark-math";
 import remarkAttributes from "remark-attributes";
 import rehypeKatex from "rehype-katex";
@@ -24,9 +22,6 @@ export default defineConfig({
     }),
     sitemap(),
     react(),
-    tailwind({
-      applyBaseStyles: false,
-    }),
     mermaid({
       theme: "default",
       autoTheme: true,
