@@ -14,6 +14,8 @@
     "clone": "bash ./packages/scripts/clone.sh",
     "content:prepare": "pnpm --filter content-prepare prepare-metadata",
     "fetch:podcast": "pnpm --filter fetch-podcast fetch-podcast",
+    "umap:build": "cargo build --release --manifest-path packages/umap/Cargo.toml",
+    "umap:test": "cargo test -p umap",
     "embedding:sync": "uv sync",
     "embedding:hello": "uv run --package embedding python -c \"from embedding import get_embedding; print(len(get_embedding('Hello, world!')))\""
   },

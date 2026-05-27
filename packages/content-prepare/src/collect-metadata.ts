@@ -11,6 +11,7 @@ import {
   type FrontmatterData,
 } from "./data-field.ts";
 import { embedMetadata } from "./embedding.ts";
+import { applyUmap2D, UMAP_STATE_FILENAME } from "./apply-umap.ts";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
 import type {
@@ -150,19 +151,27 @@ export async function collectMetadata(
     options;
   const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
 
-  const embeddingServerRunning =
-    await isEmbeddingServerRunning(embeddingOptions);
-  if (!embeddingServerRunning) {
-    throw new Error(
-      "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.",
-    );
-  }
-
   await fs.mkdir(outputDir, { recursive: true });
 
   const oldData = await loadExistingMetadata(outputDir, legacyJsonPath);
   const files = await fg("**/*.md", { cwd: docsDir, absolute: true });
   const parsedPosts = await parsePosts(docsDir, files);
+  const needsEmbedding = parsedPosts.some((post) => {
+    const old = oldData[post.relPath];
+    const hashUnchanged = old?.hash === post.contentHash;
+    return !(hashUnchanged && hasDataFields(old) && hasEmbeddings(old));
+  });
+
+  if (needsEmbedding) {
+    const embeddingServerRunning =
+      await isEmbeddingServerRunning(embeddingOptions);
+    if (!embeddingServerRunning) {
+      throw new Error(
+        "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.",
+      );
+    }
+  }
+
   const seriesNameMap = buildSeriesNameMap(
     parsedPosts.map(({ frontmatter }) => frontmatter),
   );
@@ -241,7 +250,9 @@ export async function collectMetadata(
 
   try {
     const existing = await fs.readdir(outputDir);
-    for (const file of existing.filter((f) => f.endsWith(".json"))) {
+    for (const file of existing.filter(
+      (f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME,
+    )) {
       const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
       const entry = JSON.parse(raw) as MetadataEntry;
       if (!activeSlugs.has(entry.file)) {
@@ -263,4 +274,6 @@ export async function collectMetadata(
   console.log(
     `\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`,
   );
+
+  await applyUmap2D(outputDir);
 }

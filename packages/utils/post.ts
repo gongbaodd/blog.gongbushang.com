@@ -23,6 +23,7 @@ export interface PostMetadataEntry {
     cover?: { url: string; alt?: string };
     colorSet?: { bgColor: string; titleColor: string };
     embeddings?: number[];
+    umap2D?: [number, number];
 }
 
 function metadataFileBasename(postId: string): string {
