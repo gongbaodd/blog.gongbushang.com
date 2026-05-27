@@ -27,7 +27,9 @@ vi.mock("@mantine/charts", () => ({
   }) => (
     <div
       data-testid="scatter-chart"
-      data-count={data?.[0]?.data?.length ?? 0}
+      data-count={
+        data?.reduce((sum, series) => sum + (series.data?.length ?? 0), 0) ?? 0
+      }
     />
   ),
 }));
@@ -45,6 +47,7 @@ const samplePosts: IUmapPost[] = [
     href: "/blog/2024/a",
     title: "Post A",
     date: "2024-01-15",
+    category: { label: "blog", href: "/blog" },
     umap2D: [0.1, 0.2],
   },
 ];
@@ -121,15 +124,18 @@ describe("UmapTooltip", () => {
   beforeEach(mockMatchMedia);
   afterEach(cleanup);
 
-  test("renders linked title and formatted date", () => {
+  test("renders linked title, formatted date, and category", () => {
     renderWithMantine(
       <UmapTooltip
         payload={[
           {
             payload: {
+              x: 0.1,
+              y: 0.2,
               title: "Post A",
               href: "/blog/2024/a",
               date: "2024-01-15",
+              category: "blog",
             },
           },
         ]}
@@ -139,6 +145,7 @@ describe("UmapTooltip", () => {
     const link = screen.getByRole("link", { name: "Post A" });
     expect(link.getAttribute("href")).toBe("/blog/2024/a");
     expect(screen.getByText("2024-01-15")).toBeTruthy();
+    expect(screen.getByText("blog")).toBeTruthy();
   });
 
   test("returns null when payload is missing", () => {

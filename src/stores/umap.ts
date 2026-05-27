@@ -1,10 +1,13 @@
+import { POST_CARD_UNDERLINE_COLORS } from "@/packages/consts/colors.ts";
 import { atom, computed } from "nanostores";
+import type { TLink } from "@/packages/utils/extract";
 
 export interface IUmapPost {
   id: string;
   href: string;
   title: string;
   date: string;
+  category: TLink;
   umap2D: [number, number];
 }
 
@@ -14,6 +17,7 @@ export interface IUmapChartPoint {
   title: string;
   href: string;
   date: string;
+  category: string;
   [key: string]: number | string;
 }
 
@@ -27,20 +31,56 @@ export const $umapPosts = atom<IUmapPost[]>([]);
 export const $umapLoading = atom(false);
 export const $umapError = atom<string | null>(null);
 
+export function cssVarToMantineColor(cssVar: string): string {
+  return cssVar.replace("--mantine-color-", "").replace(/-(\d+)$/, ".$1");
+}
+
+export function categoryToChartColor(
+  sortedCategoryHrefs: string[],
+  categoryHref: string,
+): string {
+  const index = sortedCategoryHrefs.indexOf(categoryHref);
+  const paletteIndex =
+    index >= 0 ? index % POST_CARD_UNDERLINE_COLORS.length : 0;
+  return cssVarToMantineColor(POST_CARD_UNDERLINE_COLORS[paletteIndex]!);
+}
+
 export function buildUmapChartData(posts: IUmapPost[]): IUmapChartSeries[] {
-  return [
-    {
-      name: "Posts",
-      color: "blue.5",
-      data: posts.map((p) => ({
+  if (posts.length === 0) return [];
+
+  const categoriesByHref = new Map<string, TLink>();
+  for (const post of posts) {
+    categoriesByHref.set(post.category.href, post.category);
+  }
+
+  const sortedCategoryHrefs = [...categoriesByHref.keys()].sort();
+  const postsByCategory = new Map<string, IUmapPost[]>();
+
+  for (const post of posts) {
+    const href = post.category.href;
+    const group = postsByCategory.get(href);
+    if (group) {
+      group.push(post);
+    } else {
+      postsByCategory.set(href, [post]);
+    }
+  }
+
+  return sortedCategoryHrefs.map((href) => {
+    const category = categoriesByHref.get(href)!;
+    return {
+      name: category.label,
+      color: categoryToChartColor(sortedCategoryHrefs, href),
+      data: (postsByCategory.get(href) ?? []).map((p) => ({
         x: p.umap2D[0],
         y: p.umap2D[1],
         title: p.title,
         href: p.href,
         date: p.date,
+        category: category.label,
       })),
-    },
-  ];
+    };
+  });
 }
 
 export const $umapChartData = computed($umapPosts, buildUmapChartData);

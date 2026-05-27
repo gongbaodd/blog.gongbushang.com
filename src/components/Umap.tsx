@@ -30,6 +30,9 @@ export function UmapTooltip({ payload }: IUmapTooltipProps) {
         <Text size="xs" c="dimmed">
           {dayjs(point.date).format("YYYY-MM-DD")}
         </Text>
+        <Text size="xs" c="dimmed">
+          {point.category}
+        </Text>
       </Stack>
     </Paper>
   );
@@ -67,6 +70,8 @@ export default function Umap() {
             dataKey={{ x: "x", y: "y" }}
             xAxisLabel="UMAP 1"
             yAxisLabel="UMAP 2"
+            withLegend
+            legendProps={{ verticalAlign: "bottom" }}
             withTooltip
             valueFormatter={(value) => value.toFixed(3)}
             scatterProps={{ r: 3 }}
