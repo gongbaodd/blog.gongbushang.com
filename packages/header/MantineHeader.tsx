@@ -19,14 +19,14 @@ import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 import { Notebook, Folder, Home, Menu, Plane, FlaskConical } from "lucide-react";
 import { useDisclosure } from "@mantine/hooks";
 import { $links, type ILink } from "./store/links";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactElement, type ReactNode } from "react";
 import { navigate } from "astro:transitions/client";
 import { ROUTE_HREF, ROUTE_LABEL, ROUTES } from "../consts";
 import { Carousel as MantineCarousel } from "@mantine/carousel";
 import { $pathnameNormalized } from "./store/pathname";
 import MantineAnchor from "@/src/components/MantineAnchor";
 
-const Icons: Record<string, JSX.Element> = {
+const Icons: Record<string, ReactElement> = {
   [ROUTE_LABEL.Home]: <Home size="16" />,
   [ROUTE_LABEL.Blog]: <Notebook size="16" />,
   [ROUTE_LABEL.Lab]: <FlaskConical size="16" />,
