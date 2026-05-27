@@ -6,23 +6,23 @@ This document provides guidelines for agents working on this codebase.
 
 When working with Astro (pages, components, content collections, or framework integrations), use the project skill for authoritative patterns and links to [astro.build](https://docs.astro.build):
 
-- **Astro**: [.agent/skills/astro-build/SKILL.md](.agent/skills/astro-build/SKILL.md) — pages, routing, `.astro` components, content collections, React/framework components, endpoints.
+- **Astro**: [.agents/skills/astro-build/SKILL.md](.agents/skills/astro-build/SKILL.md) — pages, routing, `.astro` components, content collections, React/framework components, endpoints.
 
 When working with Mantine UI (React components from `@mantine/core`, `@mantine/hooks`, etc.), use the project skill for Mantine patterns and this repo’s Astro adapt layer:
 
-- **Mantine UI**: [.agent/skills/mantine-ui/SKILL.md](.agent/skills/mantine-ui/SKILL.md) — Mantine usage, **CustomMantineProvider** from `@/src/stores/CustomMantineProvider` as the adapt layer (Mantine does not support Astro natively; wrap each React island that uses Mantine with this provider).
+- **Mantine UI**: [.agents/skills/mantine-ui/SKILL.md](.agents/skills/mantine-ui/SKILL.md) — Mantine usage, **CustomMantineProvider** from `@/src/stores/CustomMantineProvider` as the adapt layer (Mantine does not support Astro natively; wrap each React island that uses Mantine with this provider).
 
 When writing or running tests, use the project skill for Vitest:
 
-- **Vitest (testing)**: [.agent/skills/vitest-testing/SKILL.md](.agent/skills/vitest-testing/SKILL.md) — Vitest setup, test API (`test`/`describe`/`expect`), config (Vite shared), CLI, mocking (`vi`), snapshots, coverage.
+- **Vitest (testing)**: [.agents/skills/vitest-testing/SKILL.md](.agents/skills/vitest-testing/SKILL.md) — Vitest setup, test API (`test`/`describe`/`expect`), config (Vite shared), CLI, mocking (`vi`), snapshots, coverage.
 
 When working with generated post covers, metadata, podcast data, or the `content-prepare` / `fetch-podcast` pipelines:
 
-- **Generated content**: [.agent/skills/generated-content/SKILL.md](.agent/skills/generated-content/SKILL.md) — paths in `packages/consts/config.js`, reader functions in `packages/utils/post.ts` and `packages/utils/podcast.ts`, SVG trace layout under `src/content/generated/`.
+- **Generated content**: [.agents/skills/generated-content/SKILL.md](.agents/skills/generated-content/SKILL.md) — paths in `packages/consts/config.js`, reader functions in `packages/utils/post.ts` and `packages/utils/podcast.ts`, SVG trace layout under `src/content/generated/`.
 
 When adding or editing React islands that use WebGL, Three.js, Rapier physics, or maplibre/mapbox canvas:
 
-- **WebGL components**: [.agent/skills/webgl-components/SKILL.md](.agent/skills/webgl-components/SKILL.md) — error boundaries around WebGL subtrees, Rapier WASM Vite config in `astro.config.mjs`, pnpm overrides, dev cache troubleshooting.
+- **WebGL components**: [.agents/skills/webgl-components/SKILL.md](.agents/skills/webgl-components/SKILL.md) — error boundaries around WebGL subtrees, Rapier WASM Vite config in `astro.config.mjs`, pnpm overrides, dev cache troubleshooting.
 
 ## Project Overview
 
@@ -71,7 +71,7 @@ export const $derived = computed($state, v => transform(v));
 
 ### Styling
 - **Tailwind CSS** for utility classes
-- **Mantine** for UI components — wrap any React component that uses Mantine with `CustomMantineProvider` from `@/src/stores/CustomMantineProvider` (see [.agent/skills/mantine-ui/SKILL.md](.agent/skills/mantine-ui/SKILL.md))
+- **Mantine** for UI components — wrap any React component that uses Mantine with `CustomMantineProvider` from `@/src/stores/CustomMantineProvider` (see [.agents/skills/mantine-ui/SKILL.md](.agents/skills/mantine-ui/SKILL.md))
 - **shadcn/ui** components in `@/packages/shadcn/`
 - **CSS Modules** for component-specific styles
 
