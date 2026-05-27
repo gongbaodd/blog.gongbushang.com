@@ -4,6 +4,7 @@ import {
   runUmapBinary,
   type UmapBinaryDeps,
 } from "./run-umap-binary.ts";
+import { UMAP_2D_CONFIG } from "./umap-params.ts";
 
 class MockChild extends EventEmitter {
   stdout = new EventEmitter();
@@ -49,7 +50,10 @@ describe("runUmapBinary", () => {
       expect.objectContaining({ cwd: "/repo" }),
     );
     expect(child.stdin.write).toHaveBeenCalledWith(
-      JSON.stringify({ embeddings: [[0.1, 0.2], [0.3, 0.4]] }),
+      JSON.stringify({
+        embeddings: [[0.1, 0.2], [0.3, 0.4]],
+        config: UMAP_2D_CONFIG,
+      }),
     );
     expect(child.stdin.end).toHaveBeenCalled();
 

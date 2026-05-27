@@ -6,7 +6,7 @@ fn umap_bin() -> Command {
 
 #[test]
 fn valid_json_returns_coordinates() {
-    let input = r#"{"embeddings":[[0,0,0],[1,0,0],[0,1,0],[1,1,0]]}"#;
+    let input = r#"{"embeddings":[[0,0,0],[1,0,0],[0,1,0],[1,1,0]],"config":{"n_neighbors":15,"min_dist":0.1,"spread":1.0}}"#;
 
     umap_bin()
         .write_stdin(input)
@@ -27,7 +27,9 @@ fn invalid_json_exits_with_error() {
 #[test]
 fn empty_embeddings_exits_with_error() {
     umap_bin()
-        .write_stdin(r#"{"embeddings":[]}"#)
+        .write_stdin(
+            r#"{"embeddings":[],"config":{"n_neighbors":15,"min_dist":0.1,"spread":1.0}}"#,
+        )
         .assert()
         .failure()
         .stderr(predicates::str::contains("empty"));

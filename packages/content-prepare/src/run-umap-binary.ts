@@ -2,6 +2,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { access } from "node:fs/promises";
 import path from "node:path";
 import { findRepoRoot } from "./cli.ts";
+import { UMAP_2D_CONFIG } from "./umap-params.ts";
 
 export interface UmapBinaryDeps {
   findRepoRoot: () => Promise<string>;
@@ -78,7 +79,9 @@ export async function runUmapBinary(
       }
     });
 
-    child.stdin.write(JSON.stringify({ embeddings }));
+    child.stdin.write(
+      JSON.stringify({ embeddings, config: UMAP_2D_CONFIG }),
+    );
     child.stdin.end();
   });
 }

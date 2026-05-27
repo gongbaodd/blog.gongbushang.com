@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 
-/** Keep in sync with `UMAP_2D_CONFIG` in `packages/umap/src/lib.rs`. */
+/** UMAP hyperparameters passed to the `umap` Rust binary at runtime. */
 export const UMAP_2D_CONFIG = {
-  n_neighbors: 5,
+  n_neighbors: 20,
   min_dist: 0.01,
   spread: 2.5,
 } as const;
