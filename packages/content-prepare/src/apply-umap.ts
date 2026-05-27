@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runUmap } from "./umap.ts";
+import { computeUmapParamsHash } from "./umap-params.ts";
 import type { MetadataEntry } from "./types.ts";
 
 export const UMAP_STATE_FILENAME = ".umap-state.json";
@@ -14,6 +15,7 @@ interface UmapCorpusEntry {
 interface UmapState {
   inputHash: string;
   count: number;
+  paramsHash: string;
 }
 
 export function computeUmapInputHash(entries: UmapCorpusEntry[]): string {
@@ -118,9 +120,14 @@ export async function applyUmap2D(outputDir: string): Promise<void> {
     embeddings,
   }));
   const inputHash = computeUmapInputHash(corpus);
+  const paramsHash = computeUmapParamsHash();
   const cached = await readUmapState(outputDir);
 
-  if (cached?.inputHash === inputHash && cached.count === embeddedEntries.length) {
+  if (
+    cached?.inputHash === inputHash &&
+    cached.count === embeddedEntries.length &&
+    cached.paramsHash === paramsHash
+  ) {
     console.log("ℹ️ Skipped UMAP: embedding corpus unchanged");
     return;
   }
@@ -142,6 +149,7 @@ export async function applyUmap2D(outputDir: string): Promise<void> {
   await writeUmapState(outputDir, {
     inputHash,
     count: embeddedEntries.length,
+    paramsHash,
   });
 
   console.log(

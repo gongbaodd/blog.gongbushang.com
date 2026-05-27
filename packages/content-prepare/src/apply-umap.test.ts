@@ -21,6 +21,7 @@ import {
   UMAP_STATE_FILENAME,
 } from "./apply-umap.ts";
 import { runUmap } from "./umap.ts";
+import { computeUmapParamsHash } from "./umap-params.ts";
 import type { MetadataEntry } from "./types.ts";
 
 const runUmapMock = runUmap as Mock;
@@ -135,7 +136,7 @@ describe("applyUmap2D", () => {
     );
     await fs.writeFile(
       path.join(outputDir, UMAP_STATE_FILENAME),
-      JSON.stringify({ inputHash, count: 2 }),
+      JSON.stringify({ inputHash, count: 2, paramsHash: computeUmapParamsHash() }),
       "utf-8",
     );
 

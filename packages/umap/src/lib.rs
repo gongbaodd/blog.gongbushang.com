@@ -1,6 +1,13 @@
 //! UMAP dimensionality reduction for post embedding vectors.
 
-use rag_umap::convert_to_2d;
+use rag_umap::{convert_to_2d_with_config, Umap2dConfig};
+
+/// Keep in sync with `UMAP_2D_CONFIG` in `packages/content-prepare/src/umap-params.ts`.
+const UMAP_2D_CONFIG: Umap2dConfig = Umap2dConfig {
+    n_neighbors: 5,
+    min_dist: 0.01,
+    spread: 2.5,
+};
 
 /// Reduce high-dimensional embeddings to 2D coordinates using UMAP.
 pub fn umap_2d(embeddings: &[Vec<f64>]) -> Result<Vec<[f64; 2]>, String> {
@@ -26,7 +33,8 @@ pub fn umap_2d(embeddings: &[Vec<f64>]) -> Result<Vec<[f64; 2]>, String> {
         }
     }
 
-    let result = convert_to_2d(embeddings.to_vec()).map_err(|error| error.to_string())?;
+    let result = convert_to_2d_with_config(embeddings.to_vec(), UMAP_2D_CONFIG)
+        .map_err(|error| error.to_string())?;
 
     let coordinates: Vec<[f64; 2]> = result
         .into_iter()

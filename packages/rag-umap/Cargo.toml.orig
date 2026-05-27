@@ -1,0 +1,16 @@
+[package]
+name = "rag-umap"
+version = "0.0.0"
+edition = "2024"
+authors = ["Richard Anaya"]
+license = "MIT"
+description = "A simple Rust implementation of UMAP for dimensionality reduction"
+repository = "https://github.com/richardanaya/rag-umap"
+
+[dependencies]
+ndarray = "0.15"
+rand = "0.8"
+nalgebra = "0.32"
+rayon = "1.8"
+thiserror = "1.0"
+num-traits = "0.2"
