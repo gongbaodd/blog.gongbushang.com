@@ -186,7 +186,7 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
     }
 
 
-    return {...post}
+    return post as T_EXT_POST
 }
 
 

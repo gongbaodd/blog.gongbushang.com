@@ -119,8 +119,9 @@ export function mapPodcastEpisodesToPosts(): T_PROPS[] {
 
   return episodes.map((episode) => ({
     id: episode.id,
-    collection: "blog",
+    collection: "blog" as const,
     data: {
+      type: "post" as const,
       title: episode.title,
       category: "podcast",
       description: episode.description || episode.summary || "",
@@ -134,5 +135,5 @@ export function mapPodcastEpisodesToPosts(): T_PROPS[] {
       trace: episode.trace,
       body: episode.description || episode.summary || "",
     },
-  }));
+  })) as T_PROPS[];
 }

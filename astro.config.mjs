@@ -67,6 +67,10 @@ export default defineConfig({
     },
     resolve: {
       alias: {
+        "react-plock": path.resolve(
+          import.meta.dirname,
+          "node_modules/react-plock/dist/index.es.js",
+        ),
         "onnxruntime-node": path.resolve(import.meta.dirname, "src/empty-module.js"),
       },
     },
