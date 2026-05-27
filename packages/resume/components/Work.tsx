@@ -138,8 +138,8 @@ export default function Work() {
                 .filter((_d, i) => i % columns.length === col)
                 .map((d) => {
                   return (
-                    <Anchor href={d.url} target={"_blank"} className="work">
-                      <Stack key={d.key} gap={0}>
+                    <Anchor key={d.key} href={d.url} target={"_blank"} className="work">
+                      <Stack gap={0}>
                         <Card
                           padding="sm"
                           radius="lg"
@@ -153,27 +153,25 @@ export default function Work() {
                         >
                           <Stack gap={2}>
                             {d.items &&
-                              d.items.map((item) => {
-                                return (
-                                  <Badge
-                                    color="gray"
-                                    variant="default"
+                              d.items.map((item) => (
+                                <Badge
+                                  key={item}
+                                  color="gray"
+                                  variant="default"
+                                  size="sm"
+                                  style={{
+                                    textTransform: "none",
+                                    opacity: 0.85,
+                                  }}
+                                >
+                                  <Text
                                     size="sm"
-                                    style={{
-                                      textTransform: "none",
-                                      opacity: 0.85,
-                                    }}
+                                    style={{ marginBottom: 0 }}
                                   >
-                                    <Text
-                                      key={item}
-                                      size="sm"
-                                      style={{ marginBottom: 0 }}
-                                    >
-                                      {item}
-                                    </Text>
-                                  </Badge>
-                                );
-                              })}
+                                    {item}
+                                  </Text>
+                                </Badge>
+                              ))}
                           </Stack>
                         </Card>
                         <Stack gap={0}>

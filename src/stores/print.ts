@@ -6,10 +6,14 @@ export enum PRINT_SUPPORT_STATUS {
     UNKNOWN
 }   
 
-export const $isPrintSupported = atom(globalThis.print == undefined? PRINT_SUPPORT_STATUS.FALSE : PRINT_SUPPORT_STATUS.UNKNOWN)
+export const $isPrintSupported = atom(
+    globalThis.print == undefined ? PRINT_SUPPORT_STATUS.FALSE : PRINT_SUPPORT_STATUS.UNKNOWN,
+)
 const $isPrintRequested = atom(false)
 
 onMount($isPrintSupported, () => {
+    if (import.meta.env.SSR) return
+
     const printWindowOpened = () => {
         $isPrintSupported.set(PRINT_SUPPORT_STATUS.TRUE)
     }
@@ -30,10 +34,9 @@ onSet($isPrintRequested, (isPrintRequested) => {
     }
 })
 
-
 export function requestPrint() {
     $isPrintRequested.set(true)
-    print()
+    globalThis.print?.()
 }
 
 const pdfLink = "https://res.cloudinary.com/dmq8ipket/image/upload/v1757748988/Resume_-_Jian_Gong_-_Web_Game_Dev_kkddqr.pdf"
