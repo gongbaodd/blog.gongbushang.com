@@ -42,8 +42,8 @@ importers:
         specifier: ^11.14.1
         version: 11.14.1(@emotion/react@11.14.0(@types/react@19.1.9)(react@19.2.6))(@types/react@19.1.9)(react@19.2.6)
       '@lucide/astro':
-        specifier: ^0.525.0
-        version: 0.525.0(astro@6.3.8(@types/node@24.12.4)(@vercel/functions@3.6.0)(jiti@2.6.1)(rollup@4.59.0)(tsx@4.22.3)(yaml@2.9.0))
+        specifier: ^1.16.0
+        version: 1.16.0(astro@6.3.8(@types/node@24.12.4)(@vercel/functions@3.6.0)(jiti@2.6.1)(rollup@4.59.0)(tsx@4.22.3)(yaml@2.9.0))
       '@mantine/carousel':
         specifier: ^9.2.1
         version: 9.2.1(@mantine/core@9.2.1(@mantine/hooks@9.2.1(react@19.2.6))(@types/react@19.1.9)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@mantine/hooks@9.2.1(react@19.2.6))(embla-carousel-react@8.6.0(react@19.2.6))(embla-carousel@8.6.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -2556,10 +2556,10 @@ packages:
   '@llm-tools/embedjs@0.1.29':
     resolution: {integrity: sha512-O9oaNYTyGFHE53/2E1uZRiek1BNK08lQHsC5f7BKceqv9d6/nVwVz8ubzwt8h+nizUJSMQYQ7M0RRi+o23K9lg==}
 
-  '@lucide/astro@0.525.0':
-    resolution: {integrity: sha512-CjX9aJlmHg5/Io6mRSrSi3TbwRXtrV/6kwsRjv6eVhBymAA8ogq3j8YrV1PsXn1EHK9HFyzeJOhaXGm00acVLg==}
+  '@lucide/astro@1.16.0':
+    resolution: {integrity: sha512-RWT+9Y1UAMnz/oiJMssnQTSeBM0AbwzK1SsOeY2zQungN7PQxm4Pp4bNxIVp/Wu77TBXkpPoaIyxYqagZVjWGQ==}
     peerDependencies:
-      astro: ^4 || ^5
+      astro: ^4 || ^5 || ^6
 
   '@mantine/carousel@9.2.1':
     resolution: {integrity: sha512-b0ZBDnKhzztEFWNWbbFpPMqaV/4k/lclX8KB0PfU+qhu3Fa6wjS1VIn4XLZu9N3vgkzPkNXwDzpcwFShA9Uvqw==}
@@ -10843,7 +10843,7 @@ snapshots:
       - typeorm
       - ws
 
-  '@lucide/astro@0.525.0(astro@6.3.8(@types/node@24.12.4)(@vercel/functions@3.6.0)(jiti@2.6.1)(rollup@4.59.0)(tsx@4.22.3)(yaml@2.9.0))':
+  '@lucide/astro@1.16.0(astro@6.3.8(@types/node@24.12.4)(@vercel/functions@3.6.0)(jiti@2.6.1)(rollup@4.59.0)(tsx@4.22.3)(yaml@2.9.0))':
     dependencies:
       astro: 6.3.8(@types/node@24.12.4)(@vercel/functions@3.6.0)(jiti@2.6.1)(rollup@4.59.0)(tsx@4.22.3)(yaml@2.9.0)
 
