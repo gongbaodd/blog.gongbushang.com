@@ -48,7 +48,9 @@ export function readPostMetadata(): PostMetadataEntry[] | undefined {
     try {
         const metadataDir = path.join(process.cwd(), POST_METADATA_DIR);
         if (!fs.existsSync(metadataDir)) return undefined;
-        const files = fs.readdirSync(metadataDir).filter((f) => f.endsWith(".json"));
+        const files = fs.readdirSync(metadataDir).filter(
+            (f) => f.endsWith(".json") && !f.startsWith("."),
+        );
         return files.map((file) => {
             const raw = fs.readFileSync(path.join(metadataDir, file), "utf-8");
             return JSON.parse(raw) as PostMetadataEntry;
