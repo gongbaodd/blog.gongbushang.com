@@ -20,6 +20,10 @@ When working with generated post covers, metadata, podcast data, or the `content
 
 - **Generated content**: [.agent/skills/generated-content/SKILL.md](.agent/skills/generated-content/SKILL.md) — paths in `packages/consts/config.js`, reader functions in `packages/utils/post.ts` and `packages/utils/podcast.ts`, SVG trace layout under `src/content/generated/`.
 
+When adding or editing React islands that use WebGL, Three.js, Rapier physics, or maplibre/mapbox canvas:
+
+- **WebGL components**: [.agent/skills/webgl-components/SKILL.md](.agent/skills/webgl-components/SKILL.md) — error boundaries around WebGL subtrees, Rapier WASM Vite config in `astro.config.mjs`, pnpm overrides, dev cache troubleshooting.
+
 ## Project Overview
 
 This is an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).

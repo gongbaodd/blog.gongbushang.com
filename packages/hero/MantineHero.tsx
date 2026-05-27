@@ -13,10 +13,38 @@ import classes from "./Hero.module.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import Lanyard from "@/src/bits/Components/Lanyard/Lanyard";
 import profile from "@/src/icons/profile.svg?raw"
-import { useState, type ReactNode } from "react";
+import { Component, useState, type ErrorInfo, type ReactNode } from "react";
 
 interface IProps {
   children: ReactNode
+}
+
+interface IErrorBoundaryProps {
+  children: ReactNode
+  fallback?: ReactNode
+}
+
+interface IErrorBoundaryState {
+  hasError: boolean
+}
+
+class ErrorBoundary extends Component<IErrorBoundaryProps, IErrorBoundaryState> {
+  state: IErrorBoundaryState = { hasError: false }
+
+  static getDerivedStateFromError(): IErrorBoundaryState {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("Hero lanyard failed to render:", error, info.componentStack)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback ?? null
+    }
+    return this.props.children
+  }
 }
 
 export default function Hero({ children }: IProps) {
@@ -29,9 +57,11 @@ export default function Hero({ children }: IProps) {
           <Card p={0} radius={"lg"} shadow="lg">
             <Flex className={classes.avatarContainer}>
               <Center className={classes.placeholder} dangerouslySetInnerHTML={{ __html: profile }}></Center>
-              <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded : "")}>
-                <Lanyard position={[0, 0, 12]} gravity={[0, -40, 0]} onLoad={() => setModelLoaded(true)} />
-              </Flex>
+              <ErrorBoundary>
+                <Flex flex={1} className={classes.lanyard + (modelLoaded ? " " + classes.loaded : "")}>
+                  <Lanyard position={[0, 0, 12]} gravity={[0, -40, 0]} onLoad={() => setModelLoaded(true)} />
+                </Flex>
+              </ErrorBoundary>
             </Flex>
           </Card>
 

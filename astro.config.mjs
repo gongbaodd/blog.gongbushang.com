@@ -56,7 +56,16 @@ export default defineConfig({
   vite: {
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
-      exclude: ["onnxruntime-node"],
+      exclude: [
+        "onnxruntime-node",
+        "@dimforge/rapier3d-compat",
+        "@react-three/rapier",
+      ],
+    },
+    build: {
+      rollupOptions: {
+        treeshake: false,
+      },
     },
     ssr: {
       noExternal: ["react-plock"], // force SSR build to bundle as CJS

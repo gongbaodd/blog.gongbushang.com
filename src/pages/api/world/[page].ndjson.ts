@@ -12,7 +12,7 @@ export const getStaticPaths = async function () {
     for (let i = 0; i < posts.length; i += POST_COUNT_PER_PAGE) {
         results.push({
             params: {
-                page: Math.floor(i/POST_COUNT_PER_PAGE)
+                page: String(Math.floor(i / POST_COUNT_PER_PAGE))
             },
             props: {
                 posts: posts.slice(i, i + POST_COUNT_PER_PAGE)

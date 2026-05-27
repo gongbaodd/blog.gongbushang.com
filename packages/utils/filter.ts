@@ -213,7 +213,7 @@ export function page(filterFn: typeof getFilterByCityPage | typeof getFilterByCa
     type T_RES = typeof results[0];
     type T_PAGED_RES = T_RES & {
       params: (T_RES extends { params: object } ? T_RES["params"] : {}) & {
-        page: number;
+        page: string;
       };
     }
 
@@ -227,7 +227,7 @@ export function page(filterFn: typeof getFilterByCityPage | typeof getFilterByCa
           ...result,
           params: {
             ...result.params,
-            page: Math.floor(j / POST_COUNT_PER_PAGE)
+            page: String(Math.floor(j / POST_COUNT_PER_PAGE))
           },
           props: {
             posts: result.props.posts.slice(j, j + POST_COUNT_PER_PAGE)
