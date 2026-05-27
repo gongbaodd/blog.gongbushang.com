@@ -11,7 +11,7 @@ describe("buildEmbeddingText", () => {
     });
 
     expect(text).toBe(
-      "title: Hello\ncategory: travel\ncontent: Plain body text",
+      "title: Hello\ncategory: life\ncontent: Plain body text",
     );
   });
 
@@ -31,7 +31,7 @@ describe("buildEmbeddingText", () => {
     expect(text).toBe(
       [
         "title: Hello",
-        "category: travel",
+        "category: life",
         "series: Tokyo Trip",
         "tags: food, japan",
         "city: Tokyo, Kyoto",

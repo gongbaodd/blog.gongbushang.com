@@ -95,7 +95,7 @@ describe("collectMetadata", () => {
     await writePost(
       "2024/01/01/hello-world.md",
       `---
-category: travel
+category: life
 city: Tokyo
 cover:
   url: ./cover.png
@@ -249,7 +249,7 @@ category: blog
 
   test("backfills data fields without re-geocoding when hash is unchanged", async () => {
     const content = `---
-category: travel
+category: life
 city: Tokyo
 cover:
   url: ./cover.png
