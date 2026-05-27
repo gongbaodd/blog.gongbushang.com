@@ -7,6 +7,7 @@ import { useMediaQuery } from "@mantine/hooks";
 import { useStore } from "@nanostores/react";
 import { $cities, requestCitiesData } from "./store/city";
 import { useEffect } from "react";
+import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import { $pathnameNormalized } from "../header/store/pathname";
 import { ROUTE_HREF } from "../consts";
 
@@ -56,29 +57,31 @@ export default function GLMap({}: IMapProps) {
           h={showButton ? "30vh" : undefined}
           style={showButton ? undefined : { minHeight: 0 }}
         >
-          <Map
-            initialViewState={{ longitude: 50, latitude: 45, zoom }}
-            style={{ width: "100%", height: "100%" }}
-            mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
-          >
-            {data.map((d) => {
-              return (
-                <Marker
-                  longitude={d.location.longitude}
-                  latitude={d.location.latitude}
-                  key={d.slug}
-                >
-                  <Anchor
-                    href={`/world/${d.slug}`}
-                    style={{ fontSize: "24px", cursor: "pointer" }}
-                    c={"red"}
+          <ReactErrorBoundary label="GLMap failed to render">
+            <Map
+              initialViewState={{ longitude: 50, latitude: 45, zoom }}
+              style={{ width: "100%", height: "100%" }}
+              mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+            >
+              {data.map((d) => {
+                return (
+                  <Marker
+                    longitude={d.location.longitude}
+                    latitude={d.location.latitude}
+                    key={d.slug}
                   >
-                    <MapPin fill="white" size={28} />
-                  </Anchor>
-                </Marker>
-              );
-            })}
-          </Map>
+                    <Anchor
+                      href={`/world/${d.slug}`}
+                      style={{ fontSize: "24px", cursor: "pointer" }}
+                      c={"red"}
+                    >
+                      <MapPin fill="white" size={28} />
+                    </Anchor>
+                  </Marker>
+                );
+              })}
+            </Map>
+          </ReactErrorBoundary>
         </Card.Section>
 
         {showButton && (
