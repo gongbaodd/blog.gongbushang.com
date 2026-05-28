@@ -1,11 +1,16 @@
 .root {
   position: relative;
+}
+
+.frame {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 1.25rem 1rem 5.5rem;
   min-height: min(900px, 80vh);
+  overflow: visible;
 }
 
 .canvas {
@@ -97,55 +102,12 @@
   white-space: nowrap;
 }
 
-.loading {
-  position: fixed;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.4rem 0.9rem;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  z-index: 20;
-  pointer-events: none;
-  color: #eee;
-}
-
-.loadingHidden {
-  display: none;
-}
-
 .tooltip {
   position: fixed;
   max-width: min(320px, 80vw);
-  padding: 0.5rem 0.75rem;
-  background: rgba(0, 0, 0, 0.82);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  line-height: 1.35;
   pointer-events: none;
   z-index: 30;
   transform: translate(12px, 12px);
-  color: #eee;
-}
-
-.tooltipHidden {
-  display: none;
-}
-
-.tooltipTitle {
-  color: #fff;
-}
-
-.tooltipCategory {
-  display: inline-block;
-  margin-top: 0.25rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .legendFilter {
@@ -239,7 +201,7 @@
 }
 
 @media (max-width: 768px) {
-  .root {
+  .frame {
     padding: 0.75rem 0.75rem 5.5rem;
     justify-content: flex-start;
   }

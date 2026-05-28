@@ -1,5 +1,16 @@
+import {
+  Badge,
+  Box,
+  Card,
+  Container,
+  LoadingOverlay,
+  Paper,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import App from "./core/App.js";
 import ImagePicker, {
   DEFAULT_IMAGE_ID,
@@ -170,55 +181,64 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
   }, [posts, applyFilter]);
 
   return (
-    <div className={classes.root}>
-      <LegendFilter posts={posts} onChange={handleFilterChange} />
+    <CustomMantineProvider>
+      <Container size="xl" py="xl" className={classes.root}>
+        <Card
+          withBorder
+          padding={0}
+          radius="lg"
+          shadow="sm"
+          className={classes.frame}
+        >
+          <LoadingOverlay
+            visible={loading}
+            zIndex={20}
+            overlayProps={{ radius: "lg" }}
+            loaderProps={{ type: "dots" }}
+          />
 
-      <div
-        className={
-          classes.loading + (loading ? "" : " " + classes.loadingHidden)
-        }
-        aria-live="polite"
-      >
-        Loading…
-      </div>
+          <LegendFilter posts={posts} onChange={handleFilterChange} />
 
-      <div
-        className={
-          classes.tooltip + (tooltip ? "" : " " + classes.tooltipHidden)
-        }
-        aria-hidden={!tooltip}
-        style={
-          tooltip
-            ? { left: tooltip.left, top: tooltip.top }
-            : undefined
-        }
-      >
-        {tooltip && (
-          <>
-            <div className={classes.tooltipTitle}>{tooltip.title}</div>
-            <span
-              className={classes.tooltipCategory}
-              style={{
-                background: `${tooltip.color}33`,
-                color: tooltip.color,
-              }}
+          {tooltip && (
+            <Paper
+              className={classes.tooltip}
+              p="sm"
+              radius="md"
+              shadow="md"
+              withBorder
+              aria-hidden={false}
+              style={{ left: tooltip.left, top: tooltip.top }}
             >
-              {tooltip.categoryLabel}
-            </span>
-          </>
-        )}
-      </div>
+              <Stack gap={4}>
+                <Text size="sm" fw={500} lineClamp={3}>
+                  {tooltip.title}
+                </Text>
+                <Badge
+                  size="xs"
+                  variant="light"
+                  style={{
+                    background: `${tooltip.color}33`,
+                    color: tooltip.color,
+                  }}
+                >
+                  {tooltip.categoryLabel}
+                </Badge>
+              </Stack>
+            </Paper>
+          )}
 
-      <ReactErrorBoundary label="ParticleHero failed to render">
-        <div ref={canvasRef} className={classes.canvas} />
-      </ReactErrorBoundary>
+          <ReactErrorBoundary label="ParticleHero failed to render">
+            <Box ref={canvasRef} className={classes.canvas} />
+          </ReactErrorBoundary>
 
-      <ImagePicker
-        activeId={activePickerId}
-        loading={loading}
-        onSelectPosts={handleSelectPosts}
-        onSelectImage={handleSelectImage}
-      />
-    </div>
+          <ImagePicker
+            activeId={activePickerId}
+            loading={loading}
+            onSelectPosts={handleSelectPosts}
+            onSelectImage={handleSelectImage}
+          />
+        </Card>
+      </Container>
+    </CustomMantineProvider>
   );
 }
