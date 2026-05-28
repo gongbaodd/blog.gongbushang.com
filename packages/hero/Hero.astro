@@ -1,8 +1,10 @@
 ---
 import MantineHero from "./MantineHero.tsx";
 import { Content } from "./fragments/description.mdx";
+import { Content as TitleContent } from "./fragments/title.mdx";
 ---
 
 <MantineHero client:load>
-  <Content />
+  <TitleContent slot="title" />
+  <Content slot="description" />
 </MantineHero>

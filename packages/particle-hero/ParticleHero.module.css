@@ -2,13 +2,25 @@
   position: relative;
 }
 
+.heroTitle {
+  width: 100%;
+  text-align: center;
+}
+
+.canvasColumn {
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: center;
+  width: min(calc(600px * 320 / 180), calc(100vw - 2rem));
+}
+
 .heroGroup {
   width: 100%;
   flex-wrap: wrap;
 }
 
 .canvasCard {
-  flex: 0 1 auto;
+  width: 100%;
   min-width: 0;
 }
 
@@ -22,7 +34,7 @@
   position: relative;
   max-width: 100%;
   aspect-ratio: 320 / 180;
-  width: min(calc(600px * 320 / 180), calc(100vw - 2rem));
+  width: 100%;
 }
 
 @media (min-width: 62em) {
@@ -30,8 +42,17 @@
     flex-wrap: nowrap;
   }
 
-  .canvasContainer {
+  .canvasColumn {
+    align-items: flex-start;
     width: min(calc(600px * 320 / 180), 58vw);
+  }
+
+  .heroTitle {
+    text-align: left;
+  }
+
+  .canvasContainer {
+    width: 100%;
   }
 }
 

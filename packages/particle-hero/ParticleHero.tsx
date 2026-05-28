@@ -34,7 +34,8 @@ export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
 
 export interface IParticleHeroProps {
   posts: UmapPost[];
-  children?: ReactNode;
+  title?: ReactNode;
+  description?: ReactNode;
 }
 
 interface ITooltipState {
@@ -45,7 +46,7 @@ interface ITooltipState {
   top: number;
 }
 
-export default function ParticleHero({ posts, children }: IParticleHeroProps) {
+export default function ParticleHero({ posts, title, description }: IParticleHeroProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<InstanceType<typeof App> | null>(null);
   const rafRef = useRef<number>(0);
@@ -197,7 +198,14 @@ export default function ParticleHero({ posts, children }: IParticleHeroProps) {
           gap="xl"
           justify="center"
         >
-          <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
+          <Stack gap="md" className={classes.canvasColumn}>
+            {title && (
+              <Typography component="div" className={classes.heroTitle}>
+                {title}
+              </Typography>
+            )}
+
+            <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
             <Flex className={classes.canvasContainer}>
               <LegendFilter posts={posts} onChange={handleFilterChange} />
 
@@ -249,10 +257,13 @@ export default function ParticleHero({ posts, children }: IParticleHeroProps) {
               />
             </Flex>
           </Card>
+          </Stack>
 
-          {children && (
+          {description && (
             <Stack gap="xl" className={classes.contentPanel}>
-              <Typography p="md">{children}</Typography>
+              <Typography component="div" p="md">
+                {description}
+              </Typography>
               <Group align="center" justify="center">
                 <Button onClick={() => { location.href = "#socials"; }}>
                   Follow me in social media

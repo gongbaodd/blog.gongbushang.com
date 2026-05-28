@@ -17,10 +17,11 @@ import { useState, type ReactNode } from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 
 interface IProps {
-  children: ReactNode
+  title?: ReactNode;
+  description?: ReactNode;
 }
 
-export default function Hero({ children }: IProps) {
+export default function Hero({ title, description }: IProps) {
   const [modelLoaded, setModelLoaded] = useState(false)
 
   return (
@@ -39,9 +40,7 @@ export default function Hero({ children }: IProps) {
           </Card>
 
           <Stack gap="xl">
-            <HeroContent>
-              {children}
-            </HeroContent>
+            <HeroContent title={title} description={description} />
             <Group align="center" justify="center">
               {/* <Button>订阅更新</Button> */}
               <Button  onClick={_ => location.href = "#socials"}>Follow me in social media</Button>
@@ -54,10 +53,17 @@ export default function Hero({ children }: IProps) {
   );
 }
 
-function HeroContent({ children }: { children: ReactNode }) {
+function HeroContent({
+  title,
+  description,
+}: {
+  title?: ReactNode;
+  description?: ReactNode;
+}) {
   return (
-    <Typography p={"md"}>
-      {children}
-    </Typography>
-  )
+    <Stack gap="md" p="md">
+      {title && <Typography component="div">{title}</Typography>}
+      {description && <Typography component="div">{description}</Typography>}
+    </Stack>
+  );
 }

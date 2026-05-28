@@ -1,6 +1,7 @@
 ---
 import ParticleHero from "./ParticleHero.tsx";
 import { Content } from "@/packages/hero/fragments/description.mdx";
+import { Content as TitleContent } from "@/packages/hero/fragments/title.mdx";
 import { readPostMetadata } from "@/packages/utils/post";
 
 const posts = (readPostMetadata() ?? [])
@@ -22,5 +23,6 @@ const posts = (readPostMetadata() ?? [])
 ---
 
 <ParticleHero posts={posts} client:load>
-  <Content />
+  <TitleContent slot="title" />
+  <Content slot="description" />
 </ParticleHero>
