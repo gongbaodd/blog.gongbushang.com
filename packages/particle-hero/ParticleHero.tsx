@@ -2,8 +2,9 @@ import {
   Badge,
   Box,
   Card,
-  Container,
-  LoadingOverlay,
+  Divider,
+  Flex,
+  Group,
   Paper,
   Stack,
   Text,
@@ -182,63 +183,63 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
 
   return (
     <CustomMantineProvider>
-      <Container size="xl" py="xl" className={classes.root}>
-        <Card
-          withBorder
-          padding={0}
-          radius="lg"
-          shadow="sm"
-          className={classes.frame}
-        >
-          <LoadingOverlay
-            visible={loading}
-            zIndex={20}
-            overlayProps={{ radius: "lg" }}
-            loaderProps={{ type: "dots" }}
-          />
+      <Box py="xl" className={classes.hero}>
+        <Group align="center" gap="xl" justify="center">
+          <Card p={0} radius="lg" shadow="lg">
+            <Flex className={classes.canvasContainer}>
+              <LegendFilter posts={posts} onChange={handleFilterChange} />
 
-          <LegendFilter posts={posts} onChange={handleFilterChange} />
-
-          {tooltip && (
-            <Paper
-              className={classes.tooltip}
-              p="sm"
-              radius="md"
-              shadow="md"
-              withBorder
-              aria-hidden={false}
-              style={{ left: tooltip.left, top: tooltip.top }}
-            >
-              <Stack gap={4}>
-                <Text size="sm" fw={500} lineClamp={3}>
-                  {tooltip.title}
-                </Text>
-                <Badge
-                  size="xs"
-                  variant="light"
-                  style={{
-                    background: `${tooltip.color}33`,
-                    color: tooltip.color,
-                  }}
+              {tooltip && (
+                <Paper
+                  className={classes.tooltip}
+                  p="sm"
+                  radius="md"
+                  shadow="md"
+                  withBorder
+                  aria-hidden={false}
+                  style={{ left: tooltip.left, top: tooltip.top }}
                 >
-                  {tooltip.categoryLabel}
-                </Badge>
-              </Stack>
-            </Paper>
-          )}
+                  <Stack gap={4}>
+                    <Text size="sm" fw={500} lineClamp={3}>
+                      {tooltip.title}
+                    </Text>
+                    <Badge
+                      size="xs"
+                      variant="light"
+                      style={{
+                        background: `${tooltip.color}33`,
+                        color: tooltip.color,
+                      }}
+                    >
+                      {tooltip.categoryLabel}
+                    </Badge>
+                  </Stack>
+                </Paper>
+              )}
 
-          <ReactErrorBoundary label="ParticleHero failed to render">
-            <Box ref={canvasRef} className={classes.canvas} />
-          </ReactErrorBoundary>
+              <ReactErrorBoundary label="ParticleHero failed to render">
+                <Flex
+                  flex={1}
+                  className={
+                    classes.canvas +
+                    (loading ? "" : " " + classes.loaded)
+                  }
+                >
+                  <Box ref={canvasRef} className={classes.canvasInner} />
+                </Flex>
+              </ReactErrorBoundary>
 
-          <ImagePicker
-            activeId={activePickerId}
-            loading={loading}
-            onSelectPosts={handleSelectPosts}
-            onSelectImage={handleSelectImage}
-          />
-        </Card>
-      </Container>
+              <ImagePicker
+                activeId={activePickerId}
+                loading={loading}
+                onSelectPosts={handleSelectPosts}
+                onSelectImage={handleSelectImage}
+              />
+            </Flex>
+          </Card>
+        </Group>
+      </Box>
+      <Divider />
     </CustomMantineProvider>
   );
 }
