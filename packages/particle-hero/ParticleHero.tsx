@@ -29,6 +29,11 @@ import classes from "./ParticleHero.module.css";
 
 export type { UmapPost } from "./postsData";
 
+/** Matches particle sampling resolution in `core/Particles.js` */
+export const PARTICLE_VIEW_WIDTH = 320;
+export const PARTICLE_VIEW_HEIGHT = 180;
+export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
+
 export interface IParticleHeroProps {
   posts: UmapPost[];
 }
@@ -154,6 +159,8 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
     app.resize();
     const onResize = () => app.resize();
     window.addEventListener("resize", onResize);
+    const resizeObserver = new ResizeObserver(onResize);
+    resizeObserver.observe(container);
 
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate);
@@ -176,6 +183,7 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
+      resizeObserver.disconnect();
       void app.dispose();
       appRef.current = null;
     };
@@ -186,7 +194,13 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
       <Box py="xl" className={classes.hero}>
         <Group align="center" gap="xl" justify="center">
           <Card p={0} radius="lg" shadow="lg">
-            <Flex className={classes.canvasContainer}>
+            <Flex
+              className={classes.canvasContainer}
+              style={{
+                aspectRatio: `${PARTICLE_VIEW_WIDTH} / ${PARTICLE_VIEW_HEIGHT}`,
+                width: `min(${(PARTICLE_VIEW_DISPLAY_HEIGHT * PARTICLE_VIEW_WIDTH) / PARTICLE_VIEW_HEIGHT}px, calc(100vw - 2rem))`,
+              }}
+            >
               <LegendFilter posts={posts} onChange={handleFilterChange} />
 
               {tooltip && (

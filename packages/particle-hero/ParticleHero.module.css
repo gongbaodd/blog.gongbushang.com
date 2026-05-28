@@ -4,14 +4,12 @@
 
 .canvasContainer {
   position: relative;
-  aspect-ratio: 1 / 1;
-  height: 600px;
-  width: 600px;
-  max-width: min(600px, calc(100vw - 2rem));
-  max-height: min(600px, calc(100vw - 2rem));
+  max-width: 100%;
 }
 
 .canvas {
+  width: 100%;
+  height: 100%;
   backdrop-filter: blur(5px) opacity(0);
   transition: backdrop-filter 0.5s ease-in-out;
 }
@@ -207,11 +205,6 @@
 }
 
 @media (max-width: 768px) {
-  .canvasContainer {
-    height: min(600px, calc(100vw - 2rem));
-    width: min(600px, calc(100vw - 2rem));
-  }
-
   .legendFilter {
     left: 0.75rem;
     right: 0.75rem;

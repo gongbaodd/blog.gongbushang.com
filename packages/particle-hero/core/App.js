@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import InteractiveControls from './InteractiveControls.js';
 import Particles from './Particles.js';
 
-export const CANVAS_SIZE = 900;
+export const CANVAS_WIDTH = 320;
+export const CANVAS_HEIGHT = 180;
 
 export default class App {
   constructor(container) {
@@ -68,11 +69,14 @@ export default class App {
   }
 
   resize() {
-    const w = CANVAS_SIZE;
-    const h = CANVAS_SIZE;
-    this.camera.aspect = 1;
+    const w = this.container.clientWidth || CANVAS_WIDTH;
+    const h = this.container.clientHeight || CANVAS_HEIGHT;
+    if (w === 0 || h === 0) return;
+
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setSize(w, h, false);
 
     this.fovHeight =
       2 *
