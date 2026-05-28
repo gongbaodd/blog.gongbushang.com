@@ -15,11 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import App from "./core/App.js";
-import ImagePicker, {
-  DEFAULT_IMAGE_ID,
-  DEFAULT_IMAGE_URL,
-  POSTS_ITEM_ID,
-} from "./components/ImagePicker";
+import ImagePicker, { POSTS_ITEM_ID } from "./components/ImagePicker";
 import LegendFilter from "./components/LegendFilter";
 import {
   getCategoryColor,
@@ -62,7 +58,7 @@ export default function ParticleHero({ posts, children }: IParticleHeroProps) {
 
   const filterRef = useRef<PostFilterState>(initialFilter);
   const [loading, setLoading] = useState(true);
-  const [activePickerId, setActivePickerId] = useState(DEFAULT_IMAGE_ID);
+  const [activePickerId, setActivePickerId] = useState(POSTS_ITEM_ID);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
 
   const applyFilter = useCallback(() => {
@@ -175,9 +171,9 @@ export default function ParticleHero({ posts, children }: IParticleHeroProps) {
     (async () => {
       setLoading(true);
       try {
-        await app.loadImage(DEFAULT_IMAGE_URL, posts);
+        await app.loadPosts(posts);
         applyFilter();
-        setActivePickerId(DEFAULT_IMAGE_ID);
+        setActivePickerId(POSTS_ITEM_ID);
       } finally {
         setLoading(false);
       }

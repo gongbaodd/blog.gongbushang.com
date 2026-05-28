@@ -1,11 +1,8 @@
 import { CATEGORY_COLORS } from "../postsData";
 import { getGalleryImages } from "../galleryIndex";
-import rhinoUrl from "../assets/rhino.png?url";
 import classes from "../ParticleHero.module.css";
 
 export const POSTS_ITEM_ID = "posts";
-export const DEFAULT_IMAGE_ID = "rhino";
-export const DEFAULT_IMAGE_URL = rhinoUrl;
 
 export interface PickerItem {
   id: string;
@@ -18,7 +15,6 @@ export function getPickerItems(): PickerItem[] {
   const gallery = getGalleryImages();
   return [
     { id: POSTS_ITEM_ID, name: "Posts", type: "posts" },
-    { id: DEFAULT_IMAGE_ID, name: "Rhino", type: "image", url: DEFAULT_IMAGE_URL },
     ...gallery.map((g) => ({
       id: g.path,
       name: g.name,
