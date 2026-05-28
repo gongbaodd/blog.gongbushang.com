@@ -1,6 +1,7 @@
 import {
   Badge,
   Box,
+  Button,
   Card,
   Divider,
   Flex,
@@ -8,8 +9,9 @@ import {
   Paper,
   Stack,
   Text,
+  Typography,
 } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import App from "./core/App.js";
@@ -36,6 +38,7 @@ export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
 
 export interface IParticleHeroProps {
   posts: UmapPost[];
+  children?: ReactNode;
 }
 
 interface ITooltipState {
@@ -46,7 +49,7 @@ interface ITooltipState {
   top: number;
 }
 
-export default function ParticleHero({ posts }: IParticleHeroProps) {
+export default function ParticleHero({ posts, children }: IParticleHeroProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<InstanceType<typeof App> | null>(null);
   const rafRef = useRef<number>(0);
@@ -192,15 +195,14 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
   return (
     <CustomMantineProvider>
       <Box py="xl" className={classes.hero}>
-        <Group align="center" gap="xl" justify="center">
-          <Card p={0} radius="lg" shadow="lg">
-            <Flex
-              className={classes.canvasContainer}
-              style={{
-                aspectRatio: `${PARTICLE_VIEW_WIDTH} / ${PARTICLE_VIEW_HEIGHT}`,
-                width: `min(${(PARTICLE_VIEW_DISPLAY_HEIGHT * PARTICLE_VIEW_WIDTH) / PARTICLE_VIEW_HEIGHT}px, calc(100vw - 2rem))`,
-              }}
-            >
+        <Group
+          className={classes.heroGroup}
+          align="center"
+          gap="xl"
+          justify="center"
+        >
+          <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
+            <Flex className={classes.canvasContainer}>
               <LegendFilter posts={posts} onChange={handleFilterChange} />
 
               {tooltip && (
@@ -251,6 +253,17 @@ export default function ParticleHero({ posts }: IParticleHeroProps) {
               />
             </Flex>
           </Card>
+
+          {children && (
+            <Stack gap="xl" className={classes.contentPanel}>
+              <Typography p="md">{children}</Typography>
+              <Group align="center" justify="center">
+                <Button onClick={() => { location.href = "#socials"; }}>
+                  Follow me in social media
+                </Button>
+              </Group>
+            </Stack>
+          )}
         </Group>
       </Box>
       <Divider />

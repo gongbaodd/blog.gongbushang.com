@@ -5,27 +5,9 @@ import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
-import ParticleHero from "@/packages/particle-hero";
-import { readPostMetadata } from "@/packages/utils/post";
+import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
 
 export const prerender = true;
-
-const posts = (readPostMetadata() ?? [])
-  .filter(
-    (entry): entry is typeof entry & { umap2D: [number, number] } =>
-      entry.id != null && entry.umap2D != null,
-  )
-  .map(({ id, href, title, date, category, umap2D }) => ({
-    id,
-    href,
-    title,
-    date,
-    category,
-    umap2D,
-  }))
-  .sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-  );
 ---
 
 <Global>
@@ -38,7 +20,7 @@ const posts = (readPostMetadata() ?? [])
 
   <section>
     <MantineMain>
-      <ParticleHero posts={posts} client:load />
+      <ParticleHero />
       <Footer slug={"hero"} />
     </MantineMain>
   </section>

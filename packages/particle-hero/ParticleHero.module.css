@@ -2,9 +2,37 @@
   position: relative;
 }
 
+.heroGroup {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.canvasCard {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.contentPanel {
+  flex: 1 1 320px;
+  max-width: 520px;
+  min-width: min(100%, 280px);
+}
+
 .canvasContainer {
   position: relative;
   max-width: 100%;
+  aspect-ratio: 320 / 180;
+  width: min(calc(600px * 320 / 180), calc(100vw - 2rem));
+}
+
+@media (min-width: 62em) {
+  .heroGroup {
+    flex-wrap: nowrap;
+  }
+
+  .canvasContainer {
+    width: min(calc(600px * 320 / 180), 58vw);
+  }
 }
 
 .canvas {
