@@ -35,10 +35,17 @@ export default class App {
     this.scene.add(this.particles.container);
   }
 
+  /**
+   * @param {string} url
+   * @param {import('../postsData.ts').UmapPost[] | null} [posts]
+   */
   async loadImage(url, posts = null) {
     return this.particles.load(url, posts);
   }
 
+  /**
+   * @param {import('../postsData.ts').UmapPost[]} posts
+   */
   async loadPosts(posts) {
     return this.particles.loadPosts(posts);
   }
@@ -74,5 +81,19 @@ export default class App {
 
     if (this.interactive) this.interactive.resize();
     if (this.particles) this.particles.resize();
+  }
+
+  async dispose() {
+    if (this.interactive) this.interactive.disable();
+    if (this.particles) await this.particles.destroy();
+    if (this.renderer) {
+      this.renderer.dispose();
+      this.renderer.domElement.remove();
+    }
+    this.scene = null;
+    this.camera = null;
+    this.renderer = null;
+    this.particles = null;
+    this.interactive = null;
   }
 }

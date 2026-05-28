@@ -13,6 +13,7 @@ import mermaid from "astro-mermaid";
 
 import vercel from "@astrojs/vercel";
 import path from "node:path";
+import glsl from "vite-plugin-glsl";
 
 export default defineConfig({
   site: "https://growgen.xyz",
@@ -49,6 +50,7 @@ export default defineConfig({
     isr: true,
   }),
   vite: {
+    plugins: [glsl()],
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
       exclude: [

@@ -5,7 +5,7 @@ import shadowVertexShader from './shaders/particle-shadow.vert';
 import shadowFragmentShader from './shaders/particle-shadow.frag';
 import TouchTexture from './TouchTexture.js';
 import { lerp } from './utils/easing.js';
-import { getCategoryColor, getPostYear, hexToRgb, normalizePostPositions } from './postsData.js';
+import { getCategoryColor, getPostYear, hexToRgb, normalizePostPositions } from '../postsData.ts';
 
 const TARGET_WIDTH = 320;
 const TARGET_HEIGHT = 180;
