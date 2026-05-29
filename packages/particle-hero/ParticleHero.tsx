@@ -261,11 +261,11 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
             </Stack>
 
             {description && (
-              <Stack gap="xl" className={classes.contentPanel}>
-                <Typography component="div" p="md">
+              <Stack gap="xl" className={classes.contentPanel} justify="space-between">
+                <Typography component="div" p="md" className={classes.contentText}>
                   {description}
                 </Typography>
-                <Group align="center" justify="center">
+                <Group align="center" className={classes.contentActions}>
                   <Button onClick={() => { location.href = "#socials"; }}>
                     Follow me in social media
                   </Button>
