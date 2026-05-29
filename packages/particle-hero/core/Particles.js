@@ -6,9 +6,10 @@ import shadowFragmentShader from './shaders/particle-shadow.frag';
 import TouchTexture from './TouchTexture.js';
 import { lerp } from './utils/easing.js';
 import { getCategoryColor, getPostYear, hexToRgb, normalizePostPositions } from '../postsData.ts';
-
-const TARGET_WIDTH = 320;
-const TARGET_HEIGHT = 180;
+import {
+  drawImageCoverCenter,
+  PARTICLE_LAYOUT_LANDSCAPE,
+} from '../layout.ts';
 const ALPHA_THRESHOLD = 16;
 const SIZE_MIN = 0.3;
 const SIZE_MAX = 0.85;
@@ -35,16 +36,16 @@ function createWhiteTexture() {
   return texture;
 }
 
-export function loadImageTexture(url) {
+export function loadImageTexture(url, width, height) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = TARGET_WIDTH;
-      canvas.height = TARGET_HEIGHT;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+      drawImageCoverCenter(ctx, img, width, height);
       const texture = new THREE.CanvasTexture(canvas);
       texture.flipY = true;
       texture.minFilter = THREE.LinearFilter;
@@ -70,16 +71,35 @@ export default class Particles {
     this.onHoverPost = null;
     this.postMeta = null;
     this.activeFilter = null;
+    this.targetWidth = PARTICLE_LAYOUT_LANDSCAPE.width;
+    this.targetHeight = PARTICLE_LAYOUT_LANDSCAPE.height;
+    this.lastLoad = null;
+  }
+
+  setTargetSize(width, height) {
+    this.targetWidth = width;
+    this.targetHeight = height;
+  }
+
+  async reloadLast() {
+    if (!this.lastLoad) return this;
+    if (this.lastLoad.kind === 'posts') {
+      return this.loadPosts(this.lastLoad.posts);
+    }
+    return this.load(this.lastLoad.url, this.lastLoad.posts);
   }
 
   async load(src, posts = null) {
     await this.destroy();
     this.isDataMode = false;
-    this.posts = posts ? normalizePostPositions(posts, TARGET_WIDTH, TARGET_HEIGHT) : null;
-    const texture = await loadImageTexture(src);
+    const w = this.targetWidth;
+    const h = this.targetHeight;
+    this.posts = posts ? normalizePostPositions(posts, w, h) : null;
+    const texture = await loadImageTexture(src, w, h);
     this.texture = texture;
-    this.width = TARGET_WIDTH;
-    this.height = TARGET_HEIGHT;
+    this.width = w;
+    this.height = h;
+    this.lastLoad = { kind: 'image', url: src, posts };
     this.initBackground();
     this.buildMesh(true);
     if (this.posts) this.buildPostsMesh(this.posts);
@@ -94,10 +114,13 @@ export default class Particles {
   async loadPosts(posts) {
     await this.destroy();
     this.isDataMode = true;
-    this.posts = normalizePostPositions(posts, TARGET_WIDTH, TARGET_HEIGHT);
+    const w = this.targetWidth;
+    const h = this.targetHeight;
+    this.posts = normalizePostPositions(posts, w, h);
     this.texture = createWhiteTexture();
-    this.width = TARGET_WIDTH;
-    this.height = TARGET_HEIGHT;
+    this.width = w;
+    this.height = h;
+    this.lastLoad = { kind: 'posts', posts };
     this.buildPostsMesh(this.posts);
     this.initHitArea();
     this.attachTouchUniform();
@@ -588,5 +611,6 @@ export default class Particles {
     this.posts = null;
     this.postMeta = null;
     this.isDataMode = false;
+    // lastLoad kept for layout-mode reload
   }
 }

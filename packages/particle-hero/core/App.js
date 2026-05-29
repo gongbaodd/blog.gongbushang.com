@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import InteractiveControls from './InteractiveControls.js';
 import Particles from './Particles.js';
+import { getParticleLayoutDims } from '../layout.ts';
 
 export const CANVAS_WIDTH = 320;
 export const CANVAS_HEIGHT = 180;
@@ -9,6 +10,7 @@ export default class App {
   constructor(container) {
     this.container = container;
     this.clock = new THREE.Clock();
+    this.layoutMode = null;
     this.initThree();
     this.initParticles();
     this.initControls();
@@ -34,6 +36,22 @@ export default class App {
   initParticles() {
     this.particles = new Particles(this);
     this.scene.add(this.particles.container);
+  }
+
+  /**
+   * @param {'landscape' | 'square'} mode
+   */
+  async setLayoutMode(mode) {
+    const prevMode = this.layoutMode;
+    this.layoutMode = mode;
+    const dims = getParticleLayoutDims(mode);
+    this.particles.setTargetSize(dims.width, dims.height);
+
+    if (prevMode !== null && prevMode !== mode && this.particles.lastLoad) {
+      await this.particles.reloadLast();
+    }
+
+    this.resize();
   }
 
   /**

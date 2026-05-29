@@ -9,7 +9,7 @@
 
 .heroTitle {
   width: 100%;
-  max-width: min(1200px, 100%);
+  max-width: min(1920px, 100%);
   text-align: center;
 }
 
@@ -43,6 +43,16 @@
   width: 100%;
 }
 
+@media (max-width: 61.99em) {
+  .canvasColumn {
+    width: min(600px, calc(100vw - 2rem));
+  }
+
+  .canvasContainer {
+    aspect-ratio: 1 / 1;
+  }
+}
+
 @media (min-width: 48em) and (max-width: 61.99em) {
   .heroTitle {
     text-align: center;
@@ -62,7 +72,7 @@
     display: grid;
     grid-template-columns: min(calc(600px * 320 / 180), 58vw) minmax(280px, 520px);
     gap: var(--mantine-spacing-xl);
-    max-width: min(1200px, 100%);
+    max-width: min(1920px, 100%);
     margin-inline: auto;
     width: 100%;
     align-items: stretch;

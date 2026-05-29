@@ -23,13 +23,28 @@ import {
   type PostFilterState,
   type UmapPost,
 } from "./postsData";
+import {
+  getParticleLayoutModeForViewport,
+  PARTICLE_LAYOUT_BELOW_LARGE_MQ,
+  PARTICLE_LAYOUT_LANDSCAPE,
+  PARTICLE_LAYOUT_SQUARE,
+} from "./layout";
 import classes from "./ParticleHero.module.css";
 
 export type { UmapPost } from "./postsData";
 
-/** Matches particle sampling resolution in `core/Particles.js` */
-export const PARTICLE_VIEW_WIDTH = 320;
-export const PARTICLE_VIEW_HEIGHT = 180;
+export {
+  PARTICLE_LAYOUT_BELOW_LARGE_MQ,
+  PARTICLE_LAYOUT_LANDSCAPE,
+  PARTICLE_LAYOUT_SQUARE,
+  getParticleLayoutModeForViewport,
+} from "./layout";
+
+/** Landscape sampling resolution (desktop, ≥62em) */
+export const PARTICLE_VIEW_WIDTH = PARTICLE_LAYOUT_LANDSCAPE.width;
+export const PARTICLE_VIEW_HEIGHT = PARTICLE_LAYOUT_LANDSCAPE.height;
+/** Square sampling resolution (below 62em) */
+export const PARTICLE_VIEW_SQUARE_SIZE = PARTICLE_LAYOUT_SQUARE.width;
 export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
 
 export interface IParticleHeroProps {
@@ -114,6 +129,16 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
     const app = new App(container);
     appRef.current = app;
 
+    const syncLayoutMode = async (showLoading: boolean) => {
+      if (showLoading) setLoading(true);
+      try {
+        await app.setLayoutMode(getParticleLayoutModeForViewport());
+        applyFilter();
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    };
+
     app.setHoverHandler((
       post: UmapPost | null,
       event?: { intersectionData?: { uv: { x: number; y: number } } },
@@ -162,6 +187,12 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
     const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(container);
 
+    const layoutMq = window.matchMedia(PARTICLE_LAYOUT_BELOW_LARGE_MQ);
+    const onLayoutChange = () => {
+      void syncLayoutMode(true);
+    };
+    layoutMq.addEventListener("change", onLayoutChange);
+
     const animate = () => {
       rafRef.current = requestAnimationFrame(animate);
       app.update();
@@ -172,6 +203,7 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
     (async () => {
       setLoading(true);
       try {
+        await syncLayoutMode(false);
         await app.loadPosts(posts);
         applyFilter();
         setActivePickerId(POSTS_ITEM_ID);
@@ -183,6 +215,7 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
     return () => {
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", onResize);
+      layoutMq.removeEventListener("change", onLayoutChange);
       resizeObserver.disconnect();
       void app.dispose();
       appRef.current = null;
