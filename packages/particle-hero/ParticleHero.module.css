@@ -2,8 +2,14 @@
   position: relative;
 }
 
+.heroStack {
+  width: 100%;
+  align-items: center;
+}
+
 .heroTitle {
   width: 100%;
+  max-width: min(1200px, 100%);
   text-align: center;
 }
 
@@ -38,8 +44,13 @@
 }
 
 @media (min-width: 62em) {
+  .heroStack {
+    align-items: stretch;
+  }
+
   .heroGroup {
     flex-wrap: nowrap;
+    align-items: flex-start;
   }
 
   .canvasColumn {

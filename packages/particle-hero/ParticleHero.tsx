@@ -192,86 +192,88 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
   return (
     <CustomMantineProvider>
       <Box py="xl" className={classes.hero}>
-        <Group
-          className={classes.heroGroup}
-          align="center"
-          gap="xl"
-          justify="center"
-        >
-          <Stack gap="md" className={classes.canvasColumn}>
-            {title && (
-              <Typography component="div" className={classes.heroTitle}>
-                {title}
-              </Typography>
-            )}
-
-            <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
-            <Flex className={classes.canvasContainer}>
-              <LegendFilter posts={posts} onChange={handleFilterChange} />
-
-              {tooltip && (
-                <Paper
-                  className={classes.tooltip}
-                  p="sm"
-                  radius="md"
-                  shadow="md"
-                  withBorder
-                  aria-hidden={false}
-                  style={{ left: tooltip.left, top: tooltip.top }}
-                >
-                  <Stack gap={4}>
-                    <Text size="sm" fw={500} lineClamp={3}>
-                      {tooltip.title}
-                    </Text>
-                    <Badge
-                      size="xs"
-                      variant="light"
-                      style={{
-                        background: `${tooltip.color}33`,
-                        color: tooltip.color,
-                      }}
-                    >
-                      {tooltip.categoryLabel}
-                    </Badge>
-                  </Stack>
-                </Paper>
-              )}
-
-              <ReactErrorBoundary label="ParticleHero failed to render">
-                <Flex
-                  flex={1}
-                  className={
-                    classes.canvas +
-                    (loading ? "" : " " + classes.loaded)
-                  }
-                >
-                  <Box ref={canvasRef} className={classes.canvasInner} />
-                </Flex>
-              </ReactErrorBoundary>
-
-              <ImagePicker
-                activeId={activePickerId}
-                loading={loading}
-                onSelectPosts={handleSelectPosts}
-                onSelectImage={handleSelectImage}
-              />
-            </Flex>
-          </Card>
-          </Stack>
-
-          {description && (
-            <Stack gap="xl" className={classes.contentPanel}>
-              <Typography component="div" p="md">
-                {description}
-              </Typography>
-              <Group align="center" justify="center">
-                <Button onClick={() => { location.href = "#socials"; }}>
-                  Follow me in social media
-                </Button>
-              </Group>
-            </Stack>
+        <Stack gap="xl" className={classes.heroStack}>
+          {title && (
+            <Typography component="div" className={classes.heroTitle}>
+              {title}
+            </Typography>
           )}
-        </Group>
+
+          <Group
+            className={classes.heroGroup}
+            align="center"
+            gap="xl"
+            justify="center"
+          >
+            <Stack gap="md" className={classes.canvasColumn}>
+              <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
+                <Flex className={classes.canvasContainer}>
+                  <LegendFilter posts={posts} onChange={handleFilterChange} />
+
+                  {tooltip && (
+                    <Paper
+                      className={classes.tooltip}
+                      p="sm"
+                      radius="md"
+                      shadow="md"
+                      withBorder
+                      aria-hidden={false}
+                      style={{ left: tooltip.left, top: tooltip.top }}
+                    >
+                      <Stack gap={4}>
+                        <Text size="sm" fw={500} lineClamp={3}>
+                          {tooltip.title}
+                        </Text>
+                        <Badge
+                          size="xs"
+                          variant="light"
+                          style={{
+                            background: `${tooltip.color}33`,
+                            color: tooltip.color,
+                          }}
+                        >
+                          {tooltip.categoryLabel}
+                        </Badge>
+                      </Stack>
+                    </Paper>
+                  )}
+
+                  <ReactErrorBoundary label="ParticleHero failed to render">
+                    <Flex
+                      flex={1}
+                      className={
+                        classes.canvas +
+                        (loading ? "" : " " + classes.loaded)
+                      }
+                    >
+                      <Box ref={canvasRef} className={classes.canvasInner} />
+                    </Flex>
+                  </ReactErrorBoundary>
+
+                  <ImagePicker
+                    activeId={activePickerId}
+                    loading={loading}
+                    onSelectPosts={handleSelectPosts}
+                    onSelectImage={handleSelectImage}
+                  />
+                </Flex>
+              </Card>
+            </Stack>
+
+            {description && (
+              <Stack gap="xl" className={classes.contentPanel}>
+                <Typography component="div" p="md">
+                  {description}
+                </Typography>
+                <Group align="center" justify="center">
+                  <Button onClick={() => { location.href = "#socials"; }}>
+                    Follow me in social media
+                  </Button>
+                </Group>
+              </Stack>
+            )}
+          </Group>
+        </Stack>
       </Box>
       <Divider />
     </CustomMantineProvider>
