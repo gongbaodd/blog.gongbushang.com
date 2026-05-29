@@ -225,7 +225,7 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
   return (
     <CustomMantineProvider>
       <Box py="xl" className={classes.hero}>
-        <Stack gap="xl" className={classes.heroStack}>
+        <Stack gap="xl" className={classes.heroStack} justify="center">
           {title && (
             <Typography component="div" className={classes.heroTitle}>
               {title}
