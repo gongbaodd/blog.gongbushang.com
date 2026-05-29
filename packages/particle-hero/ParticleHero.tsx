@@ -16,7 +16,9 @@ import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import App from "./core/App.js";
 import ImagePicker, { POSTS_ITEM_ID } from "./components/ImagePicker";
-import LegendFilter from "./components/LegendFilter";
+import LegendCategoryChips from "./components/LegendCategoryChips";
+import LegendYearSlider from "./components/LegendYearSlider";
+import { usePostFilter } from "./usePostFilter";
 import {
   getCategoryColor,
   getFilterOptions,
@@ -88,6 +90,8 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
     },
     [applyFilter],
   );
+
+  const filter = usePostFilter(posts, handleFilterChange);
 
   const handleSelectPosts = useCallback(async () => {
     const app = appRef.current;
@@ -239,10 +243,18 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
             justify="center"
           >
             <Stack gap="md" className={classes.canvasColumn}>
+              {filter.hasYears && (
+                <Flex className={classes.legendChipsRow} justify="flex-end">
+                  <LegendCategoryChips
+                    categories={filter.categories}
+                    selectedCategory={filter.selectedCategory}
+                    onSelectCategory={filter.selectCategory}
+                  />
+                </Flex>
+              )}
+
               <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
                 <Flex className={classes.canvasContainer}>
-                  <LegendFilter posts={posts} onChange={handleFilterChange} />
-
                   {tooltip && (
                     <Paper
                       className={classes.tooltip}
@@ -291,6 +303,18 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
                   />
                 </Flex>
               </Card>
+
+              {filter.hasYears && (
+                <Flex className={classes.legendYearRow} justify="flex-start">
+                  <LegendYearSlider
+                    years={filter.years}
+                    yearIndex={filter.yearIndex}
+                    yearLabel={filter.yearLabel}
+                    lastYear={filter.lastYear}
+                    onYearChange={filter.onYearChange}
+                  />
+                </Flex>
+              )}
             </Stack>
 
             {description && (
