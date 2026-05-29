@@ -309,8 +309,6 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
                   <LegendYearSlider
                     years={filter.years}
                     yearIndex={filter.yearIndex}
-                    yearLabel={filter.yearLabel}
-                    lastYear={filter.lastYear}
                     onYearChange={filter.onYearChange}
                   />
                 </Flex>

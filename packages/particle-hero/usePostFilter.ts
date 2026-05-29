@@ -22,9 +22,6 @@ export function usePostFilter(
   const lastYear = years[years.length - 1] ?? "";
   const hasYears = years.length > 0;
 
-  const yearLabel =
-    selectedYear === lastYear ? "All" : `≤ ${selectedYear}`;
-
   function emitChange(category: string, year: string) {
     onChange({ category, year });
   }
@@ -45,7 +42,6 @@ export function usePostFilter(
     years,
     selectedCategory,
     yearIndex,
-    yearLabel,
     lastYear,
     hasYears,
     selectCategory,

@@ -104,6 +104,7 @@
     min-height: 100%;
     max-width: none;
     flex: none;
+    padding-bottom: 4.8em;
   }
 
   .contentActions {
@@ -237,7 +238,7 @@
 }
 
 .legendYear {
-  width: min(280px, 100%);
+  width: 100%;
 }
 
 .legendChipLabel {
@@ -257,13 +258,9 @@
   background: linear-gradient(135deg, #4a9eff, #7ed957, #b47aff, #ffb347);
 }
 
-.legendYearBound {
-  flex-shrink: 0;
-}
-
-.legendYearSlider {
-  flex: 1;
-  min-width: 0;
+.legendYearMarkLabel {
+  font-size: var(--mantine-font-size-xs);
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
