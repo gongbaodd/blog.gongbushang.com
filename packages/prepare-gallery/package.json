@@ -1,0 +1,20 @@
+{
+  "name": "prepare-gallery",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "prepare-gallery": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "consts": "workspace:*",
+    "fast-glob": "^3.3.3",
+    "image-metadata": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.4"
+  }
+}
