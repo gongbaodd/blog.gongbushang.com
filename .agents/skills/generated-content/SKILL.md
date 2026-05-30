@@ -19,6 +19,7 @@ src/content/
 ├── _gallery/                 # source gallery image JSON (image URL + doc link)
 └── generated/
     ├── metadata/               # per-post metadata JSON (city, geocode, colorSet, hash)
+    ├── metadata/.umap-state.json  # UMAP 2D coordinates keyed by post file slug
     ├── podcast.json          # podcast channel manifest (channel, lastUpdated)
     ├── gallery.json          # gallery manifest (all images + hashes + colorSet)
     ├── cover/                # post cover SVG traces
@@ -34,6 +35,7 @@ All paths are defined in [`packages/consts/config.js`](../../../packages/consts/
 |----------|------|
 | `CONTENT_GENERATED_DIR` | `src/content/generated` |
 | `POST_METADATA_DIR` | `src/content/generated/metadata/` |
+| `POST_UMAP_STATE` | `src/content/generated/metadata/.umap-state.json` |
 | `POST_COVER_DIR` | `src/content/generated/cover` |
 | `PODCAST_JSON` | `src/content/generated/podcast.json` |
 | `PODCAST_COVER_DIR` | `src/content/generated/podcast` |
@@ -62,6 +64,7 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 - Writes one `MetadataEntry` JSON per post under `metadata/` (basename mirrors cover SVG naming)
 - Each entry includes a SHA-256 `hash` of the source markdown; unchanged posts are skipped
 - `file` field = post id (slug under `_docs/`)
+- UMAP 2D coordinates live in `metadata/.umap-state.json` (not in per-post JSON); `readPostMetadata()` merges them at read time
 - Generates cover SVG when cover URL is new/changed
 
 ### Podcast data (`fetch-podcast`)
@@ -90,7 +93,7 @@ readPostMetadataEntry(postId: string): PostMetadataEntry | undefined
 readPostCoverSvg(postId: string): string | undefined
 ```
 
-- `PostMetadataEntry`: `{ file, hash, city?, locations?, colorSet? }`
+- `PostMetadataEntry`: `{ file, hash, city?, locations?, colorSet?, umap2D? }` — `umap2D` is merged from `.umap-state.json` at read time, not stored in per-post JSON
 - Metadata filename: `{postId with / → -}.json` (e.g. `2017-01-26-dalian-modern-museum.json`)
 - Cover SVG filename: `{postId with / → -}.svg` (e.g. `2017-01-26-dalian-modern-museum.svg`)
 

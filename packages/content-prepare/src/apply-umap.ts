@@ -12,11 +12,15 @@ interface UmapCorpusEntry {
   embeddings: number[];
 }
 
-interface UmapState {
+export interface UmapState {
   inputHash: string;
   count: number;
   paramsHash: string;
+  coordinates?: Record<string, [number, number]>;
 }
+
+/** Legacy per-post metadata may still contain umap2D before migration. */
+type LegacyMetadataEntry = MetadataEntry & { umap2D?: [number, number] };
 
 export function computeUmapInputHash(entries: UmapCorpusEntry[]): string {
   const hash = crypto.createHash("sha256");
@@ -97,6 +101,46 @@ async function clearUmapState(outputDir: string): Promise<void> {
   }
 }
 
+async function stripUmap2DFromAllMetadata(outputDir: string): Promise<void> {
+  const allEntries = await readMetadataEntries(outputDir);
+
+  for (const metadataEntry of allEntries) {
+    const legacy = metadataEntry as LegacyMetadataEntry;
+    if (legacy.umap2D) {
+      const { umap2D: _removed, ...rest } = legacy;
+      await writeMetadataEntry(outputDir, rest);
+    }
+  }
+}
+
+function collectLegacyCoordinates(
+  embeddedEntries: LegacyMetadataEntry[],
+): Record<string, [number, number]> | undefined {
+  const coordinates: Record<string, [number, number]> = {};
+
+  for (const entry of embeddedEntries) {
+    if (!entry.umap2D) {
+      return undefined;
+    }
+    coordinates[entry.file] = entry.umap2D;
+  }
+
+  return coordinates;
+}
+
+function buildCoordinatesMap(
+  embeddedEntries: MetadataEntry[],
+  coordinateList: [number, number][],
+): Record<string, [number, number]> {
+  const coordinates: Record<string, [number, number]> = {};
+
+  for (let index = 0; index < embeddedEntries.length; index++) {
+    coordinates[embeddedEntries[index]!.file] = coordinateList[index]!;
+  }
+
+  return coordinates;
+}
+
 export async function applyUmap2D(outputDir: string): Promise<void> {
   const allEntries = await readMetadataEntries(outputDir);
   const embeddedEntries = allEntries
@@ -104,12 +148,7 @@ export async function applyUmap2D(outputDir: string): Promise<void> {
     .sort((left, right) => left.file.localeCompare(right.file));
 
   if (embeddedEntries.length < 2) {
-    for (const metadataEntry of allEntries) {
-      if (metadataEntry.umap2D) {
-        const { umap2D: _removed, ...rest } = metadataEntry;
-        await writeMetadataEntry(outputDir, rest);
-      }
-    }
+    await stripUmap2DFromAllMetadata(outputDir);
     await clearUmapState(outputDir);
     console.log("ℹ️ Skipped UMAP: fewer than 2 embeddings");
     return;
@@ -128,29 +167,42 @@ export async function applyUmap2D(outputDir: string): Promise<void> {
     cached.count === embeddedEntries.length &&
     cached.paramsHash === paramsHash
   ) {
-    console.log("ℹ️ Skipped UMAP: embedding corpus unchanged");
-    return;
+    if (cached.coordinates && Object.keys(cached.coordinates).length > 0) {
+      await stripUmap2DFromAllMetadata(outputDir);
+      console.log("ℹ️ Skipped UMAP: embedding corpus unchanged");
+      return;
+    }
+
+    const migrated = collectLegacyCoordinates(
+      embeddedEntries as LegacyMetadataEntry[],
+    );
+    if (migrated) {
+      await writeUmapState(outputDir, { ...cached, coordinates: migrated });
+      await stripUmap2DFromAllMetadata(outputDir);
+      console.log("ℹ️ Migrated umap2D to .umap-state.json");
+      return;
+    }
   }
 
-  const coordinates = await runUmap(embeddedEntries.map(({ embeddings }) => embeddings));
+  const coordinateList = await runUmap(
+    embeddedEntries.map(({ embeddings }) => embeddings),
+  );
 
-  if (coordinates.length !== embeddedEntries.length) {
+  if (coordinateList.length !== embeddedEntries.length) {
     throw new Error(
-      `UMAP returned ${coordinates.length} coordinates for ${embeddedEntries.length} embeddings`,
+      `UMAP returned ${coordinateList.length} coordinates for ${embeddedEntries.length} embeddings`,
     );
   }
 
-  for (let index = 0; index < embeddedEntries.length; index++) {
-    const metadataEntry = embeddedEntries[index]!;
-    const umap2D = coordinates[index]!;
-    await writeMetadataEntry(outputDir, { ...metadataEntry, umap2D });
-  }
+  const coordinates = buildCoordinatesMap(embeddedEntries, coordinateList);
 
   await writeUmapState(outputDir, {
     inputHash,
     count: embeddedEntries.length,
     paramsHash,
+    coordinates,
   });
+  await stripUmap2DFromAllMetadata(outputDir);
 
   console.log(
     `✅ Updated umap2D for ${embeddedEntries.length} metadata file(s)`,

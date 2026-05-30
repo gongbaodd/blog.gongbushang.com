@@ -2,7 +2,7 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
-import { POST_COVER_DIR, POST_METADATA_DIR } from "../consts/config.js";
+import { POST_COVER_DIR, POST_METADATA_DIR, POST_UMAP_STATE } from "../consts/config.js";
 import {
   applyGalleryEntryToClientPost,
   galleryDocToPostId,
@@ -36,6 +36,25 @@ function metadataFileBasename(postId: string): string {
     return `${postId.replaceAll("/", "-")}.json`;
 }
 
+export function readUmapCoordinates(): Record<string, [number, number]> {
+    try {
+        const statePath = path.join(process.cwd(), POST_UMAP_STATE);
+        if (!fs.existsSync(statePath)) return {};
+        const state = JSON.parse(fs.readFileSync(statePath, "utf-8")) as {
+            coordinates?: Record<string, [number, number]>;
+        };
+        return state.coordinates ?? {};
+    } catch {
+        return {};
+    }
+}
+
+function enrichWithUmap2D(entry: PostMetadataEntry): PostMetadataEntry {
+    const coordinates = readUmapCoordinates();
+    const umap2D = coordinates[entry.file];
+    return umap2D ? { ...entry, umap2D } : entry;
+}
+
 export function readPostMetadataEntry(postId: string): PostMetadataEntry | undefined {
     try {
         const metadataPath = path.join(
@@ -44,7 +63,8 @@ export function readPostMetadataEntry(postId: string): PostMetadataEntry | undef
             metadataFileBasename(postId),
         );
         if (!fs.existsSync(metadataPath)) return undefined;
-        return JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry;
+        const entry = JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry;
+        return enrichWithUmap2D(entry);
     } catch {
         return undefined;
     }
@@ -54,12 +74,15 @@ export function readPostMetadata(): PostMetadataEntry[] | undefined {
     try {
         const metadataDir = path.join(process.cwd(), POST_METADATA_DIR);
         if (!fs.existsSync(metadataDir)) return undefined;
+        const coordinates = readUmapCoordinates();
         const files = fs.readdirSync(metadataDir).filter(
             (f) => f.endsWith(".json") && !f.startsWith("."),
         );
         return files.map((file) => {
             const raw = fs.readFileSync(path.join(metadataDir, file), "utf-8");
-            return JSON.parse(raw) as PostMetadataEntry;
+            const entry = JSON.parse(raw) as PostMetadataEntry;
+            const umap2D = coordinates[entry.file];
+            return umap2D ? { ...entry, umap2D } : entry;
         });
     } catch (error) {
         console.warn("Could not read post metadata:", error);

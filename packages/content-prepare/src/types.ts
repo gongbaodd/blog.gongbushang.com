@@ -36,7 +36,6 @@ export interface MetadataEntry {
   cover?: Cover;
   colorSet?: ColorSet;
   embeddings?: number[];
-  umap2D?: [number, number];
 }
 
 export interface CollectMetadataOptions {

@@ -53,7 +53,9 @@ async function loadExistingMetadata(
 
   try {
     const files = await fs.readdir(outputDir);
-    for (const file of files.filter((f) => f.endsWith(".json"))) {
+    for (const file of files.filter(
+      (f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME,
+    )) {
       const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
       const entry = JSON.parse(raw) as MetadataEntry;
       oldData[entry.file] = entry;
@@ -195,8 +197,11 @@ export async function collectMetadata(
     );
 
     if (hashUnchanged && old) {
+      const { umap2D: _removed, ...oldWithoutUmap } = old as MetadataEntry & {
+        umap2D?: [number, number];
+      };
       const merged: MetadataEntry = {
-        ...old,
+        ...oldWithoutUmap,
         ...dataFields,
       };
       merged.embeddings = await embedMetadata(merged, embeddingOptions);
