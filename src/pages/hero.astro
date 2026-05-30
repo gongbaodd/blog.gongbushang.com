@@ -6,8 +6,21 @@ import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
 import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
+import {
+  findNearestGalleryEntry,
+  readGalleryTraceSvg,
+} from "@/packages/utils/gallery";
 
 export const prerender = true;
+
+const nearest = findNearestGalleryEntry();
+const galleryImage = nearest
+  ? {
+      url: nearest.image,
+      traceSvg: readGalleryTraceSvg(nearest.id),
+      colorSet: nearest.colorSet,
+    }
+  : undefined;
 ---
 
 <Global>
@@ -20,7 +33,7 @@ export const prerender = true;
 
   <section>
     <MantineMain>
-      <ParticleHero />
+      <ParticleHero galleryImage={galleryImage} />
       <Footer slug={"hero"} />
     </MantineMain>
   </section>

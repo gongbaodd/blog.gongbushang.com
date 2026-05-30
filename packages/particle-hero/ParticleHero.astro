@@ -4,6 +4,21 @@ import { Content } from "@/packages/hero/fragments/description.mdx";
 import { Content as TitleContent } from "@/packages/hero/fragments/title.mdx";
 import { readPostMetadata } from "@/packages/utils/post";
 
+interface IGalleryImageProp {
+  url: string;
+  traceSvg?: string;
+  colorSet?: {
+    bgColor: string;
+    titleColor: string;
+  };
+}
+
+interface Props {
+  galleryImage?: IGalleryImageProp;
+}
+
+const { galleryImage } = Astro.props;
+
 const posts = (readPostMetadata() ?? [])
   .filter(
     (entry): entry is typeof entry & { umap2D: [number, number] } =>
@@ -22,7 +37,7 @@ const posts = (readPostMetadata() ?? [])
   );
 ---
 
-<ParticleHero posts={posts} client:load>
+<ParticleHero posts={posts} galleryImage={galleryImage} client:load>
   <TitleContent slot="title" />
   <Content slot="description" />
 </ParticleHero>

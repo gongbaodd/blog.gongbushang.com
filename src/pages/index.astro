@@ -15,9 +15,24 @@ import Footer from "@/packages/footer/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
 import WorldMap from "../components/WorldMap.astro";
+import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
+import {
+  findNearestGalleryEntry,
+  readGalleryTraceSvg,
+} from "@/packages/utils/gallery";
+
 
 export const prerender = true;
 const badges = await getBadges();
+
+const nearest = findNearestGalleryEntry();
+const galleryImage = nearest
+  ? {
+      url: nearest.image,
+      traceSvg: readGalleryTraceSvg(nearest.id),
+      colorSet: nearest.colorSet,
+    }
+  : undefined;
 ---
 
 <Global>
@@ -25,7 +40,7 @@ const badges = await getBadges();
   <Header />
   <section id="home-page" class="main">
     <MantineMain client:load>
-      <Hero />
+      <ParticleHero galleryImage={galleryImage} />
       <MantineHeatWrapper />
       <BlogSections />
       <WorldMap />

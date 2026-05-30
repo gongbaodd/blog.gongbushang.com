@@ -43,6 +43,19 @@
   width: 100%;
 }
 
+.canvasPlaceholder {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.canvasPlaceholderHidden {
+  opacity: 0;
+}
+
 @media (max-width: 61.99em) {
   .canvasColumn {
     width: min(600px, calc(100vw - 2rem));
@@ -117,6 +130,8 @@
 }
 
 .canvas {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   backdrop-filter: blur(5px) opacity(0);
@@ -139,80 +154,6 @@
   touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
-}
-
-.picker {
-  position: fixed;
-  left: 50%;
-  bottom: 1.25rem;
-  transform: translateX(-50%);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  max-width: min(96vw, 640px);
-  padding: 0.6rem 0.75rem;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 10px;
-  backdrop-filter: blur(8px);
-  pointer-events: auto;
-  z-index: 10;
-}
-
-.pickerBtn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.35rem;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  background: transparent;
-  color: #ccc;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-}
-
-.pickerBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.pickerBtnActive {
-  border-color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.pickerBtn img {
-  width: 56px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 4px;
-  display: block;
-}
-
-.pickerPostsSwatch {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  width: 56px;
-  height: 32px;
-  padding: 4px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.pickerPostsSwatch span {
-  border-radius: 50%;
-  display: block;
-}
-
-.pickerLabel {
-  font-size: 0.65rem;
-  max-width: 72px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .tooltip {
@@ -261,11 +202,4 @@
 .legendYearMarkLabel {
   font-size: var(--mantine-font-size-xs);
   white-space: nowrap;
-}
-
-@media (max-width: 768px) {
-  .pickerBtn {
-    min-height: 44px;
-    min-width: 44px;
-  }
 }

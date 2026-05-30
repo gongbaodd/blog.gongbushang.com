@@ -11,11 +11,10 @@ import {
   Text,
   Typography,
 } from "@mantine/core";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import App from "./core/App.js";
-import ImagePicker, { POSTS_ITEM_ID } from "./components/ImagePicker";
 import LegendCategoryChips from "./components/LegendCategoryChips";
 import LegendYearSlider from "./components/LegendYearSlider";
 import { usePostFilter } from "./usePostFilter";
@@ -49,8 +48,18 @@ export const PARTICLE_VIEW_HEIGHT = PARTICLE_LAYOUT_LANDSCAPE.height;
 export const PARTICLE_VIEW_SQUARE_SIZE = PARTICLE_LAYOUT_SQUARE.width;
 export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
 
+export interface IGalleryImage {
+  url: string;
+  traceSvg?: string;
+  colorSet?: {
+    bgColor: string;
+    titleColor: string;
+  };
+}
+
 export interface IParticleHeroProps {
   posts: UmapPost[];
+  galleryImage?: IGalleryImage;
   title?: ReactNode;
   description?: ReactNode;
 }
@@ -63,7 +72,17 @@ interface ITooltipState {
   top: number;
 }
 
-export default function ParticleHero({ posts, title, description }: IParticleHeroProps) {
+function traceSvgToCssBackground(traceSvg?: string): string | undefined {
+  if (!traceSvg) return undefined;
+  return `url("data:image/svg+xml,${encodeURIComponent(traceSvg)}")`;
+}
+
+export default function ParticleHero({
+  posts,
+  galleryImage,
+  title,
+  description,
+}: IParticleHeroProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<InstanceType<typeof App> | null>(null);
   const rafRef = useRef<number>(0);
@@ -76,8 +95,18 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
 
   const filterRef = useRef<PostFilterState>(initialFilter);
   const [loading, setLoading] = useState(true);
-  const [activePickerId, setActivePickerId] = useState(POSTS_ITEM_ID);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
+
+  const placeholderStyle = useMemo((): CSSProperties | undefined => {
+    if (!galleryImage?.traceSvg && !galleryImage?.colorSet?.bgColor) return undefined;
+
+    return {
+      backgroundColor: galleryImage.colorSet?.bgColor,
+      backgroundImage: traceSvgToCssBackground(galleryImage.traceSvg),
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
+  }, [galleryImage]);
 
   const applyFilter = useCallback(() => {
     appRef.current?.setPostFilter(filterRef.current);
@@ -93,33 +122,16 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
 
   const filter = usePostFilter(posts, handleFilterChange);
 
-  const handleSelectPosts = useCallback(async () => {
-    const app = appRef.current;
-    if (!app) return;
-    setLoading(true);
-    try {
-      await app.loadPosts(posts);
-      applyFilter();
-      setActivePickerId(POSTS_ITEM_ID);
-    } finally {
-      setLoading(false);
-    }
-  }, [posts, applyFilter]);
-
-  const handleSelectImage = useCallback(
-    async (url: string, id: string) => {
-      const app = appRef.current;
-      if (!app) return;
-      setLoading(true);
-      try {
-        await app.loadImage(url, posts);
-        applyFilter();
-        setActivePickerId(id);
-      } finally {
-        setLoading(false);
+  const loadScene = useCallback(
+    async (app: InstanceType<typeof App>) => {
+      if (galleryImage?.url) {
+        await app.loadImage(galleryImage.url, posts);
+      } else {
+        await app.loadPosts(posts);
       }
+      applyFilter();
     },
-    [posts, applyFilter],
+    [galleryImage?.url, posts, applyFilter],
   );
 
   useEffect(() => {
@@ -208,9 +220,7 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
       setLoading(true);
       try {
         await syncLayoutMode(false);
-        await app.loadPosts(posts);
-        applyFilter();
-        setActivePickerId(POSTS_ITEM_ID);
+        await loadScene(app);
       } finally {
         setLoading(false);
       }
@@ -224,7 +234,7 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
       void app.dispose();
       appRef.current = null;
     };
-  }, [posts, applyFilter]);
+  }, [posts, applyFilter, loadScene]);
 
   return (
     <CustomMantineProvider>
@@ -255,6 +265,17 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
 
               <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
                 <Flex className={classes.canvasContainer}>
+                  {galleryImage && placeholderStyle && (
+                    <Box
+                      aria-hidden
+                      className={
+                        classes.canvasPlaceholder +
+                        (loading ? "" : " " + classes.canvasPlaceholderHidden)
+                      }
+                      style={placeholderStyle}
+                    />
+                  )}
+
                   {tooltip && (
                     <Paper
                       className={classes.tooltip}
@@ -294,13 +315,6 @@ export default function ParticleHero({ posts, title, description }: IParticleHer
                       <Box ref={canvasRef} className={classes.canvasInner} />
                     </Flex>
                   </ReactErrorBoundary>
-
-                  <ImagePicker
-                    activeId={activePickerId}
-                    loading={loading}
-                    onSelectPosts={handleSelectPosts}
-                    onSelectImage={handleSelectImage}
-                  />
                 </Flex>
               </Card>
 
