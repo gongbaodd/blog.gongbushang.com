@@ -1,0 +1,48 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import { SITE_TITLE } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import Header from "@/packages/header/Header.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
+import {
+  readGalleryEntry,
+  readGalleryTraceSvg,
+} from "@/packages/utils/gallery";
+
+/** Change this to test a different gallery image (see src/content/generated/gallery.json). */
+const GALLERY_IMAGE_ID = "06/27/shenzhen";
+
+export const prerender = true;
+
+const entry = readGalleryEntry(GALLERY_IMAGE_ID);
+const galleryImage = entry
+  ? {
+      url: entry.image,
+      traceSvg: readGalleryTraceSvg(entry.id),
+      colorSet: entry.colorSet,
+    }
+  : undefined;
+---
+
+<Global>
+  <BaseHead
+    title={`${SITE_TITLE} · Hero gallery test`}
+    description="ParticleHero gallery image test page"
+    slot="head"
+  />
+  <Header />
+
+  <section>
+    <MantineMain>
+      {!entry && (
+        <p style="padding: 1rem; color: var(--mantine-color-red-6);">
+          Gallery entry not found for id: {GALLERY_IMAGE_ID}
+        </p>
+      )}
+      <ParticleHero galleryImage={galleryImage} />
+      <Footer slug={"hero-gallery"} />
+    </MantineMain>
+  </section>
+</Global>
