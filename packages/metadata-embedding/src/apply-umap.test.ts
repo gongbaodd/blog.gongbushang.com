@@ -16,17 +16,21 @@ vi.mock("./umap.ts", () => ({
 }));
 
 import {
+  applyCombinedUmap2D,
   applyUmap2D,
   computeUmapInputHash,
   UMAP_STATE_FILENAME,
 } from "./apply-umap.ts";
 import { runUmap } from "./umap.ts";
 import { computeUmapParamsHash } from "./umap-params.ts";
-import type { MetadataEntry } from "./types.ts";
 
 const runUmapMock = runUmap as Mock;
 
-type TestMetadataEntry = MetadataEntry & { umap2D?: [number, number] };
+type TestMetadataEntry = Record<string, unknown> & {
+  file: string;
+  embeddings: number[];
+  umap2D?: [number, number];
+};
 
 function entry(
   file: string,
@@ -69,11 +73,8 @@ async function readMetadata(
   return JSON.parse(raw) as TestMetadataEntry;
 }
 
-async function readUmapState(outputDir: string) {
-  const raw = await fs.readFile(
-    path.join(outputDir, UMAP_STATE_FILENAME),
-    "utf-8",
-  );
+async function readUmapState(statePath: string) {
+  const raw = await fs.readFile(statePath, "utf-8");
   return JSON.parse(raw) as {
     count: number;
     coordinates?: Record<string, [number, number]>;
@@ -82,12 +83,13 @@ async function readUmapState(outputDir: string) {
 
 let tmpRoot = "";
 let outputDir = "";
+let statePath = "";
 
 describe("computeUmapInputHash", () => {
   test("is stable for the same corpus", () => {
     const corpus = [
-      { file: "a/post", embeddings: [0.1, 0.2] },
-      { file: "b/post", embeddings: [0.3, 0.4] },
+      { key: "a/post", embeddings: [0.1, 0.2] },
+      { key: "b/post", embeddings: [0.3, 0.4] },
     ];
 
     expect(computeUmapInputHash(corpus)).toBe(computeUmapInputHash(corpus));
@@ -95,12 +97,12 @@ describe("computeUmapInputHash", () => {
 
   test("changes when one embedding value changes", () => {
     const before = computeUmapInputHash([
-      { file: "a/post", embeddings: [0.1, 0.2] },
-      { file: "b/post", embeddings: [0.3, 0.4] },
+      { key: "a/post", embeddings: [0.1, 0.2] },
+      { key: "b/post", embeddings: [0.3, 0.4] },
     ]);
     const after = computeUmapInputHash([
-      { file: "a/post", embeddings: [0.1, 0.21] },
-      { file: "b/post", embeddings: [0.3, 0.4] },
+      { key: "a/post", embeddings: [0.1, 0.21] },
+      { key: "b/post", embeddings: [0.3, 0.4] },
     ]);
 
     expect(after).not.toBe(before);
@@ -108,12 +110,12 @@ describe("computeUmapInputHash", () => {
 
   test("is stable regardless of input order", () => {
     const first = computeUmapInputHash([
-      { file: "a/post", embeddings: [0.1, 0.2] },
-      { file: "b/post", embeddings: [0.3, 0.4] },
+      { key: "a/post", embeddings: [0.1, 0.2] },
+      { key: "b/post", embeddings: [0.3, 0.4] },
     ]);
     const second = computeUmapInputHash([
-      { file: "b/post", embeddings: [0.3, 0.4] },
-      { file: "a/post", embeddings: [0.1, 0.2] },
+      { key: "b/post", embeddings: [0.3, 0.4] },
+      { key: "a/post", embeddings: [0.1, 0.2] },
     ]);
 
     expect(second).toBe(first);
@@ -124,6 +126,7 @@ describe("applyUmap2D", () => {
   beforeEach(async () => {
     tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-umap-"));
     outputDir = path.join(tmpRoot, "metadata");
+    statePath = path.join(outputDir, UMAP_STATE_FILENAME);
     await fs.mkdir(outputDir, { recursive: true });
     runUmapMock.mockReset();
     runUmapMock.mockResolvedValue([
@@ -145,10 +148,10 @@ describe("applyUmap2D", () => {
     await writeMetadata(outputDir, corpus[1]!);
 
     const inputHash = computeUmapInputHash(
-      corpus.map(({ file, embeddings }) => ({ file, embeddings })),
+      corpus.map(({ file, embeddings }) => ({ key: file, embeddings })),
     );
     await fs.writeFile(
-      path.join(outputDir, UMAP_STATE_FILENAME),
+      statePath,
       JSON.stringify({
         inputHash,
         count: 2,
@@ -179,7 +182,7 @@ describe("applyUmap2D", () => {
     expect((await readMetadata(outputDir, "a/post")).umap2D).toBeUndefined();
     expect((await readMetadata(outputDir, "b/post")).umap2D).toBeUndefined();
 
-    const state = await readUmapState(outputDir);
+    const state = await readUmapState(statePath);
     expect(state).toMatchObject({ count: 2 });
     expect(state.coordinates).toEqual({
       "a/post": [1, 2],
@@ -196,10 +199,10 @@ describe("applyUmap2D", () => {
     await writeMetadata(outputDir, corpus[1]!);
 
     const inputHash = computeUmapInputHash(
-      corpus.map(({ file, embeddings }) => ({ file, embeddings })),
+      corpus.map(({ file, embeddings }) => ({ key: file, embeddings })),
     );
     await fs.writeFile(
-      path.join(outputDir, UMAP_STATE_FILENAME),
+      statePath,
       JSON.stringify({
         inputHash,
         count: 2,
@@ -228,10 +231,10 @@ describe("applyUmap2D", () => {
     await writeMetadata(outputDir, corpus[1]!);
 
     const inputHash = computeUmapInputHash(
-      corpus.map(({ file, embeddings }) => ({ file, embeddings })),
+      corpus.map(({ file, embeddings }) => ({ key: file, embeddings })),
     );
     await fs.writeFile(
-      path.join(outputDir, UMAP_STATE_FILENAME),
+      statePath,
       JSON.stringify({
         inputHash,
         count: 2,
@@ -245,7 +248,7 @@ describe("applyUmap2D", () => {
     expect(runUmapMock).not.toHaveBeenCalled();
     expect((await readMetadata(outputDir, "a/post")).umap2D).toBeUndefined();
     expect((await readMetadata(outputDir, "b/post")).umap2D).toBeUndefined();
-    expect(await readUmapState(outputDir)).toMatchObject({
+    expect(await readUmapState(statePath)).toMatchObject({
       coordinates: {
         "a/post": [1, 2],
         "b/post": [3, 4],
@@ -260,9 +263,7 @@ describe("applyUmap2D", () => {
 
     expect(runUmapMock).not.toHaveBeenCalled();
     expect((await readMetadata(outputDir, "a/post")).umap2D).toBeUndefined();
-    await expect(
-      fs.access(path.join(outputDir, UMAP_STATE_FILENAME)),
-    ).rejects.toThrow();
+    await expect(fs.access(statePath)).rejects.toThrow();
   });
 
   test("clears stale umap2D when corpus drops below two entries", async () => {
@@ -279,5 +280,66 @@ describe("applyUmap2D", () => {
 
     expect(runUmapMock).toHaveBeenCalledTimes(1);
     expect((await readMetadata(outputDir, "a/post")).umap2D).toBeUndefined();
+  });
+});
+
+describe("applyCombinedUmap2D", () => {
+  beforeEach(async () => {
+    tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-combined-umap-"));
+    runUmapMock.mockReset();
+    runUmapMock.mockResolvedValue([
+      [1, 2],
+      [3, 4],
+    ]);
+  });
+
+  afterEach(async () => {
+    await fs.rm(tmpRoot, { recursive: true, force: true });
+  });
+
+  test("merges post and podcast corpora into one state file", async () => {
+    const metadataDir = path.join(tmpRoot, "metadata");
+    const podcastDir = path.join(tmpRoot, "podcast");
+    const combinedState = path.join(metadataDir, UMAP_STATE_FILENAME);
+    await fs.mkdir(metadataDir, { recursive: true });
+    await fs.mkdir(podcastDir, { recursive: true });
+
+    await writeMetadata(metadataDir, entry("blog/post", [0.1, 0.2]));
+    await fs.writeFile(
+      path.join(podcastDir, "ep-one.json"),
+      JSON.stringify({
+        id: "ep-one",
+        title: "Ep",
+        summary: "Sum",
+        embeddings: [0.5, 0.6],
+      }),
+      "utf-8",
+    );
+
+    await applyCombinedUmap2D(
+      [
+        {
+          dir: metadataDir,
+          getKey: (e) => e.file as string,
+          toBasename: (k) => k.replaceAll("/", "-"),
+        },
+        {
+          dir: podcastDir,
+          getKey: (e) => e.id as string,
+          toBasename: (k) => k,
+        },
+      ],
+      combinedState,
+    );
+
+    expect(runUmapMock).toHaveBeenCalledWith([
+      [0.1, 0.2],
+      [0.5, 0.6],
+    ]);
+    const state = await readUmapState(combinedState);
+    expect(state.coordinates).toEqual({
+      "blog/post": [1, 2],
+      "ep-one": [3, 4],
+    });
   });
 });

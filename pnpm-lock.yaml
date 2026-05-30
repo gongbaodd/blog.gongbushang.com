@@ -285,6 +285,9 @@ importers:
       image-metadata:
         specifier: workspace:*
         version: link:../image-metadata
+      metadata-embedding:
+        specifier: workspace:*
+        version: link:../metadata-embedding
       post-embedding:
         specifier: workspace:*
         version: link:../post-embedding
@@ -304,6 +307,12 @@ importers:
       image-metadata:
         specifier: workspace:*
         version: link:../image-metadata
+      metadata-embedding:
+        specifier: workspace:*
+        version: link:../metadata-embedding
+      post-embedding:
+        specifier: workspace:*
+        version: link:../post-embedding
       xml2js:
         specifier: ^0.6.2
         version: 0.6.2
@@ -345,6 +354,15 @@ importers:
       react:
         specifier: ^19.2.6
         version: 19.2.6
+
+  packages/metadata-embedding:
+    dependencies:
+      consts:
+        specifier: workspace:*
+        version: link:../consts
+      post-embedding:
+        specifier: workspace:*
+        version: link:../post-embedding
 
   packages/particle-hero:
     dependencies:

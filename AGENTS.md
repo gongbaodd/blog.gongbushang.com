@@ -16,9 +16,10 @@ When writing or running tests, use the project skill for Vitest:
 
 - **Vitest (testing)**: [.agents/skills/vitest-testing/SKILL.md](.agents/skills/vitest-testing/SKILL.md) — Vitest setup, test API (`test`/`describe`/`expect`), config (Vite shared), CLI, mocking (`vi`), snapshots, coverage.
 
-When working with generated post covers, metadata, podcast data, or the `content-prepare` / `fetch-podcast` pipelines:
+When working with generated post covers, metadata, podcast data, embeddings, UMAP, or the `content-prepare` / `fetch-podcast` pipelines:
 
 - **Generated content**: [.agents/skills/generated-content/SKILL.md](.agents/skills/generated-content/SKILL.md) — paths in `packages/consts/config.js`, reader functions in `packages/utils/post.ts` and `packages/utils/podcast.ts`, SVG trace layout under `src/content/generated/`.
+- **Metadata embeddings + UMAP**: `packages/metadata-embedding` — post/podcast embedding text builders, `embedFromText`, `applyBlogUmapCorpus` (shared `metadata/.umap-state.json`).
 
 When adding or editing React islands that use WebGL, Three.js, Rapier physics, or maplibre/mapbox canvas:
 

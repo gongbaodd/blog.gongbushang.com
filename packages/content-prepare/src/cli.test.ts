@@ -59,6 +59,7 @@ describe("resolveCollectOptions", () => {
   test("resolves default paths relative to repo root", async () => {
     const options = await resolveCollectOptions({});
 
+    expect(options.repoRoot).toBe(repoRoot);
     expect(options.docsDir).toBe(path.resolve(repoRoot, "src/content/_docs"));
     expect(options.outputDir).toBe(
       path.resolve(repoRoot, "src/content/generated/metadata"),
@@ -78,6 +79,7 @@ describe("resolveCollectOptions", () => {
     });
 
     expect(options).toEqual({
+      repoRoot,
       docsDir: path.resolve(repoRoot, "alt/docs"),
       outputDir: path.resolve(repoRoot, "alt/metadata"),
       traceDir: path.resolve(repoRoot, "alt/trace"),

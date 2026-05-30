@@ -19,6 +19,14 @@ vi.mock("image-metadata", () => ({
   getColorSet: vi.fn(),
 }));
 
+vi.mock("metadata-embedding", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("metadata-embedding")>();
+  return {
+    ...actual,
+    applyBlogUmapCorpus: vi.fn(),
+  };
+});
+
 vi.mock("post-embedding", async (importOriginal) => {
   const actual = await importOriginal<typeof import("post-embedding")>();
   return {
@@ -106,16 +114,16 @@ cover:
 `,
     );
 
-    await collectMetadata({ docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
 
     const entry = await readMetadata("2024/01/01/hello-world");
     expect(entry.file).toBe("2024/01/01/hello-world");
     expect(entry.hash).toMatch(/^[a-f0-9]{64}$/);
     expect(entry.id).toBe("2024/01/01/hello-world");
-    expect(entry.href).toBe("/travel/2024/01/01/hello-world");
+    expect(entry.href).toBe("/life/2024/01/01/hello-world");
     expect(entry.title).toBe("Hello");
     expect(entry.content).toContain("Hello");
-    expect(entry.category).toEqual({ label: "travel", href: "/travel" });
+    expect(entry.category).toEqual({ label: "life", href: "/life" });
     expect(entry.tags).toEqual([]);
     expect(entry.city).toEqual(["Tokyo"]);
     expect(entry.locations).toEqual([
@@ -146,7 +154,7 @@ category: blog
     );
 
     await expect(
-      collectMetadata({ docsDir, outputDir, traceDir }),
+      collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir }),
     ).rejects.toThrow("Embedding server is not running");
   });
 
@@ -160,14 +168,14 @@ title: Stable
 `;
     await writePost("2024/01/02/stable.md", content);
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     const first = await readMetadata("2024/01/02/stable");
 
     geocodeCitiesMock.mockClear();
     getColorSetMock.mockClear();
     const writeSpy = vi.spyOn(fs, "writeFile");
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     const second = await readMetadata("2024/01/02/stable");
 
     expect(second).toEqual(first);
@@ -189,7 +197,7 @@ cover:
 `,
     );
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     getColorSetMock.mockClear();
 
     await writePost(
@@ -204,7 +212,7 @@ cover:
 `,
     );
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     const entry = await readMetadata("2024/01/03/with-cover");
 
     expect(entry.cover).toEqual({ url: "./same-cover.png" });
@@ -226,7 +234,7 @@ category: blog
 # Stable
 `;
     await writePost("2024/01/08/embed-backfill.md", content);
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     const first = await readMetadata("2024/01/08/embed-backfill");
 
     await fs.writeFile(
@@ -240,7 +248,7 @@ category: blog
 
     getEmbeddingMock.mockClear();
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
     const second = await readMetadata("2024/01/08/embed-backfill");
 
     expect(second.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
@@ -258,7 +266,7 @@ cover:
 # Hello
 `;
     await writePost("2024/01/06/backfill.md", content);
-    await collectMetadata({ docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
 
     const hash = (await readMetadata("2024/01/06/backfill")).hash;
     await fs.writeFile(
@@ -277,7 +285,7 @@ cover:
     geocodeCitiesMock.mockClear();
     getColorSetMock.mockClear();
 
-    await collectMetadata({ docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
     const entry = await readMetadata("2024/01/06/backfill");
 
     expect(entry.id).toBe("2024/01/06/backfill");
@@ -326,7 +334,7 @@ category: blog
       "utf-8",
     );
 
-    await collectMetadata({ docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
 
     const entry = await readMetadata("2024/01/04/active");
     expect(entry.hash).not.toBe("legacy-hash");

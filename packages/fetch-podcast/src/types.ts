@@ -11,6 +11,7 @@ export interface Episode {
   audioUrl: string;
   image: string;
   colorSet?: ColorSet;
+  embeddings?: number[];
 }
 
 export interface ChannelData {

@@ -2,6 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseStringPromise } from "xml2js";
 import { getColorSet } from "image-metadata";
+import { applyBlogUmapCorpus } from "metadata-embedding";
+import { isEmbeddingServerRunning } from "post-embedding";
+import { syncEpisodeEmbeddings } from "./sync-embeddings.ts";
 import type {
   ChannelData,
   Episode,
@@ -10,6 +13,9 @@ import type {
 } from "./types.ts";
 
 const DEFAULT_RSS_URL = "https://anchor.fm/s/f483db10/podcast/rss";
+
+const EMBEDDING_SERVER_ERROR =
+  "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.";
 
 function getEpisodeSlug(url: string): string {
   try {
@@ -140,7 +146,7 @@ async function loadExistingPodcast(
     } else {
       const files = await fs.readdir(episodeDir);
       for (const file of files) {
-        if (!file.endsWith(".json")) continue;
+        if (!file.endsWith(".json") || file.startsWith(".")) continue;
         const episodeRaw = await fs.readFile(
           path.join(episodeDir, file),
           "utf-8",
@@ -157,6 +163,25 @@ async function loadExistingPodcast(
   } catch {
     return null;
   }
+}
+
+async function episodeNeedsEmbedding(traceDir: string): Promise<boolean> {
+  let files: string[];
+  try {
+    files = await fs.readdir(traceDir);
+  } catch {
+    return false;
+  }
+
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    const raw = await fs.readFile(path.join(traceDir, file), "utf-8");
+    const episode = JSON.parse(raw) as Episode;
+    if (!Array.isArray(episode.embeddings) || episode.embeddings.length === 0) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 export async function fetchAndProcessPodcast(
@@ -183,6 +208,8 @@ export async function fetchAndProcessPodcast(
   );
   console.log(`📻 Found ${rssEpisodes.length} episodes in RSS`);
 
+  await fs.mkdir(options.traceDir, { recursive: true });
+
   const existing = await loadExistingPodcast(
     options.outputFile,
     options.traceDir,
@@ -191,49 +218,61 @@ export async function fetchAndProcessPodcast(
     ? new Set(existing.episodes.map((ep) => ep.id))
     : new Set<string>();
 
-  const newEpisodes = rssEpisodes.filter((ep : Episode) => !existingIds.has(ep.id));
+  const newEpisodes = rssEpisodes.filter((ep: Episode) => !existingIds.has(ep.id));
   const existingEpisodes = existing
     ? existing.episodes.filter((ep) =>
-        rssEpisodes.some((rss : Episode) => rss.id === ep.id),
+        rssEpisodes.some((rss: Episode) => rss.id === ep.id),
       )
     : [];
 
-  if (newEpisodes.length === 0) {
-    console.log("✅ No new episodes; podcast data unchanged.");
-    return;
-  }
+  if (newEpisodes.length > 0) {
+    console.log(
+      `📥 ${existingEpisodes.length} existing, ${newEpisodes.length} new`,
+    );
 
-  console.log(
-    `📥 ${existingEpisodes.length} existing, ${newEpisodes.length} new`,
-  );
+    const enrichedNew = await enrichEpisodesWithColors(newEpisodes, {
+      baseDir: options.baseDir,
+      traceDir: options.traceDir,
+    });
 
-  const enrichedNew = await enrichEpisodesWithColors(newEpisodes, {
-    baseDir: options.baseDir,
-    traceDir: options.traceDir,
-  });
+    const manifest = {
+      channel: channelData,
+      lastUpdated: new Date().toISOString(),
+    };
 
-  const manifest = {
-    channel: channelData,
-    lastUpdated: new Date().toISOString(),
-  };
-
-  await fs.writeFile(
-    options.outputFile,
-    JSON.stringify(manifest, null, 2),
-    "utf-8",
-  );
-
-  for (const episode of enrichedNew) {
-    const episodePath = path.join(options.traceDir, `${episode.id}.json`);
     await fs.writeFile(
-      episodePath,
-      JSON.stringify(episode, null, 2),
+      options.outputFile,
+      JSON.stringify(manifest, null, 2),
       "utf-8",
     );
+
+    for (const episode of enrichedNew) {
+      const episodePath = path.join(options.traceDir, `${episode.id}.json`);
+      await fs.writeFile(
+        episodePath,
+        JSON.stringify(episode, null, 2),
+        "utf-8",
+      );
+    }
+
+    console.log(
+      `\n✨ Podcast manifest saved to ${options.outputFile} (${newEpisodes.length} new episode(s) added)`,
+    );
+    console.log(`📁 Episode JSON + trace SVGs saved to ${options.traceDir}/`);
+  } else {
+    console.log("✅ No new episodes; podcast data unchanged.");
   }
 
-  console.log(
-    `\n✨ Podcast manifest saved to ${options.outputFile} (${newEpisodes.length} new episode(s) added)`,
-  );
-  console.log(`📁 Episode JSON + trace SVGs saved to ${options.traceDir}/`);
+  if (await episodeNeedsEmbedding(options.traceDir)) {
+    const embeddingServerRunning = await isEmbeddingServerRunning();
+    if (!embeddingServerRunning) {
+      throw new Error(EMBEDDING_SERVER_ERROR);
+    }
+    const embeddedCount = await syncEpisodeEmbeddings(options.traceDir);
+    if (embeddedCount > 0) {
+      console.log(`🧠 Embedded ${embeddedCount} podcast episode(s)`);
+    }
+  }
+
+  await applyBlogUmapCorpus(options.baseDir);
 }

@@ -3,6 +3,7 @@ export {
   EMBEDDING_DIMENSIONS,
   resolveModel,
 } from "./client.ts";
+export { findRepoRoot } from "./find-repo-root.ts";
 export { getEmbedding } from "./get-embedding.ts";
 export { isEmbeddingServerRunning } from "./is-embedding-server-running.ts";
 export type { EmbeddingOptions } from "./types.ts";

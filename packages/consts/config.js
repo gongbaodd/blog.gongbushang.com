@@ -1,6 +1,7 @@
 export const CONTENT_GENERATED_DIR = "src/content/generated";
 
 export const POST_METADATA_DIR = `${CONTENT_GENERATED_DIR}/metadata`;
+/** Combined 2D UMAP coordinates for blog posts (key = post file slug) and podcasts (key = episode id). */
 export const POST_UMAP_STATE = `${POST_METADATA_DIR}/.umap-state.json`;
 export const POST_COVER_DIR = `${CONTENT_GENERATED_DIR}/cover`;
 

@@ -12,6 +12,8 @@
   "dependencies": {
     "consts": "workspace:*",
     "image-metadata": "workspace:*",
+    "metadata-embedding": "workspace:*",
+    "post-embedding": "workspace:*",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {

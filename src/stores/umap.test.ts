@@ -107,6 +107,31 @@ describe("buildUmapChartData", () => {
   test("returns empty array for empty input", () => {
     expect(buildUmapChartData([])).toEqual([]);
   });
+
+  test("includes podcast as its own chart series", () => {
+    const postsWithPodcast = [
+      ...samplePosts,
+      {
+        id: "AIXR-e3hmug0",
+        href: "https://example.com/ep",
+        title: "AIXR episode",
+        date: "Fri, 10 Apr 2026 11:25:23 GMT",
+        category: { label: "podcast", href: "/podcast" },
+        umap2D: [0.7, -0.2] as [number, number],
+      },
+    ];
+
+    const result = buildUmapChartData(postsWithPodcast);
+
+    expect(result).toHaveLength(2);
+    expect(result.map((series) => series.name)).toEqual(["blog", "podcast"]);
+    expect(result[1].data[0]).toMatchObject({
+      title: "AIXR episode",
+      category: "podcast",
+      x: 0.7,
+      y: -0.2,
+    });
+  });
 });
 
 describe("$umapChartData", () => {

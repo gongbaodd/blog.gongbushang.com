@@ -64,14 +64,16 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 - Writes one `MetadataEntry` JSON per post under `metadata/` (basename mirrors cover SVG naming)
 - Each entry includes a SHA-256 `hash` of the source markdown; unchanged posts are skipped
 - `file` field = post id (slug under `_docs/`)
-- UMAP 2D coordinates live in `metadata/.umap-state.json` (not in per-post JSON); `readPostMetadata()` merges them at read time
+- Embeddings stored in per-post JSON; UMAP 2D coordinates live in `metadata/.umap-state.json` (shared with podcasts — not in per-entity JSON); `readPostMetadata()` merges `umap2D` at read time
+- Embedding + combined UMAP logic: `packages/metadata-embedding` (used by `content-prepare` and `fetch-podcast`)
 - Generates cover SVG when cover URL is new/changed
 
 ### Podcast data (`fetch-podcast`)
 
 - Input: Anchor RSS feed (default URL in `fetch-podcast.ts`)
-- Only processes **new** episodes; skips write if none
 - Writes channel manifest to `podcast.json` and one JSON per episode under `podcast/` (filename = episode `id`, e.g. `Canva-e3jc78i.json`)
+- Embeds episodes missing `embeddings` using text `title|podcast|summary`; runs combined UMAP with posts via `metadata-embedding` (even when RSS has no new episodes)
+- `umap2D` merged at read time from `metadata/.umap-state.json` (key = episode `id`); exposed on `/api/posts/umap.json` with category `podcast`
 
 ### Gallery data (`prepare-gallery`)
 

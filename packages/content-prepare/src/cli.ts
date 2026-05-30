@@ -54,6 +54,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
 export async function resolveCollectOptions(cli: CliOptions = {}) {
   const repoRoot = await findRepoRoot();
   return {
+    repoRoot,
     docsDir: path.resolve(repoRoot, cli.docsDir ?? "src/content/_docs"),
     outputDir: path.resolve(
       repoRoot,

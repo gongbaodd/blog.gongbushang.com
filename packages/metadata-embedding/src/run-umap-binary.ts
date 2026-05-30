@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { access } from "node:fs/promises";
 import path from "node:path";
-import { findRepoRoot } from "./cli.ts";
+import { findRepoRoot } from "post-embedding/find-repo-root";
 import { UMAP_2D_CONFIG } from "./umap-params.ts";
 
 export interface UmapBinaryDeps {
@@ -15,7 +15,7 @@ export interface UmapBinaryDeps {
 }
 
 const defaultDeps: UmapBinaryDeps = {
-  findRepoRoot,
+  findRepoRoot: async () => findRepoRoot(),
   access,
   spawn,
 };

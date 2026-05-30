@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { PODCAST_COVER_DIR, PODCAST_JSON } from "../consts/config.js";
+import { PODCAST_COVER_DIR, PODCAST_JSON, POST_UMAP_STATE } from "../consts/config.js";
 import type { T_PROPS } from "./post";
 
 export interface PodcastEpisode extends Record<string, unknown> {
@@ -19,6 +19,8 @@ export interface PodcastEpisode extends Record<string, unknown> {
     trace?: string;
   };
   trace?: string;
+  embeddings?: number[];
+  umap2D?: [number, number];
 }
 
 export interface PodcastData {
@@ -32,16 +34,41 @@ const EMPTY_PODCAST_DATA: PodcastData = {
   episodes: [],
 };
 
+export function readPodcastUmapCoordinates(): Record<string, [number, number]> {
+  try {
+    const statePath = path.join(process.cwd(), POST_UMAP_STATE);
+    if (!fs.existsSync(statePath)) return {};
+    const state = JSON.parse(fs.readFileSync(statePath, "utf-8")) as {
+      coordinates?: Record<string, [number, number]>;
+    };
+    return state.coordinates ?? {};
+  } catch {
+    return {};
+  }
+}
+
+function enrichEpisodeWithUmap2D(episode: PodcastEpisode): PodcastEpisode {
+  const coordinates = readPodcastUmapCoordinates();
+  const umap2D = coordinates[episode.id];
+  return umap2D ? { ...episode, umap2D } : episode;
+}
+
 function readPodcastEpisodes(): PodcastEpisode[] {
   const podcastDir = path.join(process.cwd(), PODCAST_COVER_DIR);
   if (!fs.existsSync(podcastDir)) return [];
 
+  const coordinates = readPodcastUmapCoordinates();
+
   return fs
     .readdirSync(podcastDir)
-    .filter((file) => file.endsWith(".json"))
+    .filter(
+      (file) => file.endsWith(".json") && !file.startsWith("."),
+    )
     .map((file) => {
       const raw = fs.readFileSync(path.join(podcastDir, file), "utf-8");
-      return JSON.parse(raw) as PodcastEpisode;
+      const episode = JSON.parse(raw) as PodcastEpisode;
+      const umap2D = coordinates[episode.id];
+      return umap2D ? { ...episode, umap2D } : episode;
     })
     .sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
@@ -98,13 +125,15 @@ export function processPodcastEpisodes(): PodcastEpisode[] {
   const episodesData = readPodcastData().episodes;
 
   return episodesData.map((ep) => {
-    if (!ep.image) return ep as PodcastEpisode;
+    const withUmap = enrichEpisodeWithUmap2D(ep);
 
-    const slug = episodeSlug(ep.id as string);
+    if (!withUmap.image) return withUmap;
+
+    const slug = episodeSlug(withUmap.id as string);
     const trace = readPodcastCoverSvg(slug);
-    if (!trace) return ep as PodcastEpisode;
+    if (!trace) return withUmap;
 
-    return { ...ep, trace } as PodcastEpisode;
+    return { ...withUmap, trace };
   });
 }
 

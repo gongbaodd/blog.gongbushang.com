@@ -10,8 +10,11 @@ import {
   extractDataFields,
   type FrontmatterData,
 } from "./data-field.ts";
-import { embedMetadata } from "./embedding.ts";
-import { applyUmap2D, UMAP_STATE_FILENAME } from "./apply-umap.ts";
+import {
+  applyBlogUmapCorpus,
+  embedPostMetadata,
+  UMAP_STATE_FILENAME,
+} from "metadata-embedding";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
 import type {
@@ -149,7 +152,7 @@ async function writeMetadataEntry(
 export async function collectMetadata(
   options: CollectMetadataOptions,
 ): Promise<void> {
-  const { docsDir, outputDir, traceDir, googleApiKey, embeddingOptions } =
+  const { repoRoot, docsDir, outputDir, traceDir, googleApiKey, embeddingOptions } =
     options;
   const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
 
@@ -204,7 +207,7 @@ export async function collectMetadata(
         ...oldWithoutUmap,
         ...dataFields,
       };
-      merged.embeddings = await embedMetadata(merged, embeddingOptions);
+      merged.embeddings = await embedPostMetadata(merged, embeddingOptions);
       await writeMetadataEntry(outputDir, merged);
       changedCount++;
       console.log(`✅ Backfilled data fields: ${relPath}`);
@@ -246,7 +249,7 @@ export async function collectMetadata(
       }
     }
 
-    merged.embeddings = await embedMetadata(merged, embeddingOptions);
+    merged.embeddings = await embedPostMetadata(merged, embeddingOptions);
 
     await writeMetadataEntry(outputDir, merged);
     changedCount++;
@@ -280,5 +283,5 @@ export async function collectMetadata(
     `\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`,
   );
 
-  await applyUmap2D(outputDir);
+  await applyBlogUmapCorpus(repoRoot);
 }
