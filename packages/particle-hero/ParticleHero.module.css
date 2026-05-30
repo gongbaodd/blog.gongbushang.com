@@ -125,10 +125,6 @@
     padding-bottom: 0;
   }
 
-  .contentActions {
-    justify-content: flex-start;
-  }
-
   .canvasContainer {
     width: 100%;
   }
