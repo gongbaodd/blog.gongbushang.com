@@ -115,3 +115,47 @@ export function findNearestGalleryEntry(
 ): GalleryEntry | undefined {
   return pickNearestGalleryEntry(readGalleryData().images, refDate);
 }
+
+export function galleryDocToPostId(doc: string): string | undefined {
+  if (!doc.startsWith("/")) return undefined;
+  const postId = doc.slice(1);
+  return postId.length > 0 ? postId : undefined;
+}
+
+export interface IGalleryClientPostData {
+  cover?: { url: string | { src: string }; alt?: string };
+  bgColor?: string;
+  titleColor?: string;
+  trace?: string;
+  [key: string]: unknown;
+}
+
+export interface IGalleryClientPost {
+  id: string;
+  title: string;
+  data: IGalleryClientPostData;
+}
+
+export function applyGalleryEntryToClientPost<T extends IGalleryClientPost>(
+  clientPost: T,
+  entry: GalleryEntry,
+  trace?: string,
+): T {
+  return {
+    ...clientPost,
+    data: {
+      ...clientPost.data,
+      cover: {
+        url: entry.image,
+        alt: clientPost.data.cover?.alt ?? clientPost.title,
+      },
+      ...(entry.colorSet?.bgColor
+        ? { bgColor: entry.colorSet.bgColor }
+        : {}),
+      ...(entry.colorSet?.titleColor
+        ? { titleColor: entry.colorSet.titleColor }
+        : {}),
+      ...(trace ? { trace } : {}),
+    },
+  };
+}

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   anniversaryDistance,
+  galleryDocToPostId,
   parseGalleryDocDate,
   pickNearestGalleryEntry,
   type GalleryEntry,
@@ -50,6 +51,20 @@ describe("anniversaryDistance", () => {
     const dec31 = new Date(2010, 11, 31);
 
     expect(anniversaryDistance(ref, dec31)).toBe(2);
+  });
+});
+
+describe("galleryDocToPostId", () => {
+  test("strips leading slash from doc path", () => {
+    expect(
+      galleryDocToPostId("/2019/05/25/take-another-black-golden-roof-again"),
+    ).toBe("2019/05/25/take-another-black-golden-roof-again");
+  });
+
+  test("returns undefined for invalid doc", () => {
+    expect(galleryDocToPostId("2019/05/25/slug")).toBeUndefined();
+    expect(galleryDocToPostId("")).toBeUndefined();
+    expect(galleryDocToPostId("/")).toBeUndefined();
   });
 });
 

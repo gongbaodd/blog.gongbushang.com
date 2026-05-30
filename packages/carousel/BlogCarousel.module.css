@@ -2,6 +2,19 @@
     border-radius: var(--mantine-radius-md);
 }
 
+.carouselFill {
+    height: 100%;
+}
+
+.carouselFill :global(.mantine-Carousel-viewport),
+.carouselFill :global(.mantine-Carousel-container) {
+    height: 100%;
+}
+
+.carouselFill :global(.mantine-Carousel-container) {
+    align-items: center;
+}
+
 @media screen and (max-width: 88em) {
     .carousel {
         max-width: 100%;

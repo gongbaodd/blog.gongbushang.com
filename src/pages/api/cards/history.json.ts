@@ -1,6 +1,12 @@
 import { date } from "@/packages/utils/extract";
 import { getAllPostByDateDesc, initYearMonthPostMap } from "@/packages/utils/filter";
-import { mapServerPostToClient, type TClientPost, type T_PROPS } from "@/packages/utils/post";
+import { findNearestGalleryEntry } from "@/packages/utils/gallery";
+import {
+  mapGalleryEntryToClientPost,
+  mapServerPostToClient,
+  type TClientPost,
+  type T_PROPS,
+} from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 import dayjs from "dayjs";
 
@@ -62,6 +68,18 @@ export const GET: APIRoute<T_PROPS> = async () => {
             return sortByDateAsc(a, b)
         })
     posts = [...hPostWithCover, ...hPostNoCover]
+
+    const galleryEntry = findNearestGalleryEntry();
+    const galleryPost = galleryEntry
+      ? await mapGalleryEntryToClientPost(galleryEntry)
+      : undefined;
+
+    if (galleryPost) {
+      posts = [
+        galleryPost,
+        ...posts.filter((p) => p.id !== galleryPost.id),
+      ];
+    }
 
     return new Response(JSON.stringify({ posts }))
 }

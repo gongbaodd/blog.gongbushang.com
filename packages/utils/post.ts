@@ -3,6 +3,12 @@ import { date as dateFrom, title as titleFrom, excerpt as excerptFrom, type TLin
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import { POST_COVER_DIR, POST_METADATA_DIR } from "../consts/config.js";
+import {
+  applyGalleryEntryToClientPost,
+  galleryDocToPostId,
+  readGalleryTraceSvg,
+  type GalleryEntry,
+} from "./gallery.ts";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
@@ -119,6 +125,22 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
           return result
       })
   );
+}
+
+export async function mapGalleryEntryToClientPost(
+  entry: GalleryEntry,
+): Promise<TClientPost | undefined> {
+  const postId = galleryDocToPostId(entry.doc);
+  if (!postId) return undefined;
+
+  const posts = await getAllPosts();
+  const serverPost = posts.find((post) => post.id === postId);
+  if (!serverPost) return undefined;
+
+  const [clientPost] = await mapServerPostToClient([serverPost]);
+  const trace = readGalleryTraceSvg(entry.id);
+
+  return applyGalleryEntryToClientPost(clientPost, entry, trace);
 }
 
 

@@ -11,9 +11,14 @@ import {
   Text,
   Typography,
 } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
+import { useStore } from "@nanostores/react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import { TooltipStackCarousel } from "@/packages/carousel/BlogCarousel";
+import { $cardCache, requestCardPost } from "@/packages/carousel/card";
+import type { IPost } from "@/packages/card/PostCard";
 import App from "./core/App.js";
 import LegendCategoryChips from "./components/LegendCategoryChips";
 import LegendYearSlider from "./components/LegendYearSlider";
@@ -96,6 +101,39 @@ export default function ParticleHero({
   const filterRef = useRef<PostFilterState>(initialFilter);
   const [loading, setLoading] = useState(true);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
+  const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
+  const [cardStack, setCardStack] = useState<string[]>([]);
+  const [debouncedHoveredId] = useDebouncedValue(hoveredPostId, 300);
+  const cardCache = useStore($cardCache);
+
+  useEffect(() => {
+    if (!debouncedHoveredId) return;
+    setCardStack((prev) => {
+      const next = [
+        debouncedHoveredId,
+        ...prev.filter((id) => id !== debouncedHoveredId),
+      ];
+      return next.slice(0, 5);
+    });
+  }, [debouncedHoveredId]);
+
+  useEffect(() => {
+    if (cardStack.length === 0) return;
+    const cached = $cardCache.get();
+    void Promise.all(
+      cardStack
+        .filter((id) => !cached[id])
+        .map((id) => requestCardPost(id)),
+    );
+  }, [cardStack]);
+
+  const stackPosts = useMemo(
+    () =>
+      cardStack
+        .map((id) => cardCache[id])
+        .filter((post): post is IPost => post != null),
+    [cardStack, cardCache],
+  );
 
   const placeholderStyle = useMemo((): CSSProperties | undefined => {
     if (!galleryImage?.traceSvg && !galleryImage?.colorSet?.bgColor) return undefined;
@@ -162,6 +200,7 @@ export default function ParticleHero({
       if (!post) {
         setTooltip(null);
         lastHoveredIdRef.current = null;
+        setHoveredPostId(null);
         return;
       }
 
@@ -170,6 +209,7 @@ export default function ParticleHero({
 
       if (post.id !== lastHoveredIdRef.current) {
         lastHoveredIdRef.current = post.id;
+        setHoveredPostId(post.id);
         let left = 0;
         let top = 0;
         if (event?.intersectionData && app.renderer) {
@@ -329,7 +369,19 @@ export default function ParticleHero({
               )}
             </Stack>
 
-            {description && (
+            {description && cardStack.length > 0 ? (
+              <Stack
+                gap="md"
+                className={`${classes.contentPanel} ${classes.contentPanelCarousel}`}
+              >
+                <TooltipStackCarousel
+                  posts={stackPosts}
+                  onClose={() => setCardStack([])}
+                  className={classes.carouselPanel}
+                  closeClassName={classes.carouselClose}
+                />
+              </Stack>
+            ) : description ? (
               <Stack gap="xl" className={classes.contentPanel} justify="space-between">
                 <Typography component="div" p="md" className={classes.contentText}>
                   {description}
@@ -340,7 +392,7 @@ export default function ParticleHero({
                   </Button>
                 </Group>
               </Stack>
-            )}
+            ) : null}
           </Group>
         </Stack>
       </Box>
