@@ -15,6 +15,7 @@ export default defineConfig({
       "packages/image-metadata/**/*.test.ts",
       "packages/content-prepare/**/*.test.ts",
       "packages/metadata-embedding/**/*.test.ts",
+      "packages/particle-hero/**/*.test.ts",
       "packages/prepare-gallery/**/*.test.ts",
       "packages/post-embedding/**/*.test.ts",
       "src/**/*.test.ts",

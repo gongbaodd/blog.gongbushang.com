@@ -8,6 +8,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   sport: "#06d6a0",
   tv: "#ef476f",
   music: "#118ab2",
+  podcast: "#f72585",
 };
 
 const DEFAULT_COLOR = "#aaaaaa";
@@ -36,6 +37,10 @@ export function hexToRgb(hex: string): [number, number, number] {
 }
 
 export function getPostYear(post: UmapPost): string {
+  const parsed = new Date(post.date);
+  if (!Number.isNaN(parsed.getTime())) {
+    return String(parsed.getFullYear());
+  }
   return post.date?.slice(0, 4) ?? "";
 }
 

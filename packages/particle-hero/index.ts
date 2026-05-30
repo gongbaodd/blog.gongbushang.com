@@ -1,5 +1,6 @@
 export { default } from "./ParticleHero";
 export type { IParticleHeroProps, UmapPost } from "./ParticleHero";
+export { loadUmapPosts } from "./loadUmapPosts";
 export {
   PARTICLE_LAYOUT_BELOW_LARGE_MQ,
   PARTICLE_LAYOUT_LANDSCAPE,
