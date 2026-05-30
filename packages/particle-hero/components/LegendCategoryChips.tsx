@@ -39,12 +39,16 @@ export default function LegendCategoryChips({
 }: ILegendCategoryChipsProps) {
   return (
     <Chip.Group
-      className={classes.legendChips}
       value={selectedCategory}
       onChange={(value) => value && onSelectCategory(value)}
       aria-label="Category filter"
     >
-      <Group gap="xs" wrap="wrap" justify="flex-end">
+      <Group
+        gap="xs"
+        wrap="wrap"
+        justify="flex-end"
+        className={classes.legendChips}
+      >
         <Chip value="all" size="xs" variant="outline">
           <ChipLabel>All</ChipLabel>
         </Chip>
