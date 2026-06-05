@@ -1,4 +1,5 @@
 import {
+  ActionIcon,
   Avatar,
   Badge,
   Box,
@@ -10,7 +11,7 @@ import {
   Title,
   Anchor,
 } from "@mantine/core";
-import { IconQuoteFilled } from "@tabler/icons-react";
+import { IconPlayerPlay, IconQuoteFilled } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { Calendar, Headphones } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -83,6 +84,28 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
     </Flex>
   );
 
+  const metaRow = episode.audioUrl && (
+    <Flex gap="xs" justify="space-between" align="end">
+      <Group flex={1} />
+      <Group gap="xs" flex={0}>
+        <ActionIcon
+          component="a"
+          href={episode.audioUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Listen"
+          variant="default"
+          color="gray"
+          size="lg"
+          radius="xl"
+          className={classes.category}
+        >
+          <IconPlayerPlay size={16} />
+        </ActionIcon>
+      </Group>
+    </Flex>
+  );
+
   const titleBlock = (
     <Anchor underline="never" href={episode.link} target="_blank">
       <Title className={classes.title}>
@@ -123,11 +146,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
                     className={classes.cover_content}
                   >
                     {badgeRow}
-                    {episode.audioUrl && (
-                      <Anchor href={episode.audioUrl} target="_blank" size="xs">
-                        Listen
-                      </Anchor>
-                    )}
+                    {metaRow}
                   </Flex>
                 </Box>
                 <Box className={classes.cover_footer}>{titleBlock}</Box>

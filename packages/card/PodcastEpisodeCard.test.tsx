@@ -56,7 +56,7 @@ describe("PodcastEpisodeCard", () => {
   test("renders duration and Listen link when provided", () => {
     render(<PodcastEpisodeCard episode={episodeWithDuration} />);
     expect(screen.getByText("42:00")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /listen/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Listen" })).toHaveAttribute(
       "href",
       "https://example.com/audio.mp3"
     );
