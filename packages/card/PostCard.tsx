@@ -11,9 +11,12 @@ import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 export interface IPost extends TClientPost {
 }
 
-interface ICardProp { post: IPost; hideExcerpt?: boolean }
+const CARD_WIDTH = 360;
+const CARD_MIN_WIDTH = 280;
 
-export function PostCard({ post, hideExcerpt }: ICardProp) {
+interface ICardProp { post: IPost; hideExcerpt?: boolean; fill?: boolean }
+
+export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const title = post.title;
   const hasCover = !!post.data.cover;
 
@@ -169,15 +172,16 @@ export function PostCard({ post, hideExcerpt }: ICardProp) {
 
   return (
     <CustomMantineProvider>
-      <Stack justify={"center"} align={"center"}>
-        <Box maw={360}>
-          <Anchor underline="never" href={post.href}>
+      <Stack justify={"center"} align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
+        <Box maw={fill ? undefined : CARD_WIDTH} miw={fill ? CARD_MIN_WIDTH : undefined} w={fill ? "100%" : undefined}>
+          <Anchor underline="never" href={post.href} display={fill ? "block" : undefined} w={fill ? "100%" : undefined}>
             <Card
               key={post.id}
               shadow="sm"
               padding={hasCover ? 0 : "lg"}
               radius="lg"
               withBorder
+              w={fill ? "100%" : undefined}
               className={className}
               style={cardStyle}
             >

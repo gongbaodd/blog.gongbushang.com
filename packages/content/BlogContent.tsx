@@ -130,7 +130,7 @@ export function BlogMenu({ headings, links, post }: {
   return (
     <CustomMantineProvider>
       <Stack gap="xl" style={{ position: 'sticky', top: 100 }}>
-        <PostCard post={post} hideExcerpt />
+        <PostCard post={post} hideExcerpt fill />
         <Headings />
         <Tags />
       </Stack>
