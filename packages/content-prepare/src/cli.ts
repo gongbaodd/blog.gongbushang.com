@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { POST_COVER_DIR, POST_METADATA_DIR } from "consts/config.js";
 
 export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
@@ -53,6 +53,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
 
 export async function resolveCollectOptions(cli: CliOptions = {}) {
   const repoRoot = await findRepoRoot();
+  loadEnv({ path: path.join(repoRoot, ".env") });
   return {
     repoRoot,
     docsDir: path.resolve(repoRoot, cli.docsDir ?? "src/content/_docs"),
