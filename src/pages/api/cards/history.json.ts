@@ -1,6 +1,9 @@
 import { date } from "@/packages/utils/extract";
 import { getAllPostByDateDesc, initYearMonthPostMap } from "@/packages/utils/filter";
-import { findNearestGalleryEntry } from "@/packages/utils/gallery";
+import {
+  findNearestGalleryEntry,
+  parseGalleryDocDate,
+} from "@/packages/utils/gallery";
 import {
   mapGalleryEntryToClientPost,
   mapServerPostToClient,
@@ -17,9 +20,10 @@ export const prerender = true;
 export const GET: APIRoute<T_PROPS> = async () => {
     const _posts = await getAllPostByDateDesc();
 
-    const buildYear = dayjs().format("YYYY");
-    const buildMonth = dayjs().format("MM");
-    const buildDay = dayjs().format("DD");
+    const now = dayjs();
+    const buildYear = now.format("YYYY");
+    const buildMonth = now.format("MM");
+    const buildDay = now.format("DD");
     const monthPostMap = initYearMonthPostMap(_posts);
 
     const sameMonthPosts: T_POST[] = [];
@@ -69,10 +73,17 @@ export const GET: APIRoute<T_PROPS> = async () => {
         })
     posts = [...hPostWithCover, ...hPostNoCover]
 
-    const galleryEntry = findNearestGalleryEntry();
-    const galleryPost = galleryEntry
-      ? await mapGalleryEntryToClientPost(galleryEntry)
+    const galleryEntry = findNearestGalleryEntry(now.toDate());
+    const galleryDocDate = galleryEntry
+      ? parseGalleryDocDate(galleryEntry.doc)
       : undefined;
+    const isGalleryWithinOneWeek =
+      galleryDocDate != null &&
+      now.diff(dayjs(galleryDocDate), "day") <= 7;
+    const galleryPost =
+      galleryEntry && !isGalleryWithinOneWeek
+        ? await mapGalleryEntryToClientPost(galleryEntry)
+        : undefined;
 
     if (galleryPost) {
       posts = [
