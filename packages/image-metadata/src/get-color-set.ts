@@ -5,6 +5,7 @@ import { Vibrant } from "node-vibrant/node";
 import potrace from "potrace";
 import { SobelService } from "@musical-sniffle/sobel-edge-detection";
 import { findNearestTitleColor, isRemote, stripQuery } from "./color-utils.ts";
+import { prepareWithDepth } from "./prepare-trace-input.ts";
 
 export interface ColorSet {
   bgColor: string;
@@ -15,6 +16,21 @@ export interface GetColorSetOptions {
   baseDir?: string;
   relPath?: string;
   saveTraceToDir?: string;
+  useDepthPrep?: boolean;
+}
+
+const POTRACE_OPTIONS = {
+  turdSize: 100,
+  optCurve: true,
+  optTolerance: 0.4,
+} as const;
+
+export async function traceBufferToSvg(buffer: Buffer): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    potrace.trace(buffer, POTRACE_OPTIONS, (err, svg) =>
+      err ? reject(err) : resolve(svg),
+    );
+  });
 }
 
 export async function sharpSobel(inputBuffer: Buffer): Promise<Buffer> {
@@ -49,7 +65,12 @@ export async function getColorSet(
   imagePathOrUrl: string,
   options: GetColorSetOptions = {},
 ): Promise<ColorSet> {
-  const { baseDir = process.cwd(), relPath, saveTraceToDir } = options;
+  const {
+    baseDir = process.cwd(),
+    relPath,
+    saveTraceToDir,
+    useDepthPrep = false,
+  } = options;
 
   let bufferForColor: Buffer;
   let buffer: Buffer;
@@ -61,7 +82,6 @@ export async function getColorSet(
     }
     buffer = Buffer.from(await res.arrayBuffer());
     bufferForColor = await sharp(buffer).png().toBuffer();
-    buffer = await sharpSobel(bufferForColor);
   } else {
     let p = imagePathOrUrl;
     if (p.startsWith("/@fs/")) p = p.slice("/@fs/".length);
@@ -69,18 +89,16 @@ export async function getColorSet(
     const abs = path.isAbsolute(p) ? p : path.resolve(baseDir, p);
     buffer = await fs.readFile(abs);
     bufferForColor = await sharp(buffer).png().toBuffer();
-    buffer = await sharpSobel(bufferForColor);
   }
+
+  const traceInput = useDepthPrep
+    ? await prepareWithDepth(bufferForColor)
+    : bufferForColor;
+  buffer = await sharpSobel(traceInput);
 
   const palette = await Vibrant.from(bufferForColor).getPalette();
 
-  const trace = await new Promise<string>((resolve, reject) => {
-    potrace.trace(
-      buffer,
-      { turdSize: 100, optCurve: true, optTolerance: 0.4 },
-      (err, svg) => (err ? reject(err) : resolve(svg)),
-    );
-  });
+  const trace = await traceBufferToSvg(buffer);
 
   if (relPath && saveTraceToDir) {
     await fs.mkdir(saveTraceToDir, { recursive: true });
