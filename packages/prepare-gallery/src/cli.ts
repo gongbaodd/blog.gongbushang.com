@@ -29,6 +29,9 @@ export interface CliOptions {
   galleryDir?: string;
   output?: string;
   traceDir?: string;
+  depth?: boolean;
+  regenerateTraces?: boolean;
+  tracesOnly?: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -45,6 +48,12 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--trace-dir" && next) {
       options.traceDir = next;
       i++;
+    } else if (arg === "--depth") {
+      options.depth = true;
+    } else if (arg === "--regenerate-traces") {
+      options.regenerateTraces = true;
+    } else if (arg === "--traces-only") {
+      options.tracesOnly = true;
     }
   }
   return options;
@@ -60,6 +69,9 @@ export async function resolveCollectOptions(cli: CliOptions = {}) {
     outputFile: path.resolve(repoRoot, cli.output ?? GALLERY_JSON),
     traceDir: path.resolve(repoRoot, cli.traceDir ?? GALLERY_TRACE_DIR),
     baseDir: repoRoot,
+    useDepthPrep: cli.depth ?? false,
+    regenerateTraces: cli.regenerateTraces ?? false,
+    tracesOnly: cli.tracesOnly ?? false,
   };
 }
 

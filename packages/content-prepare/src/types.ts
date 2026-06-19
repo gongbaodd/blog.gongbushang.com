@@ -45,4 +45,7 @@ export interface CollectMetadataOptions {
   traceDir: string;
   googleApiKey?: string;
   embeddingOptions?: EmbeddingOptions;
+  useDepthPrep?: boolean;
+  regenerateTraces?: boolean;
+  tracesOnly?: boolean;
 }

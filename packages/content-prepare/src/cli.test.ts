@@ -31,6 +31,16 @@ describe("parseCliArgs", () => {
     });
   });
 
+  test("parses depth and trace regeneration flags", () => {
+    expect(
+      parseCliArgs(["--depth", "--regenerate-traces", "--traces-only"]),
+    ).toEqual({
+      depth: true,
+      regenerateTraces: true,
+      tracesOnly: true,
+    });
+  });
+
   test("ignores flags without a following value", () => {
     expect(parseCliArgs(["--docs-dir"])).toEqual({});
   });
@@ -84,6 +94,21 @@ describe("resolveCollectOptions", () => {
       outputDir: path.resolve(repoRoot, "alt/metadata"),
       traceDir: path.resolve(repoRoot, "alt/trace"),
       googleApiKey: "test-google-key",
+      useDepthPrep: false,
+      regenerateTraces: false,
+      tracesOnly: false,
     });
+  });
+
+  test("passes depth and trace flags through resolveCollectOptions", async () => {
+    const options = await resolveCollectOptions({
+      depth: true,
+      regenerateTraces: true,
+      tracesOnly: true,
+    });
+
+    expect(options.useDepthPrep).toBe(true);
+    expect(options.regenerateTraces).toBe(true);
+    expect(options.tracesOnly).toBe(true);
   });
 });

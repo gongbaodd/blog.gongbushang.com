@@ -30,6 +30,9 @@ export interface CliOptions {
   docsDir?: string;
   output?: string;
   traceDir?: string;
+  depth?: boolean;
+  regenerateTraces?: boolean;
+  tracesOnly?: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -46,6 +49,12 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--trace-dir" && next) {
       options.traceDir = next;
       i++;
+    } else if (arg === "--depth") {
+      options.depth = true;
+    } else if (arg === "--regenerate-traces") {
+      options.regenerateTraces = true;
+    } else if (arg === "--traces-only") {
+      options.tracesOnly = true;
     }
   }
   return options;
@@ -63,6 +72,9 @@ export async function resolveCollectOptions(cli: CliOptions = {}) {
     ),
     traceDir: path.resolve(repoRoot, cli.traceDir ?? POST_COVER_DIR),
     googleApiKey: process.env.GOOGLE_API_KEY,
+    useDepthPrep: cli.depth ?? false,
+    regenerateTraces: cli.regenerateTraces ?? false,
+    tracesOnly: cli.tracesOnly ?? false,
   };
 }
 

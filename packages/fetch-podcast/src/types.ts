@@ -32,4 +32,7 @@ export interface FetchPodcastOptions {
   outputFile: string;
   traceDir: string;
   baseDir: string;
+  useDepthPrep?: boolean;
+  regenerateTraces?: boolean;
+  tracesOnly?: boolean;
 }

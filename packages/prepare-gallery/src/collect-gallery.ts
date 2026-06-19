@@ -42,6 +42,7 @@ async function processImage(
     baseDir: options.baseDir,
     relPath: id,
     saveTraceToDir: options.traceDir,
+    useDepthPrep: options.useDepthPrep ?? false,
   });
 
   return {
@@ -57,7 +58,13 @@ async function processImage(
 export async function collectGallery(
   options: CollectGalleryOptions,
 ): Promise<void> {
-  const { galleryDir, outputFile, traceDir } = options;
+  const {
+    galleryDir,
+    outputFile,
+    traceDir,
+    regenerateTraces = false,
+    tracesOnly = false,
+  } = options;
 
   await fs.mkdir(traceDir, { recursive: true });
   await fs.mkdir(path.dirname(outputFile), { recursive: true });
@@ -77,14 +84,19 @@ export async function collectGallery(
       activeIds.add(id);
 
       const old = oldEntries.get(id);
-      if (old?.hash === contentHash) {
+      if (!regenerateTraces && !tracesOnly && old?.hash === contentHash) {
         images.push(old);
         continue;
       }
 
       let entry: GalleryEntry;
 
-      if (old?.image === source.image && old.colorSet) {
+      if (
+        !regenerateTraces &&
+        !tracesOnly &&
+        old?.image === source.image &&
+        old.colorSet
+      ) {
         entry = {
           ...old,
           hash: contentHash,
@@ -102,6 +114,13 @@ export async function collectGallery(
       const message = err instanceof Error ? err.message : String(err);
       console.error(`❌ Error processing ${file}:`, message);
     }
+  }
+
+  if (tracesOnly) {
+    console.log(
+      `\n✏️ Regenerated ${changedCount} gallery trace(s) in ${traceDir}`,
+    );
+    return;
   }
 
   images.sort((a, b) => a.id.localeCompare(b.id));

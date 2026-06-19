@@ -24,4 +24,7 @@ export interface CollectGalleryOptions {
   outputFile: string;
   traceDir: string;
   baseDir: string;
+  useDepthPrep?: boolean;
+  regenerateTraces?: boolean;
+  tracesOnly?: boolean;
 }

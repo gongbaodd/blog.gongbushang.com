@@ -102,7 +102,10 @@ function parseEpisode(item: Record<string, unknown>, index: number): Episode {
 
 async function enrichEpisodesWithColors(
   episodes: Episode[],
-  options: Pick<FetchPodcastOptions, "baseDir" | "traceDir">,
+  options: Pick<
+    FetchPodcastOptions,
+    "baseDir" | "traceDir" | "useDepthPrep"
+  >,
 ): Promise<Episode[]> {
   const enrichedEpisodes: Episode[] = [];
 
@@ -114,6 +117,7 @@ async function enrichEpisodesWithColors(
           baseDir: options.baseDir,
           relPath: episode.id,
           saveTraceToDir: options.traceDir,
+          useDepthPrep: options.useDepthPrep ?? false,
         });
         enrichedEpisodes.push({ ...episode, colorSet });
       } else {
@@ -129,6 +133,41 @@ async function enrichEpisodesWithColors(
   }
 
   return enrichedEpisodes;
+}
+
+async function regenerateAllEpisodeTraces(
+  options: Pick<
+    FetchPodcastOptions,
+    "traceDir" | "baseDir" | "useDepthPrep"
+  >,
+): Promise<void> {
+  let files: string[];
+  try {
+    files = await fs.readdir(options.traceDir);
+  } catch {
+    console.log("No podcast trace directory found.");
+    return;
+  }
+
+  let count = 0;
+  for (const file of files.filter((name) => name.endsWith(".json"))) {
+    const raw = await fs.readFile(path.join(options.traceDir, file), "utf-8");
+    const episode = JSON.parse(raw) as Episode;
+    if (!episode.image) continue;
+
+    await getColorSet(episode.image, {
+      baseDir: options.baseDir,
+      relPath: episode.id,
+      saveTraceToDir: options.traceDir,
+      useDepthPrep: options.useDepthPrep ?? false,
+    });
+    count++;
+    console.log(`🎨 Regenerated trace: ${episode.id}`);
+  }
+
+  console.log(
+    `\n✏️ Regenerated ${count} podcast trace(s) in ${options.traceDir}`,
+  );
 }
 
 async function loadExistingPodcast(
@@ -187,6 +226,21 @@ async function episodeNeedsEmbedding(traceDir: string): Promise<boolean> {
 export async function fetchAndProcessPodcast(
   options: FetchPodcastOptions,
 ): Promise<void> {
+  const {
+    useDepthPrep = false,
+    regenerateTraces = false,
+    tracesOnly = false,
+  } = options;
+
+  await fs.mkdir(options.traceDir, { recursive: true });
+
+  if (tracesOnly || regenerateTraces) {
+    await regenerateAllEpisodeTraces(options);
+    if (tracesOnly) {
+      return;
+    }
+  }
+
   const rssUrl = options.rssUrl ?? DEFAULT_RSS_URL;
   const channel = await fetchRssFeed(rssUrl);
 
@@ -207,8 +261,6 @@ export async function fetchAndProcessPodcast(
     parseEpisode(item, idx),
   );
   console.log(`📻 Found ${rssEpisodes.length} episodes in RSS`);
-
-  await fs.mkdir(options.traceDir, { recursive: true });
 
   const existing = await loadExistingPodcast(
     options.outputFile,
@@ -233,6 +285,7 @@ export async function fetchAndProcessPodcast(
     const enrichedNew = await enrichEpisodesWithColors(newEpisodes, {
       baseDir: options.baseDir,
       traceDir: options.traceDir,
+      useDepthPrep,
     });
 
     const manifest = {
