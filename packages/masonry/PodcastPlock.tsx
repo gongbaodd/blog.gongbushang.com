@@ -39,8 +39,8 @@ export function postToEpisode(post: IPost): IPodcastEpisode {
   };
 }
 
-export function PodcastCardFromPost({ post, hideExcerpt }: { post: IPost, hideExcerpt?: boolean }) {
-  return <PodcastEpisodeCard episode={postToEpisode(post)} hideExcerpt={hideExcerpt}/>;
+export function PodcastCardFromPost({ post, hideExcerpt, fill }: { post: IPost; hideExcerpt?: boolean; fill?: boolean }) {
+  return <PodcastEpisodeCard episode={postToEpisode(post)} hideExcerpt={hideExcerpt} fill={fill} />;
 }
 
 export interface IPodcastPlockProps {
@@ -73,7 +73,7 @@ export default function PodcastPlock({ totalCount }: IPodcastPlockProps) {
             media: [28, 48, 75, 88, 110].map((i) => i * 16),
           }}
           render={(episode) => (
-            <PodcastEpisodeCard key={episode.id} episode={episode} />
+            <PodcastEpisodeCard key={episode.id} episode={episode} fill />
           )}
         />
         {hasMore && (

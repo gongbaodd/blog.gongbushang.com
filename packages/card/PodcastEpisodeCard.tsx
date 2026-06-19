@@ -20,12 +20,16 @@ import type { IPodcastEpisode } from "@/src/stores/podcast";
 import classes from "./PostCard.module.css";
 import { stripHtml } from "./stripHtml";
 
+const CARD_WIDTH = 360;
+const CARD_MIN_WIDTH = 280;
+
 interface IPodcastEpisodeCardProps {
   episode: IPodcastEpisode;
   hideExcerpt?: boolean;
+  fill?: boolean;
 }
 
-export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCardProps) {
+export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpisodeCardProps) {
   const excerpt = stripHtml(episode.summary || episode.description || "");
   const [coverOpacity, setCoverOpacity] = useState(0);
   const hasCover = !!episode.image;
@@ -116,14 +120,15 @@ export function PodcastEpisodeCard({ episode, hideExcerpt }: IPodcastEpisodeCard
 
   return (
     <CustomMantineProvider>
-      <Stack justify="center" align="center">
-        <Box maw={360}>
+      <Stack justify="center" align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
+        <Box maw={fill ? undefined : CARD_WIDTH} miw={fill ? CARD_MIN_WIDTH : undefined} w={fill ? "100%" : undefined}>
           <Card
             key={episode.id}
             shadow="sm"
             padding={hasCover ? 0 : "lg"}
             radius="lg"
             withBorder
+            w={fill ? "100%" : undefined}
             className={className}
             style={{
               ...cardStyle,

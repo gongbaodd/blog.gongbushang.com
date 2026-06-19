@@ -40,9 +40,9 @@ export default function BlogPlock({ totalCount, ...param }: IPlockProps) {
                     }}
                     render={post =>
                         post.data.category === 'podcast' ? (
-                            <PodcastCardFromPost key={post.id} post={post} />
+                            <PodcastCardFromPost key={post.id} post={post} fill />
                         ) : (
-                            <PostCard key={post.id} post={post} />
+                            <PostCard key={post.id} post={post} fill />
                         )
                     }
                 />
