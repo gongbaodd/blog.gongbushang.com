@@ -18,7 +18,9 @@
     "umap:build": "cargo build --release --manifest-path packages/umap/Cargo.toml",
     "umap:test": "cargo test -p umap",
     "embedding:sync": "uv sync",
-    "embedding:hello": "uv run --package embedding python -c \"from embedding import get_embedding; print(len(get_embedding('Hello, world!')))\""
+    "embedding:hello": "uv run --package embedding python -c \"from embedding import get_embedding; print(len(get_embedding('Hello, world!')))\"",
+    "depth:sync": "uv sync",
+    "depth:photo": "uv run --package depth-estimation depth-photo"
   },
   "dependencies": {
     "@astrojs/check": "0.9.9",
