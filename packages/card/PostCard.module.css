@@ -3,6 +3,10 @@
     position: relative;
 }
 
+:global(.mantine-Carousel-slide) .item {
+    min-width: 280px;
+}
+
 @media not (prefers-reduced-motion: reduce) {
     .item {
         view-transition-name: var(--transition-name);
