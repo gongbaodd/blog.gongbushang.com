@@ -64,11 +64,17 @@ a.work {
     margin: 0 auto;
   }
 
-  /* Keep A4 geometry; scale the whole stack to fit narrow containers */
+  /* Keep A4 geometry; scale the whole stack to fit narrow containers.
+     transform (not zoom) is applied after layout, so it cannot miss the
+     first paint the way zoom + container units do in some Chrome builds. */
   @container (max-width: 210mm) {
     .A4 {
       width: 210mm;
-      zoom: calc(100cqi / 210mm);
+      transform: scale(calc(100cqi / 210mm));
+      transform-origin: top left;
+      /* collapse layout height to the scaled height:
+         (2 sheets + 10mm gap = 602mm) * (container / 210mm) */
+      height: calc(100cqi * 602 / 210);
     }
   }
 }

@@ -61,7 +61,7 @@ export default function Education() {
   const small = data.filter((i) => i.isSmall);
 
   return (
-    <CustomMantineProvider>
+    <CustomMantineProvider theme="light">
       <Flex justify="space-between" align="stretch" direction="row" gap={8}>
         {main.map((i) => (
           <LargeSchoolCard
@@ -121,7 +121,7 @@ function DateBadge({ date }: { date: string }) {
 
 function LargeSchoolCard(opts: ISchoolProps) {
   return (
-    <Card padding="xs" radius="lg" maw={220} withBorder pos="relative">
+    <Card padding="xs" radius="lg" maw={220} withBorder pos="relative" bg="white" c="black">
       {opts.degree ? (
         <Badge
           size="xs"
@@ -170,7 +170,7 @@ function LargeSchoolCard(opts: ISchoolProps) {
 
 function CompactSchoolRow(opts: ISchoolProps) {
   return (
-    <Card padding="xs" radius="md" withBorder>
+    <Card padding="xs" radius="md" withBorder bg="white" c="black">
       <Flex direction="row" gap={6} align="center">
         <Image
           src={opts.img}

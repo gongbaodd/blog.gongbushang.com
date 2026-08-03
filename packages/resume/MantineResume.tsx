@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function MantineResume({ children }: Props) {
-    return <CustomMantineProvider>
+    return <CustomMantineProvider theme="light">
         <Typography className={classes.content}>{children}</Typography>
     </CustomMantineProvider>
 }

@@ -43,7 +43,7 @@ export default function Job() {
       <SimpleGrid cols={2} spacing="sm">
         {datas.map((d) => {
           return (
-            <Card key={d.name} padding="sm" radius="lg" withBorder>
+            <Card key={d.name} padding="sm" radius="lg" withBorder bg="white" c="black">
               <Stack gap={4}>
                 <Flex direction="row" gap={6} align="center">
                   <Image
