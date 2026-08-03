@@ -102,9 +102,13 @@ a.work {
 
 .page-1 .subsection.edu {
   margin-left: 2.2em;
-  height: 224px;
+  height: 130px;
+}
+
+.page-1 h2:has(+ .subsection.job) {
+  transform: rotate(90deg) translateX(1em);
 }
 
 .page-1 .subsection.job {
-  margin-top: 1em;
+  margin-top: 0;
 }
