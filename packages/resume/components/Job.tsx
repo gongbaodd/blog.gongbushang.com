@@ -5,9 +5,9 @@ import { Calendar } from "lucide-react";
 const datas = [
   {
     image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778363157/Qunar_logo_mmk06d.png",
+      "https://res.cloudinary.com/dmq8ipket/image/upload/v1785759396/trip_yw7gaq.png",
     date: "2015-2019",
-    name: "Qunar.com",
+    name: "Trip.com",
     content: "Developed a frontend monitoring system that identified 90% of client-side issues before backend log analysis."
   },
   {
@@ -23,6 +23,13 @@ const datas = [
     date: "2025-2026",
     name: "Kickstart Now",
     content:  "Automated the translation pipeline, enabling support for 12 languages; engineered cross-platform compatibility for Windows, macOS, and Linux."
+  },
+  {
+    image:
+      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330602/copy_of_copy_of_tlu_hvawhg_a86549_6afe2e.jpg",
+    date: "2026-2026",
+    name: "Tallinn University",
+    content:  "Lecturing course `From Atom to Products – Developing Design Systems in Figma`"
   },
 ];
 

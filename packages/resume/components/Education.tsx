@@ -42,13 +42,15 @@ const data = [
     name: "Brandenburg University of Applied Sciences",
     content: "Interactive Environments",
     date: "Dec 2025",
+    isSmall: true
   },
   {
     key: "UL",
     img: UL_IMG,
     name: "Universidade Lusófona",
     date: "Jan 2026",
-    content: "Data Science Applied To Geographic Information Systems"
+    content: "Data Science Applied To Geographic Information Systems",
+    isSmall: true
   },
 ];
 
