@@ -23,14 +23,16 @@ const data = [
   {
     key: "SUT",
     img: SUT_IMG,
-    content: "Computer Science (BSc)",
+    content: "Computer Science",
+    degree: "BSc",
     name: "Shenyang University of Technology",
     date: "2011-2015",
   },
   {
     key: "TLU",
     img: TLU_IMG,
-    content: "Digital Learning Games (MSc)",
+    content: "Digital Learning Games",
+    degree: "MSc",
     award:
       "National Scholarship for International Students, Education and Youth Board of Estonia (2026)",
     name: "Tallinn University",
@@ -69,6 +71,7 @@ export default function Education() {
             name={i.name}
             content={i.content}
             award={i.award}
+            degree={i.degree}
           />
         ))}
         <Stack gap={4}>
@@ -93,6 +96,7 @@ interface ISchoolProps {
   name: string;
   content: string;
   award?: string;
+  degree?: string;
 }
 
 function DateBadge({ date }: { date: string }) {
@@ -117,7 +121,24 @@ function DateBadge({ date }: { date: string }) {
 
 function LargeSchoolCard(opts: ISchoolProps) {
   return (
-    <Card padding="xs" radius="lg" maw={220} withBorder>
+    <Card padding="xs" radius="lg" maw={220} withBorder pos="relative">
+      {opts.degree ? (
+        <Badge
+          size="xs"
+          color="gray"
+          variant="filled"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            zIndex: 1,
+            borderRadius: "0 var(--mantine-radius-lg) 0 6px",
+            textTransform: "none",
+          }}
+        >
+          {opts.degree}
+        </Badge>
+      ) : null}
       <Stack gap={8}>
         <Flex direction="row" gap={6} align="center" style={{ minHeight: 64 }}>
           <Image
@@ -135,10 +156,12 @@ function LargeSchoolCard(opts: ISchoolProps) {
           </Stack>
         </Flex>
         <Stack gap={0}>
-
-        <Text size="xs">{opts.content}</Text>
-        {opts.award ? <Text size="xs"><b>Award:</b> {opts.award}</Text> : null}
-    
+          <Text size="xs">{opts.content}</Text>
+          {opts.award ? (
+            <Text size="xs">
+              <b>Award:</b> {opts.award}
+            </Text>
+          ) : null}
         </Stack>
       </Stack>
     </Card>
