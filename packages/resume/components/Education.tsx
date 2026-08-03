@@ -1,13 +1,11 @@
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import {
-  Box,
   Card,
   Image,
   Flex,
   Badge,
   Text,
   Group,
-  Title,
   Stack,
 } from "@mantine/core";
 import { Calendar } from "lucide-react";
@@ -25,14 +23,16 @@ const data = [
   {
     key: "SUT",
     img: SUT_IMG,
-    content: "Bachelor in Computer Science",
+    content: "Computer Science (BSc)",
     name: "Shenyang University of Technology",
     date: "2011-2015",
   },
   {
     key: "TLU",
     img: TLU_IMG,
-    content: "Master in Digital Learning Games",
+    content: "Digital Learning Games (MSc)",
+    award:
+      "National Scholarship for International Students, Education and Youth Board of Estonia (2026)",
     name: "Tallinn University",
     date: "2024-2026",
   },
@@ -42,7 +42,7 @@ const data = [
     name: "Brandenburg University of Applied Sciences",
     content: "Interactive Environments",
     date: "Dec 2025",
-    isSmall: true
+    isSmall: true,
   },
   {
     key: "UL",
@@ -50,56 +50,120 @@ const data = [
     name: "Universidade Lusófona",
     date: "Jan 2026",
     content: "Data Science Applied To Geographic Information Systems",
-    isSmall: true
+    isSmall: true,
   },
 ];
 
 export default function Education() {
+  const main = data.filter((i) => !i.isSmall);
+  const small = data.filter((i) => i.isSmall);
+
   return (
     <CustomMantineProvider>
-      <Flex justify="space-between" align="center" direction="row" gap={10}>
-        {data.map((i) => {
-          return <SchoolCard key={i.key!} img={i.img} date={i.date} name={i.name} content={i.content} />;
-        })}
+      <Flex justify="space-between" align="stretch" direction="row" gap={8}>
+        {main.map((i) => (
+          <LargeSchoolCard
+            key={i.key}
+            img={i.img}
+            date={i.date}
+            name={i.name}
+            content={i.content}
+            award={i.award}
+          />
+        ))}
+        <Stack gap={4}>
+          {small.map((i) => (
+            <CompactSchoolRow
+              key={i.key}
+              img={i.img}
+              date={i.date}
+              name={i.name}
+              content={i.content}
+            />
+          ))}
+        </Stack>
       </Flex>
     </CustomMantineProvider>
   );
 }
 
-interface IProps {
+interface ISchoolProps {
   img: string;
   date: string;
   name: string;
   content: string;
+  award?: string;
 }
 
-function SchoolCard(opts: IProps) {
+function DateBadge({ date }: { date: string }) {
   return (
-    <Box maw={148} mah={124}>
-      <Stack gap={"sm"}>
-        <Card padding="sm" radius="lg" maw={124} withBorder>
-          <Image src={opts.img} />
-          <Flex justify={"center"}>
-            <Badge
-              color="gray"
-              size="sm"
-              variant="default"
-              style={{ 
-                textOverflow: "none",
-              }}
-            >
-              <Group gap={6}>
-                <Calendar size={12} />
-                <Text size="xs" style={{ paddingTop: "4px" }}>{opts.date}</Text>
-              </Group>
-            </Badge>
-          </Flex>
-        </Card>
+    <Badge
+      color="gray"
+      size="xs"
+      variant="default"
+      style={{
+        textOverflow: "none",
+      }}
+    >
+      <Group gap={4}>
+        <Calendar size={10} />
+        <Text size="xs" style={{ paddingTop: "2px" }}>
+          {date}
+        </Text>
+      </Group>
+    </Badge>
+  );
+}
+
+function LargeSchoolCard(opts: ISchoolProps) {
+  return (
+    <Card padding="xs" radius="lg" maw={220} withBorder>
+      <Stack gap={8}>
+        <Flex direction="row" gap={6} align="center" style={{ minHeight: 64 }}>
+          <Image
+            src={opts.img}
+            w={40}
+            h={40}
+            fit="contain"
+            style={{ flexShrink: 0 }}
+          />
+          <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+            <Text size="sm" style={{ fontWeight: 500, marginBottom: 0 }}>
+              {opts.name}
+            </Text>
+            <DateBadge date={opts.date} />
+          </Stack>
+        </Flex>
         <Stack gap={0}>
-          <Text size="md" style={{ fontWeight: 500, marginBottom: 0 }}>{opts.name}</Text>
-          <Text size="xs">{opts.content}</Text>
+
+        <Text size="xs">{opts.content}</Text>
+        {opts.award ? <Text size="xs"><b>Award:</b> {opts.award}</Text> : null}
+    
         </Stack>
       </Stack>
-    </Box>
+    </Card>
+  );
+}
+
+function CompactSchoolRow(opts: ISchoolProps) {
+  return (
+    <Card padding="xs" radius="md" withBorder>
+      <Flex direction="row" gap={6} align="center">
+        <Image
+          src={opts.img}
+          w={24}
+          h={24}
+          fit="contain"
+          style={{ flexShrink: 0 }}
+        />
+        <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+          <Text size="xs" style={{ fontWeight: 500, marginBottom: 0 }}>
+            {opts.name}
+          </Text>
+          <DateBadge date={opts.date} />
+          <Text size="xs">{opts.content}</Text>
+        </Stack>
+      </Flex>
+    </Card>
   );
 }
