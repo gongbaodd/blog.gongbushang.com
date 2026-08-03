@@ -52,10 +52,24 @@ a.work {
 
 /** For screen preview **/
 @media screen {
+  .resume-scale {
+    container-type: inline-size;
+    width: 100%;
+    overflow: clip;
+  }
+
   .sheet {
     background: white;
     box-shadow: 0 .5mm 2mm rgba(0,0,0,.3);
     margin: 0 auto;
+  }
+
+  /* Keep A4 geometry; scale the whole stack to fit narrow containers */
+  @container (max-width: 210mm) {
+    .A4 {
+      width: 210mm;
+      zoom: calc(100cqi / 210mm);
+    }
   }
 }
 
