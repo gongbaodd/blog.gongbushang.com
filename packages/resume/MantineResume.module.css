@@ -44,15 +44,22 @@
         visibility: hidden;
     }
 
+    html,
+    body {
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .content {
         position: absolute;
         left: 0;
         top: 0;
+        width: 210mm;
     }
 
     .content,
     .content * {
         visibility: visible;
-
     }
 }
