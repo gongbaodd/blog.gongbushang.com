@@ -51,7 +51,7 @@ export default function Job() {
                     w={40}
                     h={40}
                     fit="contain"
-                    style={{ flexShrink: 0 }}
+                    style={{ flexShrink: 0, marginBottom: 0 }}
                   />
                   <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
                     <Text

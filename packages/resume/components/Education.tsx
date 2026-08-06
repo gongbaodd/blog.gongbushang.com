@@ -74,7 +74,7 @@ export default function Education() {
             degree={i.degree}
           />
         ))}
-        <Stack gap={4}>
+        <Stack gap={4} style={{ flex: "1 1 0", minWidth: 0 }}>
           {small.map((i) => (
             <CompactSchoolRow
               key={i.key}
@@ -121,7 +121,16 @@ function DateBadge({ date }: { date: string }) {
 
 function LargeSchoolCard(opts: ISchoolProps) {
   return (
-    <Card padding="xs" radius="lg" maw={220} withBorder pos="relative" bg="white" c="black">
+    <Card
+      padding="xs"
+      radius="lg"
+      maw={220}
+      withBorder
+      pos="relative"
+      bg="white"
+      c="black"
+      style={{ flex: "1 1 0", minWidth: 0 }}
+    >
       {opts.degree ? (
         <Badge
           size="xs"
@@ -184,7 +193,16 @@ function CompactSchoolRow(opts: ISchoolProps) {
             {opts.name}
           </Text>
           <DateBadge date={opts.date} />
-          <Text size="xs">{opts.content}</Text>
+          <Text
+            size="xs"
+            style={{
+              fontSize: 11,
+              letterSpacing: "-0.02em",
+              wordSpacing: "-0.04em",
+            }}
+          >
+            {opts.content}
+          </Text>
         </Stack>
       </Flex>
     </Card>
