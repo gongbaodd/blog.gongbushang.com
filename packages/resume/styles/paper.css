@@ -61,7 +61,15 @@ a.work {
   .sheet {
     background: white;
     box-shadow: 0 .5mm 2mm rgba(0,0,0,.3);
-    margin: 1em auto;
+    margin: 0 auto;
+  }
+
+  .sheet:first-child {
+    margin-top: 1em;
+  }
+
+  .sheet:last-child {
+    margin-bottom: 1em;
   }
 
   /* Keep A4 geometry; scale the whole stack to fit narrow containers.
@@ -72,9 +80,9 @@ a.work {
       width: 210mm;
       transform: scale(calc(100cqi / 210mm));
       transform-origin: top left;
-      /* collapse layout height to the scaled height:
-         (2 sheets + 10mm gap = 602mm) * (container / 210mm) */
-      height: calc(100cqi * 602 / 210);
+      /* Collapse layout height to the scaled page stack while preserving
+         room for the outer margins and shadows. */
+      height: calc(100cqi * 602 / 210 + 2em);
     }
   }
 }
