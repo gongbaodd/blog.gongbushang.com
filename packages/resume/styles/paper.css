@@ -61,14 +61,8 @@ a.work {
   .sheet {
     background: white;
     box-shadow: 0 .5mm 2mm rgba(0,0,0,.3);
-    margin: 0 auto;
-  }
-
-  .sheet:first-child {
-    margin-top: 1em;
-  }
-
-  .sheet:last-child {
+    margin: 1em auto;
+    margin-top: 1em;    
     margin-bottom: 1em;
   }
 
