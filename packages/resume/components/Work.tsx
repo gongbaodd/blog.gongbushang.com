@@ -105,10 +105,10 @@ const data = [
   {
     key: "Qunar.com",
     image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778363157/Qunar_logo_mmk06d.png",
-    name: "Qunar.com",
+      "https://res.cloudinary.com/dmq8ipket/image/upload/v1785759396/trip_yw7gaq.png",
+    name: "Trip.com",
     content:
-      "Cashier Service  | Withdraw Service  | Bank Card Management  | Frontend Analytics  | Testing Tool",
+      "Qunar's Cashier Service  | Withdraw Service  | Bank Card Management  | Frontend Analytics  | Testing Tool",
     height: 240,
     items: ["jQuery", "React Native", "Node.js", "Grafana"],
     fit: "contain",
@@ -117,7 +117,7 @@ const data = [
   {
     key: "GrowGen.xyz",
     image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778367308/Screenshot_20260510_015306-1_z8otjx.png",
+      "https://res.cloudinary.com/dmq8ipket/image/upload/v1786047419/Screenshot_20260806_231621_rjikuc.png",
     name: "Read More on My Website",
     height: 280,
     items: ["Astro", "ReactJS", "Mantine"],

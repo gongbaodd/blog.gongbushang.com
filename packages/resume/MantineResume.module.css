@@ -1,5 +1,30 @@
 .content {
-    color: var(--mantine-color-black);
+    color-scheme: only light;
+    color: #000;
+}
+
+/* html stays dark site-wide; Mantine dark Paper/Badge rules still match nested
+   resume cards — force print-style light surfaces here */
+.content :global(.mantine-Paper-root) {
+    background-color: #fff;
+    color: #000;
+    border-color: #dee2e6;
+}
+
+.content :global(.mantine-Badge-root) {
+    background-color: #f1f3f5;
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.content :global(.mantine-Badge-root[data-variant="filled"]) {
+    background-color: #868e96;
+    color: #fff;
+    border-color: transparent;
+}
+
+.content :global(.mantine-Text-root) {
+    color: inherit;
 }
 
 .content table {
@@ -19,15 +44,22 @@
         visibility: hidden;
     }
 
+    html,
+    body {
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .content {
         position: absolute;
         left: 0;
         top: 0;
+        width: 210mm;
     }
 
     .content,
     .content * {
         visibility: visible;
-
     }
 }

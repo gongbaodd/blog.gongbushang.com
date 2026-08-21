@@ -56,6 +56,11 @@
   opacity: 0;
 }
 
+.canvasUnavailable {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @media (max-width: 61.99em) {
   .canvasColumn {
     width: min(600px, calc(100vw - 2rem));

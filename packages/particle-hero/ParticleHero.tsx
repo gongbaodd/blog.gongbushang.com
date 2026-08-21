@@ -100,6 +100,7 @@ export default function ParticleHero({
 
   const filterRef = useRef<PostFilterState>(initialFilter);
   const [loading, setLoading] = useState(true);
+  const [webglFailed, setWebglFailed] = useState(false);
   const [tooltip, setTooltip] = useState<ITooltipState | null>(null);
   const [hoveredPostId, setHoveredPostId] = useState<string | null>(null);
   const [cardStack, setCardStack] = useState<string[]>([]);
@@ -146,6 +147,8 @@ export default function ParticleHero({
     };
   }, [galleryImage]);
 
+  const showPlaceholder = Boolean(placeholderStyle) && (loading || webglFailed);
+
   const applyFilter = useCallback(() => {
     appRef.current?.setPostFilter(filterRef.current);
   }, []);
@@ -180,7 +183,27 @@ export default function ParticleHero({
     const container = canvasRef.current;
     if (!container) return;
 
-    const app = new App(container);
+    setWebglFailed(false);
+
+    let app: InstanceType<typeof App>;
+    try {
+      app = new App(container);
+    } catch {
+      setWebglFailed(true);
+      setLoading(false);
+      return;
+    }
+
+    if (app.webglFailed) {
+      appRef.current = app;
+      setWebglFailed(true);
+      setLoading(false);
+      return () => {
+        void app.dispose();
+        appRef.current = null;
+      };
+    }
+
     appRef.current = app;
 
     const syncLayoutMode = async (showLoading: boolean) => {
@@ -310,7 +333,7 @@ export default function ParticleHero({
                       aria-hidden
                       className={
                         classes.canvasPlaceholder +
-                        (loading ? "" : " " + classes.canvasPlaceholderHidden)
+                        (showPlaceholder ? "" : " " + classes.canvasPlaceholderHidden)
                       }
                       style={placeholderStyle}
                     />
@@ -349,7 +372,8 @@ export default function ParticleHero({
                       flex={1}
                       className={
                         classes.canvas +
-                        (loading ? "" : " " + classes.loaded)
+                        (webglFailed ? " " + classes.canvasUnavailable : "") +
+                        (!loading && !webglFailed ? " " + classes.loaded : "")
                       }
                     >
                       <Box ref={canvasRef} className={classes.canvasInner} />

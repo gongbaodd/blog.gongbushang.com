@@ -5,13 +5,13 @@ body { margin: 0 }
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
-  page-break-after: always;
 }
 
 .A4 {
   display: flex;
   flex-wrap: wrap;
   gap: 10mm;
+  padding: 1em 0;
 }
 
 /** Paper sizes **/
@@ -52,20 +52,83 @@ a.work {
 
 /** For screen preview **/
 @media screen {
+  .resume-scale {
+    container-type: inline-size;
+    width: 100%;
+    overflow: clip;
+  }
+
   .sheet {
     background: white;
     box-shadow: 0 .5mm 2mm rgba(0,0,0,.3);
-    margin: 0 auto;
+    margin: 1em auto;
+    margin-top: 1em;    
+    margin-bottom: 1em;
+  }
+
+  /* Keep A4 geometry; scale the whole stack to fit narrow containers.
+     transform (not zoom) is applied after layout, so it cannot miss the
+     first paint the way zoom + container units do in some Chrome builds. */
+  @container (max-width: 210mm) {
+    .A4 {
+      width: 210mm;
+      transform: scale(calc(100cqi / 210mm));
+      transform-origin: top left;
+      /* Collapse layout height to the scaled page stack while preserving
+         room for the outer margins and shadows. */
+      height: calc(100cqi * 602 / 210);
+    }
   }
 }
 
 /** Fix for Chrome issue #273306 **/
 @media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    height: auto;
+    overflow: visible;
+  }
 
-  .A4.landscape { width: 297mm }
+  .A4.landscape {
+    width: 297mm;
+  }
+
   .A4 {
     width: 210mm;
     display: block;
+    gap: 0;
+    padding: 0;
+    margin: 0;
+    height: auto;
+  }
+
+  /* One sheet per printed page; skip break after the last sheet to
+     avoid a trailing blank page. */
+  .sheet {
+    margin: 0;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .sheet:last-of-type {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  /* Keep each sheet within a single A4 page — parent padding/gap used
+     to push 296mm sheets onto a second (blank) page between sheets. */
+  .A4 .sheet {
+    width: 210mm;
+    height: 297mm;
+    max-height: 297mm;
+  }
+
+  .A4.landscape .sheet {
+    width: 297mm;
+    height: 210mm;
+    max-height: 210mm;
   }
 }
 
@@ -102,7 +165,11 @@ a.work {
 
 .page-1 .subsection.edu {
   margin-left: 2.2em;
-  height: 224px;
+  height: 130px;
+}
+
+.page-1 h2:has(+ .subsection.job) {
+  transform: rotate(90deg) translateX(1em);
 }
 
 .page-1 .subsection.job {

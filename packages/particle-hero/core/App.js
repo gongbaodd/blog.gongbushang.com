@@ -11,7 +11,8 @@ export default class App {
     this.container = container;
     this.clock = new THREE.Clock();
     this.layoutMode = null;
-    this.initThree();
+    this.webglFailed = false;
+    if (!this.initThree()) return;
     this.initParticles();
     this.initControls();
   }
@@ -21,9 +22,20 @@ export default class App {
     this.camera = new THREE.PerspectiveCamera(50, 1, 1, 10000);
     this.camera.position.z = 300;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(1);
-    this.container.appendChild(this.renderer.domElement);
+    try {
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      if (!this.renderer.getContext()) {
+        throw new Error('WebGL context unavailable');
+      }
+      this.renderer.setPixelRatio(1);
+      this.container.appendChild(this.renderer.domElement);
+      return true;
+    } catch (error) {
+      this.webglFailed = true;
+      this.renderer = null;
+      console.error('ParticleHero: WebGL unavailable', error);
+      return false;
+    }
   }
 
   initControls() {
@@ -42,6 +54,7 @@ export default class App {
    * @param {'landscape' | 'square'} mode
    */
   async setLayoutMode(mode) {
+    if (this.webglFailed) return;
     const prevMode = this.layoutMode;
     this.layoutMode = mode;
     const dims = getParticleLayoutDims(mode);
@@ -78,15 +91,18 @@ export default class App {
   }
 
   update() {
+    if (this.webglFailed) return;
     const delta = this.clock.getDelta();
     if (this.particles) this.particles.update(delta);
   }
 
   draw() {
+    if (this.webglFailed || !this.renderer) return;
     this.renderer.render(this.scene, this.camera);
   }
 
   resize() {
+    if (this.webglFailed || !this.renderer) return;
     const w = this.container.clientWidth || CANVAS_WIDTH;
     const h = this.container.clientHeight || CANVAS_HEIGHT;
     if (w === 0 || h === 0) return;
