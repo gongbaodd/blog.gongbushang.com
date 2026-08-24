@@ -17,7 +17,7 @@ const datas = [
     date: "2025-2026",
     name: "Kickstart Now OÜ",
     content:
-      "Automated the translation pipeline, enabling support for 12 languages; engineered cross-platform compatibility for Windows, macOS, and Linux.",
+      "Automated the translation pipeline; programmed game play and automation tests.",
   },
   {
     image:
