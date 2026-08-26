@@ -37,7 +37,7 @@ async function processImage(
   source: GallerySource,
   id: string,
   options: CollectGalleryOptions,
-): Promise<GalleryEntry> {
+): Promise<Omit<GalleryEntry, "addedAt">> {
   const colorSet = await getColorSet(source.image, {
     baseDir: options.baseDir,
     relPath: id,
@@ -89,6 +89,7 @@ export async function collectGallery(
         continue;
       }
 
+      const addedAt = old?.addedAt ?? new Date().toISOString();
       let entry: GalleryEntry;
 
       if (
@@ -101,10 +102,11 @@ export async function collectGallery(
           ...old,
           hash: contentHash,
           doc: source.doc,
+          addedAt,
         };
       } else {
         const processed = await processImage(source, id, options);
-        entry = { ...processed, hash: contentHash };
+        entry = { ...processed, hash: contentHash, addedAt };
       }
 
       images.push(entry);

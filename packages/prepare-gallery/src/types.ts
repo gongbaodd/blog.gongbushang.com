@@ -11,6 +11,8 @@ export interface GalleryEntry {
   hash: string;
   image: string;
   doc: string;
+  /** ISO timestamp of when this entry was first collected into the gallery. */
+  addedAt: string;
   colorSet?: ColorSet;
 }
 

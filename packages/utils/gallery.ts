@@ -8,6 +8,8 @@ export interface GalleryEntry {
   hash: string;
   image: string;
   doc: string;
+  /** ISO timestamp of when this entry was first collected into the gallery. */
+  addedAt?: string;
   colorSet?: {
     bgColor: string;
     titleColor: string;
@@ -100,7 +102,8 @@ export function pickNearestGalleryEntry(
     const distance = anniversaryDistance(refDate, date);
     if (
       distance < bestDistance ||
-      (distance === bestDistance && entry.id < (best?.id ?? ""))
+      (distance === bestDistance &&
+        (entry.addedAt ?? "") > (best?.addedAt ?? ""))
     ) {
       bestDistance = distance;
       best = entry;

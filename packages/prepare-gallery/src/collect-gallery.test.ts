@@ -91,6 +91,7 @@ describe("collectGallery", () => {
       colorSet: { bgColor: "#111111", titleColor: "#eeeeee" },
     });
     expect(manifest.images[0]?.hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(manifest.images[0]?.addedAt).toBeTruthy();
     expect(manifest.lastUpdated).toBeTruthy();
   });
 
@@ -185,6 +186,36 @@ describe("collectGallery", () => {
       bgColor: "#111111",
       titleColor: "#eeeeee",
     });
+  });
+
+  test("preserves addedAt across regenerations, assigns it once per new entry", async () => {
+    await writeGalleryEntry("05/25/shenzhen.json", {
+      image: "https://example.com/photo.jpg",
+      doc: "/2019/05/25/take-another-black-golden-roof-again",
+    });
+
+    await collectGallery({ galleryDir, outputFile, traceDir, baseDir: tmpRoot });
+    const firstManifest = await readGalleryManifest();
+    const firstAddedAt = firstManifest.images[0]?.addedAt;
+    expect(firstAddedAt).toBeTruthy();
+
+    await writeGalleryEntry("06/01/beijing.json", {
+      image: "https://example.com/beijing.jpg",
+      doc: "/2019/06/01/beijing",
+    });
+
+    await collectGallery({ galleryDir, outputFile, traceDir, baseDir: tmpRoot });
+    const secondManifest = await readGalleryManifest();
+
+    const shenzhenEntry = secondManifest.images.find(
+      (image) => image.id === "05/25/shenzhen",
+    );
+    const beijingEntry = secondManifest.images.find(
+      (image) => image.id === "06/01/beijing",
+    );
+
+    expect(shenzhenEntry?.addedAt).toBe(firstAddedAt);
+    expect(beijingEntry?.addedAt).toBeTruthy();
   });
 
   test("removes orphaned entries and trace SVGs", async () => {

@@ -102,10 +102,20 @@ describe("pickNearestGalleryEntry", () => {
     expect(result?.id).toBe("05/25/shenzhen");
   });
 
-  test("tie-breaks by id", () => {
+  test("tie-breaks by most recently added", () => {
     const images = [
-      entry("b/entry", "/2019/05/25/b"),
+      entry("a/entry", "/2019/05/25/a", { addedAt: "2026-01-01T00:00:00Z" }),
+      entry("b/entry", "/2019/05/25/b", { addedAt: "2026-02-01T00:00:00Z" }),
+    ];
+
+    const result = pickNearestGalleryEntry(images, new Date(2026, 4, 30));
+    expect(result?.id).toBe("b/entry");
+  });
+
+  test("tie-breaks with missing addedAt by keeping the first seen", () => {
+    const images = [
       entry("a/entry", "/2019/05/25/a"),
+      entry("b/entry", "/2019/05/25/b"),
     ];
 
     const result = pickNearestGalleryEntry(images, new Date(2026, 4, 30));
