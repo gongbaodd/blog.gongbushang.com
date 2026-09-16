@@ -6,6 +6,7 @@ import remarkMath from "remark-math";
 import remarkAttributes from "remark-attributes";
 import rehypeKatex from "rehype-katex";
 import rehypeExternalLinks from "rehype-external-links";
+import { rehypeCloudinary } from "./packages/utils/cloudinary.ts";
 
 import { bundledLanguages } from "shiki";
 import plantumlGrammar from "shiki-plantuml";
@@ -31,6 +32,7 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkAttributes, remarkMath],
     rehypePlugins: [
+      rehypeCloudinary,
       [rehypeKatex, { strict: false }],
       [
         rehypeExternalLinks,

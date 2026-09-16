@@ -9,6 +9,7 @@ import {
   readGalleryTraceSvg,
   type GalleryEntry,
 } from "./gallery.ts";
+import { optimizeCoverUrl } from "./cloudinary.ts";
 import fs from "node:fs"
 import path from "node:path";
 import dayjs from "dayjs";
@@ -137,6 +138,15 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
       posts.map(async (post, i) => {
           const cPost = await colorizePost(post)
           const clientPost = await layoutPost(cPost)
+          if (clientPost.data.cover?.url) {
+              clientPost.data = {
+                  ...clientPost.data,
+                  cover: {
+                      ...clientPost.data.cover,
+                      url: optimizeCoverUrl(clientPost.data.cover.url),
+                  },
+              };
+          }
           const result = {
               id: clientPost.id,
               href: `/${post.data.category}/${post.id}`,

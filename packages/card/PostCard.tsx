@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import type { TClientPost } from "../utils/post";
 import classes from "./PostCard.module.css"
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import { optimizeCoverUrl } from "@/packages/utils/cloudinary";
 
 export interface IPost extends TClientPost {
 }
@@ -33,9 +34,9 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
       const { cover } = post.data
       if (cover) {
         if (typeof cover.url === "string") {
-          return cover.url
+          return optimizeCoverUrl(cover.url)
         }
-        return cover.url.src
+        return optimizeCoverUrl(cover.url).src
       }
       return c
     })

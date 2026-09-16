@@ -1,6 +1,7 @@
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { Flex, Stack, Card, Badge, Image, Text, Group, SimpleGrid } from "@mantine/core";
 import { Calendar } from "lucide-react";
+import { optimizeCloudinaryUrl } from "@/packages/utils/cloudinary";
 
 const datas = [
   {
@@ -47,7 +48,7 @@ export default function Job() {
               <Stack gap={4}>
                 <Flex direction="row" gap={6} align="center">
                   <Image
-                    src={d.image}
+                    src={optimizeCloudinaryUrl(d.image)}
                     w={40}
                     h={40}
                     fit="contain"

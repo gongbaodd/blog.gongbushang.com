@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider"
 import { Image, SimpleGrid, Stack } from "@mantine/core"
+import { optimizeCloudinaryUrl } from "@/packages/utils/cloudinary"
 
 interface Props {
     src: string
@@ -12,7 +13,7 @@ interface Props {
 export default function DescriptionImage({ src, alt, children, mah }: Props) {
     return <CustomMantineProvider>
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={"md"}>
-            <Image src={src} alt={alt} mah={mah || 400} fit="contain" />
+            <Image src={optimizeCloudinaryUrl(src)} alt={alt} mah={mah || 400} fit="contain" />
             <Stack gap={"lg"} pt="lg">
                 {children}
             </Stack>

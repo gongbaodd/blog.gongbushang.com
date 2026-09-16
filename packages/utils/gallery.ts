@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { GALLERY_JSON, GALLERY_TRACE_DIR } from "../consts/config.js";
+import { optimizeCloudinaryUrl } from "./cloudinary.ts";
 
 export interface GalleryEntry {
   id: string;
@@ -35,7 +36,14 @@ export function readGalleryData(): GalleryData {
     const galleryPath = path.join(process.cwd(), GALLERY_JSON);
     if (!fs.existsSync(galleryPath)) return EMPTY_GALLERY_DATA;
 
-    return JSON.parse(fs.readFileSync(galleryPath, "utf-8")) as GalleryData;
+    const data = JSON.parse(fs.readFileSync(galleryPath, "utf-8")) as GalleryData;
+    return {
+      ...data,
+      images: data.images.map((entry) => ({
+        ...entry,
+        image: optimizeCloudinaryUrl(entry.image),
+      })),
+    };
   } catch (error) {
     console.warn("Could not read gallery data:", error);
     return EMPTY_GALLERY_DATA;
@@ -149,7 +157,7 @@ export function applyGalleryEntryToClientPost<T extends IGalleryClientPost>(
     data: {
       ...clientPost.data,
       cover: {
-        url: entry.image,
+        url: optimizeCloudinaryUrl(entry.image),
         alt: clientPost.data.cover?.alt ?? clientPost.title,
       },
       ...(entry.colorSet?.bgColor

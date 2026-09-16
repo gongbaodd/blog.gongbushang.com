@@ -1,5 +1,6 @@
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { Card, Flex, Stack, Text, Badge, Anchor } from "@mantine/core";
+import { optimizeCloudinaryUrl } from "@/packages/utils/cloudinary";
 
 const data = [
   {
@@ -147,7 +148,7 @@ export default function Work() {
                           miw={224}
                           mih={d.height ?? 180}
                           style={{
-                            backgroundImage: `url(${d.image})`,
+                            backgroundImage: `url(${optimizeCloudinaryUrl(d.image)})`,
                             backgroundSize: d.fit ?? "cover",
                           }}
                         >

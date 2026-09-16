@@ -9,15 +9,16 @@ import {
   Stack,
 } from "@mantine/core";
 import { Calendar } from "lucide-react";
+import { optimizeCloudinaryUrl } from "@/packages/utils/cloudinary";
 
-const SUT_IMG =
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778328777/STU_kinje0.jpg";
-const TLU_IMG =
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330602/copy_of_copy_of_tlu_hvawhg_a86549_6afe2e.jpg";
-const BAT_IMG =
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330088/BAT_ihgz7p.jpg";
-const UL_IMG =
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330248/UniversidadeLusofona-logo_wxfo5o.jpg";
+const SUT_IMG = optimizeCloudinaryUrl(
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778328777/STU_kinje0.jpg");
+const TLU_IMG = optimizeCloudinaryUrl(
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330602/copy_of_copy_of_tlu_hvawhg_a86549_6afe2e.jpg");
+const BAT_IMG = optimizeCloudinaryUrl(
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330088/BAT_ihgz7p.jpg");
+const UL_IMG = optimizeCloudinaryUrl(
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330248/UniversidadeLusofona-logo_wxfo5o.jpg");
 
 const data = [
   {
