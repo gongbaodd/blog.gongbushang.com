@@ -80,6 +80,37 @@ try {
       await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
       // Let fonts/images settle; selector links must exist for a11y/sharing.
       await page.waitForSelector(".resume-scale .sheet", { timeout: 15000 });
+      // Webfonts use `font-display: swap`, so the first paint (and networkidle0)
+      // can happen before the CJK/Thai subsets apply. Printing at that moment
+      // bakes tofu into the PDF on machines without system CJK fonts (e.g. the
+      // Vercel build env). Wait until the subset faces actually render our
+      // representative glyphs before printing.
+      try {
+        // NOTE: Thai bold is (currently) unused in the layout, so its face
+        // would never load on its own — `load()` it explicitly anyway so the
+        // check below reflects readiness, not usage.
+        await page.waitForFunction(
+          async () => {
+            const sc = "宫日本語";
+            const thai = "ภาษาไทย";
+            const specs = [
+              ['400 10px "Noto Sans SC"', sc],
+              ['700 10px "Noto Sans SC"', sc],
+              ['400 10px "Noto Sans Thai"', thai],
+              ['700 10px "Noto Sans Thai"', thai],
+            ];
+            try {
+              await Promise.all(specs.map(([font, text]) => document.fonts.load(font, text)));
+            } catch {
+              return false;
+            }
+            return specs.every(([font, text]) => document.fonts.check(font, text));
+          },
+          { timeout: 30000, polling: 500 },
+        );
+      } catch {
+        failures.push(`${role}/${language}: CJK/Thai subset fonts did not load before print`);
+      }
       const check = await page.evaluate(() => {
         const sheets = [...document.querySelectorAll(".resume-scale .sheet")];
         const clipped = sheets.map((el) => ({
