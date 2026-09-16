@@ -4,7 +4,7 @@ export type ResumeRole = (typeof resumeRoles)[number];
 export type ResumeLanguage = (typeof resumeLanguages)[number];
 export type Localized = Record<ResumeLanguage, string>;
 
-export const updated = "2026-08-25";
+export const updated = "2026-09-16";
 export const roleLabels: Record<ResumeRole, Localized> = {
   universal: { en: "Universal", zh: "综合" },
   "full-stack": { en: "Full-Stack Dev", zh: "全栈开发" },
@@ -28,7 +28,15 @@ export const profile = {
   github: "https://github.com/gongbaodd",
   website: "https://www.growgen.xyz",
   linkedin: "https://www.linkedin.com/in/jian-gong-27762aa8/",
-  languages: ["普通话（母语）", "English (C1)", "日本語（初級）", "ภาษาไทย (พูด)", "Eesti Keel (A1)", "По-русски (A1)", "Deutsch (A1)"],
+  languages: [
+    { englishName: "Mandarin Chinese", nativeName: "普通话", code: "zh-CN", proficiency: { en: "Native", zh: "母语" } },
+    { englishName: "English", nativeName: "English", code: "en", proficiency: { en: "C1", zh: "C1" } },
+    { englishName: "Japanese", nativeName: "日本語", code: "ja", proficiency: { en: "Beginner", zh: "初级" } },
+    { englishName: "Thai", nativeName: "ภาษาไทย", code: "th", proficiency: { en: "Spoken", zh: "口语" } },
+    { englishName: "Estonian", nativeName: "eesti keel", code: "et", proficiency: { en: "A1", zh: "A1" } },
+    { englishName: "Russian", nativeName: "русский", code: "ru", proficiency: { en: "A1", zh: "A1" } },
+    { englishName: "German", nativeName: "Deutsch", code: "de", proficiency: { en: "A1", zh: "A1" } },
+  ],
 };
 
 export interface ResumeEntry {
@@ -86,51 +94,51 @@ const skill = (name: string, en: string, zh: string) => ({ name, detail: { en, z
 export const variants: Record<ResumeRole, ResumeVariant> = {
   universal: {
     headline: { en: "Full-Stack Web Developer | Game Programmer", zh: "全栈 Web 开发者｜游戏程序员" },
-    summary: { en: "Full-stack web developer and game programmer with 6+ years of industry experience at Trip.com and AfterShip, game development at Kickstart Now OÜ, and an MSc in Digital Learning Games with a thesis on ML-agent drone simulation.", zh: "拥有 6 年以上行业经验的全栈 Web 开发者与游戏程序员，曾就职于携程与 AfterShip，在 Kickstart Now OÜ 从事游戏开发，获数字学习游戏硕士学位，硕士论文研究 ML 智能体无人机仿真。" },
+    summary: { en: "Full-stack web developer and game programmer with 6+ years of industry experience, including roles at Trip.com, AfterShip and Kickstart Now OÜ. Holds an MSc in Digital Learning Games, with thesis research on drone simulation using ML agents.", zh: "全栈 Web 开发者与游戏程序员，拥有 6 年以上行业经验，曾就职于携程、AfterShip 和 Kickstart Now OÜ。获数字学习游戏硕士学位，论文研究基于机器学习智能体的无人机仿真。" },
     skills: [skill("TypeScript & JavaScript", "Advanced; React and Vue", "熟练；React 与 Vue"), skill("Unity & Blender", "Intermediate; 2D and 3D games", "中级；2D 与 3D 游戏"), skill("Linux", "Intermediate; Alpine, Arch, Ubuntu and Debian", "中级；Alpine、Arch、Ubuntu、Debian"), skill("Python", "Intermediate; crawlers, SciPy and ML-Agents", "中级；爬虫、SciPy 与 ML-Agents"), skill("Engineering", "Git, agile, CI/CD, Docker, K8S, TDD, AWS, GCP and Cloudflare Workers", "Git、敏捷开发、CI/CD、Docker、K8S、TDD、AWS、GCP 和 Cloudflare Workers")],
-    education: ["sut", "tlu", "bat", "ul"], experience: ["lecturer", "kickstart", "aftership", "trip"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["lecturer", "kickstart", "aftership", "trip"],
     projects: ["drone", "grandpa", "tetris", "missile", "hearing", "ninja", "tour", "kitchen", "wizard", "aftership", "trip", "website"],
   },
   "full-stack": {
     headline: { en: "Full-Stack Developer", zh: "全栈开发工程师" },
-    summary: { en: "Full-stack developer with 6+ years of experience shipping checkout, monitoring and analytics products at Trip.com and AfterShip, from jQuery and React Native to React, Node.js and Astro — plus crawler and translation automation.", zh: "拥有 6 年以上经验的全栈开发者，在携程与 AfterShip 交付收银、监控与数据分析产品，技术栈从 jQuery、React Native 到 React、Node.js 与 Astro，此前还搭建过爬虫与翻译自动化。" },
+    summary: { en: "Full-stack developer with 6+ years of experience, including checkout, monitoring and analytics products at Trip.com and AfterShip. Works across jQuery, React Native, React, Node.js and Astro, with additional experience automating crawler and translation workflows.", zh: "全栈开发者，拥有 6 年以上经验，曾在携程与 AfterShip 开发收银、监控与数据分析产品。技术栈涵盖 jQuery、React Native、React、Node.js 和 Astro，并具备爬虫与翻译流程自动化经验。" },
     skills: [skill("TypeScript & JavaScript", "React, Vue, Node.js and Astro", "React、Vue、Node.js 与 Astro"), skill("Frontend", "Monitoring, analytics dashboards and design systems", "前端监控、数据看板与设计系统"), skill("Testing", "End-to-end testing and automation", "端到端测试与自动化"), skill("Cloud", "AWS, GCP, Docker, K8S and Cloudflare Workers", "AWS、GCP、Docker、K8S 与 Cloudflare Workers")],
-    education: ["sut", "tlu", "bat", "ul"], experience: ["trip", "aftership", "lecturer", "kickstart"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["trip", "aftership", "lecturer", "kickstart"],
     projects: ["aftership", "trip", "website", "missile", "tour", "tetris", "kitchen", "grandpa", "drone"],
   },
   "machine-learning": {
     headline: { en: "Machine Learning & Interactive Systems Developer", zh: "机器学习与交互系统开发者" },
-    summary: { en: "Developer working with ML agents, game AI and edge ML: an ML-Agents drone thesis, minimax game AI, and microcontroller experiments with MFCC and CNN — grounded in a Digital Learning Games MSc from Tallinn University.", zh: "专注机器学习智能体、游戏 AI 与边缘机器学习的开发者：ML-Agents 无人机论文项目、极小化极大游戏 AI，以及基于 MFCC 与 CNN 的微控制器实验，拥有塔林大学数字学习游戏硕士学位。" },
+    summary: { en: "Developer focused on ML agents, game AI and edge ML. Projects span drone simulation with ML-Agents, minimax game AI and microcontroller experiments using MFCC and CNN. Holds an MSc in Digital Learning Games from Tallinn University.", zh: "专注机器学习智能体、游戏 AI 与边缘机器学习的开发者。项目涵盖基于 ML-Agents 的无人机仿真、极小化极大算法游戏 AI，以及使用 MFCC 与 CNN 的微控制器实验。获塔林大学数字学习游戏硕士学位。" },
     skills: [skill("Python", "SciPy, crawlers and ML-Agents", "SciPy、爬虫与 ML-Agents"), skill("Applied ML", "PyTorch, edge ML, MFCC and CNN", "PyTorch、边缘机器学习、MFCC 与 CNN"), skill("Simulation", "Unity, PID control and XR", "Unity、PID 控制与 XR"), skill("Data", "Analytics dashboards and geographic information systems", "数据分析看板与地理信息系统")],
-    education: ["tlu", "ul", "sut", "bat"], experience: ["aftership", "lecturer", "kickstart", "trip"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["aftership", "lecturer", "kickstart", "trip"],
     projects: ["drone", "hearing", "tetris", "tour", "aftership", "website", "ninja", "kitchen", "trip"],
   },
   devops: {
     headline: { en: "DevOps & Automation Developer", zh: "开发运维与自动化工程师" },
-    summary: { en: "Developer focused on automation and reliability: CI/CD, crawler and translation pipelines, Kubernetes on AWS and GCP, and end-to-end testing at 96% coverage — with production experience at Trip.com and AfterShip.", zh: "专注自动化与可靠性的开发者：CI/CD、爬虫与翻译流水线、AWS/GCP 上的 Kubernetes，以及覆盖率 96% 的端到端测试，拥有携程与 AfterShip 的生产环境经验。" },
+    summary: { en: "Developer focused on automation and reliability, with production experience at Trip.com and AfterShip. Experience spans CI/CD, crawler and translation pipelines, Kubernetes on AWS and GCP, and end-to-end testing with 96% coverage.", zh: "专注自动化与可靠性的开发者，拥有携程与 AfterShip 的生产环境经验。工作涵盖 CI/CD、爬虫与翻译流水线、AWS 与 GCP 上的 Kubernetes，以及覆盖率达 96% 的端到端测试。" },
     skills: [skill("Cloud & containers", "AWS, GCP, Docker and Google K8S", "AWS、GCP、Docker 与 Google K8S"), skill("Automation", "CI/CD, translation pipelines and crawler workflows", "CI/CD、翻译流水线与爬虫工作流"), skill("Reliability", "End-to-end testing and frontend monitoring", "端到端测试与前端监控"), skill("Linux", "Alpine, Arch, Ubuntu and Debian", "Alpine、Arch、Ubuntu 与 Debian")],
-    education: ["sut", "tlu", "bat", "ul"], experience: ["aftership", "trip", "kickstart", "lecturer"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["aftership", "trip", "kickstart", "lecturer"],
     projects: ["aftership", "trip", "website", "missile", "drone", "tour", "grandpa", "kitchen", "tetris"],
   },
   "game-dev": {
     headline: { en: "Game Developer & Programmer", zh: "游戏开发工程师" },
-    summary: { en: "Game programmer with Unity 2D/3D experience across gameplay, behavior-tree AI and automated testing, including a Unity title on Steam — with an MSc in Digital Learning Games from Tallinn University.", zh: "拥有 Unity 2D/3D 经验的游戏程序员，覆盖玩法、行为树 AI 与自动化测试，参与过 Steam 平台的 Unity 游戏，拥有塔林大学数字学习游戏硕士学位。" },
+    summary: { en: "Game programmer experienced in Unity 2D and 3D development, including gameplay, behavior-tree AI and automated testing. Contributed to a Unity game released on Steam and holds an MSc in Digital Learning Games from Tallinn University.", zh: "具备 Unity 2D 与 3D 开发经验的游戏程序员，工作涵盖玩法、行为树 AI 与自动化测试。参与开发已在 Steam 发布的 Unity 游戏，获塔林大学数字学习游戏硕士学位。" },
     skills: [skill("Unity & Blender", "2D and 3D game development", "2D 与 3D 游戏开发"), skill("Game systems", "Behavior trees, gameplay and automated tests", "行为树、游戏玩法与自动化测试"), skill("Web games", "BabylonJS, PixiJS and Colyseus", "BabylonJS、PixiJS 与 Colyseus"), skill("XR & ML", "MRTK, ML-Agents and MediaPipe", "MRTK、ML-Agents 与 MediaPipe")],
-    education: ["tlu", "bat", "sut", "ul"], experience: ["kickstart", "lecturer", "aftership", "trip"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["kickstart", "lecturer", "aftership", "trip"],
     projects: ["grandpa", "drone", "ninja", "kitchen", "wizard", "missile", "tetris", "tour", "website"],
   },
   "ai-agent": {
     headline: { en: "AI Agent Developer", zh: "AI 智能体开发工程师" },
-    summary: { en: "Developer building AI agents and automation: ML-Agents simulations, minimax and behavior-tree game AI, edge-ML experiments, and production crawler and translation pipelines — with production Python experience from AfterShip.", zh: "构建 AI 智能体与自动化的开发者：ML-Agents 仿真、极小化极大与行为树游戏 AI、边缘机器学习实验，以及生产级爬虫与翻译流水线，拥有来自 AfterShip 爬虫项目的生产级 Python 经验。" },
+    summary: { en: "Developer building AI agents and automation, with production Python experience at AfterShip. Work spans ML-Agents simulations, minimax and behavior-tree game AI, edge-ML experiments, and production crawler and translation pipelines.", zh: "专注 AI 智能体与自动化的开发者，拥有 AfterShip 的生产级 Python 开发经验。项目涵盖 ML-Agents 仿真、极小化极大算法与行为树游戏 AI、边缘机器学习实验，以及生产级爬虫与翻译流水线。" },
     skills: [skill("Python", "Crawlers, SciPy and ML-Agents", "爬虫、SciPy 与 ML-Agents"), skill("Agent systems", "ML-Agents, minimax, behavior trees and edge ML", "ML-Agents、极小化极大算法、行为树与边缘机器学习"), skill("Automation", "Translation pipelines, crawler workflows and end-to-end testing", "翻译流水线、爬虫工作流与端到端测试"), skill("Web & Cloud", "React, Node.js, Docker, K8S and Cloudflare Workers", "React、Node.js、Docker、K8S 与 Cloudflare Workers")],
-    education: ["tlu", "ul", "sut", "bat"], experience: ["kickstart", "aftership", "trip", "lecturer"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["kickstart", "aftership", "trip", "lecturer"],
     projects: ["drone", "tetris", "hearing", "ninja", "missile", "grandpa", "aftership", "trip", "kitchen"],
   },
   "product-engineer": {
     headline: { en: "Product Engineer", zh: "产品工程师" },
-    summary: { en: "Product-minded engineer who has shipped checkout flows, monitoring systems and analytics dashboards at Trip.com and AfterShip, plus a Unity game on Steam — 6+ years across e-commerce, SaaS and games.", zh: "以产品为导向的工程师，在携程与 AfterShip 交付收银流程、监控系统与数据分析看板，并参与过 Steam 平台的 Unity 游戏，横跨电商、SaaS 与游戏领域 6 年以上。" },
+    summary: { en: "Product-focused engineer with 6+ years of experience across e-commerce, SaaS and games. Delivered checkout flows, monitoring systems and analytics dashboards at Trip.com and AfterShip, and contributed to a Unity game released on Steam.", zh: "以产品为导向的工程师，拥有横跨电商、SaaS 与游戏领域的 6 年以上经验。曾在携程与 AfterShip 交付收银流程、监控系统与数据分析看板，并参与开发已在 Steam 发布的 Unity 游戏。" },
     skills: [skill("Product surfaces", "Checkout, payments, monitoring and analytics dashboards", "收银支付、前端监控与数据分析看板"), skill("Full-stack", "React, Vue, Node.js and Astro", "React、Vue、Node.js 与 Astro"), skill("Quality", "End-to-end testing and automation", "端到端测试与自动化"), skill("Design & delivery", "Design systems, agile development and CI/CD", "设计系统、敏捷开发与 CI/CD")],
-    education: ["sut", "tlu", "bat", "ul"], experience: ["trip", "aftership", "kickstart", "lecturer"],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["trip", "aftership", "kickstart", "lecturer"],
     projects: ["trip", "aftership", "grandpa", "website", "missile", "tour", "kitchen", "tetris", "drone"],
   },
 };

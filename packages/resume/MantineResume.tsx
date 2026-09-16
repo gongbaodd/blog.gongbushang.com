@@ -92,12 +92,18 @@ export default function MantineResume({ role, language }: IMantineResumeProps) {
                 {variant.skills.map(item => <div key={item.name}><strong>{item.name}</strong><span>{item.detail[language]}</span></div>)}
               </div>
               <h2>{copy.education}</h2>
-              <div className={classes.entries}>
+              <div className={`${classes.entries} ${classes.educationEntries}`}>
                 {variant.education.map(id => <EntryRow key={id} entry={education[id]} language={language} />)}
               </div>
               <h2>{copy.languages}</h2>
               <ul className={classes.languages}>
-                {profile.languages.map(item => <li key={item}>{item}</li>)}
+                {profile.languages.map(item => (
+                  <li key={item.code}>
+                    <span lang="en">{item.englishName}</span>
+                    {item.nativeName !== item.englishName && <> / <span lang={item.code}>{item.nativeName}</span></>}
+                    {" "}({item.proficiency[language]})
+                  </li>
+                ))}
               </ul>
             </div>
           </div>

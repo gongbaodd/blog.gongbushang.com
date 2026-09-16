@@ -1,3 +1,31 @@
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("/fonts/resume-noto-sans-sc-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans SC";
+  src: url("/fonts/resume-noto-sans-sc-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans Thai";
+  src: url("/fonts/resume-noto-sans-thai-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans Thai";
+  src: url("/fonts/resume-noto-sans-thai-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 .content { color: #101418; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "Noto Sans Thai", "PingFang SC", "Microsoft YaHei", sans-serif; font-size: 10.5px; line-height: 1.35; }
 .content :global(.sheet) { background: #fff; }
 /* Single sheet is a flex column so the body stretches and the page fills. */
@@ -14,8 +42,8 @@
 .heading { display: flex; align-items: baseline; gap: 10px; padding-top: 6px; padding-bottom: 8px; flex-wrap: wrap; }
 .heading > span { font-size: 15px; color: #495057; }
 .heading > p { font-size: 13px; font-weight: 700; margin: 0; color: #1c7ed6; }
-.summary { font-size: 9.5px; color: #343a40; margin: 0 0 2px; max-width: 170mm; }
-.contact { display: flex; flex-wrap: wrap; gap: 2px 14px; margin: 4px 0 6px; font-size: 9.5px; }
+.content .summary { font-size: 9.5px; color: #343a40; margin: 0; max-width: 170mm; }
+.contact { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 6px; padding-top: 8px; border-top: 1px solid #ced4da; font-size: 9.5px; }
 .contact a, .contact span { color: #343a40; }
 /* Single-page body: main column + narrow rail, stretched to fill the sheet. */
 .body { display: grid; grid-template-columns: minmax(0, 1fr) 60mm; gap: 0 14px; align-items: stretch; flex: 1 1 auto; min-height: 0; }
@@ -24,6 +52,7 @@
 .main > h2:first-child, .side > h2:first-child { margin-top: 8px; }
 .entries { display: grid; }
 .entryRow { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1f3f5; }
+.educationEntries .entryRow { padding: 8px 0; line-height: 1.45; }
 .entryRow:last-child { border-bottom: 0; }
 .entryRow img { width: 30px; height: 30px; object-fit: contain; flex: none; margin-top: 1px; border-radius: 6px; }
 .entryRow > div { min-width: 0; }
@@ -64,6 +93,7 @@
   .content h1 { font-size: 26px; }
   .content h2 { font-size: 16px; }
   .heading > p { font-size: 14px; }
+  .content .summary { font-size: 14px; }
   .contact { font-size: 12px; }
   .body { grid-template-columns: minmax(0, 1fr); }
   .projectGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
