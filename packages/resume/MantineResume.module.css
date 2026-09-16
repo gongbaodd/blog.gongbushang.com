@@ -45,6 +45,8 @@
 .content .summary { font-size: 9.5px; color: #343a40; margin: 0; max-width: 170mm; }
 .contact { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 6px; padding-top: 8px; border-top: 1px solid #ced4da; font-size: 9.5px; }
 .contact a, .contact span { color: #343a40; }
+.contactItem { display: inline-flex; align-items: center; gap: 3px; }
+.contactIcon { flex: none; }
 /* Single-page body: main column + narrow rail, stretched to fill the sheet. */
 .body { display: grid; grid-template-columns: minmax(0, 1fr) 60mm; gap: 0 14px; align-items: stretch; flex: 1 1 auto; min-height: 0; }
 .main, .side { min-width: 0; display: flex; flex-direction: column; }

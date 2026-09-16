@@ -74,9 +74,24 @@ a.work {
       width: 210mm;
       transform: scale(calc(100cqi / 210mm));
       transform-origin: top left;
-      /* Collapse layout height to the scaled page stack while preserving
-         room for the outer margins and shadows. */
-      height: calc(100cqi * 602 / 210);
+      /* Collapse layout height to the scaled single sheet (≈296mm) while
+         preserving room for the outer margins and shadows. */
+      height: calc(100cqi * 312 / 210);
+    }
+  }
+
+  /* Desktop: upscale the fixed 210mm (≈794px) sheet to fill wide
+     containers so the preview reads at >=1024px on typical desktops.
+     Capped at 1.5x (≈1190px) so ultrawide screens stay centered instead
+     of blowing up. Print is untouched: transform is visual-only and this
+     whole block lives under @media screen. */
+  @container (min-width: 210mm) {
+    .A4 {
+      width: 210mm;
+      margin-inline: auto;
+      transform: scale(min(100cqi / 210mm, 1.5));
+      transform-origin: top center;
+      height: calc(min(100cqi / 210mm, 1.5) * 312mm);
     }
   }
 }

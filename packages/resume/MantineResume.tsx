@@ -68,7 +68,24 @@ export default function MantineResume({ role, language }: IMantineResumeProps) {
           <div className={classes.contact}>
             <a href={`mailto:${profile.email}`}>{profile.email}</a>
             <a href={profile.github}>github.com/gongbaodd</a>
-            <span>📍 {profile.location[language]}</span>
+            <span className={classes.contactItem}>
+              <svg
+                className={classes.contactIcon}
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              {profile.location[language]}
+            </span>
             <a href={profile.website}>growgen.xyz</a>
             <a href={profile.linkedin}>LinkedIn — Jian Gong</a>
             <span>{copy.nationality}</span>
