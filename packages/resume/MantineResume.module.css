@@ -78,7 +78,7 @@
 .projectMini:hover { border-color: #1c7ed6; }
 .projectMini img { width: 100%; flex: 1 1 0; min-height: 56px; object-fit: cover; border-radius: 5px; }
 .projectMini strong { font-size: 10px; line-height: 1.25; color: #101418; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.projectMini span { font-size: 8.5px; color: #495057; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.projectMini span { font-size: 8.5px; color: #495057; line-height: 1.3; flex-shrink: 0; }
 .projectTags { color: #868e96 !important; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; display: block !important; }
 @media print {
   .content { position: absolute; top: 0; left: 0; width: 210mm; }
