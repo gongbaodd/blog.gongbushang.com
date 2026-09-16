@@ -6,12 +6,22 @@ import MantineMain from "@/packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
 import ResumeCom from "@/packages/resume/Resume.astro";
-import { variants } from "@/packages/resume/data";
+import { resumeLanguages, resumeRoles, variants, type ResumeLanguage, type ResumeRole } from "@/packages/resume/data";
+
+export function getStaticPaths() {
+  return resumeRoles.flatMap((role) =>
+    resumeLanguages
+      .filter((language) => !(role === "universal" && language === "en"))
+      .map((language) => ({ params: { role, lang: language } })),
+  );
+}
+
+const { role, lang: language } = Astro.params as { role: ResumeRole; lang: ResumeLanguage };
 ---
 
 <Global>
   <BaseHead
-    title={`Resume - Jian Gong - ${variants["universal"].headline["en"]}`}
+    title={`Resume - Jian Gong - ${variants[role].headline[language]}`}
     description={SITE_DESCRIPTION}
     slot="head"
   />
@@ -19,7 +29,7 @@ import { variants } from "@/packages/resume/data";
 
   <section>
     <MantineMain>
-      <ResumeCom role="universal" language="en" />
+      <ResumeCom role={role} language={language} />
       <Footer slug={"resume"} />
     </MantineMain>
   </section>

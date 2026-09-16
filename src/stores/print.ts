@@ -39,7 +39,7 @@ export function requestPrint() {
     globalThis.print?.()
 }
 
-const pdfLink = "https://res.cloudinary.com/dmq8ipket/image/upload/v1757748988/Resume_-_Jian_Gong_-_Web_Game_Dev_kkddqr.pdf"
-export function requestPDF() {
-    location.href = pdfLink
+const pdfLink = "/resume/pdfs/jian-gong-universal-en.pdf";
+export function requestPDF(href: string = pdfLink) {
+    location.href = href
 }

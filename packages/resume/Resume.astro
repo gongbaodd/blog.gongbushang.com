@@ -1,13 +1,177 @@
 ---
-import { Content } from "./fragments/resume.mdx";
 import MantineResume from "./MantineResume.tsx";
-import "./styles/paper.css"
+import "@fontsource/noto-sans-sc/latin-400.css";
+import "@fontsource/noto-sans-sc/latin-700.css";
+import { labels, pdfPath, resumeLanguages, resumePath, resumeRoles, roleLabels, variants, type ResumeLanguage, type ResumeRole } from "./data";
+import "./styles/paper.css";
+
+interface Props {
+  role?: ResumeRole;
+  language?: ResumeLanguage;
+}
+
+const { role = "universal", language = "en" } = Astro.props as Props;
+const copy = labels[language];
+const pdf = pdfPath(role, language);
 ---
 
-<div class="resume-scale">
-  <MantineResume client:load>
-    <div>
-      <Content />
-    </div>
-  </MantineResume>
+<div class="resume-layout">
+  <aside class="resume-sidebar not-print" aria-label={`${copy.role} / ${copy.language}`}>
+    <section aria-label={copy.role}>
+      <h2 class="sidebar-heading">{copy.role}</h2>
+      <ul>
+        {resumeRoles.map((r) => (
+          <li>
+            <a
+              href={resumePath(r, language)}
+              aria-current={r === role ? "page" : undefined}
+              class:list={["sidebar-link", { active: r === role }]}
+            >
+              {roleLabels[r][language]}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+    <section aria-label={copy.language}>
+      <h2 class="sidebar-heading">{copy.language}</h2>
+      <ul>
+        {resumeLanguages.map((l) => (
+          <li>
+            <a
+              href={resumePath(role, l)}
+              aria-current={l === language ? "page" : undefined}
+              hreflang={l === "zh" ? "zh-CN" : "en"}
+              class:list={["sidebar-link", { active: l === language }]}
+            >
+              {l === "zh" ? "中文" : "English"}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+    <section aria-label={`${copy.download} / ${copy.print}`}>
+      <h2 class="sidebar-heading">{copy.download}</h2>
+      <ul>
+        <li><a class="sidebar-link" href={pdf} download>{copy.download}</a></li>
+        <li><button class="sidebar-link sidebar-button" type="button" data-print-button>{copy.print}</button></li>
+      </ul>
+    </section>
+  </aside>
+
+  <div class="resume-scale">
+    <MantineResume role={role} language={language} />
+  </div>
 </div>
+
+<style>
+  .resume-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+    margin: 12px auto;
+    padding: 0 16px;
+  }
+  .resume-sidebar {
+    flex: none;
+    width: 180px;
+    position: sticky;
+    top: 12px;
+    display: grid;
+    gap: 16px;
+    font-size: 14px;
+    align-content: start;
+  }
+  /* paper.css sets width:100% on .resume-scale, which collapses to 0 for
+     this flex item inside Mantine's flex parents — grow instead. */
+  .resume-layout > .resume-scale {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+  .sidebar-heading {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.65;
+    margin: 0 0 6px;
+  }
+  .resume-sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .sidebar-link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 5px 10px;
+    text-decoration: none;
+    color: inherit;
+    background: none;
+    cursor: pointer;
+    font: inherit;
+  }
+  .sidebar-link:hover {
+    border-color: #adb5bd;
+  }
+  .sidebar-link[aria-current="page"],
+  .sidebar-link.active {
+    background: #1c7ed6;
+    border-color: #1c7ed6;
+    color: #fff;
+  }
+  .sidebar-link:focus-visible {
+    outline: 2px solid #1c7ed6;
+    outline-offset: 2px;
+  }
+  @media (max-width: 900px) {
+    .resume-layout {
+      flex-direction: column;
+    }
+    .resume-layout > .resume-scale {
+      width: 100%;
+      flex: none;
+    }
+    .resume-sidebar {
+      width: 100%;
+      position: static;
+    }
+    .resume-sidebar ul {
+      grid-auto-flow: column;
+      grid-auto-columns: max-content;
+      overflow-x: auto;
+    }
+  }
+  @media print {
+    .not-print {
+      display: none !important;
+    }
+  }
+</style>
+
+<!-- Global (unscoped): print must hide the site chrome around the CV.
+     Scoped styles cannot reach Header/Footer/Main since they live outside
+     this component, and this tag only ships on resume pages. -->
+<style is:global>
+  @media print {
+    header,
+    footer {
+      display: none !important;
+    }
+    main {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+  }
+</style>
+
+<script>
+  document.querySelector("[data-print-button]")?.addEventListener("click", () => window.print());
+</script>
