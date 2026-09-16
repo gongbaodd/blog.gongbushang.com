@@ -15,7 +15,6 @@ export interface IPodcastEpisode {
   audioUrl?: string;
   image?: string;
   colorSet?: { bgColor: string; titleColor: string };
-  trace?: string;
 }
 
 export const $episodes = map<Record<string, IPodcastEpisode[]>>({});

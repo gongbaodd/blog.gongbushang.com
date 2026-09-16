@@ -29,10 +29,7 @@ export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
 export interface CliOptions {
   rssUrl?: string;
   output?: string;
-  traceDir?: string;
-  depth?: boolean;
-  regenerateTraces?: boolean;
-  tracesOnly?: boolean;
+  episodeDir?: string;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -46,15 +43,9 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--output" && next) {
       options.output = next;
       i++;
-    } else if (arg === "--trace-dir" && next) {
-      options.traceDir = next;
+    } else if (arg === "--episode-dir" && next) {
+      options.episodeDir = next;
       i++;
-    } else if (arg === "--depth") {
-      options.depth = true;
-    } else if (arg === "--regenerate-traces") {
-      options.regenerateTraces = true;
-    } else if (arg === "--traces-only") {
-      options.tracesOnly = true;
     }
   }
   return options;
@@ -68,11 +59,8 @@ export async function resolveFetchOptions(cli: CliOptions = {}) {
       repoRoot,
       cli.output ?? PODCAST_JSON,
     ),
-    traceDir: path.resolve(repoRoot, cli.traceDir ?? PODCAST_COVER_DIR),
+    episodeDir: path.resolve(repoRoot, cli.episodeDir ?? PODCAST_COVER_DIR),
     baseDir: repoRoot,
-    useDepthPrep: cli.depth ?? false,
-    regenerateTraces: cli.regenerateTraces ?? false,
-    tracesOnly: cli.tracesOnly ?? false,
   };
 }
 

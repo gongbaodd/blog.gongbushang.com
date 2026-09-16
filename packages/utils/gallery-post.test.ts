@@ -27,18 +27,13 @@ const clientPost = {
     cover: { url: "https://example.com/post.jpg", alt: "post alt" },
     bgColor: "#ae9f74",
     titleColor: "--mantine-color-orange-2",
-    trace: "<svg>post</svg>",
     layout: "md",
   },
 };
 
 describe("applyGalleryEntryToClientPost", () => {
-  test("overrides cover, trace, and colorSet from gallery entry", () => {
-    const result = applyGalleryEntryToClientPost(
-      clientPost,
-      galleryEntry,
-      "<svg>gallery</svg>",
-    );
+  test("overrides cover and colorSet from gallery entry", () => {
+    const result = applyGalleryEntryToClientPost(clientPost, galleryEntry);
 
     expect(result).toMatchObject({
       id: "2019/05/25/take-another-black-golden-roof-again",
@@ -50,11 +45,11 @@ describe("applyGalleryEntryToClientPost", () => {
         },
         bgColor: "#6c6d83",
         titleColor: "--mantine-color-green-4",
-        trace: "<svg>gallery</svg>",
         category: "life",
         layout: "md",
       },
     });
+    expect(result.data).not.toHaveProperty("trace");
   });
 
   test("falls back to title for cover alt", () => {

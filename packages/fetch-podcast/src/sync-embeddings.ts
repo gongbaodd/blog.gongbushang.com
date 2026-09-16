@@ -14,7 +14,7 @@ async function readEpisodeFile(filePath: string): Promise<Episode> {
 }
 
 export async function syncEpisodeEmbeddings(
-  traceDir: string,
+  episodeDir: string,
   options?: {
     embeddingOptions?: EmbeddingOptions;
     episodeIds?: Set<string>;
@@ -22,7 +22,7 @@ export async function syncEpisodeEmbeddings(
 ): Promise<number> {
   let files: string[];
   try {
-    files = await fs.readdir(traceDir);
+    files = await fs.readdir(episodeDir);
   } catch {
     return 0;
   }
@@ -36,7 +36,7 @@ export async function syncEpisodeEmbeddings(
       !name.startsWith(".") &&
       name !== UMAP_STATE_FILENAME,
   )) {
-    const filePath = path.join(traceDir, file);
+    const filePath = path.join(episodeDir, file);
     const episode = await readEpisodeFile(filePath);
 
     if (onlyIds && !onlyIds.has(episode.id)) {

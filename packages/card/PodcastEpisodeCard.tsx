@@ -47,14 +47,6 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
     classes.md,
   ].join(" ");
 
-  const tracedCover = episode.trace
-    ? `url("data:image/svg+xml,${encodeURIComponent(episode.trace)}")`
-    : episode.image
-      ? `url("data:image/svg+xml,${encodeURIComponent(
-          `<svg xmlns="http://www.w3.org/2000/svg"><rect fill="%23e9ecef" width="100" height="100"/></svg>`
-        )}")`
-      : "";
-
   const cardStyle = {
     "--underline-color": episode.colorSet?.titleColor
       ? `var(${episode.colorSet.titleColor})`
@@ -66,7 +58,6 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
     backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
     "--cover-opacity": coverOpacity,
     "--cover-image": `url(${episode.image})`,
-    "--cover-trace": tracedCover,
   } as React.CSSProperties;
 
   const badgeRow = (

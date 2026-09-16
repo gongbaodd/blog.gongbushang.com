@@ -83,10 +83,6 @@ async function processLocation(
 async function processCover(
   data: FrontmatterData,
   old: MetadataEntry | undefined,
-  file: string,
-  relPath: string,
-  traceDir: string,
-  useDepthPrep: boolean,
 ) {
   if (!data?.cover?.url) return undefined;
 
@@ -94,12 +90,7 @@ async function processCover(
     return undefined;
   }
 
-  const colorSet = await getColorSet(data.cover.url, {
-    baseDir: path.dirname(file),
-    relPath,
-    saveTraceToDir: traceDir,
-    useDepthPrep,
-  });
+  const colorSet = await getColorSet(data.cover.url);
   return {
     cover: data.cover,
     colorSet,
@@ -151,30 +142,6 @@ async function writeMetadataEntry(
   await fs.writeFile(outPath, JSON.stringify(merged, null, 2), "utf-8");
 }
 
-async function regenerateAllTraces(
-  parsedPosts: ParsedPost[],
-  options: Pick<CollectMetadataOptions, "traceDir" | "useDepthPrep">,
-): Promise<void> {
-  let count = 0;
-
-  for (const post of parsedPosts) {
-    if (!post.frontmatter.cover?.url) continue;
-
-    await getColorSet(post.frontmatter.cover.url, {
-      baseDir: path.dirname(post.file),
-      relPath: post.relPath,
-      saveTraceToDir: options.traceDir,
-      useDepthPrep: options.useDepthPrep ?? false,
-    });
-    count++;
-    console.log(`🎨 Regenerated trace: ${post.relPath}`);
-  }
-
-  console.log(
-    `\n✏️ Regenerated ${count} cover trace(s) in ${options.traceDir}`,
-  );
-}
-
 export async function collectMetadata(
   options: CollectMetadataOptions,
 ): Promise<void> {
@@ -182,12 +149,8 @@ export async function collectMetadata(
     repoRoot,
     docsDir,
     outputDir,
-    traceDir,
     googleApiKey,
     embeddingOptions,
-    useDepthPrep = false,
-    regenerateTraces = false,
-    tracesOnly = false,
   } = options;
   const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
 
@@ -195,11 +158,6 @@ export async function collectMetadata(
 
   const files = await fg("**/*.md", { cwd: docsDir, absolute: true });
   const parsedPosts = await parsePosts(docsDir, files);
-
-  if (tracesOnly) {
-    await regenerateAllTraces(parsedPosts, { traceDir, useDepthPrep });
-    return;
-  }
 
   const oldData = await loadExistingMetadata(outputDir, legacyJsonPath);
   const needsEmbedding = parsedPosts.some((post) => {
@@ -225,7 +183,7 @@ export async function collectMetadata(
   let changedCount = 0;
 
   for (const post of parsedPosts) {
-    const { file, contentHash, frontmatter, body, relPath } = post;
+    const { contentHash, frontmatter, body, relPath } = post;
     const old = oldData[relPath];
     const hashUnchanged = old?.hash === contentHash;
 
@@ -274,14 +232,7 @@ export async function collectMetadata(
     }
 
     if (frontmatter.cover?.url) {
-      const coverPart = await processCover(
-        frontmatter,
-        old,
-        file,
-        relPath,
-        traceDir,
-        useDepthPrep,
-      );
+      const coverPart = await processCover(frontmatter, old);
       if (coverPart) {
         merged.cover = coverPart.cover;
         merged.colorSet = coverPart.colorSet;
@@ -324,10 +275,6 @@ export async function collectMetadata(
   console.log(
     `\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`,
   );
-
-  if (regenerateTraces) {
-    await regenerateAllTraces(parsedPosts, { traceDir, useDepthPrep });
-  }
 
   await applyBlogUmapCorpus(repoRoot);
 }

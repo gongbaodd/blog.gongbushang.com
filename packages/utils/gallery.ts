@@ -27,10 +27,6 @@ const EMPTY_GALLERY_DATA: GalleryData = {
   images: [],
 };
 
-function traceSvgBasename(id: string): string {
-  return `${id.replaceAll("/", "-")}.svg`;
-}
-
 export function readGalleryData(): GalleryData {
   try {
     const galleryPath = path.join(process.cwd(), GALLERY_JSON);
@@ -52,6 +48,10 @@ export function readGalleryData(): GalleryData {
 
 export function readGalleryEntry(id: string): GalleryEntry | undefined {
   return readGalleryData().images.find((entry) => entry.id === id);
+}
+
+function traceSvgBasename(id: string): string {
+  return `${id.replaceAll("/", "-")}.svg`;
 }
 
 export function readGalleryTraceSvg(id: string): string | undefined {
@@ -137,7 +137,6 @@ export interface IGalleryClientPostData {
   cover?: { url: string | { src: string }; alt?: string };
   bgColor?: string;
   titleColor?: string;
-  trace?: string;
   [key: string]: unknown;
 }
 
@@ -150,7 +149,6 @@ export interface IGalleryClientPost {
 export function applyGalleryEntryToClientPost<T extends IGalleryClientPost>(
   clientPost: T,
   entry: GalleryEntry,
-  trace?: string,
 ): T {
   return {
     ...clientPost,
@@ -166,7 +164,6 @@ export function applyGalleryEntryToClientPost<T extends IGalleryClientPost>(
       ...(entry.colorSet?.titleColor
         ? { titleColor: entry.colorSet.titleColor }
         : {}),
-      ...(trace ? { trace } : {}),
     },
   };
 }

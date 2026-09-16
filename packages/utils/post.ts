@@ -2,11 +2,10 @@ import { getCollection, type CollectionEntry } from "astro:content";
 import { date as dateFrom, title as titleFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
 import { set } from 'es-toolkit/compat';
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
-import { POST_COVER_DIR, POST_METADATA_DIR, POST_UMAP_STATE } from "../consts/config.js";
+import { POST_METADATA_DIR, POST_UMAP_STATE } from "../consts/config.js";
 import {
   applyGalleryEntryToClientPost,
   galleryDocToPostId,
-  readGalleryTraceSvg,
   type GalleryEntry,
 } from "./gallery.ts";
 import { optimizeCoverUrl } from "./cloudinary.ts";
@@ -91,20 +90,6 @@ export function readPostMetadata(): PostMetadataEntry[] | undefined {
     }
 }
 
-export function readPostCoverSvg(postId: string): string | undefined {
-    try {
-        const coverPath = path.join(
-            process.cwd(),
-            POST_COVER_DIR,
-            `${postId.replaceAll("/", "-")}.svg`,
-        );
-        if (!fs.existsSync(coverPath)) return undefined;
-        return fs.readFileSync(coverPath, "utf-8");
-    } catch {
-        return undefined;
-    }
-}
-
 export interface IPost {
     id: string;
     href: string;
@@ -126,7 +111,6 @@ type T_EXT = {
     bgClass: string;
     bgColor: string;
     titleColor: string;
-    trace: string;
 }
 type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
 
@@ -171,9 +155,8 @@ export async function mapGalleryEntryToClientPost(
   if (!serverPost) return undefined;
 
   const [clientPost] = await mapServerPostToClient([serverPost]);
-  const trace = readGalleryTraceSvg(entry.id);
 
-  return applyGalleryEntryToClientPost(clientPost, entry, trace);
+  return applyGalleryEntryToClientPost(clientPost, entry);
 }
 
 
@@ -232,12 +215,8 @@ async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
         const matchingEntry = readPostMetadataEntry(post.id);
 
         if (matchingEntry?.colorSet) {
-            const trace = readPostCoverSvg(post.id);
-            if (trace) {
-                const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor);
-                const t = set(r, "data.trace", trace);
-                return set<T_EXT_POST>(t, "data.titleColor", matchingEntry.colorSet.titleColor);
-            }
+            const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor);
+            return set<T_EXT_POST>(r, "data.titleColor", matchingEntry.colorSet.titleColor);
         }
     } catch (error) {
         console.warn('Could not read post metadata, falling back to color generation:', error);

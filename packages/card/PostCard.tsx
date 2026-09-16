@@ -53,15 +53,6 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
     img.onload = () => setCoverOpacity(1)
   }, [coverImage])
 
-  const { tracedCover } = {
-    get tracedCover() {
-      const { trace } = post.data
-      const encoded = encodeURIComponent(trace);
-      const cssBg = `url("data:image/svg+xml,${encoded}")`;
-      return cssBg
-    }
-  }
-
   const cardStyle = {
     ...(hasCover ? {} : { backgroundColor: post.data.bgColor }),
     "--underline-color": `var(${post.data.titleColor})`,
@@ -72,7 +63,6 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
     backgroundColor: post.data.bgColor,
     "--cover-opacity": coverOpacity,
     "--cover-image": `url(${coverImage})`,
-    "--cover-trace": tracedCover,
   } as React.CSSProperties
 
   const badgeRow = (

@@ -8,7 +8,7 @@ describe("requestLatestPosts", () => {
       href: "/blog/2024/post-a",
       title: "Post A",
       date: new Date("2024-01-15"),
-      data: { category: "blog", layout: "md", bgClass: "", bgColor: "", titleColor: "", trace: "" },
+      data: { category: "blog", layout: "md", bgClass: "", bgColor: "", titleColor: "" },
       excerpt: "Excerpt A",
     },
   ];

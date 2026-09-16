@@ -1,6 +1,6 @@
 # Exclude heavy local-only dirs from Vercel source upload.
-# (Output size itself is controlled by not inlining cover-trace SVGs;
-# see packages/utils/post.ts mapServerPostToClient.)
+# (Images are served optimized via Cloudinary f_auto,q_auto;
+# see packages/utils/cloudinary.ts.)
 .venv/
 target/
 future/

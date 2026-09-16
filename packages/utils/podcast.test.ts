@@ -1,4 +1,4 @@
-import { describe, expect, test, vi, beforeEach } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 const podcastManifest = {
   channel: { title: "Test Podcast" },
@@ -19,12 +19,10 @@ const podcastEpisodes = [
     link: "https://example.com/ep2",
     pubDate: "2024-02-20T00:00:00Z",
     description: "Desc two",
+    summary: "Summary two",
     image: "https://example.com/img.png",
   },
 ];
-
-let svgExists = false;
-let svgReadFails = false;
 
 vi.mock("node:fs", () => ({
   default: {
@@ -32,7 +30,6 @@ vi.mock("node:fs", () => ({
       const p = String(filePath);
       if (p.endsWith("podcast.json")) return true;
       if (p.endsWith("podcast")) return true;
-      if (p.endsWith(".svg")) return svgExists;
       return false;
     },
     readdirSync: (dirPath: unknown) => {
@@ -49,10 +46,6 @@ vi.mock("node:fs", () => ({
       if (p.endsWith("ep2.json")) {
         return JSON.stringify(podcastEpisodes[1]);
       }
-      if (p.endsWith(".svg")) {
-        if (svgReadFails) throw new Error("ENOENT");
-        return "<svg>trace</svg>";
-      }
       throw new Error(`Unexpected read: ${p}`);
     },
   },
@@ -62,7 +55,6 @@ import {
   processPodcastEpisodes,
   mapPodcastEpisodesToPosts,
   readPodcastData,
-  readPodcastCoverSvg,
 } from "./podcast";
 
 describe("readPodcastData", () => {
@@ -73,54 +65,20 @@ describe("readPodcastData", () => {
   });
 });
 
-describe("readPodcastCoverSvg", () => {
-  beforeEach(() => {
-    svgExists = true;
-    svgReadFails = false;
-  });
-
-  test("returns svg content when file exists", () => {
-    expect(readPodcastCoverSvg("ep2")).toBe("<svg>trace</svg>");
-  });
-
-  test("returns undefined when file missing", () => {
-    svgExists = false;
-    expect(readPodcastCoverSvg("missing")).toBeUndefined();
-  });
-});
-
 describe("processPodcastEpisodes", () => {
-  beforeEach(() => {
-    svgExists = false;
-    svgReadFails = false;
-  });
-
-  test("returns episode unchanged when no image", () => {
+  test("returns episodes without trace data", () => {
     const result = processPodcastEpisodes();
-    const noImage = result.find((ep) => ep.title === "Episode One");
-    expect(noImage?.image).toBeUndefined();
-    expect(noImage?.trace).toBeUndefined();
-  });
-
-  test("enriches episode with trace when SVG exists", () => {
-    svgExists = true;
-    const result = processPodcastEpisodes();
+    expect(result).toHaveLength(2);
+    for (const episode of result) {
+      expect(episode).not.toHaveProperty("trace");
+    }
     const withImage = result.find((ep) => ep.title === "Episode Two");
-    expect(withImage?.trace).toBe("<svg>trace</svg>");
-  });
-
-  test("returns episode unchanged when SVG read fails", () => {
-    svgExists = true;
-    svgReadFails = true;
-    const result = processPodcastEpisodes();
-    const withImage = result.find((ep) => ep.title === "Episode Two");
-    expect(withImage?.trace).toBeUndefined();
+    expect(withImage?.image).toBe("https://example.com/img.png");
   });
 });
 
 describe("mapPodcastEpisodesToPosts", () => {
   test("maps episodes to post shape with category podcast", () => {
-    svgExists = false;
     const result = mapPodcastEpisodesToPosts();
     expect(result).toHaveLength(2);
     expect(result[0].data.category).toBe("podcast");
@@ -129,5 +87,6 @@ describe("mapPodcastEpisodesToPosts", () => {
     expect(result[0].data.date).toEqual(new Date("2024-02-20T00:00:00Z"));
     expect(result[1].data.title).toBe("Episode One");
     expect(result[1].data.body).toBe("Desc one");
+    expect(result[0].data).not.toHaveProperty("trace");
   });
 });

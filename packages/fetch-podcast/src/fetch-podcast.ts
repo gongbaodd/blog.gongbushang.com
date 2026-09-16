@@ -102,10 +102,7 @@ function parseEpisode(item: Record<string, unknown>, index: number): Episode {
 
 async function enrichEpisodesWithColors(
   episodes: Episode[],
-  options: Pick<
-    FetchPodcastOptions,
-    "baseDir" | "traceDir" | "useDepthPrep"
-  >,
+  options: Pick<FetchPodcastOptions, "baseDir">,
 ): Promise<Episode[]> {
   const enrichedEpisodes: Episode[] = [];
 
@@ -115,9 +112,6 @@ async function enrichEpisodesWithColors(
         console.log(`🎨 Processing colors for: ${episode.title}`);
         const colorSet = await getColorSet(episode.image, {
           baseDir: options.baseDir,
-          relPath: episode.id,
-          saveTraceToDir: options.traceDir,
-          useDepthPrep: options.useDepthPrep ?? false,
         });
         enrichedEpisodes.push({ ...episode, colorSet });
       } else {
@@ -133,41 +127,6 @@ async function enrichEpisodesWithColors(
   }
 
   return enrichedEpisodes;
-}
-
-async function regenerateAllEpisodeTraces(
-  options: Pick<
-    FetchPodcastOptions,
-    "traceDir" | "baseDir" | "useDepthPrep"
-  >,
-): Promise<void> {
-  let files: string[];
-  try {
-    files = await fs.readdir(options.traceDir);
-  } catch {
-    console.log("No podcast trace directory found.");
-    return;
-  }
-
-  let count = 0;
-  for (const file of files.filter((name) => name.endsWith(".json"))) {
-    const raw = await fs.readFile(path.join(options.traceDir, file), "utf-8");
-    const episode = JSON.parse(raw) as Episode;
-    if (!episode.image) continue;
-
-    await getColorSet(episode.image, {
-      baseDir: options.baseDir,
-      relPath: episode.id,
-      saveTraceToDir: options.traceDir,
-      useDepthPrep: options.useDepthPrep ?? false,
-    });
-    count++;
-    console.log(`🎨 Regenerated trace: ${episode.id}`);
-  }
-
-  console.log(
-    `\n✏️ Regenerated ${count} podcast trace(s) in ${options.traceDir}`,
-  );
 }
 
 async function loadExistingPodcast(
@@ -204,16 +163,16 @@ async function loadExistingPodcast(
   }
 }
 
-async function episodeNeedsEmbedding(traceDir: string): Promise<boolean> {
+async function episodeNeedsEmbedding(episodeDir: string): Promise<boolean> {
   let files: string[];
   try {
-    files = await fs.readdir(traceDir);
+    files = await fs.readdir(episodeDir);
   } catch {
     return false;
   }
 
   for (const file of files.filter((name) => name.endsWith(".json"))) {
-    const raw = await fs.readFile(path.join(traceDir, file), "utf-8");
+    const raw = await fs.readFile(path.join(episodeDir, file), "utf-8");
     const episode = JSON.parse(raw) as Episode;
     if (!Array.isArray(episode.embeddings) || episode.embeddings.length === 0) {
       return true;
@@ -226,20 +185,7 @@ async function episodeNeedsEmbedding(traceDir: string): Promise<boolean> {
 export async function fetchAndProcessPodcast(
   options: FetchPodcastOptions,
 ): Promise<void> {
-  const {
-    useDepthPrep = false,
-    regenerateTraces = false,
-    tracesOnly = false,
-  } = options;
-
-  await fs.mkdir(options.traceDir, { recursive: true });
-
-  if (tracesOnly || regenerateTraces) {
-    await regenerateAllEpisodeTraces(options);
-    if (tracesOnly) {
-      return;
-    }
-  }
+  await fs.mkdir(options.episodeDir, { recursive: true });
 
   const rssUrl = options.rssUrl ?? DEFAULT_RSS_URL;
   const channel = await fetchRssFeed(rssUrl);
@@ -264,7 +210,7 @@ export async function fetchAndProcessPodcast(
 
   const existing = await loadExistingPodcast(
     options.outputFile,
-    options.traceDir,
+    options.episodeDir,
   );
   const existingIds = existing
     ? new Set(existing.episodes.map((ep) => ep.id))
@@ -284,8 +230,6 @@ export async function fetchAndProcessPodcast(
 
     const enrichedNew = await enrichEpisodesWithColors(newEpisodes, {
       baseDir: options.baseDir,
-      traceDir: options.traceDir,
-      useDepthPrep,
     });
 
     const manifest = {
@@ -300,7 +244,7 @@ export async function fetchAndProcessPodcast(
     );
 
     for (const episode of enrichedNew) {
-      const episodePath = path.join(options.traceDir, `${episode.id}.json`);
+      const episodePath = path.join(options.episodeDir, `${episode.id}.json`);
       await fs.writeFile(
         episodePath,
         JSON.stringify(episode, null, 2),
@@ -311,17 +255,17 @@ export async function fetchAndProcessPodcast(
     console.log(
       `\n✨ Podcast manifest saved to ${options.outputFile} (${newEpisodes.length} new episode(s) added)`,
     );
-    console.log(`📁 Episode JSON + trace SVGs saved to ${options.traceDir}/`);
+    console.log(`📁 Episode JSON saved to ${options.episodeDir}/`);
   } else {
     console.log("✅ No new episodes; podcast data unchanged.");
   }
 
-  if (await episodeNeedsEmbedding(options.traceDir)) {
+  if (await episodeNeedsEmbedding(options.episodeDir)) {
     const embeddingServerRunning = await isEmbeddingServerRunning();
     if (!embeddingServerRunning) {
       throw new Error(EMBEDDING_SERVER_ERROR);
     }
-    const embeddedCount = await syncEpisodeEmbeddings(options.traceDir);
+    const embeddedCount = await syncEpisodeEmbeddings(options.episodeDir);
     if (embeddedCount > 0) {
       console.log(`🧠 Embedded ${embeddedCount} podcast episode(s)`);
     }

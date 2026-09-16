@@ -16,9 +16,7 @@ export interface PodcastEpisode extends Record<string, unknown> {
   colorSet?: {
     bgColor: string;
     titleColor: string;
-    trace?: string;
   };
-  trace?: string;
   embeddings?: number[];
   umap2D?: [number, number];
 }
@@ -99,42 +97,15 @@ export function readPodcastData(): PodcastData {
   }
 }
 
-export function readPodcastCoverSvg(episodeSlug: string): string | undefined {
-  try {
-    const svgPath = path.join(process.cwd(), PODCAST_COVER_DIR, `${episodeSlug}.svg`);
-    if (!fs.existsSync(svgPath)) return undefined;
-    return fs.readFileSync(svgPath, "utf-8");
-  } catch {
-    return undefined;
-  }
-}
-
-function episodeSlug(id: string): string {
-  const part = id.split("/").pop();
-  return part || id.replace(/[^a-zA-Z0-9-]/g, "-");
-}
-
 /**
- * Processes podcast data by enriching episodes with trace data from SVG files.
- * Similar to sortPostsByDate, this function transforms raw podcast data into
- * the final podcast data structure.
+ * Enriches podcast episodes with UMAP coordinates.
  *
- * @returns Array of episodes enriched with trace data
+ * @returns Array of episodes enriched with UMAP data
  */
 export function processPodcastEpisodes(): PodcastEpisode[] {
   const episodesData = readPodcastData().episodes;
 
-  return episodesData.map((ep) => {
-    const withUmap = enrichEpisodeWithUmap2D(ep);
-
-    if (!withUmap.image) return withUmap;
-
-    const slug = episodeSlug(withUmap.id as string);
-    const trace = readPodcastCoverSvg(slug);
-    if (!trace) return withUmap;
-
-    return { ...withUmap, trace };
-  });
+  return episodesData.map((ep) => enrichEpisodeWithUmap2D(ep));
 }
 
 /**
@@ -161,7 +132,6 @@ export function mapPodcastEpisodesToPosts(): T_PROPS[] {
       image: episode.image,
       link: episode.link,
       colorSet: episode.colorSet,
-      trace: episode.trace,
       body: episode.description || episode.summary || "",
     },
   })) as T_PROPS[];

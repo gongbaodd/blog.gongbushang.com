@@ -13,31 +13,18 @@ describe("parseCliArgs", () => {
     expect(parseCliArgs([])).toEqual({});
   });
 
-  test("parses docs, output, and trace flags", () => {
+  test("parses docs and output flags", () => {
     expect(
       parseCliArgs([
         "--docs-dir",
         "custom/docs",
         "--output",
         "custom/metadata",
-        "--trace-dir",
-        "custom/trace",
         "ignored",
       ]),
     ).toEqual({
       docsDir: "custom/docs",
       output: "custom/metadata",
-      traceDir: "custom/trace",
-    });
-  });
-
-  test("parses depth and trace regeneration flags", () => {
-    expect(
-      parseCliArgs(["--depth", "--regenerate-traces", "--traces-only"]),
-    ).toEqual({
-      depth: true,
-      regenerateTraces: true,
-      tracesOnly: true,
     });
   });
 
@@ -74,9 +61,6 @@ describe("resolveCollectOptions", () => {
     expect(options.outputDir).toBe(
       path.resolve(repoRoot, "src/content/generated/metadata"),
     );
-    expect(options.traceDir).toBe(
-      path.resolve(repoRoot, "src/content/generated/cover"),
-    );
   });
 
   test("applies CLI overrides and GOOGLE_API_KEY env", async () => {
@@ -85,30 +69,13 @@ describe("resolveCollectOptions", () => {
     const options = await resolveCollectOptions({
       docsDir: "alt/docs",
       output: "alt/metadata",
-      traceDir: "alt/trace",
     });
 
     expect(options).toEqual({
       repoRoot,
       docsDir: path.resolve(repoRoot, "alt/docs"),
       outputDir: path.resolve(repoRoot, "alt/metadata"),
-      traceDir: path.resolve(repoRoot, "alt/trace"),
       googleApiKey: "test-google-key",
-      useDepthPrep: false,
-      regenerateTraces: false,
-      tracesOnly: false,
     });
-  });
-
-  test("passes depth and trace flags through resolveCollectOptions", async () => {
-    const options = await resolveCollectOptions({
-      depth: true,
-      regenerateTraces: true,
-      tracesOnly: true,
-    });
-
-    expect(options.useDepthPrep).toBe(true);
-    expect(options.regenerateTraces).toBe(true);
-    expect(options.tracesOnly).toBe(true);
   });
 });

@@ -30,9 +30,6 @@ export interface PodcastData {
 export interface FetchPodcastOptions {
   rssUrl?: string;
   outputFile: string;
-  traceDir: string;
+  episodeDir: string;
   baseDir: string;
-  useDepthPrep?: boolean;
-  regenerateTraces?: boolean;
-  tracesOnly?: boolean;
 }

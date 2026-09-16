@@ -1,8 +1,8 @@
 ---
 name: generated-content
 description: >-
-  Post cover metadata, SVG traces, and podcast generated data for this blog.
-  Use when working with metadata/, podcast.json, cover SVGs, content-prepare,
+  Post cover metadata and podcast generated data for this blog.
+  Use when working with metadata/, podcast.json, content-prepare,
   fetch-podcast, post card colorization, world map geodata, gallery.json,
   prepare-gallery, or paths under src/content/generated/.
 ---
@@ -10,6 +10,13 @@ description: >-
 # Generated content (covers & metadata)
 
 Generated artifacts live under `src/content/generated/` inside the `src/content` git submodule. Source markdown stays in `src/content/_docs/`.
+
+> Image SVG traces (potrace placeholders) were removed from post cards and
+> podcast cards: Cloudinary `f_auto,q_auto` delivery
+> (`packages/utils/cloudinary.ts`) keeps images small enough that
+> placeholders are unnecessary there — cards fall back to the `colorSet`
+> background color while the cover loads. The hero (`ParticleHero`) keeps
+> its gallery trace placeholder shown while WebGL loads.
 
 ## Layout
 
@@ -22,9 +29,8 @@ src/content/
     ├── metadata/.umap-state.json  # UMAP 2D coordinates keyed by post file slug
     ├── podcast.json          # podcast channel manifest (channel, lastUpdated)
     ├── gallery.json          # gallery manifest (all images + hashes + colorSet)
-    ├── cover/                # post cover SVG traces
-    ├── gallery/              # gallery image SVG traces
-    └── podcast/              # per-episode JSON + SVG traces
+    ├── gallery/              # gallery image SVG traces (hero placeholder)
+    └── podcast/              # per-episode JSON
 ```
 
 ## Path constants (single source of truth)
@@ -51,11 +57,11 @@ Re-exported from `@/packages/consts`. **Never hardcode these paths elsewhere.**
 
 | Package | Command | Output |
 |---------|---------|--------|
-| `content-prepare` | `pnpm content:prepare` | `metadata/*.json` + `cover/*.svg` |
-| `fetch-podcast` | `pnpm fetch:podcast` | `podcast.json` + `podcast/{id}.json` + `podcast/*.svg` |
+| `content-prepare` | `pnpm content:prepare` | `metadata/*.json` |
+| `fetch-podcast` | `pnpm fetch:podcast` | `podcast.json` + `podcast/{id}.json` |
 | `prepare-gallery` | `pnpm gallery:prepare` | `gallery.json` + `gallery/*.svg` |
 
-Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and write SVG edge traces. JSON stores `colorSet` (bg/title colors); SVG content is stored separately on disk.
+All three use `packages/image-metadata` (`getColorSet`) to extract palette colors. JSON stores `colorSet` (bg/title colors) used for card backgrounds.
 
 ### Post metadata (`content-prepare`)
 
@@ -66,7 +72,7 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 - `file` field = post id (slug under `_docs/`)
 - Embeddings stored in per-post JSON; UMAP 2D coordinates live in `metadata/.umap-state.json` (shared with podcasts — not in per-entity JSON); `readPostMetadata()` merges `umap2D` at read time
 - Embedding + combined UMAP logic: `packages/metadata-embedding` (used by `content-prepare` and `fetch-podcast`)
-- Generates cover SVG when cover URL is new/changed
+- Cover colors are extracted when the cover URL is new/changed
 
 ### Podcast data (`fetch-podcast`)
 
@@ -79,7 +85,8 @@ Both use `packages/image-metadata` (`getColorSet`) to extract palette colors and
 
 - Input: `src/content/_gallery/**/*.json` (`image` URL + `doc` link)
 - Writes single manifest to `gallery.json` with all entries and SHA-256 `hash` per source file
-- Generates trace SVG under `gallery/` when image URL is new/changed; skips unchanged entries by hash
+- Re-extracts colors when the image URL is new/changed; skips unchanged entries by hash
+- Generates the hero placeholder trace SVG under `gallery/` when the image URL is new/changed
 - Reuses existing `colorSet` when only `doc` changes (image URL unchanged)
 - SVG filename: `{id with / → -}.svg` (e.g. `05-25-shenzhen.svg`)
 
@@ -92,12 +99,10 @@ Do **not** read generated files with inline `fs`/`path` in pages or API routes. 
 ```ts
 readPostMetadata(): PostMetadataEntry[] | undefined
 readPostMetadataEntry(postId: string): PostMetadataEntry | undefined
-readPostCoverSvg(postId: string): string | undefined
 ```
 
 - `PostMetadataEntry`: `{ file, hash, city?, locations?, colorSet?, umap2D? }` — `umap2D` is merged from `.umap-state.json` at read time, not stored in per-post JSON
 - Metadata filename: `{postId with / → -}.json` (e.g. `2017-01-26-dalian-modern-museum.json`)
-- Cover SVG filename: `{postId with / → -}.svg` (e.g. `2017-01-26-dalian-modern-museum.svg`)
 
 Used by `colorizePost()` (post card styling) and `src/pages/api/world/map.json.ts`.
 
@@ -105,13 +110,11 @@ Used by `colorizePost()` (post card styling) and `src/pages/api/world/map.json.t
 
 ```ts
 readPodcastData(): PodcastData
-readPodcastCoverSvg(episodeSlug: string): string | undefined
-processPodcastEpisodes(): PodcastEpisode[]   // enriches with trace SVGs
+processPodcastEpisodes(): PodcastEpisode[]   // enriches with UMAP coordinates
 mapPodcastEpisodesToPosts(): T_PROPS[]       // maps to post shape for filters
 ```
 
 - Episode JSON filename: `{episode.id}.json` (e.g. `Canva-e3jc78i.json`)
-- SVG filename: last URL path segment of episode id (e.g. `787-e2k41n4.svg`)
 - Used by `src/pages/podcast.astro` and podcast filter/card components
 
 ### Gallery — [`packages/utils/gallery.ts`](../../../packages/utils/gallery.ts)
@@ -119,7 +122,7 @@ mapPodcastEpisodesToPosts(): T_PROPS[]       // maps to post shape for filters
 ```ts
 readGalleryData(): GalleryData
 readGalleryEntry(id: string): GalleryEntry | undefined
-readGalleryTraceSvg(id: string): string | undefined
+readGalleryTraceSvg(id: string): string | undefined   // hero placeholder only
 ```
 
 - `GalleryEntry`: `{ id, file, hash, image, doc, colorSet? }`
@@ -130,9 +133,7 @@ readGalleryTraceSvg(id: string): string | undefined
 ```mermaid
 flowchart LR
   JSON[metadata/*.json / podcast.json + podcast/*.json] --> Reader[readPostMetadata / readPodcastData]
-  SVG[cover/ or podcast/ SVG] --> Reader2[readPostCoverSvg / readPodcastCoverSvg]
   Reader --> Transform[colorizePost / processPodcastEpisodes]
-  Reader2 --> Transform
   Transform --> UI[PostCard / PodcastPlock / GLMap]
 ```
 
@@ -142,14 +143,14 @@ Posts without `cover` frontmatter fall back to deterministic CSS gradient classe
 
 1. **Adding/changing paths** → edit `packages/consts/config.js` only.
 2. **Reading generated data** → use reader functions in `post.ts` / `podcast.ts` / `gallery.ts`; never static-import JSON from `src/content/`.
-3. **Regenerating data** → run `pnpm content:prepare`, `pnpm fetch:podcast`, or `pnpm gallery:prepare`; do not hand-edit hundreds of SVGs.
+3. **Regenerating data** → run `pnpm content:prepare`, `pnpm fetch:podcast`, or `pnpm gallery:prepare`.
 4. **Tests** → import readers from `config.js` path (not `@/packages/consts` index) to avoid pulling MDX from hero fragments.
 5. **Submodule** → generated files are committed inside `src/content`; bump submodule pointer in main repo after moves.
 
 ## CLI overrides
 
-Both generators accept flags that override config defaults:
+Generators accept flags that override config defaults:
 
-- `content-prepare`: `--docs-dir`, `--output`, `--trace-dir`
-- `fetch-podcast`: `--rss-url`, `--output`, `--trace-dir`
-- `prepare-gallery`: `--gallery-dir`, `--output`, `--trace-dir`
+- `content-prepare`: `--docs-dir`, `--output`
+- `fetch-podcast`: `--rss-url`, `--output`, `--episode-dir`
+- `prepare-gallery`: `--gallery-dir`, `--output`, `--trace-dir` (+ `--depth`, `--regenerate-traces`, `--traces-only`)

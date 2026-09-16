@@ -33,7 +33,6 @@
 
   background-size: cover;
   background-position: top center;
-  background-image: var(--cover-trace);
 }
 
 .item.with_bg .cover_area::after {

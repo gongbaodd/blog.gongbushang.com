@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { config as loadEnv } from "dotenv";
-import { POST_COVER_DIR, POST_METADATA_DIR } from "consts/config.js";
+import { POST_METADATA_DIR } from "consts/config.js";
 
 export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
   let dir = startDir;
@@ -29,10 +29,6 @@ export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
 export interface CliOptions {
   docsDir?: string;
   output?: string;
-  traceDir?: string;
-  depth?: boolean;
-  regenerateTraces?: boolean;
-  tracesOnly?: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -46,15 +42,6 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--output" && next) {
       options.output = next;
       i++;
-    } else if (arg === "--trace-dir" && next) {
-      options.traceDir = next;
-      i++;
-    } else if (arg === "--depth") {
-      options.depth = true;
-    } else if (arg === "--regenerate-traces") {
-      options.regenerateTraces = true;
-    } else if (arg === "--traces-only") {
-      options.tracesOnly = true;
     }
   }
   return options;
@@ -70,11 +57,7 @@ export async function resolveCollectOptions(cli: CliOptions = {}) {
       repoRoot,
       cli.output ?? POST_METADATA_DIR,
     ),
-    traceDir: path.resolve(repoRoot, cli.traceDir ?? POST_COVER_DIR),
     googleApiKey: process.env.GOOGLE_API_KEY,
-    useDepthPrep: cli.depth ?? false,
-    regenerateTraces: cli.regenerateTraces ?? false,
-    tracesOnly: cli.tracesOnly ?? false,
   };
 }
 

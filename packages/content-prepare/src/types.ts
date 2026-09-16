@@ -42,10 +42,6 @@ export interface CollectMetadataOptions {
   repoRoot: string;
   docsDir: string;
   outputDir: string;
-  traceDir: string;
   googleApiKey?: string;
   embeddingOptions?: EmbeddingOptions;
-  useDepthPrep?: boolean;
-  regenerateTraces?: boolean;
-  tracesOnly?: boolean;
 }

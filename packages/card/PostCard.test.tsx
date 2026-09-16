@@ -20,7 +20,6 @@ const minimalPost: IPost = {
     bgClass: "liquid_cheese",
     bgColor: "#f0f0f0",
     titleColor: "--mantine-color-dark-8",
-    trace: "<svg/>",
     cover: undefined,
   },
   excerpt: "Short excerpt text",

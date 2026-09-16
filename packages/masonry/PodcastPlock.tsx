@@ -35,7 +35,6 @@ export function postToEpisode(post: IPost): IPodcastEpisode {
     audioUrl: data?.audioUrl as string | undefined,
     image,
     colorSet,
-    trace: (data?.trace as string) ?? post.data?.trace,
   };
 }
 

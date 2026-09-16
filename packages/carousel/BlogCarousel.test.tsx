@@ -21,7 +21,6 @@ const mockPost: IPost = {
     bgClass: "",
     bgColor: "",
     titleColor: "",
-    trace: "",
   },
   excerpt: "",
 };

@@ -8,7 +8,7 @@ describe("requestHistoryPosts", () => {
       href: "/blog/2023/old-post",
       title: "Old Post",
       date: new Date("2023-06-01"),
-      data: { category: "blog", layout: "md", bgClass: "", bgColor: "", titleColor: "", trace: "" },
+      data: { category: "blog", layout: "md", bgClass: "", bgColor: "", titleColor: "" },
       excerpt: "Old excerpt",
     },
   ];

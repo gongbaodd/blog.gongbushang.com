@@ -58,7 +58,6 @@ function mockEmbeddingVector(length = EMBEDDING_DIMENSIONS): number[] {
 let tmpRoot = "";
 let docsDir = "";
 let outputDir = "";
-let traceDir = "";
 
 async function writePost(relativePath: string, body: string) {
   const filePath = path.join(docsDir, relativePath);
@@ -77,7 +76,6 @@ describe("collectMetadata", () => {
     tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "content-prepare-"));
     docsDir = path.join(tmpRoot, "docs");
     outputDir = path.join(tmpRoot, "metadata");
-    traceDir = path.join(tmpRoot, "trace");
 
     geocodeCitiesMock.mockResolvedValue({
       city: ["Tokyo"],
@@ -114,7 +112,7 @@ cover:
 `,
     );
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, googleApiKey: "key" });
 
     const entry = await readMetadata("2024/01/01/hello-world");
     expect(entry.file).toBe("2024/01/01/hello-world");
@@ -154,7 +152,7 @@ category: blog
     );
 
     await expect(
-      collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir }),
+      collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir }),
     ).rejects.toThrow("Embedding server is not running");
   });
 
@@ -168,14 +166,14 @@ title: Stable
 `;
     await writePost("2024/01/02/stable.md", content);
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     const first = await readMetadata("2024/01/02/stable");
 
     geocodeCitiesMock.mockClear();
     getColorSetMock.mockClear();
     const writeSpy = vi.spyOn(fs, "writeFile");
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     const second = await readMetadata("2024/01/02/stable");
 
     expect(second).toEqual(first);
@@ -197,7 +195,7 @@ cover:
 `,
     );
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     getColorSetMock.mockClear();
 
     await writePost(
@@ -212,7 +210,7 @@ cover:
 `,
     );
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     const entry = await readMetadata("2024/01/03/with-cover");
 
     expect(entry.cover).toEqual({ url: "./same-cover.png" });
@@ -234,7 +232,7 @@ category: blog
 # Stable
 `;
     await writePost("2024/01/08/embed-backfill.md", content);
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     const first = await readMetadata("2024/01/08/embed-backfill");
 
     await fs.writeFile(
@@ -248,7 +246,7 @@ category: blog
 
     getEmbeddingMock.mockClear();
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
     const second = await readMetadata("2024/01/08/embed-backfill");
 
     expect(second.embeddings).toHaveLength(EMBEDDING_DIMENSIONS);
@@ -266,7 +264,7 @@ cover:
 # Hello
 `;
     await writePost("2024/01/06/backfill.md", content);
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, googleApiKey: "key" });
 
     const hash = (await readMetadata("2024/01/06/backfill")).hash;
     await fs.writeFile(
@@ -285,7 +283,7 @@ cover:
     geocodeCitiesMock.mockClear();
     getColorSetMock.mockClear();
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir, googleApiKey: "key" });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, googleApiKey: "key" });
     const entry = await readMetadata("2024/01/06/backfill");
 
     expect(entry.id).toBe("2024/01/06/backfill");
@@ -334,7 +332,7 @@ category: blog
       "utf-8",
     );
 
-    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir, traceDir });
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
 
     const entry = await readMetadata("2024/01/04/active");
     expect(entry.hash).not.toBe("legacy-hash");
