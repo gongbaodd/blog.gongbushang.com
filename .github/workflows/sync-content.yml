@@ -1,0 +1,60 @@
+name: sync-content
+
+# 内容仓 (src/content, astro 分支) 有更新时,自动把根仓的 gitlink bump 到最新,
+# 产生一次根仓提交 -> Cloudflare Pages 自动构建上线 (方案 A)。
+# Pages 只监听根仓,内容仓单独 push 不会触发构建,所以需要这一层粘合。
+
+on:
+  repository_dispatch:
+    types: [content-updated]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "content SHA to pin (default: origin/astro tip)"
+        required: false
+        default: ""
+  schedule:
+    # 每天兜底一次,防止 dispatch 丢失导致内容长期不同步
+    - cron: "17 3 * * *"
+
+concurrency:
+  group: sync-content
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump src/content to latest
+        id: bump
+        run: |
+          git submodule update --init src/content
+          git -C src/content fetch origin astro
+          TARGET="${{ inputs.sha || github.event.client_payload.sha }}"
+          if [ -z "$TARGET" ]; then
+            TARGET="$(git -C src/content rev-parse origin/astro)"
+          fi
+          git -C src/content checkout --detach "$TARGET"
+          git add src/content
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Already at $TARGET, nothing to do."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.bump.outputs.changed == 'true'
+        run: |
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "chore: sync src/content to ${{ steps.bump.outputs.target }}"
+          git push

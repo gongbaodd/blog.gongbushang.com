@@ -12,7 +12,6 @@ import { bundledLanguages } from "shiki";
 import plantumlGrammar from "shiki-plantuml";
 import mermaid from "astro-mermaid";
 
-import vercel from "@astrojs/vercel";
 import path from "node:path";
 import glsl from "vite-plugin-glsl";
 
@@ -48,9 +47,6 @@ export default defineConfig({
     },
   },
   output: "static",
-  adapter: vercel({
-    isr: true,
-  }),
   vite: {
     plugins: [glsl()],
     optimizeDeps: {
