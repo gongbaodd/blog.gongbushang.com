@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
-const resumeRoles = ["universal", "full-stack", "machine-learning", "devops", "game-dev", "ai-agent", "product-engineer"];
+const resumeRoles = ["universal", "full-stack", "machine-learning", "devops", "game-dev", "ai-agent", "product-engineer", "qa-tester"];
 const resumeLanguages = ["en", "zh"];
 const MAX_BYTES = 2 * 1024 * 1024;
 

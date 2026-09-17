@@ -1,4 +1,4 @@
-export const resumeRoles = ["universal", "full-stack", "machine-learning", "devops", "game-dev", "ai-agent", "product-engineer"] as const;
+export const resumeRoles = ["universal", "full-stack", "machine-learning", "devops", "game-dev", "ai-agent", "product-engineer", "qa-tester"] as const;
 export const resumeLanguages = ["en", "zh"] as const;
 export type ResumeRole = (typeof resumeRoles)[number];
 export type ResumeLanguage = (typeof resumeLanguages)[number];
@@ -13,6 +13,7 @@ export const roleLabels: Record<ResumeRole, Localized> = {
   "game-dev": { en: "Game Dev", zh: "游戏开发" },
   "ai-agent": { en: "AI Agent", zh: "AI 智能体" },
   "product-engineer": { en: "Product Engineer", zh: "产品工程师" },
+  "qa-tester": { en: "QA Tester", zh: "测试工程师" },
 };
 
 export const labels: Record<ResumeLanguage, Record<string, string>> = {
@@ -157,6 +158,13 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
     skills: [skill("Product surfaces", "Checkout, payments, monitoring and analytics dashboards", "收银支付、前端监控与数据分析看板"), skill("Full-stack", "React, Vue, Node.js and Astro", "React、Vue、Node.js 与 Astro"), skill("Quality", "End-to-end testing and automation", "端到端测试与自动化"), skill("Design & delivery", "Design systems, agile development and CI/CD", "设计系统、敏捷开发与 CI/CD")],
     education: ["tlu", "ul", "bat", "sut"], experience: ["trip", "aftership", "kickstart", "lecturer"],
     projects: ["trip", "aftership", "grandpa", "website", "missile", "tour", "kitchen", "tetris", "drone"],
+  },
+  "qa-tester": {
+    headline: { en: "QA Tester & Test Automation Engineer", zh: "QA 测试与自动化测试工程师" },
+    summary: { en: "QA-focused engineer with 6+ years of experience at Trip.com and AfterShip, combining end-to-end testing leadership with test automation. Led testing that reached 96% coverage at AfterShip, built Python/Poco/pytest-bdd tests across languages and resolutions for a Steam release, and built frontend monitoring at Trip.com that caught 90% of client-side issues before backend log analysis.", zh: "专注质量保障的工程师，拥有 6 年以上经验，曾在携程与 AfterShip 兼顾端到端测试主导与自动化建设。主导 AfterShip 端到端测试，将覆盖率提升至 96%；为 Steam 游戏构建基于 Python、Poco 与 pytest-bdd 的跨语言、跨分辨率测试；并在携程搭建前端监控系统，在后端日志分析前发现 90% 的客户端问题。" },
+    skills: [skill("Test automation", "Python, Poco, pytest-bdd and end-to-end testing", "Python、Poco、pytest-bdd 与端到端测试"), skill("Quality & reliability", "96% coverage, frontend monitoring and payment-flow testing", "96% 测试覆盖率、前端监控与支付流程测试"), skill("Full-stack", "React, Node.js, TypeScript and Astro", "React、Node.js、TypeScript 与 Astro"), skill("Automation & cloud", "CI/CD, crawler workflows, Docker, K8S and AWS/GCP", "CI/CD、爬虫工作流、Docker、K8S 与 AWS/GCP")],
+    education: ["tlu", "ul", "bat", "sut"], experience: ["kickstart", "aftership", "trip", "lecturer"],
+    projects: ["grandpa", "trip", "aftership", "tour", "drone", "website", "missile", "kitchen", "tetris"],
   },
 };
 
