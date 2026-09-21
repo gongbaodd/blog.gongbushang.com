@@ -1,245 +1,641 @@
 # Astro 6 → 7 Upgrade Plan
 
-> Created: 2026-09-21
-> **Status: PLANNED**
-> Scope: this repo (growgen.xyz) — Astro `6.3.8` → `7.x`, plus all Astro-integration-coupled dependencies.
-> Sources: [Upgrade to Astro v7](https://docs.astro.build/en/guides/upgrade-to/v7/), [Astro 7.0 release post](https://astro.build/blog/astro-7/), local audit of `astro.config.mjs` / `package.json` / `src` / `packages`.
+> Created: 2026-09-21\
+> Status: **PLANNED**\
+> Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
+> dependencies.\
+> Deployment: **Cloudflare**
 
----
+## Goal
 
-## 1. Current state (audited 2026-09-21)
+Upgrade the project to Astro 7 in small, independently verifiable steps.
 
-| Item | Value | v7 impact |
-|---|---|---|
-| astro | `6.3.8` (exact pin) | upgrade to `7.x` |
-| @astrojs/mdx | `5.0.6` (exact pin, `extendMarkdownConfig: true`) | needs v7-compatible major |
-| @astrojs/react | `^5.0.5` | needs v7-compatible major |
-| @astrojs/sitemap | `3.7.3` (exact pin) | needs v7-compatible major |
-| @astrojs/rss | `^4.0.18` | verify peer range |
-| @astrojs/check | `0.9.9` (used by `astro check` in build script) | needs v7-compatible version |
-| Markdown plugins | `remark-attributes`, `remark-math`, `rehype-katex`, `rehype-external-links`, custom `rehypeCloudinary` (`packages/utils/cloudinary.ts`), custom `shiki-plantuml` grammar | **biggest change** — v7 default pipeline is Sätteri (Rust); this project must stay on the `unified()` pipeline (see §3.2) |
-| `astro-mermaid` | `^1.0.4` (integration) | third-party — verify v7 support before upgrading |
-| Vite usage | `vite-plugin-glsl`, `optimizeDeps.include/exclude`, `build.rollupOptions.treeshake`, `ssr.noExternal`, `resolve.alias` | Vite 8 / Rolldown — compat layer auto-converts `rollupOptions`, but plugins must be validated (§3.4) |
-| `src/fetch.ts` | not present ✅ | no conflict with Advanced Routing |
-| `@astrojs/db` | not used ✅ | removed in v7 — no action |
-| `astro:transitions` usage | `ClientRouter` (`packages/layouts/Global.astro`), `navigate()` + `TransitionBeforeSwapEvent` type (`packages/header/`) | ✅ all still-supported APIs; none of the removed internals (`createAnimationScope`, `TRANSITION_*` constants, `isTransitionBefore*Event()`) are used |
-| `getContainerRenderer()` | not used ✅ | no action |
-| Experimental flags in config | none ✅ | no config removal needed |
-| Runtime | Node `24.15.0`, pnpm `10.33.2` | meets v7 requirements |
-| Deployment | static output, Vercel | no adapter changes required |
-| Tests | Vitest `~3.2.4` (+ jsdom, happy-dom, @testing-library/react) | Vitest majors are Vite-coupled — likely needs Vitest 4 (§3.5) |
+Do not mix dependency upgrades, compiler fixes, bundler fixes, and
+visual fixes in one step. Every step has a gate that must pass before
+continuing.
 
-### 1.1 Risk summary (project-specific)
+------------------------------------------------------------------------
 
-1. **Markdown pipeline** — 5 remark/rehype plugins + custom Shiki grammar + MDX. Auto-upgrading blindly would silently drop KaTeX math, external-link attrs, and Cloudinary image rewriting.
-2. **Rust compiler strictness** — this site has ~many hand-written `.astro` components and 100+ Markdown/MDX posts; unclosed tags now **error**, and invalid HTML nesting (e.g. block elements inside `<p>`) is no longer auto-corrected.
-3. **`compressHTML: 'jsx'` new default** — spaces between inline elements disappear (e.g. `<span>a</span>\n<em>b</em>` renders `ab`). Blog post cards, breadcrumbs, and tag lists are typical victims.
-4. **Vite 8 / Rolldown** — `vite-plugin-glsl` and the hand-tuned `treeshake` config (added to fix the 2.2 MB tabler-icons bundle, see `website-optimization-plan.md`) must be re-verified.
-5. **`astro-mermaid`** — integration API consumers can break on Vite 8; pin/verify.
+## Step 0 --- Create upgrade branch and capture baseline
 
----
+Create a dedicated branch before changing dependencies.
 
-## 2. Upgrade strategy
+``` bash
+git checkout master
+git pull
+git checkout -b astro7-upgrade
 
-Upgrade on a dedicated branch with a **verified baseline first**, in small verifiable stages:
-
-```
-astro7-upgrade  (branch off master)
+pnpm install
+pnpm build
+pnpm test
+pnpm test:unit
 ```
 
-Each phase ends with a green `pnpm build` (or an explicit recorded failure with a fix). Do not combine Phase 1 with template fixes — compiler errors must be attributable to the new compiler, not to concurrent edits.
+Capture the Astro 6 baseline:
 
-### Baseline to capture BEFORE starting (Phase 0)
+-   Record `pnpm build` wall-clock time.
+-   Record `astro check` output.
+-   Record `du -sh dist/`.
+-   Record the largest files under `dist/_astro/`.
+-   Save `dist/rss.xml`.
+-   Save `dist/sitemap-index.xml`.
+-   Save representative rendered HTML:
+    -   homepage
+    -   blog post containing KaTeX/math, Mermaid, PlantUML, and code
+        blocks
+    -   MDX page
+    -   resume page
+    -   gallery page
+-   Capture full-page screenshots:
+    -   homepage desktop/mobile
+    -   representative post desktop/mobile
+-   Confirm the existing test suite is green.
 
-- [ ] `pnpm build` on `master`: record wall-clock time (v7 claims 15–61% faster builds; we want our own number) and `astro check` output.
-- [ ] `du -sh dist/` + list of largest `dist/_astro/*` bundles (compare with §3.4 and with `website-optimization-plan.md` §5).
-- [ ] RSS/atom output: save `dist/rss.xml`.
-- [ ] Sitemap: save `dist/sitemap-index.xml`.
-- [ ] A few representative rendered pages saved as HTML: homepage, one blog post **with math (`$$`/KaTeX) + mermaid + PlantUML + code blocks**, one MDX page, resume page, gallery page.
-- [ ] Full-page screenshots (homepage + post page, desktop + mobile) for visual diffing.
-- [ ] `pnpm test` green (record snapshot list).
+### Gate
 
----
+The existing Astro 6 project must build and test successfully before the
+upgrade begins.
 
-## 3. Work plan
+------------------------------------------------------------------------
 
-### Phase 1 — Dependency upgrades
+## Step 1 --- Check third-party compatibility
 
-```bash
-pnpm dlx @astrojs/upgrade          # upgrades astro + official integrations together
+Before changing Astro, verify the dependencies most likely to be
+affected by Astro 7 / Vite 8.
+
+Check:
+
+-   `astro-mermaid`
+    -   Verify Astro 7 compatibility.
+    -   If unsupported, decide whether to pin, replace, fork, or patch
+        it.
+-   `vite-plugin-glsl`
+    -   Verify Vite 8 / Rolldown compatibility.
+-   `vitest`
+    -   Determine the major version compatible with the Vite version
+        used by Astro 7.
+-   Local `shiki-plantuml`
+    -   Check whether its Shiki grammar API remains compatible.
+
+### Gate
+
+Every potentially blocking dependency has a known upgrade or fallback
+path.
+
+------------------------------------------------------------------------
+
+## Step 2 --- Upgrade Astro and official integrations
+
+Run:
+
+``` bash
+pnpm dlx @astrojs/upgrade
 ```
 
-Then manually reconcile (the CLI may not cover everything):
+Then manually reconcile versions where necessary:
 
-| Package | Action |
-|---|---|
-| `astro` | `6.3.8` → latest `7.x` (keep exact pin, matching current style) |
-| `@astrojs/mdx` | latest v7-compatible major |
-| `@astrojs/react` | latest v7-compatible major |
-| `@astrojs/sitemap` | latest v7-compatible major |
-| `@astrojs/rss` | bump if peer range requires |
-| `@astrojs/check` | latest (required by `astro check` in `build` script) |
-| `@astrojs/markdown-remark` | **new dependency** — required to keep the unified pipeline (§3.2) |
-| `astro-mermaid` | check releases/changelog for v7 support; if unsupported, pin and open/track an upstream issue, or vendor the integration |
-| `vite-plugin-glsl` | verify Vite 8 compatibility; if broken, look for a Rolldown-compatible fork or inline a minimal plugin |
-| `vitest`, `jsdom`, `happy-dom`, `@testing-library/react` | bump Vitest to the major that supports Vite 8 (§3.5) |
+-   `astro` → latest `7.x`
+-   `@astrojs/mdx` → Astro 7-compatible major
+-   `@astrojs/react` → Astro 7-compatible major
+-   `@astrojs/sitemap` → Astro 7-compatible major
+-   `@astrojs/rss` → bump if required by peer dependencies
+-   `@astrojs/check` → Astro 7-compatible version
+-   add `@astrojs/markdown-remark`
 
-- [ ] `pnpm install` clean, no peer-dep warnings on `astro@7`.
-- [ ] Commit lockfile separately for reviewability.
+Run:
 
-### Phase 2 — Config migration (`astro.config.mjs`)
+``` bash
+pnpm install
+```
 
-#### 3.1 Nothing to remove
-No `experimental` flags, no `@astrojs/db`, no legacy flags in the current config — the "removed/deprecated config" part of the guide is a no-op here. `src/fetch.ts` doesn't exist, so Advanced Routing's reserved filename is not a conflict.
+Check for Astro-related peer dependency warnings.
 
-#### 3.2 Keep the unified Markdown pipeline (REQUIRED)
+Do **not** start fixing `.astro` compiler errors yet.
 
-v7's default pipeline (Sätteri) does not run remark/rehype plugins. This project depends on:
+### Gate
 
-- `remark-math` + `rehype-katex` → math rendering in posts
-- `rehype-external-links` → `_blank`/`noopener` on outbound links
-- `rehypeCloudinary` (`packages/utils/cloudinary.ts`) → image URL rewriting
-- `remark-attributes` → `{.class}` attribute syntax in Markdown
+`pnpm install` succeeds with no unresolved Astro 7 peer dependency
+problems.
 
-Therefore add the explicit processor **in the same change as the version bump**:
+Keep the dependency/lockfile change isolated for reviewability.
 
-```js
-import { unified } from "@astrojs/markdown-remark";
+Example commit:
+
+``` bash
+git add package.json pnpm-lock.yaml
+git commit -m "chore: upgrade Astro 7 dependencies"
+```
+
+------------------------------------------------------------------------
+
+## Step 3 --- Restore the unified Markdown pipeline
+
+Astro 7's default Sätteri pipeline does not automatically preserve the
+project's existing remark/rehype processing.
+
+The project currently depends on:
+
+-   `remark-attributes`
+-   `remark-math`
+-   `rehype-katex`
+-   `rehype-external-links`
+-   custom `rehypeCloudinary`
+-   custom `shiki-plantuml`
+-   MDX with `extendMarkdownConfig: true`
+
+Explicitly configure the unified processor in `astro.config.mjs`.
+
+Conceptually:
+
+``` js
+import { unified } from '@astrojs/markdown-remark'
 
 export default defineConfig({
   // ...
   markdown: {
     processor: unified(),
-    remarkPlugins: [remarkAttributes, remarkMath],
-    rehypePlugins: [
-      rehypeCloudinary,
-      [rehypeKatex, { strict: false }],
-      [rehypeExternalLinks, { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] }],
-    ],
-    shikiConfig: { /* unchanged */ },
+    // preserve the existing remark/rehype/Shiki configuration
   },
-});
+})
 ```
 
-Notes:
-- `markdown.remarkPlugins` / `rehypePlugins` are deprecated-but-functional in v7 and now **require** `@astrojs/markdown-remark` installed — passing them through `unified({...})` is the more future-proof form; prefer it if it works with `extendMarkdownConfig: true` for MDX, otherwise keep the `markdown.*` form.
-- **Verify `shikiConfig`** (custom `plantuml` grammar from `shiki-plantuml` local package + `bundledLanguages`) still loads under v7; this is a local `file:` package and a prime breakage candidate. If the grammar API changed, adapt `packages/shiki-plantuml`.
-- Later (optional, post-upgrade follow-up): evaluate migrating `remark-math`/`rehype-katex` to Sätteri's built-in `math` feature and porting the rehype plugins to Sätteri's plugin API for build-speed gains. Out of scope for the upgrade itself.
+Preserve the existing plugin behavior rather than redesigning the
+Markdown stack during this upgrade.
 
-#### 3.3 `compressHTML` decision
+Verify:
 
-v7 default is `compressHTML: 'jsx'` (JSX whitespace rules). Two options:
+-   Markdown renders.
+-   KaTeX math renders.
+-   External links retain the expected target/rel attributes.
+-   Cloudinary URLs are rewritten.
+-   `{.class}` / `remark-attributes` syntax works.
+-   Shiki highlighting works.
+-   PlantUML grammar loads.
+-   MDX continues to inherit the expected Markdown configuration.
 
-- **Option A (recommended):** accept the new default and fix spacing with `{" "}` where inline elements adjoin (Phase 4 audit). Keeps the smaller HTML output and future-default alignment.
-- **Option B (safe fallback):** set `compressHTML: true` in config to restore v6 behavior; revisit later.
+Do **not** migrate to Sätteri-native plugins as part of this upgrade.
+That can be a separate optimization later.
 
-Start with B applied in a **revertible single-line commit** only if Phase 4 finds widespread breakage; otherwise stay on A.
+### Gate
 
-#### 3.4 Vite 8 / Rolldown validation
+A representative content page successfully exercises the entire
+Markdown/MDX pipeline.
 
-Current `vite` config block must be re-validated:
+------------------------------------------------------------------------
 
-- [ ] `vite-plugin-glsl` still transforms `.glsl` imports in the WebGL islands (ParticleHero / three.js) — build a page that imports shaders and inspect the client bundle.
-- [ ] `build.rollupOptions.treeshake.moduleSideEffects: "no-external"` — Vite 8's compat layer converts `rollupOptions`; confirm the tabler-icons/lucide tree-shaking fix still holds (compare largest bundles vs baseline; `tabler-icons-react` must stay well under 2.2 MB).
-- [ ] `optimizeDeps.exclude` for `@dimforge/rapier3d-compat` / `@react-three/rapier` and the `pnpm.overrides` pin still produce a working dev server (Rapier WASM init must not be prebundled — see `.agents/skills/webgl-components`).
-- [ ] `resolve.alias` for `react-plock` (points at a concrete ESM dist file) and `onnxruntime-node` → `src/empty-module.js` still resolve under Rolldown.
-- [ ] `ssr.noExternal: ["react-plock"]` still honored.
+## Step 4 --- Run the first Astro 7 build
 
-#### 3.5 Test tooling
+Now run:
 
-- [ ] Upgrade `vitest` to the major paired with Vite 8 (check vitest release notes; expect 4.x). Align the config with `.agents/skills/vitest-testing/SKILL.md`.
-- [ ] Run `pnpm test`, `pnpm test:unit` — fix config/API breakages (e.g. `vi.mock` hoisting changes, workspace config format).
+``` bash
+pnpm build
+```
 
-### Phase 3 — Rust compiler strictness fixes
+Do not immediately make broad fixes. First classify failures into:
 
-Run `pnpm build` and triage. Expected error classes and where to look:
+-   unclosed tags
+-   invalid HTML / nesting
+-   Astro API/config changes
+-   integration failures
+-   Markdown/MDX failures
+-   Vite/Rolldown failures
 
-1. **Unclosed tags now error** — compiler output names the file/line. Likely spots: hand-written `.astro` in `src/components/`, `packages/layouts/`, `packages/header/`, `packages/heat/`.
-2. **Invalid HTML nesting no longer corrected** — the compiler won't reflow invalid markup anymore; the *browser* then re-parses it and layout can silently change even without build errors. Grep for classic offenders:
-   - `<div>`/`<table>`/`<ul>`/headings nested inside `<p>` (in `.astro` templates **and** in Markdown content, since raw HTML in `.md` is affected too).
-   - [ ] Fix by changing the container element (e.g. `<p>` → `<div>`) rather than relying on parser correction.
-3. **CSS output differences (cosmetic, but verify)**: scoped styles now go through Lightning CSS — named colors may serialize to hex (`rebeccapurple` → `#639`), `url()` quoting may change. Only action: confirm no tests/snapshots do exact CSS string matching, and spot-check scoped-style isolation in `packages/*` CSS modules.
-4. [ ] After fixes: full `pnpm build` green + `astro check` clean.
+This gives a clean picture of which failures are caused by which part of
+the upgrade.
 
-### Phase 4 — Whitespace / inline-element audit (new `compressHTML: 'jsx'` default)
+### Gate
 
-JSX whitespace rules drop the "significant space" between inline elements that v6 preserved. Audit, in priority order:
+All build failures are classified and can be addressed independently.
 
-- [ ] Navigation / breadcrumb / tag-list / pagination components where inline items are separated only by newlines (`packages/header/`, footer, post metadata rows).
-- [ ] Inline prose patterns in `.astro` layouts (e.g. `Posted <span>date</span><em>category</em>`).
-- [ ] Markdown content is *not* affected (Markdown paragraph text keeps its spaces); only `.astro` template markup is. MDX inline JSX **is** affected — spot-check MDX posts.
-- [ ] Visual-diff the Phase 0 screenshots vs new build; fix with explicit `{" "}` between inline elements.
-- [ ] Re-check `packages/heat` and homepage islands for collapsed-space regressions around badges/chips.
+------------------------------------------------------------------------
 
-### Phase 5 — Functional verification
+## Step 5 --- Fix Astro 7 compiler strictness issues
 
-- [ ] `pnpm build` (includes `astro check` + resume PDF generation `packages/resume/generate-pdfs.mjs`) — green, and **faster than baseline** (record the number).
-- [ ] `pnpm test` + `pnpm test:unit` — green.
-- [ ] `pnpm dev` — server boots; WebGL islands (ParticleHero, WorldMap/maplibre, Rapier) hydrate without errors; mermaid diagrams render; PlantUML code blocks highlight.
-- [ ] Content spot checks on the built output:
-  - [ ] KaTeX math renders in a math-heavy post.
-  - [ ] External links open in new tab with `rel` attrs.
-  - [ ] Cloudinary image URLs rewritten.
-  - [ ] `dist/rss.xml` valid and unchanged vs baseline.
-  - [ ] `dist/sitemap-index.xml` unchanged.
-  - [ ] Search index data (minisearch) intact.
-- [ ] Bundle-size regression check vs Phase 0 baseline (guard the `website-optimization-plan.md` wins).
-- [ ] Lighthouse / CWV spot check on homepage + one post (no regressions; ideally neutral-to-better given smaller HTML from `compressHTML: 'jsx'`).
-- [ ] Deploy preview (Vercel) and smoke-test production routes before merging.
+Fix deterministic Rust compiler/template problems first.
 
-### Phase 6 — Merge
+Look especially in:
 
-- [ ] Squash-merge `astro7-upgrade` → `master` after preview deploy approval.
-- [ ] Update `AGENTS.md` / `.agents/skills/astro-build/SKILL.md` notes if any project-specific conventions changed (e.g. unified processor note, whitespace `{" "}` convention).
-- [ ] Tag or record the Astro 7 build-time number in this doc's §8 (results).
+``` text
+src/components/
+packages/layouts/
+packages/header/
+packages/heat/
+```
 
----
+Also inspect `.md` and `.mdx` content where raw HTML is used.
 
-## 4. Post-upgrade opportunities (optional, separate PRs)
+Typical issues:
 
-Not required for v7, but unlocked by it:
+### Unclosed tags
 
-1. **Advanced Routing** (`src/fetch.ts`) — currently no need; static output has no request pipeline. Revisit only if moving to SSR/on-demand rendering.
-2. **Route caching + Vercel CDN cache provider** — only relevant if/when the blog adopts SSR or live content collections; static output gains nothing.
-3. **Sätteri migration for Markdown** — port `remark-math` → built-in `features.math`, and rehype plugins → Sätteri plugins, to actually capture the Rust Markdown pipeline's build-time win (currently we intentionally stay on unified, so v7's Markdown speedup mostly doesn't apply to us).
-4. **`astro dev --background` / JSON logging** — nice for agent workflows; zero-risk adoption.
-5. **Background-render benchmarks** — re-measure the homepage HTML size from `website-optimization-plan.md`; the new compiler + `compressHTML: 'jsx'` may shave payload for free.
+Fix the exact locations reported by the compiler.
 
----
+### Invalid HTML nesting
 
-## 5. Risk matrix
+Do not rely on browser/parser auto-correction.
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| remark/rehype plugins silently ignored (forgot `unified()`) | Med | High (broken math/links/images) | Add processor in same commit as bump; Phase 5 content checks are mandatory |
-| `astro-mermaid` incompatible with v7 | Med | Med | Verify before merge; fallback: pin, fork, or replace with a local rehype/integration shim |
-| `shiki-plantuml` grammar API break | Low–Med | Med | Phase 2 verification; local `file:` package means we can fix in-repo |
-| Inline-element spaces collapse site-wide | High | Low–Med | Phase 4 audit + visual diffs; `compressHTML: true` as one-line fallback |
-| Build errors from unclosed tags | Med | Low (compiler points at file/line) | Phase 3 triage; mechanical fixes |
-| Rapier/three/maplibre islands break under Vite 8 | Low–Med | High (dev + runtime) | Phase 3.4 checklist; webgl-components skill troubleshooting |
-| Vitest/Vite mismatch breaks test suite | Med | Low | Upgrade Vitest in lockstep (Phase 3.5) |
-| Tree-shaking regression re-inflates icon bundles | Low | Med | Bundle-size check vs baseline (Phase 5) |
+For example, replace structurally invalid markup such as:
 
-## 6. Rollback
+``` html
+<p>
+  <div>...</div>
+</p>
+```
 
-Everything happens on the `astro7-upgrade` branch; `master` is untouched until Phase 6. Rollback = abandon branch. If issues surface **after** merge, revert the merge commit; config fallback `compressHTML: true` and the unified Markdown processor are independent, individually revertible changes.
+with valid HTML using an appropriate container.
 
----
+Check especially for block elements nested inside `<p>`:
 
-## 7. Estimated effort
+-   `<div>`
+-   `<table>`
+-   `<ul>`
+-   headings
 
-| Phase | Effort |
-|---|---|
-| 0 Baseline | 0.5 h |
-| 1 Dependency upgrades | 0.5–1 h (+ unknowns: astro-mermaid, glsl plugin) |
-| 2 Config migration | 1 h |
-| 3 Compiler strictness fixes | 1–3 h (depends on content hygiene) |
-| 4 Whitespace audit | 1–2 h |
-| 5 Verification | 1–2 h |
-| **Total** | **~0.5–1.5 days** |
+### CSS output changes
 
----
+Astro 7 may serialize scoped CSS differently through Lightning CSS.
 
-## 8. Results
+Do not treat cosmetic serialization differences as bugs unless they
+affect:
 
-_(to be filled after the upgrade)_
+-   rendering
+-   scoped-style isolation
+-   tests/snapshots that compare exact CSS strings
+
+Run:
+
+``` bash
+pnpm build
+```
+
+### Gate
+
+`pnpm build` and `astro check` are green.
+
+------------------------------------------------------------------------
+
+## Step 6 --- Validate Vite 8 / Rolldown behavior
+
+With the compiler green, verify bundler-specific behavior separately.
+
+### GLSL
+
+Confirm `vite-plugin-glsl` still transforms `.glsl` imports.
+
+Test the actual WebGL page/island, especially `ParticleHero`.
+
+### Tree shaking
+
+Verify the existing:
+
+``` text
+build.rollupOptions.treeshake.moduleSideEffects
+```
+
+behavior remains effective through Vite 8's compatibility layer.
+
+Compare bundle sizes against Step 0.
+
+In particular, ensure the previous `tabler-icons-react` bundle
+regression does not return.
+
+### Rapier / dependency optimization
+
+Verify:
+
+-   `optimizeDeps.exclude`
+-   `@dimforge/rapier3d-compat`
+-   `@react-three/rapier`
+-   existing `pnpm.overrides`
+
+Start the development server and ensure Rapier WASM initializes
+correctly.
+
+### Aliases
+
+Verify existing aliases still resolve correctly, including:
+
+-   `react-plock`
+-   `onnxruntime-node` → `src/empty-module.js`
+
+### SSR externalization
+
+Verify:
+
+``` text
+ssr.noExternal: ["react-plock"]
+```
+
+still behaves as expected.
+
+### Gate
+
+-   Production build works.
+-   Development server works.
+-   WebGL islands work.
+-   Rapier/WASM works.
+-   Existing bundle-size optimizations remain effective.
+
+------------------------------------------------------------------------
+
+## Step 7 --- Upgrade and fix test tooling
+
+Upgrade the Vite-coupled test stack as necessary:
+
+-   `vitest`
+-   `jsdom`
+-   `happy-dom`
+-   `@testing-library/react`
+
+Then run:
+
+``` bash
+pnpm test
+pnpm test:unit
+```
+
+Fix only actual test-tooling compatibility issues, such as:
+
+-   config format changes
+-   workspace configuration changes
+-   mock behavior / `vi.mock` changes
+-   removed or changed APIs
+
+Avoid unrelated test refactors during the upgrade.
+
+### Gate
+
+All tests are green.
+
+------------------------------------------------------------------------
+
+## Step 8 --- Audit Astro 7 whitespace behavior
+
+Astro 7 defaults to:
+
+``` text
+compressHTML: 'jsx'
+```
+
+Keep the new default initially.
+
+Audit components where inline elements are separated only by source-code
+whitespace/newlines.
+
+Priority areas:
+
+-   navigation
+-   breadcrumbs
+-   tag lists
+-   pagination
+-   post metadata
+-   footer
+-   badges/chips
+-   homepage islands
+-   MDX inline JSX
+
+For example:
+
+``` astro
+<span>Hello</span>
+<em>World</em>
+```
+
+may render without the previous whitespace.
+
+Where a space is semantically required, make it explicit:
+
+``` astro
+<span>Hello</span>{" "}
+<em>World</em>
+```
+
+Compare against the Step 0 screenshots.
+
+Markdown paragraph text itself is not the main target of this audit;
+focus on `.astro` markup and MDX inline JSX.
+
+### Fallback
+
+If whitespace regressions are widespread, temporarily restore the
+previous behavior with:
+
+``` js
+compressHTML: true
+```
+
+Keep this as a fallback rather than applying it preemptively.
+
+### Gate
+
+Desktop/mobile visual comparisons show no meaningful whitespace/layout
+regressions.
+
+------------------------------------------------------------------------
+
+## Step 9 --- Full functional verification
+
+Run the complete local verification:
+
+``` bash
+pnpm build
+pnpm test
+pnpm test:unit
+pnpm dev
+```
+
+Verify:
+
+-   KaTeX
+-   Mermaid
+-   PlantUML
+-   Shiki
+-   Cloudinary URL rewriting
+-   external-link attributes
+-   RSS
+-   sitemap
+-   minisearch/search index
+-   resume PDF generation
+-   ParticleHero
+-   WorldMap / MapLibre
+-   Rapier
+-   React islands
+
+Compare against Step 0:
+
+-   build time
+-   `dist/` size
+-   largest JS bundles
+-   representative HTML
+-   screenshots
+
+Run Lighthouse/CWV spot checks on:
+
+-   homepage
+-   representative blog post
+
+Record the final Astro 7 build time.
+
+### Gate
+
+Local build, tests, content processing, interactive islands, visual
+checks, and bundle-size checks all pass.
+
+------------------------------------------------------------------------
+
+## Step 10 --- Cloudflare deployment verification
+
+Deploy the upgraded branch/build through the project's current
+Cloudflare deployment workflow.
+
+Smoke-test:
+
+-   `/`
+-   representative blog post
+-   MDX page
+-   resume
+-   gallery
+-   WebGL page
+-   404
+-   RSS
+-   sitemap
+
+Verify specifically in the Cloudflare environment:
+
+-   static assets load correctly
+-   Astro routes resolve correctly
+-   React islands hydrate
+-   WebGL assets load
+-   WASM assets load
+-   RSS/sitemap are accessible
+-   redirects behave correctly
+-   404 handling works
+-   expected cache headers/behavior remain correct
+
+Run a final Lighthouse/CWV spot check against the deployed site.
+
+### Gate
+
+The Cloudflare deployment has no runtime, routing, asset-path, WASM,
+hydration, or content regressions.
+
+------------------------------------------------------------------------
+
+## Step 11 --- Finish the upgrade
+
+Once every previous gate passes, finish the upgrade and merge according
+to the project's normal workflow.
+
+Update project documentation if the upgrade introduced new conventions,
+especially:
+
+-   Astro 7 requirements
+-   explicit unified Markdown processor
+-   Markdown/MDX plugin behavior
+-   Astro template whitespace convention (`{" "}`)
+-   Vite 8 / Rolldown compatibility notes
+-   any changes required for Cloudflare deployment
+
+Record final results:
+
+``` text
+Astro version:
+Build time before:
+Build time after:
+dist size before:
+dist size after:
+Largest bundle before:
+Largest bundle after:
+Tests:
+Cloudflare deployment:
+Known follow-ups:
+```
+
+------------------------------------------------------------------------
+
+## Post-upgrade work --- Separate PRs only
+
+Do not mix these into the Astro 7 upgrade.
+
+Possible follow-ups:
+
+### Sätteri migration
+
+Evaluate replacing the unified Markdown pipeline with Astro 7's
+Rust-native Markdown features/plugins.
+
+Potential targets:
+
+-   `remark-math` → built-in math support
+-   rehype plugins → Sätteri-compatible equivalents
+
+Only do this if the feature parity is acceptable.
+
+### Advanced Routing
+
+Evaluate only if the project later moves away from purely static output
+or needs request-level routing behavior.
+
+### Cloudflare-specific optimization
+
+Evaluate Cloudflare caching and runtime features separately from the
+framework upgrade.
+
+### Build performance
+
+Re-benchmark HTML size and build performance after the upgrade is
+stable.
+
+------------------------------------------------------------------------
+
+## Final execution order
+
+``` text
+Baseline
+   ↓
+Third-party compatibility
+   ↓
+Astro dependencies
+   ↓
+Unified Markdown pipeline
+   ↓
+First Astro 7 build
+   ↓
+Compiler fixes
+   ↓
+Vite 8 / Rolldown
+   ↓
+Vitest
+   ↓
+Whitespace audit
+   ↓
+Full local verification
+   ↓
+Cloudflare deployment verification
+   ↓
+Finish / merge
+```
+
+## Rollback
+
+All upgrade work should remain isolated on `astro7-upgrade` until
+verification is complete.
+
+Before merge:
+
+``` text
+rollback = abandon the upgrade branch
+```
+
+After merge:
+
+``` text
+rollback = revert the upgrade merge/commit
+```
+
+Keep major compatibility changes independently revertible where
+practical, especially:
+
+-   unified Markdown processor
+-   `compressHTML` fallback
+-   Vite/Rolldown compatibility changes
