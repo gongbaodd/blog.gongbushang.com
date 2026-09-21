@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **PLANNED**\
+> Status: **IN PROGRESS** (Step 0 ✅ done; next: Step 1 — third-party compatibility)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -17,6 +17,18 @@ continuing.
 ------------------------------------------------------------------------
 
 ## Step 0 --- Create upgrade branch and capture baseline
+
+> **Status: ✅ DONE (2026-09-21)** — Branch `astro7-upgrade` created.
+> Baseline captured in `docs/plan/baseline/astro6/` (see
+> `BASELINE.md`): build ~3m8s / 1617 pages, `astro check` 0 errors /
+> 0 warnings, `dist/` 326 MB (`_astro/` 49 MB), largest bundles
+> recorded, `rss.xml` + `sitemap-index.xml` + representative rendered
+> HTML saved (homepage, KaTeX/Mermaid/PlantUML posts, MDX pages, cv,
+> about, gallery). `pnpm test:unit` green; full `pnpm test` has 19
+> pre-existing jsdom/Mantine component-test failures already present on
+> `master` (documented in `BASELINE.md`, treated as baseline — not an
+> upgrade regression). Screenshots not captured; saved HTML serves as
+> the visual reference for the Step 8 audit. Baseline commit: `d0b774e`.
 
 Create a dedicated branch before changing dependencies.
 
