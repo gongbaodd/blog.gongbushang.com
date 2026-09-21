@@ -3,6 +3,9 @@ dist/
 .vercel/
 /target/
 
+# e2e results (cucumber reports, screenshots, traces)
+e2e-results/
+
 # generated types
 .astro/
 

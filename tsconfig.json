@@ -13,6 +13,7 @@
   "exclude": [
     "packages/pv-counter",
     "dist",
+    "e2e",
     "public",
     "**/*.test.ts",
     "**/*.test.tsx",

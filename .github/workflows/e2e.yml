@@ -1,0 +1,57 @@
+name: e2e
+
+# Read-only PR check: build the static site from checked-out submodules and
+# run the Cucumber + Playwright browser suite against `astro preview`.
+# Deliberately independent of the Vitest unit suite (`pnpm test`).
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # The static build generates ~1600 pages plus resume PDFs; leave headroom
+    # so build failure output is preserved separately from browser failures.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Content and the PlantUML grammar are Git submodules; the build
+          # needs them checked out.
+          submodules: recursive
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Kept in sync with .nvmrc: jsdom (Vitest dependency) requires
+          # Node >= 22.22.2 / 24.15.0, so the suite standardizes on 24 LTS.
+          node-version: 24.15.0
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium with OS dependencies
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build and run E2E suite
+        run: pnpm test:e2e
+
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: |
+            e2e-results/
+          retention-days: 14
+          if-no-files-found: ignore
