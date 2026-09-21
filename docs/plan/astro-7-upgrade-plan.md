@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Steps 0–2 ✅; next: Step 3 — unified Markdown pipeline)\
+> Status: **IN PROGRESS** (Steps 0–5 ✅; next: Step 6 — Vite 8 / Rolldown validation)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -202,6 +202,23 @@ git commit -m "chore: upgrade Astro 7 dependencies"
 
 ## Step 3 --- Restore the unified Markdown pipeline
 
+> **Status: ✅ DONE (2026-09-21)** — Commit `055869c`. `markdown.processor`
+> set to `unified()` from `@astrojs/markdown-remark` with the existing
+> remark/rehype plugins passed to `unified({...})` (the legacy
+> top-level `remarkPlugins`/`rehypePlugins` keys still work but emit
+> deprecation warnings, so plugins were moved into the factory call;
+> `shikiConfig` stays top-level — Astro 7 forwards it to the
+> processor's renderer). Verified against the Step 0 baseline:
+> KaTeX markup identical (48 occurrences on the LaTeX page), Mermaid
+> blocks identical (20), PlantUML highlighted output **byte-identical**
+> (Shiki 4 + local grammar OK), Shiki `astro-code` blocks present,
+> Cloudinary `f_auto` rewriting works, external links get
+> `target="_blank" rel="noopener noreferrer nofollow"`, all 3 MDX pages
+> built with sizes within ~400 bytes of baseline. Note: no content
+> actually uses `{.class}` remark-attributes syntax (962 `.md` + 3
+> `.mdx` scanned) — the plugin is preserved in config but currently
+> unused. Sätteri-native migration intentionally deferred (per plan).
+
 Astro 7's default Sätteri pipeline does not automatically preserve the
 project's existing remark/rehype processing.
 
@@ -257,6 +274,18 @@ Markdown/MDX pipeline.
 
 ## Step 4 --- Run the first Astro 7 build
 
+> **Status: ✅ DONE (2026-09-21)** — First build reached route generation
+> and produced exactly **one** failure class, already fixed (commit
+> `f506b96`): an **integration failure** — `@lucide/astro 1.47`'s
+> `<Icon>` requires a real icon name and crashed on the footer's
+> `<Icon set:html={raw} />` pattern (`buildLucideIconNode` of undefined
+> while rendering `/404`). No unclosed-tag / invalid-nesting compiler
+> errors, no Astro API/config changes needed, no Markdown/MDX failures,
+> no Vite/Rolldown failures ( Rolldown bundled cleanly; only benign
+> warnings: `use astro:head-inject` directive notices on MDX
+> propagated-assets chunks, a >500 kB chunk-size notice, and pre-existing
+> route-priority warnings for `/api/[filter]` vs `/api/podcast`).
+
 Now run:
 
 ``` bash
@@ -282,6 +311,16 @@ All build failures are classified and can be addressed independently.
 ------------------------------------------------------------------------
 
 ## Step 5 --- Fix Astro 7 compiler strictness issues
+
+> **Status: ✅ DONE (2026-09-21)** — **Zero Rust-compiler strictness
+> failures surfaced.** The single blocking fix was the lucide
+> integration pattern (commit `f506b96`, see Step 4), which also removed
+> a stray `}` inside a `<Icon>` block in `Footer.astro` that the old Go
+> compiler silently tolerated. No `<p>`-nesting / unclosed-tag issues
+> found in components or `.md`/`.mdx` raw HTML. `pnpm build` is green
+> (1617 pages in **2m 31s** vs 3m 8s Astro 6 baseline, ~20% faster) and
+> `astro check` is green (0 errors, 0 warnings, 64 hints — same as
+> baseline). Gate: **PASS**.
 
 Fix deterministic Rust compiler/template problems first.
 
