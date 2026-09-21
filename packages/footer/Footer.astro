@@ -1,5 +1,4 @@
 ---
-import { Icon } from "@lucide/astro";
 import GitHub from "../../src/icons/github.svg?raw";
 import Twitter from "../../src/icons/x.svg?raw";
 import Linkedin from "../../src/icons/linkedin.svg?raw";
@@ -17,113 +16,209 @@ import MantineFooter from "@/packages/footer/MantineFooter";
 import ViewCount from "@/src/components/ViewCount";
 import OpenSource from "./fragments/opensource.mdx"
 
+// Brand icons are raw SVG files injected via `set:html`. They previously
+// went through `@lucide/astro`'s `<Icon set:html={...} />` (which rendered
+// a wrapper `<svg class="lucide">` around the injected content). Lucide
+// 1.47 requires a real icon name and no longer supports that pattern, so
+// the wrapper is now a native <svg> with the same attributes the Icon
+// component used to render (verified against the Astro 6 baseline HTML).
 ---
 
 <MantineFooter>
-  <Icon
-    set:html={GitHub}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconGithub"
+    set:html={GitHub}
   />
-  <Icon
-    set:html={Itchio}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconItchio"
-    }
+    set:html={Itchio}
   />
-  <Icon
-    set:html={Twitter}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconTwitter"
+    set:html={Twitter}
   />
-  <Icon
-    set:html={Linkedin}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconLinkedin"
+    set:html={Linkedin}
   />
-  <Icon
-    set:html={Instagram}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconInstagram"
+    set:html={Instagram}
   />
-  <Icon
-    set:html={Threads}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconThreads"
+    set:html={Threads}
   />
-  <Icon
-    set:html={Spotify}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconSpotify"
+    set:html={Spotify}
   />
-  <Icon
-    set:html={Youtube}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconYoutube"
+    set:html={Youtube}
   />
-  <Icon
-    set:html={Jike}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconJike"
+    set:html={Jike}
   />
-  <Icon
-    set:html={Xiaohongshu}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconXiaohongshu"
+    set:html={Xiaohongshu}
   />
-  <Icon
-    set:html={Facebook}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconFacebook"
+    set:html={Facebook}
   />
-  <Icon
-    set:html={Bilibili}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconBilibili"
+    set:html={Bilibili}
   />
-  <Icon
-    set:html={v2ex}
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     width="24"
     height="24"
     stroke="none"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
     fill="currentcolor"
+    aria-hidden="true"
+    class="lucide"
     slot="iconV2ex"
+    set:html={v2ex}
   />
   <ViewCount path={Astro.url.pathname} slot="viewCount" client:visible />
   <OpenSource slot="openSource" />
@@ -134,4 +229,3 @@ import OpenSource from "./fragments/opensource.mdx"
   fetchpriority="low"
   src="//gc.zgo.at/count.js"
 ></script>
-
