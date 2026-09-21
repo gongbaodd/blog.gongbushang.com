@@ -1,4 +1,5 @@
 import { defineConfig } from "astro/config";
+import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import react from "@astrojs/react";
@@ -84,15 +85,21 @@ export default defineConfig({
     dedupeInlineStyles(),
   ],
   markdown: {
-    remarkPlugins: [remarkAttributes, remarkMath],
-    rehypePlugins: [
-      rehypeCloudinary,
-      [rehypeKatex, { strict: false }],
-      [
-        rehypeExternalLinks,
-        { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] },
+    // Astro 7 defaults to the Sätteri processor; this project depends on
+    // unified remark/rehype plugins, so restore the unified pipeline
+    // explicitly (Astro 7 no longer installs @astrojs/markdown-remark by
+    // default — it is a direct dependency in package.json).
+    processor: unified({
+      remarkPlugins: [remarkAttributes, remarkMath],
+      rehypePlugins: [
+        rehypeCloudinary,
+        [rehypeKatex, { strict: false }],
+        [
+          rehypeExternalLinks,
+          { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] },
+        ],
       ],
-    ],
+    }),
     shikiConfig: {
       langAlias: {
         C: "c",
