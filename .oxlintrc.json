@@ -1,4 +1,10 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": [".astro/**", "dist/**", "public/**", "src/content/**"]
+  "ignorePatterns": [
+    ".astro/**",
+    "dist/**",
+    "public/**",
+    "src/content/**",
+    "packages/shiki-plantuml/**"
+  ]
 }
