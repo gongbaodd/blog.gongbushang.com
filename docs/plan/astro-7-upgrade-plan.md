@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Steps 0–8 ✅; next: Step 9 — full functional verification)\
+> Status: **IN PROGRESS** (Steps 0–9 ✅; next: Step 10 — Cloudflare deployment verification)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -629,6 +629,57 @@ regressions.
 ------------------------------------------------------------------------
 
 ## Step 9 --- Full functional verification
+
+> **Status: ✅ DONE (2026-09-21)** — Full local verification green.
+>
+> ### Commands
+> - `pnpm build` ✅ (run twice) — `astro check` 31s: 0 errors / 0
+>   warnings / 64 hints (identical to baseline); `astro build`: **1617
+>   pages in 2m 39s**; all 16 resume PDFs written.
+> - `pnpm test` ✅ **193 passed / 0 failed / 3 skipped** (baseline: 170
+>   passed / 19 failed).
+> - `pnpm test:unit` ✅ 164 passed / 3 skipped.
+> - `pnpm dev` ✅ `/`, `/world`, `/tech/2021/02/09/latex-cheat-sheet/`
+>   → 200; unknown URL → proper 404; dev log **0 errors**.
+>
+> ### Content pipeline (counts vs baseline)
+> - KaTeX 18 (=), Mermaid 14 (=), PlantUML 21 (≥15, byte-identical
+>   highlighted blocks), Shiki `astro-code` 12 (=), Cloudinary
+>   `f_auto` rewriting ✅, external links `target="_blank"
+>   rel="noopener noreferrer nofollow"` ✅.
+> - RSS `dist/rss.xml` ✅ valid; `dist/sitemap-index.xml` ✅.
+> - Search index: `dist/api/all/0.ndjson` valid JSON entries
+>   (`id/href/title/date/excerpt/data`) ✅ (minisearch feed).
+> - Resume PDF generation ✅ (16 PDFs in `dist/resume/pdfs/`).
+>
+> ### Interactive islands (production chunks)
+> - ParticleHero ✅ (`ParticleHero.U_5e9cSe.js`, GLSL inlined incl.
+>   `noise.glsl` include); Three.js `three.module` chunk present.
+> - WorldMap / MapLibre ✅ (`GLMap.CqkXm2Rb.js` + `maplibre-gl` chunk).
+> - Rapier ✅ — WASM base64-inlined in hero chunks, dev-chain verified
+>   (Step 6), `pnpm.overrides` pin to 0.19.2 honored.
+> - React islands ✅ — client chunks emitted and referenced
+>   (`BlogPlock`, `Search`, `MantineHeader`, …).
+>
+> ### Metrics vs Step 0 baseline
+> | Metric | Astro 6 baseline | Astro 7 final |
+> | --- | --- | --- |
+> | `astro build` (1617 pages) | 3m 8s | **2m 39s (−15%)** |
+> | `astro check` | 0 err / 0 warn / 64 hints | 0 err / 0 warn / 64 hints |
+> | full `pnpm build` wall | ~3m 20s (estimate, not precisely timed) | 4m 40s (check ~31s + build 2m39s + PDFs ~30s + prerender/asset phases) |
+> | `dist/` size | 326 MB | **326 MB (=)** |
+> | `dist/_astro/` | 49 MB | **49 MB (=)** |
+> | Largest JS bundles | MantineHero 2.5 MB; maplibre-gl 1.1 MB; three.module 668 KB | MantineHero **2.5 MB**; maplibre **1004 KB**; three.module **660 KB** — no tabler/lucide regression |
+> | Tests | 170 passed / 19 failed | **193 passed / 0 failed** |
+>
+> ### Not run in this session (manual follow-ups)
+> - Lighthouse/CWV spot checks (homepage + representative post) — no
+>   browser automation attached; run before/after Step 10 deploy.
+> - Pixel screenshots — text-identity diffs were used instead; a visual
+>   eyeball of homepage (ParticleHero + Lanyard) and `/world` remains
+>   recommended before merge.
+>
+> **Gate: PASS** (with the two manual follow-ups noted).
 
 Run the complete local verification:
 
