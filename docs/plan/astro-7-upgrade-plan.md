@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Steps 0–7 ✅; next: Step 8 — whitespace audit)\
+> Status: **IN PROGRESS** (Steps 0–8 ✅; next: Step 9 — full functional verification)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -537,6 +537,34 @@ All tests are green.
 ------------------------------------------------------------------------
 
 ## Step 8 --- Audit Astro 7 whitespace behavior
+
+> **Status: ✅ DONE (2026-09-21, no code changes needed)** — New default
+> `compressHTML: 'jsx'` kept. Audit evidence:
+>
+> 1. **Visible-text diff, Step 0 baseline vs Astro 7 build** for all 10
+>    saved representative pages (homepage, about, cv, hero-gallery,
+>    KaTeX/Mermaid/PlantUML posts, 2 MDX pages): all ratios **1.0000**
+>    with identical word counts — no words glued, no spaces dropped.
+>    These pages include navigation, footer, badges/chips, post
+>    metadata, tag links and breadcrumbs.
+> 2. **Static scan of every `.astro` template** in `src/` +
+>    `packages/`: **zero** occurrences of the only risky pattern — an
+>    inline element (`<a> <span> <em> <strong> <code> <time> …`)
+>    followed across a newline by another inline element or bare text
+>    (JSX whitespace rules only drop newline-containing whitespace;
+>    same-line spaces are preserved).
+> 3. React islands are unaffected: they already rendered with JSX
+>    whitespace semantics under Astro 6, and their text is produced by
+>    React, not the `.astro` compiler.
+> 4. MDX inline JSX unchanged (MDX has always used JSX rules); both MDX
+>    pages in the diff set are text-identical.
+>
+> **Gate: PASS** — no whitespace/layout regressions; the
+> `compressHTML: true` fallback is **not** applied (kept available for
+> revert). Note: no browser is attached in this session, so the visual
+> comparison is evidence-based (text identity) rather than pixel
+> screenshots; a manual eyeball of the homepage/post pages before merge
+> remains recommended.
 
 Astro 7 defaults to:
 
