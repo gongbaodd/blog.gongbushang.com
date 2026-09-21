@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Step 0 ✅, Step 1 ✅; next: Step 2 — Astro 7 dependencies)\
+> Status: **IN PROGRESS** (Steps 0–2 ✅; next: Step 3 — unified Markdown pipeline)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -142,6 +142,21 @@ path.
 ------------------------------------------------------------------------
 
 ## Step 2 --- Upgrade Astro and official integrations
+
+> **Status: ✅ DONE (2026-09-21)** — Commit `0d98baa` (isolated
+> `package.json` + `pnpm-lock.yaml` change). Versions now installed:
+> `astro 7.3.3`, `@astrojs/mdx 8.0.1`, `@astrojs/react 6.0.6`,
+> `@astrojs/sitemap 3.7.4`, `@astrojs/rss 4.0.19`,
+> `@astrojs/check 0.9.10`, `@astrojs/markdown-remark 7.3.1` (added),
+> plus third-party reconciliations from Step 1: `astro-mermaid 2.1.0`,
+> `@lucide/astro 1.47.0` (was the only remaining Astro-7 peer warning:
+> `astro ^4 || ^5 || ^6`), `shiki 4.1.0`, `vite-plugin-glsl 1.6.1`.
+> `pnpm install` succeeds; `astro --version` → `v7.3.3`; no unresolved
+> Astro 7 peer dependency problems (remaining pnpm notes are
+> pre-existing: deprecated subdependencies of test tooling, and ignored
+> `esbuild`/`workerd` build scripts that resolve platform binaries via
+> optional deps). `vitest ~3.2.4` left untouched for Step 7. No
+> `.astro` compiler fixes attempted yet.
 
 Run:
 
