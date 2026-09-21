@@ -1,22 +1,10 @@
 import { useMemo, useState } from "react";
-import {
-  getFilterOptions,
-  type PostFilterState,
-  type UmapPost,
-} from "./postsData";
+import { getFilterOptions, type PostFilterState, type UmapPost } from "./postsData";
 
-export function usePostFilter(
-  posts: UmapPost[],
-  onChange: (state: PostFilterState) => void,
-) {
-  const { categories, years } = useMemo(
-    () => getFilterOptions(posts),
-    [posts],
-  );
+export function usePostFilter(posts: UmapPost[], onChange: (state: PostFilterState) => void) {
+  const { categories, years } = useMemo(() => getFilterOptions(posts), [posts]);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [yearIndex, setYearIndex] = useState(() =>
-    Math.max(0, years.length - 1),
-  );
+  const [yearIndex, setYearIndex] = useState(() => Math.max(0, years.length - 1));
   const [yearTouched, setYearTouched] = useState(false);
 
   // Posts may arrive asynchronously (island props are kept small), so until

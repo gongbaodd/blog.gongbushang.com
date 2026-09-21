@@ -2,7 +2,12 @@ import { Masonry } from "react-plock";
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 import { Button, Center, Loader, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
-import { $episodes, $loading, streamPodcastEpisodes, type IPodcastEpisode } from "../../src/stores/podcast";
+import {
+  $episodes,
+  $loading,
+  streamPodcastEpisodes,
+  type IPodcastEpisode,
+} from "../../src/stores/podcast";
 import { PodcastEpisodeCard } from "@/packages/card/PodcastEpisodeCard";
 import { useCallback, useEffect } from "react";
 import type { IPost } from "@/packages/card/PostCard";
@@ -16,7 +21,8 @@ export function postToEpisode(post: IPost): IPodcastEpisode {
   const image =
     (data?.image as string) ??
     (typeof cover?.url === "string" ? cover.url : (cover?.url as { src?: string })?.src);
-  const colorSetRaw = (data?.colorSet as { bgColor?: string; titleColor?: string } | undefined) ??
+  const colorSetRaw =
+    (data?.colorSet as { bgColor?: string; titleColor?: string } | undefined) ??
     (post.data?.bgColor && post.data?.titleColor
       ? { bgColor: post.data.bgColor, titleColor: post.data.titleColor }
       : undefined);
@@ -38,7 +44,15 @@ export function postToEpisode(post: IPost): IPodcastEpisode {
   };
 }
 
-export function PodcastCardFromPost({ post, hideExcerpt, fill }: { post: IPost; hideExcerpt?: boolean; fill?: boolean }) {
+export function PodcastCardFromPost({
+  post,
+  hideExcerpt,
+  fill,
+}: {
+  post: IPost;
+  hideExcerpt?: boolean;
+  fill?: boolean;
+}) {
   return <PodcastEpisodeCard episode={postToEpisode(post)} hideExcerpt={hideExcerpt} fill={fill} />;
 }
 
@@ -71,17 +85,12 @@ export default function PodcastPlock({ totalCount }: IPodcastPlockProps) {
             gap: [48, 16, 32, 32, 32],
             media: [28, 48, 75, 88, 110].map((i) => i * 16),
           }}
-          render={(episode) => (
-            <PodcastEpisodeCard key={episode.id} episode={episode} fill />
-          )}
+          render={(episode) => <PodcastEpisodeCard key={episode.id} episode={episode} fill />}
         />
         {hasMore && (
           <Center w="100%" pt="xl">
             {isLoading ? (
-              <Button
-                variant="default"
-                leftSection={<Loader size="xs" c="dimmed" />}
-              >
+              <Button variant="default" leftSection={<Loader size="xs" c="dimmed" />}>
                 Loading
               </Button>
             ) : (

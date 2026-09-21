@@ -14,7 +14,7 @@ import {
 import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
-import classes from "./Footer.module.css"
+import classes from "./Footer.module.css";
 
 interface IFooterProps {
   children?: ReactNode;
@@ -307,7 +307,13 @@ export default function MantineFooter({
             </Group>
           </Group>
 
-          <Typography className={classes.opensource} ta="center" c="dimmed" py="sm" style={{ fontSize: "var(--mantine-font-size-xs)"}} >
+          <Typography
+            className={classes.opensource}
+            ta="center"
+            c="dimmed"
+            py="sm"
+            style={{ fontSize: "var(--mantine-font-size-xs)" }}
+          >
             {openSource}
           </Typography>
         </Container>

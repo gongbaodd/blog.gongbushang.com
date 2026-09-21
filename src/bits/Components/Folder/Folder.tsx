@@ -3,20 +3,26 @@
 */
 
 import { darken } from "@mantine/core";
-import React, { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import React, {
+  useEffect,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 
 interface FolderProps {
   color?: string;
   size?: number;
   items?: React.ReactNode[];
   className?: string;
-  cover?: ReactNode
-  title?: ReactNode
-  setOpen: Dispatch<SetStateAction<boolean>>
-  open: boolean
+  cover?: ReactNode;
+  title?: ReactNode;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  open: boolean;
 }
 
-const darkenColor = darken
+const darkenColor = darken;
 
 const Folder: React.FC<FolderProps> = ({
   color = "#5227FF",
@@ -26,7 +32,7 @@ const Folder: React.FC<FolderProps> = ({
   cover,
   title,
   setOpen,
-  open
+  open,
 }) => {
   const maxItems = 3;
   const papers = items.slice(0, maxItems);
@@ -38,7 +44,6 @@ const Folder: React.FC<FolderProps> = ({
   const [paperOffsets, setPaperOffsets] = useState<{ x: number; y: number }[]>(
     Array.from({ length: maxItems }, () => ({ x: 0, y: 0 })),
   );
-
 
   const folderBackColor = darkenColor(color, 0.5);
   const paper1 = darkenColor("#ffffff", 0.1);
@@ -52,10 +57,7 @@ const Folder: React.FC<FolderProps> = ({
     }
   };
 
-  const handlePaperMouseMove = (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    index: number,
-  ) => {
+  const handlePaperMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, index: number) => {
     if (!open) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
@@ -96,7 +98,7 @@ const Folder: React.FC<FolderProps> = ({
     if (index === 2) return "translate(-50%, -100%) rotate(5deg)";
     return "";
   };
-  
+
   return (
     <div style={scaleStyle} className={className}>
       <div
@@ -116,15 +118,14 @@ const Folder: React.FC<FolderProps> = ({
           <span
             className="absolute z-0 bottom-[98%] left-0 w-[30px] h-[10px] rounded-tl-[5px] rounded-tr-[5px] rounded-bl-0 rounded-br-0"
             style={{ backgroundColor: folderBackColor }}
-          >{title}</span>
+          >
+            {title}
+          </span>
           {papers.map((item, i) => {
             let sizeClasses = "";
-            if (i === 0)
-              sizeClasses = open ? "w-[70%] h-[80%]" : "w-[70%] h-[80%]";
-            if (i === 1)
-              sizeClasses = open ? "w-[80%] h-[80%]" : "w-[80%] h-[70%]";
-            if (i === 2)
-              sizeClasses = open ? "w-[90%] h-[80%]" : "w-[90%] h-[60%]";
+            if (i === 0) sizeClasses = open ? "w-[70%] h-[80%]" : "w-[70%] h-[80%]";
+            if (i === 1) sizeClasses = open ? "w-[80%] h-[80%]" : "w-[80%] h-[70%]";
+            if (i === 2) sizeClasses = open ? "w-[90%] h-[80%]" : "w-[90%] h-[60%]";
 
             const transformStyle = open
               ? `${getOpenTransform(i)} translate(${paperOffsets[i].x}px, ${paperOffsets[i].y}px)`
@@ -144,7 +145,7 @@ const Folder: React.FC<FolderProps> = ({
                   ...(!open ? {} : { transform: transformStyle }),
                   backgroundColor: i === 0 ? paper1 : i === 1 ? paper2 : paper3,
                   borderRadius: "10px",
-                  overflow: "hidden"
+                  overflow: "hidden",
                 }}
               >
                 {item}

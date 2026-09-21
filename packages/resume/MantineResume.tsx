@@ -17,7 +17,9 @@ function optimizeImage(url: string, variant: "logo" | "cover") {
 function EntryRow({ entry, language }: { entry: ResumeEntry; language: ResumeLanguage }) {
   return (
     <article className={classes.entryRow}>
-      {entry.image && <img src={optimizeImage(entry.image, "logo")} alt="" width="24" height="24" />}
+      {entry.image && (
+        <img src={optimizeImage(entry.image, "logo")} alt="" width="24" height="24" />
+      )}
       <div>
         <div className={classes.entryTitle}>
           {entry.name[language]}
@@ -25,10 +27,18 @@ function EntryRow({ entry, language }: { entry: ResumeEntry; language: ResumeLan
           {entry.date && <span className={classes.date}>{entry.date[language]}</span>}
         </div>
         <p>{entry.detail[language]}</p>
-        {entry.award && <p><strong>{labels[language].award}:</strong> {entry.award[language]}</p>}
+        {entry.award && (
+          <p>
+            <strong>{labels[language].award}:</strong> {entry.award[language]}
+          </p>
+        )}
         {entry.tags && (
           <div className={classes.expTags}>
-            {entry.tags.map(tag => <span className={classes.badge} key={tag}>{tag}</span>)}
+            {entry.tags.map((tag) => (
+              <span className={classes.badge} key={tag}>
+                {tag}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -39,10 +49,22 @@ function EntryRow({ entry, language }: { entry: ResumeEntry; language: ResumeLan
 function ProjectMini({ entry, language }: { entry: ResumeEntry; language: ResumeLanguage }) {
   return (
     <a className={classes.projectMini} href={entry.url} target="_blank" rel="noopener noreferrer">
-      {entry.image && <img src={optimizeImage(entry.image, "cover")} alt="" width="240" height="120" loading="lazy" />}
+      {entry.image && (
+        <img
+          src={optimizeImage(entry.image, "cover")}
+          alt=""
+          width="240"
+          height="120"
+          loading="lazy"
+        />
+      )}
       <strong>{entry.name[language]}</strong>
       <span>{entry.detail[language]}</span>
-      {entry.award && <span><strong>{labels[language].award}:</strong> {entry.award[language]}</span>}
+      {entry.award && (
+        <span>
+          <strong>{labels[language].award}:</strong> {entry.award[language]}
+        </span>
+      )}
       {entry.tags && (
         <span className={classes.projectTags}>{entry.tags.slice(0, 3).join(" · ")}</span>
       )}
@@ -57,8 +79,13 @@ export default function MantineResume({ role, language }: IMantineResumeProps) {
   return (
     <div className={classes.content} lang={language === "zh" ? "zh-CN" : "en"}>
       <div className="A4">
-        <section className="sheet padding-10mm" aria-label={`${profile.name[language]} — ${variant.headline[language]}`}>
-          <div className={classes.updated}>{copy.updated} {updated}</div>
+        <section
+          className="sheet padding-10mm"
+          aria-label={`${profile.name[language]} — ${variant.headline[language]}`}
+        >
+          <div className={classes.updated}>
+            {copy.updated} {updated}
+          </div>
           <div className={classes.heading}>
             <h1>{profile.name[language]}</h1>
             <span>{profile.otherName[language]}</span>
@@ -94,31 +121,52 @@ export default function MantineResume({ role, language }: IMantineResumeProps) {
             <div className={classes.main}>
               <h2>{copy.experience}</h2>
               <div className={classes.entries}>
-                {variant.experience.map(id => <EntryRow key={id} entry={experience[id]} language={language} />)}
+                {variant.experience.map((id) => (
+                  <EntryRow key={id} entry={experience[id]} language={language} />
+                ))}
               </div>
               <h2>{copy.projects}</h2>
               {/* Sparse variants (6 projects) use 2 columns so every CV
                   shows 3-4 full rows at the same density. */}
-              <div className={classes.projectGrid} style={{ gridTemplateColumns: `repeat(${variant.projects.length > 6 ? 3 : 2}, minmax(0, 1fr))` }}>
-                {variant.projects.map(id => <ProjectMini key={id} entry={projects[id]} language={language} />)}
+              <div
+                className={classes.projectGrid}
+                style={{
+                  gridTemplateColumns: `repeat(${variant.projects.length > 6 ? 3 : 2}, minmax(0, 1fr))`,
+                }}
+              >
+                {variant.projects.map((id) => (
+                  <ProjectMini key={id} entry={projects[id]} language={language} />
+                ))}
               </div>
             </div>
             <div className={classes.side}>
               <h2>{copy.skills}</h2>
               <div className={classes.skills}>
-                {variant.skills.map(item => <div key={item.name}><strong>{item.name}</strong><span>{item.detail[language]}</span></div>)}
+                {variant.skills.map((item) => (
+                  <div key={item.name}>
+                    <strong>{item.name}</strong>
+                    <span>{item.detail[language]}</span>
+                  </div>
+                ))}
               </div>
               <h2>{copy.education}</h2>
               <div className={`${classes.entries} ${classes.educationEntries}`}>
-                {variant.education.map(id => <EntryRow key={id} entry={education[id]} language={language} />)}
+                {variant.education.map((id) => (
+                  <EntryRow key={id} entry={education[id]} language={language} />
+                ))}
               </div>
               <h2>{copy.languages}</h2>
               <ul className={classes.languages}>
-                {profile.languages.map(item => (
+                {profile.languages.map((item) => (
                   <li key={item.code}>
                     <span lang="en">{item.englishName}</span>
-                    {item.nativeName !== item.englishName && <> / <span lang={item.code}>{item.nativeName}</span></>}
-                    {" "}({item.proficiency[language]})
+                    {item.nativeName !== item.englishName && (
+                      <>
+                        {" "}
+                        / <span lang={item.code}>{item.nativeName}</span>
+                      </>
+                    )}{" "}
+                    ({item.proficiency[language]})
                   </li>
                 ))}
               </ul>

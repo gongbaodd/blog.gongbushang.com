@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { easeOutSine } from './utils/easing.js';
+import * as THREE from "three";
+import { easeOutSine } from "./utils/easing.js";
 
 export default class TouchTexture {
   constructor() {
@@ -11,9 +11,9 @@ export default class TouchTexture {
   }
 
   initTexture() {
-    this.canvas = document.createElement('canvas');
+    this.canvas = document.createElement("canvas");
     this.canvas.width = this.canvas.height = this.size;
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext("2d");
     this.clear();
     this.texture = new THREE.Texture(this.canvas);
     this.texture.needsUpdate = true;
@@ -41,7 +41,7 @@ export default class TouchTexture {
   }
 
   clear() {
-    this.ctx.fillStyle = 'black';
+    this.ctx.fillStyle = "black";
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
@@ -65,34 +65,17 @@ export default class TouchTexture {
 
     let intensity = 1;
     if (point.age < this.maxAge * 0.3) {
-      intensity = easeOutSine(
-        point.age / (this.maxAge * 0.3),
-        0,
-        1,
-        1
-      );
+      intensity = easeOutSine(point.age / (this.maxAge * 0.3), 0, 1, 1);
     } else {
-      intensity = easeOutSine(
-        1 - (point.age - this.maxAge * 0.3) / (this.maxAge * 0.7),
-        0,
-        1,
-        1
-      );
+      intensity = easeOutSine(1 - (point.age - this.maxAge * 0.3) / (this.maxAge * 0.7), 0, 1, 1);
     }
 
     intensity *= point.force;
 
     const radius = this.size * this.radius * intensity;
-    const grd = this.ctx.createRadialGradient(
-      pos.x,
-      pos.y,
-      radius * 0.25,
-      pos.x,
-      pos.y,
-      radius
-    );
-    grd.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-    grd.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+    const grd = this.ctx.createRadialGradient(pos.x, pos.y, radius * 0.25, pos.x, pos.y, radius);
+    grd.addColorStop(0, "rgba(255, 255, 255, 0.2)");
+    grd.addColorStop(1, "rgba(0, 0, 0, 0.0)");
 
     this.ctx.beginPath();
     this.ctx.fillStyle = grd;

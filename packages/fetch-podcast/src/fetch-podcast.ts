@@ -5,12 +5,7 @@ import { getColorSet } from "image-metadata";
 import { applyBlogUmapCorpus } from "metadata-embedding";
 import { isEmbeddingServerRunning } from "post-embedding";
 import { syncEpisodeEmbeddings } from "./sync-embeddings.ts";
-import type {
-  ChannelData,
-  Episode,
-  FetchPodcastOptions,
-  PodcastData,
-} from "./types.ts";
+import type { ChannelData, Episode, FetchPodcastOptions, PodcastData } from "./types.ts";
 
 const DEFAULT_RSS_URL = "https://anchor.fm/s/f483db10/podcast/rss";
 
@@ -59,11 +54,8 @@ async function fetchRssFeed(rssUrl: string) {
 function parseEpisode(item: Record<string, unknown>, index: number): Episode {
   const title = (item.title as string[] | undefined)?.[0] || "Untitled";
   const link =
-    (item.link as string[] | undefined)?.[0] ||
-    (item.guid as string[] | undefined)?.[0] ||
-    "";
-  const pubDate =
-    (item.pubDate as string[] | undefined)?.[0] || new Date().toISOString();
+    (item.link as string[] | undefined)?.[0] || (item.guid as string[] | undefined)?.[0] || "";
+  const pubDate = (item.pubDate as string[] | undefined)?.[0] || new Date().toISOString();
   const description =
     (item.description as string[] | undefined)?.[0] ||
     (item.summary as string[] | undefined)?.[0] ||
@@ -74,16 +66,12 @@ function parseEpisode(item: Record<string, unknown>, index: number): Episode {
   const duration = durationRaw ? parseDuration(durationRaw) : "";
 
   const image =
-    (
-      item["itunes:image"] as Array<{ $?: { href?: string } }> | undefined
-    )?.[0]?.$?.href ||
+    (item["itunes:image"] as Array<{ $?: { href?: string } }> | undefined)?.[0]?.$?.href ||
     (item.image as Array<{ url?: string[] }> | undefined)?.[0]?.url?.[0] ||
     "";
 
   const audioUrl =
-    (
-      item.enclosure as Array<{ $?: { url?: string } }> | undefined
-    )?.[0]?.$?.url || "";
+    (item.enclosure as Array<{ $?: { url?: string } }> | undefined)?.[0]?.$?.url || "";
 
   const id = link ? getEpisodeSlug(link) : `ep-${index}`;
 
@@ -119,9 +107,7 @@ async function enrichEpisodesWithColors(
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.warn(
-        `⚠️  Could not process colors for "${episode.title}": ${message}`,
-      );
+      console.warn(`⚠️  Could not process colors for "${episode.title}": ${message}`);
       enrichedEpisodes.push(episode);
     }
   }
@@ -145,10 +131,7 @@ async function loadExistingPodcast(
       const files = await fs.readdir(episodeDir);
       for (const file of files) {
         if (!file.endsWith(".json") || file.startsWith(".")) continue;
-        const episodeRaw = await fs.readFile(
-          path.join(episodeDir, file),
-          "utf-8",
-        );
+        const episodeRaw = await fs.readFile(path.join(episodeDir, file), "utf-8");
         episodes.push(JSON.parse(episodeRaw) as Episode);
       }
     }
@@ -182,9 +165,7 @@ async function episodeNeedsEmbedding(episodeDir: string): Promise<boolean> {
   return false;
 }
 
-export async function fetchAndProcessPodcast(
-  options: FetchPodcastOptions,
-): Promise<void> {
+export async function fetchAndProcessPodcast(options: FetchPodcastOptions): Promise<void> {
   await fs.mkdir(options.episodeDir, { recursive: true });
 
   const rssUrl = options.rssUrl ?? DEFAULT_RSS_URL;
@@ -194,10 +175,7 @@ export async function fetchAndProcessPodcast(
     title: channel.title?.[0] || "Podcast",
     description: channel.description?.[0] || "",
     link: channel.link?.[0] || "",
-    image:
-      channel.image?.[0]?.url?.[0] ||
-      channel["itunes:image"]?.[0]?.["$"]?.href ||
-      "",
+    image: channel.image?.[0]?.url?.[0] || channel["itunes:image"]?.[0]?.["$"]?.href || "",
   };
 
   console.log(`✅ Channel: ${channelData.title}`);
@@ -208,25 +186,16 @@ export async function fetchAndProcessPodcast(
   );
   console.log(`📻 Found ${rssEpisodes.length} episodes in RSS`);
 
-  const existing = await loadExistingPodcast(
-    options.outputFile,
-    options.episodeDir,
-  );
-  const existingIds = existing
-    ? new Set(existing.episodes.map((ep) => ep.id))
-    : new Set<string>();
+  const existing = await loadExistingPodcast(options.outputFile, options.episodeDir);
+  const existingIds = existing ? new Set(existing.episodes.map((ep) => ep.id)) : new Set<string>();
 
   const newEpisodes = rssEpisodes.filter((ep: Episode) => !existingIds.has(ep.id));
   const existingEpisodes = existing
-    ? existing.episodes.filter((ep) =>
-        rssEpisodes.some((rss: Episode) => rss.id === ep.id),
-      )
+    ? existing.episodes.filter((ep) => rssEpisodes.some((rss: Episode) => rss.id === ep.id))
     : [];
 
   if (newEpisodes.length > 0) {
-    console.log(
-      `📥 ${existingEpisodes.length} existing, ${newEpisodes.length} new`,
-    );
+    console.log(`📥 ${existingEpisodes.length} existing, ${newEpisodes.length} new`);
 
     const enrichedNew = await enrichEpisodesWithColors(newEpisodes, {
       baseDir: options.baseDir,
@@ -237,19 +206,11 @@ export async function fetchAndProcessPodcast(
       lastUpdated: new Date().toISOString(),
     };
 
-    await fs.writeFile(
-      options.outputFile,
-      JSON.stringify(manifest, null, 2),
-      "utf-8",
-    );
+    await fs.writeFile(options.outputFile, JSON.stringify(manifest, null, 2), "utf-8");
 
     for (const episode of enrichedNew) {
       const episodePath = path.join(options.episodeDir, `${episode.id}.json`);
-      await fs.writeFile(
-        episodePath,
-        JSON.stringify(episode, null, 2),
-        "utf-8",
-      );
+      await fs.writeFile(episodePath, JSON.stringify(episode, null, 2), "utf-8");
     }
 
     console.log(

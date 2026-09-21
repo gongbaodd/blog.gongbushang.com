@@ -12,10 +12,7 @@ export async function geocodeCities(
     return { city: cityList, locations: old?.locations ?? [] };
   }
 
-  if (
-    old?.city &&
-    JSON.stringify(old.city) === JSON.stringify(cityList)
-  ) {
+  if (old?.city && JSON.stringify(old.city) === JSON.stringify(cityList)) {
     return { city: old.city, locations: old.locations ?? [] };
   }
 

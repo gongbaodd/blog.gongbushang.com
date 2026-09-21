@@ -5,22 +5,11 @@ import matter from "gray-matter";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
 import { isEmbeddingServerRunning } from "post-embedding";
-import {
-  buildSeriesNameMap,
-  extractDataFields,
-  type FrontmatterData,
-} from "./data-field.ts";
-import {
-  applyBlogUmapCorpus,
-  embedPostMetadata,
-  UMAP_STATE_FILENAME,
-} from "metadata-embedding";
+import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "./data-field.ts";
+import { applyBlogUmapCorpus, embedPostMetadata, UMAP_STATE_FILENAME } from "metadata-embedding";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
-import type {
-  CollectMetadataOptions,
-  MetadataEntry,
-} from "./types.ts";
+import type { CollectMetadataOptions, MetadataEntry } from "./types.ts";
 
 function hashContent(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex");
@@ -56,9 +45,7 @@ async function loadExistingMetadata(
 
   try {
     const files = await fs.readdir(outputDir);
-    for (const file of files.filter(
-      (f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME,
-    )) {
+    for (const file of files.filter((f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME)) {
       const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
       const entry = JSON.parse(raw) as MetadataEntry;
       oldData[entry.file] = entry;
@@ -80,10 +67,7 @@ async function processLocation(
   return geocodeCities(cityList, googleApiKey, old);
 }
 
-async function processCover(
-  data: FrontmatterData,
-  old: MetadataEntry | undefined,
-) {
+async function processCover(data: FrontmatterData, old: MetadataEntry | undefined) {
   if (!data?.cover?.url) return undefined;
 
   if (old?.cover?.url === data.cover.url) {
@@ -134,24 +118,13 @@ async function parsePosts(docsDir: string, files: string[]): Promise<ParsedPost[
   return parsed;
 }
 
-async function writeMetadataEntry(
-  outputDir: string,
-  merged: MetadataEntry,
-): Promise<void> {
+async function writeMetadataEntry(outputDir: string, merged: MetadataEntry): Promise<void> {
   const outPath = metadataFilePath(outputDir, merged.file);
   await fs.writeFile(outPath, JSON.stringify(merged, null, 2), "utf-8");
 }
 
-export async function collectMetadata(
-  options: CollectMetadataOptions,
-): Promise<void> {
-  const {
-    repoRoot,
-    docsDir,
-    outputDir,
-    googleApiKey,
-    embeddingOptions,
-  } = options;
+export async function collectMetadata(options: CollectMetadataOptions): Promise<void> {
+  const { repoRoot, docsDir, outputDir, googleApiKey, embeddingOptions } = options;
   const legacyJsonPath = path.join(path.dirname(outputDir), "metadata.json");
 
   await fs.mkdir(outputDir, { recursive: true });
@@ -167,8 +140,7 @@ export async function collectMetadata(
   });
 
   if (needsEmbedding) {
-    const embeddingServerRunning =
-      await isEmbeddingServerRunning(embeddingOptions);
+    const embeddingServerRunning = await isEmbeddingServerRunning(embeddingOptions);
     if (!embeddingServerRunning) {
       throw new Error(
         "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.",
@@ -176,9 +148,7 @@ export async function collectMetadata(
     }
   }
 
-  const seriesNameMap = buildSeriesNameMap(
-    parsedPosts.map(({ frontmatter }) => frontmatter),
-  );
+  const seriesNameMap = buildSeriesNameMap(parsedPosts.map(({ frontmatter }) => frontmatter));
   const activeSlugs = new Set(parsedPosts.map((post) => post.relPath));
   let changedCount = 0;
 
@@ -191,12 +161,7 @@ export async function collectMetadata(
       continue;
     }
 
-    const dataFields = await extractDataFields(
-      relPath,
-      frontmatter,
-      body,
-      seriesNameMap,
-    );
+    const dataFields = await extractDataFields(relPath, frontmatter, body, seriesNameMap);
 
     if (hashUnchanged && old) {
       const { umap2D: _removed, ...oldWithoutUmap } = old as MetadataEntry & {
@@ -220,11 +185,7 @@ export async function collectMetadata(
     };
 
     if (frontmatter.city) {
-      const locationPart = await processLocation(
-        frontmatter,
-        old,
-        googleApiKey,
-      );
+      const locationPart = await processLocation(frontmatter, old, googleApiKey);
       if (locationPart) {
         merged.city = locationPart.city;
         merged.locations = locationPart.locations;
@@ -251,9 +212,7 @@ export async function collectMetadata(
 
   try {
     const existing = await fs.readdir(outputDir);
-    for (const file of existing.filter(
-      (f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME,
-    )) {
+    for (const file of existing.filter((f) => f.endsWith(".json") && f !== UMAP_STATE_FILENAME)) {
       const raw = await fs.readFile(path.join(outputDir, file), "utf-8");
       const entry = JSON.parse(raw) as MetadataEntry;
       if (!activeSlugs.has(entry.file)) {
@@ -272,9 +231,7 @@ export async function collectMetadata(
     // legacy file not present
   }
 
-  console.log(
-    `\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`,
-  );
+  console.log(`\n📦 Metadata updated in ${outputDir} (${changedCount} file(s) changed)`);
 
   await applyBlogUmapCorpus(repoRoot);
 }

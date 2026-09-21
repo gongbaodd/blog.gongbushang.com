@@ -1,8 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  applyGalleryEntryToClientPost,
-  type GalleryEntry,
-} from "./gallery.ts";
+import { applyGalleryEntryToClientPost, type GalleryEntry } from "./gallery.ts";
 
 const galleryEntry: GalleryEntry = {
   id: "05/25/shenzhen",

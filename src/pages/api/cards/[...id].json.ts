@@ -1,17 +1,11 @@
-import {
-  getAllPosts,
-  mapServerPostToClient,
-  readPostMetadata,
-} from "@/packages/utils/post";
+import { getAllPosts, mapServerPostToClient, readPostMetadata } from "@/packages/utils/post";
 import type { APIRoute } from "astro";
 
 export const prerender = true;
 
 export async function getStaticPaths() {
   const umapIds = new Set(
-    (readPostMetadata() ?? [])
-      .filter((e) => e.id && e.umap2D)
-      .map((e) => e.id),
+    (readPostMetadata() ?? []).filter((e) => e.id && e.umap2D).map((e) => e.id),
   );
   const serverPosts = (await getAllPosts()).filter((p) => umapIds.has(p.id));
   return serverPosts.map((post) => ({ params: { id: post.id } }));

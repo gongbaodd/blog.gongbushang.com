@@ -1,19 +1,19 @@
 // @ts-ignore
-import { body } from "@/packages/hero/fragments/description.mdx"
+import { body } from "@/packages/hero/fragments/description.mdx";
 import type { DataEntryMap } from "astro:content";
 
-export const SITE_TITLE = 'GrowGen | 给我整';
+export const SITE_TITLE = "GrowGen | 给我整";
 export const SITE_TITLE_NICK = "GrowGen | 整";
 export const SITE_DESCRIPTION = body;
 
-export const BLOG_SOURCE: keyof DataEntryMap = import.meta.env.BLOG_SOURCE ?? "blog"
+export const BLOG_SOURCE: keyof DataEntryMap = import.meta.env.BLOG_SOURCE ?? "blog";
 
 export enum FILTER_ENTRY {
-  ALL = 'all',
-  TAG = 'tag',
-  SERIES = 'series',
-  YEAR = 'year',
-  WORLD = "world"
+  ALL = "all",
+  TAG = "tag",
+  SERIES = "series",
+  YEAR = "year",
+  WORLD = "world",
 }
 
 export enum ROUTE_LABEL {
@@ -21,7 +21,7 @@ export enum ROUTE_LABEL {
   Blog = "Blog",
   Lab = "Lab",
   World = "World",
-  Archive = "Archive"
+  Archive = "Archive",
 }
 
 export enum ROUTE_HREF {
@@ -29,7 +29,7 @@ export enum ROUTE_HREF {
   Blog = "/all",
   Lab = "/lab",
   World = "/world",
-  Archive = "/year"
+  Archive = "/year",
 }
 
 export const ALL_ROUTE_LABEL = [
@@ -38,7 +38,7 @@ export const ALL_ROUTE_LABEL = [
   ROUTE_LABEL.Lab,
   ROUTE_LABEL.World,
   ROUTE_LABEL.Archive,
-]
+];
 
 export const ALL_ROUTE_HREF = [
   ROUTE_HREF.Home,
@@ -46,23 +46,22 @@ export const ALL_ROUTE_HREF = [
   ROUTE_HREF.Lab,
   ROUTE_HREF.World,
   ROUTE_HREF.Archive,
-]
+];
 
 export const ROUTES = [
   ROUTE_LABEL.Home,
   ROUTE_LABEL.Blog,
   ROUTE_LABEL.Lab,
   ROUTE_LABEL.World,
-  ROUTE_LABEL.Archive
-].map(label => ({
+  ROUTE_LABEL.Archive,
+].map((label) => ({
   label,
-  href: ROUTE_HREF[label]!
-}))
+  href: ROUTE_HREF[label]!,
+}));
 
-export const PV_URL = "https://pv.growgen.xyz/"
+export const PV_URL = "https://pv.growgen.xyz/";
 
 export const POST_COUNT_PER_PAGE = 16;
-
 
 export enum POST_CARD_LAYOUT {
   xs = "xs",
@@ -72,10 +71,7 @@ export enum POST_CARD_LAYOUT {
   xl = "xl",
 }
 
-export {
-  POST_CARD_UNDERLINE_COLORS,
-  TITLE_COLOR_MAP,
-} from "./colors.ts";
+export { POST_CARD_UNDERLINE_COLORS, TITLE_COLOR_MAP } from "./colors.ts";
 
 export {
   CONTENT_GENERATED_DIR,
@@ -86,7 +82,6 @@ export {
   PODCAST_COVER_DIR,
   PODCAST_JSON,
 } from "./config.js";
-
 
 export const POST_CARD_CLASSNAMES = [
   "liquid_cheese",

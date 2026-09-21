@@ -68,16 +68,16 @@ let result = convert_to_2d(float_embeddings)?;
 
 The library uses optimized default parameters internally:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `n_neighbors` | Number of nearest neighbors | 15 (or data size - 1 if smaller) |
-| `n_components` | Target embedding dimension | 2 for `convert_to_2d`, 3 for `convert_to_3d` |
-| `min_dist` | Minimum distance between points in embedding | 0.1 |
-| `n_epochs` | Number of optimization epochs | 200 |
-| `negative_sample_rate` | Negative samples per positive sample | 5 |
-| `spread` | Spread parameter for low-dimensional representation | 1.0 |
-| `local_connectivity` | Local connectivity parameter | 1.0 |
-| `repulsion_strength` | Repulsion strength parameter | 1.0 |
+| Parameter              | Description                                         | Default                                      |
+| ---------------------- | --------------------------------------------------- | -------------------------------------------- |
+| `n_neighbors`          | Number of nearest neighbors                         | 15 (or data size - 1 if smaller)             |
+| `n_components`         | Target embedding dimension                          | 2 for `convert_to_2d`, 3 for `convert_to_3d` |
+| `min_dist`             | Minimum distance between points in embedding        | 0.1                                          |
+| `n_epochs`             | Number of optimization epochs                       | 200                                          |
+| `negative_sample_rate` | Negative samples per positive sample                | 5                                            |
+| `spread`               | Spread parameter for low-dimensional representation | 1.0                                          |
+| `local_connectivity`   | Local connectivity parameter                        | 1.0                                          |
+| `repulsion_strength`   | Repulsion strength parameter                        | 1.0                                          |
 
 ### How UMAP Works
 
@@ -115,12 +115,12 @@ The algorithm constructs a high-dimensional fuzzy topological representation of 
 
 ## Comparison with Other Methods
 
-| Method | Local Structure | Global Structure | Scalability | Embedding Dimension |
-|--------|----------------|------------------|-------------|-------------------|
-| **UMAP** | ✓ | ✓ | High | Any |
-| t-SNE | ✓ | Limited | Medium | Typically 2-3 |
-| PCA | Limited | ✓ | High | Any |
-| Isomap | ✓ | ✓ | Low | Any |
+| Method   | Local Structure | Global Structure | Scalability | Embedding Dimension |
+| -------- | --------------- | ---------------- | ----------- | ------------------- |
+| **UMAP** | ✓               | ✓                | High        | Any                 |
+| t-SNE    | ✓               | Limited          | Medium      | Typically 2-3       |
+| PCA      | Limited         | ✓                | High        | Any                 |
+| Isomap   | ✓               | ✓                | Low         | Any                 |
 
 ## Limitations
 
@@ -132,6 +132,7 @@ The algorithm constructs a high-dimensional fuzzy topological representation of 
 ## License
 
 This implementation is based on the UMAP paper:
+
 > McInnes, L., Healy, J., & Melville, J. (2018). UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction. arXiv preprint arXiv:1802.03426.
 
 ## Contributing

@@ -5,27 +5,27 @@ Astro version: `6.3.8`
 
 ## Build metrics
 
-| Metric | Value |
-| --- | --- |
+| Metric                                                            | Value                                          |
+| ----------------------------------------------------------------- | ---------------------------------------------- |
 | `pnpm build` wall-clock (astro check + astro build + resume PDFs) | ~3m 20s (astro build alone: 3m 8s, 1617 pages) |
-| `astro check` | 0 errors, 0 warnings, 64 hints (212 files) |
-| `du -sh dist/` | 326 MB |
-| `du -sh dist/_astro/` | 49 MB |
+| `astro check`                                                     | 0 errors, 0 warnings, 64 hints (212 files)     |
+| `du -sh dist/`                                                    | 326 MB                                         |
+| `du -sh dist/_astro/`                                             | 49 MB                                          |
 
 ### Largest files under `dist/_astro/`
 
-| Size | File |
-| --- | --- |
+| Size   | File                                        |
+| ------ | ------------------------------------------- |
 | 2.5 MB | `dalian-subway-5-573.BTK_Iud8_Z1VoF0l.webp` |
-| 2.5 MB | `MantineHero.C9xfFLuM.js` |
-| 1.3 MB | `selfie.VcPlgrTl.png` |
-| 1.2 MB | `nsfw.CaU0sI72.png` |
-| 1.1 MB | `selfie.BtVU_0Vr.jpg` |
-| 1.1 MB | `maplibre-gl.BaAEkp-v.js` |
-| 892 KB | `zhenjiang.D6JXe3CX.jpg` |
-| 888 KB | `thailand.D0chagL0.jpg` |
-| 780 KB | `macaw.BnsIe6Fy.jpg` |
-| 668 KB | `three.module.4_GyyqrB.js` |
+| 2.5 MB | `MantineHero.C9xfFLuM.js`                   |
+| 1.3 MB | `selfie.VcPlgrTl.png`                       |
+| 1.2 MB | `nsfw.CaU0sI72.png`                         |
+| 1.1 MB | `selfie.BtVU_0Vr.jpg`                       |
+| 1.1 MB | `maplibre-gl.BaAEkp-v.js`                   |
+| 892 KB | `zhenjiang.D6JXe3CX.jpg`                    |
+| 888 KB | `thailand.D0chagL0.jpg`                     |
+| 780 KB | `macaw.BnsIe6Fy.jpg`                        |
+| 668 KB | `three.module.4_GyyqrB.js`                  |
 
 ## Test results
 
@@ -53,11 +53,11 @@ Astro version: `6.3.8`
 
 ## Content pipeline sanity (grep counts in saved HTML)
 
-| Page | katex | mermaid | plantuml | astro-code blocks |
-| --- | --- | --- | --- | --- |
-| post-katex.html | 18 | 0 | 0 | 12 |
-| post-mermaid.html | 0 | 14 | 2 | 3 |
-| post-plantuml.html | 0 | 0 | 15 | 5 |
+| Page               | katex | mermaid | plantuml | astro-code blocks |
+| ------------------ | ----- | ------- | -------- | ----------------- |
+| post-katex.html    | 18    | 0       | 0        | 12                |
+| post-mermaid.html  | 0     | 14      | 2        | 3                 |
+| post-plantuml.html | 0     | 0       | 15       | 5                 |
 
 - Cloudinary rewriting confirmed working (`res.cloudinary.com/.../f_auto,q_50,w_96/...` in resume pages).
 - RSS + sitemap-index present in `dist/`.

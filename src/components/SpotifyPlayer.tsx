@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Card,
-  Grid,
-  Group,
-  MantineProvider,
-  Stack,
-} from "@mantine/core";
+import { Box, Button, Card, Grid, Group, MantineProvider, Stack } from "@mantine/core";
 import { useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import classes from "./SpotifyPlayer.module.css";
@@ -19,13 +11,7 @@ export default function SpotifyPlayer() {
   return (
     <CustomMantineProvider>
       <Stack gap="xl">
-        <Card
-          shadow="sm"
-          padding={0}
-          radius="lg"
-          withBorder
-          className={classes.card}
-        >
+        <Card shadow="sm" padding={0} radius="lg" withBorder className={classes.card}>
           <Box p="md">
             <Grid align="center">
               <Grid.Col span={2}>
@@ -40,7 +26,7 @@ export default function SpotifyPlayer() {
               </Grid.Col>
             </Grid>
           </Box>
-      
+
           {!opened && (
             <Stack className={classes.cookie} justify="center" align="center">
               <Group>

@@ -2,16 +2,16 @@
 
 Eight CV focuses × two languages = sixteen static pages + sixteen PDFs.
 
-| Focus | Role key | EN page | ZH page |
-|---|---|---|---|
-| Universal | `universal` | `/resume` | `/resume/universal/zh` |
-| Full-Stack Dev | `full-stack` | `/resume/full-stack/en` | `/resume/full-stack/zh` |
+| Focus            | Role key           | EN page                       | ZH page                       |
+| ---------------- | ------------------ | ----------------------------- | ----------------------------- |
+| Universal        | `universal`        | `/resume`                     | `/resume/universal/zh`        |
+| Full-Stack Dev   | `full-stack`       | `/resume/full-stack/en`       | `/resume/full-stack/zh`       |
 | Machine Learning | `machine-learning` | `/resume/machine-learning/en` | `/resume/machine-learning/zh` |
-| DevOps | `devops` | `/resume/devops/en` | `/resume/devops/zh` |
-| Game Dev | `game-dev` | `/resume/game-dev/en` | `/resume/game-dev/zh` |
-| AI Agent | `ai-agent` | `/resume/ai-agent/en` | `/resume/ai-agent/zh` |
+| DevOps           | `devops`           | `/resume/devops/en`           | `/resume/devops/zh`           |
+| Game Dev         | `game-dev`         | `/resume/game-dev/en`         | `/resume/game-dev/zh`         |
+| AI Agent         | `ai-agent`         | `/resume/ai-agent/en`         | `/resume/ai-agent/zh`         |
 | Product Engineer | `product-engineer` | `/resume/product-engineer/en` | `/resume/product-engineer/zh` |
-| QA Tester | `qa-tester` | `/resume/qa-tester/en` | `/resume/qa-tester/zh` |
+| QA Tester        | `qa-tester`        | `/resume/qa-tester/en`        | `/resume/qa-tester/zh`        |
 
 PDFs: `/resume/pdfs/jian-gong-<role>-<language>.pdf` (max 2 MB each, 1 A4 page).
 

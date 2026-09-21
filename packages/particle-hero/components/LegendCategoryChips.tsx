@@ -13,9 +13,7 @@ function CategorySwatch({ color }: { color?: string }) {
     <Box
       component="span"
       className={
-        color
-          ? classes.legendSwatch
-          : `${classes.legendSwatch} ${classes.legendSwatchAll}`
+        color ? classes.legendSwatch : `${classes.legendSwatch} ${classes.legendSwatchAll}`
       }
       style={color ? { background: color } : undefined}
       aria-hidden
@@ -43,12 +41,7 @@ export default function LegendCategoryChips({
       onChange={(value) => value && onSelectCategory(value)}
       aria-label="Category filter"
     >
-      <Group
-        gap="xs"
-        wrap="wrap"
-        justify="flex-end"
-        className={classes.legendChips}
-      >
+      <Group gap="xs" wrap="wrap" justify="flex-end" className={classes.legendChips}>
         <Chip value="all" size="xs" variant="outline">
           <ChipLabel>All</ChipLabel>
         </Chip>

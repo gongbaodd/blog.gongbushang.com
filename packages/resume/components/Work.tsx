@@ -14,8 +14,7 @@ const data = [
   },
   {
     key: "grandpa",
-    image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778358907/grandpa_hrnltl.jpg",
+    image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1778358907/grandpa_hrnltl.jpg",
     name: "Kickstart Now OÜ",
     content: "Grandpa's Bee Haven",
     height: 120,
@@ -60,8 +59,7 @@ const data = [
   },
   {
     key: "school_tour",
-    image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1757489746/1747656883140_hkuw9u.jpg",
+    image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1757489746/1747656883140_hkuw9u.jpg",
     name: "Tallinn University XR tour",
     height: 200,
     items: ["BabylonJS", "3DGS"],
@@ -78,8 +76,7 @@ const data = [
   },
   {
     key: "Enchanted",
-    image:
-      "https://img.itch.zone/aW1nLzE5ODg1ODg3LnBuZw==/347x500/AC%2BLS0.png",
+    image: "https://img.itch.zone/aW1nLzE5ODg1ODg3LnBuZw==/347x500/AC%2BLS0.png",
     name: "Enchanted Wizard",
     height: 200,
     items: ["Godot"],
@@ -87,26 +84,17 @@ const data = [
   },
   {
     key: "Aftership.com",
-    image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1778362981/AfterShip_sm_pb1k3l.webp",
+    image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1778362981/AfterShip_sm_pb1k3l.webp",
     name: "Aftership.com",
     content: `Courier Information Service | Crawler | Analytics Dashboard`,
     height: 240,
-    items: [
-      "Google K8S",
-      "AWS",
-      "Python",
-      "ReactJS",
-      "Node.js",
-      "Shopify Polaris",
-    ],
+    items: ["Google K8S", "AWS", "Python", "ReactJS", "Node.js", "Shopify Polaris"],
     fit: "contain",
     url: "https://www.aftership.com",
   },
   {
     key: "Qunar.com",
-    image:
-      "https://res.cloudinary.com/dmq8ipket/image/upload/v1785759396/trip_yw7gaq.png",
+    image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1785759396/trip_yw7gaq.png",
     name: "Trip.com",
     content:
       "Qunar's Cashier Service  | Withdraw Service  | Bank Card Management  | Frontend Analytics  | Testing Tool",
@@ -165,10 +153,7 @@ export default function Work() {
                                     opacity: 0.85,
                                   }}
                                 >
-                                  <Text
-                                    size="sm"
-                                    style={{ marginBottom: 0 }}
-                                  >
+                                  <Text size="sm" style={{ marginBottom: 0 }}>
                                     {item}
                                   </Text>
                                 </Badge>
@@ -176,10 +161,7 @@ export default function Work() {
                           </Stack>
                         </Card>
                         <Stack gap={0}>
-                          <Text
-                            size="md"
-                            style={{ fontWeight: 500, marginBottom: 0 }}
-                          >
+                          <Text size="md" style={{ fontWeight: 500, marginBottom: 0 }}>
                             {d.name}
                           </Text>
                           {d.content && (

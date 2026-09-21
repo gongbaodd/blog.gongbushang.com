@@ -7,29 +7,18 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas, extend, useFrame } from "@react-three/fiber";
-import {
-  useGLTF,
-  useTexture,
-  Environment,
-  Lightformer,
-} from "@react-three/drei";
+import { useGLTF, useTexture, Environment, Lightformer } from "@react-three/drei";
 import * as Rapier from "@react-three/rapier";
-const {
-  BallCollider,
-  CuboidCollider,
-  Physics,
-  RigidBody,
-  useRopeJoint,
-  useSphericalJoint,
-} = Rapier
-type RigidBodyProps = Rapier.RigidBodyProps
+const { BallCollider, CuboidCollider, Physics, RigidBody, useRopeJoint, useSphericalJoint } =
+  Rapier;
+type RigidBodyProps = Rapier.RigidBodyProps;
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
 import * as THREE from "three";
 
 // replace with your own imports, see the usage snippet for details
 // import cardGLB from "./card.glb";
-const cardGLB = "/assets/bits/Components/Lenyard/card.glb"
-const lanyard = "/assets/bits/Components/Lenyard/texture.jpg"
+const cardGLB = "/assets/bits/Components/Lenyard/card.glb";
+const lanyard = "/assets/bits/Components/Lenyard/texture.jpg";
 
 extend({ MeshLineGeometry, MeshLineMaterial });
 
@@ -38,84 +27,82 @@ interface LanyardProps {
   gravity?: [number, number, number];
   fov?: number;
   transparent?: boolean;
-  onLoad?: () => void
+  onLoad?: () => void;
 }
 
 const touchMoveHandler = (e) => {
-   e.preventDefault();
-}
+  e.preventDefault();
+};
 
 export default function Lanyard({
   position = [0, 0, 30],
   gravity = [0, -40, 0],
   fov = 20,
   transparent = true,
-  onLoad
+  onLoad,
 }: LanyardProps) {
-  const canvasRef = useRef(null)
+  const canvasRef = useRef(null);
   const onDrag = useCallback((dragging: boolean) => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
     if (dragging) {
-      canvas.addEventListener("touchmove", touchMoveHandler, { passive: false })
+      canvas.addEventListener("touchmove", touchMoveHandler, { passive: false });
     } else {
-      canvas.removeEventListener("touchmove", touchMoveHandler)
+      canvas.removeEventListener("touchmove", touchMoveHandler);
     }
-  }, [])
+  }, []);
 
   return (
-      <Canvas
-        camera={{ position, fov }}
-        gl={{ alpha: transparent }}
-        onCreated={({ gl }) => 
-          gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)
-        }
-        ref={canvasRef}
-      >
-        <ambientLight intensity={Math.PI} />
-        <Physics gravity={gravity} timeStep={1 / 60}>
-          <Band onLoad={onLoad} onDrag={onDrag} />
-        </Physics>
-        <Environment blur={0.75}>
-          <Lightformer
-            intensity={2}
-            color="white"
-            position={[0, -1, 5]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={3}
-            color="white"
-            position={[-1, -1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={3}
-            color="white"
-            position={[1, 1, 1]}
-            rotation={[0, 0, Math.PI / 3]}
-            scale={[100, 0.1, 1]}
-          />
-          <Lightformer
-            intensity={10}
-            color="white"
-            position={[-10, 0, 14]}
-            rotation={[0, Math.PI / 2, Math.PI / 3]}
-            scale={[100, 10, 1]}
-          />
-        </Environment>
-      </Canvas>
+    <Canvas
+      camera={{ position, fov }}
+      gl={{ alpha: transparent }}
+      onCreated={({ gl }) => gl.setClearColor(new THREE.Color(0x000000), transparent ? 0 : 1)}
+      ref={canvasRef}
+    >
+      <ambientLight intensity={Math.PI} />
+      <Physics gravity={gravity} timeStep={1 / 60}>
+        <Band onLoad={onLoad} onDrag={onDrag} />
+      </Physics>
+      <Environment blur={0.75}>
+        <Lightformer
+          intensity={2}
+          color="white"
+          position={[0, -1, 5]}
+          rotation={[0, 0, Math.PI / 3]}
+          scale={[100, 0.1, 1]}
+        />
+        <Lightformer
+          intensity={3}
+          color="white"
+          position={[-1, -1, 1]}
+          rotation={[0, 0, Math.PI / 3]}
+          scale={[100, 0.1, 1]}
+        />
+        <Lightformer
+          intensity={3}
+          color="white"
+          position={[1, 1, 1]}
+          rotation={[0, 0, Math.PI / 3]}
+          scale={[100, 0.1, 1]}
+        />
+        <Lightformer
+          intensity={10}
+          color="white"
+          position={[-10, 0, 14]}
+          rotation={[0, Math.PI / 2, Math.PI / 3]}
+          scale={[100, 10, 1]}
+        />
+      </Environment>
+    </Canvas>
   );
 }
 
 interface BandProps {
   maxSpeed?: number;
   minSpeed?: number;
-  onLoad: LanyardProps["onLoad"]
-  onDrag: (start: boolean) => void
+  onLoad: LanyardProps["onLoad"];
+  onDrag: (start: boolean) => void;
 }
 
 function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
@@ -144,8 +131,8 @@ function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
   const texture = useTexture(lanyard);
 
   useEffect(() => {
-    onLoad && onLoad()
-  }, [])
+    onLoad && onLoad();
+  }, []);
 
   const [curve] = useState(
     () =>
@@ -199,9 +186,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
     if (fixed.current) {
       [j1, j2].forEach((ref) => {
         if (!ref.current.lerped)
-          ref.current.lerped = new THREE.Vector3().copy(
-            ref.current.translation(),
-          );
+          ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
         const clampedDistance = Math.max(
           0.1,
           Math.min(1, ref.current.lerped.distanceTo(ref.current.translation())),
@@ -228,11 +213,7 @@ function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
   return (
     <>
       <group position={[0, 4, 0]}>
-        <RigidBody
-          ref={fixed}
-          {...segmentProps}
-          type={"fixed" as RigidBodyProps["type"]}
-        />
+        <RigidBody ref={fixed} {...segmentProps} type={"fixed" as RigidBodyProps["type"]} />
         <RigidBody
           position={[0.5, 0, 0]}
           ref={j1}
@@ -276,15 +257,15 @@ function Band({ maxSpeed = 50, minSpeed = 0, onLoad, onDrag }: BandProps) {
             onPointerUp={(e: any) => {
               e.target.releasePointerCapture(e.pointerId);
               drag(false);
-              onDrag(false)
+              onDrag(false);
             }}
             onPointerDown={(e: any) => {
               e.target.setPointerCapture(e.pointerId);
-              const distance =  new THREE.Vector3()
-                  .copy(e.point)
-                  .sub(vec.copy(card.current.translation()))
-              drag(distance)
-              onDrag(distance)
+              const distance = new THREE.Vector3()
+                .copy(e.point)
+                .sub(vec.copy(card.current.translation()));
+              drag(distance);
+              onDrag(distance);
             }}
           >
             <mesh geometry={nodes.card.geometry}>

@@ -35,13 +35,9 @@ export function cssVarToMantineColor(cssVar: string): string {
   return cssVar.replace("--mantine-color-", "").replace(/-(\d+)$/, ".$1");
 }
 
-export function categoryToChartColor(
-  sortedCategoryHrefs: string[],
-  categoryHref: string,
-): string {
+export function categoryToChartColor(sortedCategoryHrefs: string[], categoryHref: string): string {
   const index = sortedCategoryHrefs.indexOf(categoryHref);
-  const paletteIndex =
-    index >= 0 ? index % POST_CARD_UNDERLINE_COLORS.length : 0;
+  const paletteIndex = index >= 0 ? index % POST_CARD_UNDERLINE_COLORS.length : 0;
   return cssVarToMantineColor(POST_CARD_UNDERLINE_COLORS[paletteIndex]!);
 }
 

@@ -34,9 +34,7 @@ export async function runUmapBinary(
   try {
     await deps.access(umapBin);
   } catch {
-    throw new Error(
-      `UMAP binary not found at ${umapBin}. Run \`pnpm umap:build\` first.`,
-    );
+    throw new Error(`UMAP binary not found at ${umapBin}. Run \`pnpm umap:build\` first.`);
   }
 
   return new Promise((resolve, reject) => {
@@ -57,11 +55,7 @@ export async function runUmapBinary(
     child.on("error", reject);
     child.on("close", (code) => {
       if (code !== 0) {
-        reject(
-          new Error(
-            stderr.trim() || `Failed to run UMAP binary (exit ${code ?? "unknown"})`,
-          ),
-        );
+        reject(new Error(stderr.trim() || `Failed to run UMAP binary (exit ${code ?? "unknown"})`));
         return;
       }
 
@@ -79,9 +73,7 @@ export async function runUmapBinary(
       }
     });
 
-    child.stdin.write(
-      JSON.stringify({ embeddings, config: UMAP_2D_CONFIG }),
-    );
+    child.stdin.write(JSON.stringify({ embeddings, config: UMAP_2D_CONFIG }));
     child.stdin.end();
   });
 }

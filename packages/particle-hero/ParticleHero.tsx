@@ -13,7 +13,15 @@ import {
 } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useStore } from "@nanostores/react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { TooltipStackCarousel } from "@/packages/carousel/BlogCarousel";
@@ -90,9 +98,7 @@ function useUmapPosts(initialPosts?: UmapPost[]): {
   postsReady: boolean;
 } {
   const [posts, setPosts] = useState<UmapPost[]>(() => initialPosts ?? []);
-  const [postsReady, setPostsReady] = useState(
-    () => (initialPosts?.length ?? 0) > 0,
-  );
+  const [postsReady, setPostsReady] = useState(() => (initialPosts?.length ?? 0) > 0);
 
   useEffect(() => {
     if (postsReady) return;
@@ -148,10 +154,7 @@ export default function ParticleHero({
   useEffect(() => {
     if (!debouncedHoveredId) return;
     setCardStack((prev) => {
-      const next = [
-        debouncedHoveredId,
-        ...prev.filter((id) => id !== debouncedHoveredId),
-      ];
+      const next = [debouncedHoveredId, ...prev.filter((id) => id !== debouncedHoveredId)];
       return next.slice(0, 5);
     });
   }, [debouncedHoveredId]);
@@ -159,30 +162,20 @@ export default function ParticleHero({
   useEffect(() => {
     if (cardStack.length === 0) return;
     const cached = $cardCache.get();
-    void Promise.all(
-      cardStack
-        .filter((id) => !cached[id])
-        .map((id) => requestCardPost(id)),
-    );
+    void Promise.all(cardStack.filter((id) => !cached[id]).map((id) => requestCardPost(id)));
   }, [cardStack]);
 
   const stackPosts = useMemo(
-    () =>
-      cardStack
-        .map((id) => cardCache[id])
-        .filter((post): post is IPost => post != null),
+    () => cardStack.map((id) => cardCache[id]).filter((post): post is IPost => post != null),
     [cardStack, cardCache],
   );
 
   const placeholderStyle = useMemo((): CSSProperties | undefined => {
-    if (!galleryImage?.traceUrl && !galleryImage?.colorSet?.bgColor)
-      return undefined;
+    if (!galleryImage?.traceUrl && !galleryImage?.colorSet?.bgColor) return undefined;
 
     return {
       backgroundColor: galleryImage.colorSet?.bgColor,
-      backgroundImage: galleryImage.traceUrl
-        ? `url(${galleryImage.traceUrl})`
-        : undefined,
+      backgroundImage: galleryImage.traceUrl ? `url(${galleryImage.traceUrl})` : undefined,
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -257,49 +250,46 @@ export default function ParticleHero({
       }
     };
 
-    app.setHoverHandler((
-      post: UmapPost | null,
-      event?: { intersectionData?: { uv: { x: number; y: number } } },
-    ) => {
-      if (!post) {
-        setTooltip(null);
-        lastHoveredIdRef.current = null;
-        setHoveredPostId(null);
-        return;
-      }
+    app.setHoverHandler(
+      (post: UmapPost | null, event?: { intersectionData?: { uv: { x: number; y: number } } }) => {
+        if (!post) {
+          setTooltip(null);
+          lastHoveredIdRef.current = null;
+          setHoveredPostId(null);
+          return;
+        }
 
-      const label = post.category?.label ?? "";
-      const color = getCategoryColor(label);
+        const label = post.category?.label ?? "";
+        const color = getCategoryColor(label);
 
-      if (post.id !== lastHoveredIdRef.current) {
-        lastHoveredIdRef.current = post.id;
-        setHoveredPostId(post.id);
-        let left = 0;
-        let top = 0;
-        if (event?.intersectionData && app.renderer) {
+        if (post.id !== lastHoveredIdRef.current) {
+          lastHoveredIdRef.current = post.id;
+          setHoveredPostId(post.id);
+          let left = 0;
+          let top = 0;
+          if (event?.intersectionData && app.renderer) {
+            const canvas = app.renderer.domElement;
+            const rect = canvas.getBoundingClientRect();
+            left = rect.left + event.intersectionData.uv.x * rect.width;
+            top = rect.top + (1 - event.intersectionData.uv.y) * rect.height;
+          }
+          setTooltip({
+            title: post.title,
+            categoryLabel: label,
+            color,
+            left,
+            top,
+          });
+        } else if (event?.intersectionData && app.renderer) {
+          const { uv } = event.intersectionData;
           const canvas = app.renderer.domElement;
           const rect = canvas.getBoundingClientRect();
-          left =
-            rect.left + event.intersectionData.uv.x * rect.width;
-          top =
-            rect.top + (1 - event.intersectionData.uv.y) * rect.height;
+          const left = rect.left + uv.x * rect.width;
+          const top = rect.top + (1 - uv.y) * rect.height;
+          setTooltip((prev) => (prev ? { ...prev, left, top } : null));
         }
-        setTooltip({
-          title: post.title,
-          categoryLabel: label,
-          color,
-          left,
-          top,
-        });
-      } else if (event?.intersectionData && app.renderer) {
-        const { uv } = event.intersectionData;
-        const canvas = app.renderer.domElement;
-        const rect = canvas.getBoundingClientRect();
-        const left = rect.left + uv.x * rect.width;
-        const top = rect.top + (1 - uv.y) * rect.height;
-        setTooltip((prev) => (prev ? { ...prev, left, top } : null));
-      }
-    });
+      },
+    );
 
     app.resize();
     const onResize = () => app.resize();
@@ -369,12 +359,7 @@ export default function ParticleHero({
             </Typography>
           )}
 
-          <Group
-            className={classes.heroGroup}
-            align="center"
-            gap="xl"
-            justify="center"
-          >
+          <Group className={classes.heroGroup} align="center" gap="xl" justify="center">
             <Stack gap="md" className={classes.canvasColumn}>
               {filter.hasYears && (
                 <Flex className={classes.legendChipsRow} justify="flex-end">
@@ -454,10 +439,7 @@ export default function ParticleHero({
             </Stack>
 
             {description && cardStack.length > 0 ? (
-              <Stack
-                gap="md"
-                className={`${classes.contentPanel} ${classes.contentPanelCarousel}`}
-              >
+              <Stack gap="md" className={`${classes.contentPanel} ${classes.contentPanelCarousel}`}>
                 <TooltipStackCarousel
                   posts={stackPosts}
                   onClose={() => setCardStack([])}
@@ -471,7 +453,11 @@ export default function ParticleHero({
                   {description}
                 </Typography>
                 <Group align="center" className={classes.contentActions}>
-                  <Button onClick={() => { location.href = "#socials"; }}>
+                  <Button
+                    onClick={() => {
+                      location.href = "#socials";
+                    }}
+                  >
                     Follow me in social media
                   </Button>
                 </Group>

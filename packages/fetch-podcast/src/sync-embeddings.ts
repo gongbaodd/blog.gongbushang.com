@@ -1,10 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  buildPodcastEmbeddingText,
-  embedFromText,
-  UMAP_STATE_FILENAME,
-} from "metadata-embedding";
+import { buildPodcastEmbeddingText, embedFromText, UMAP_STATE_FILENAME } from "metadata-embedding";
 import type { EmbeddingOptions } from "post-embedding";
 import type { Episode } from "./types.ts";
 
@@ -31,10 +27,7 @@ export async function syncEpisodeEmbeddings(
   const onlyIds = options?.episodeIds;
 
   for (const file of files.filter(
-    (name) =>
-      name.endsWith(".json") &&
-      !name.startsWith(".") &&
-      name !== UMAP_STATE_FILENAME,
+    (name) => name.endsWith(".json") && !name.startsWith(".") && name !== UMAP_STATE_FILENAME,
   )) {
     const filePath = path.join(episodeDir, file);
     const episode = await readEpisodeFile(filePath);
@@ -43,8 +36,7 @@ export async function syncEpisodeEmbeddings(
       continue;
     }
 
-    const needsEmbedding =
-      !Array.isArray(episode.embeddings) || episode.embeddings.length === 0;
+    const needsEmbedding = !Array.isArray(episode.embeddings) || episode.embeddings.length === 0;
 
     if (!needsEmbedding) {
       continue;

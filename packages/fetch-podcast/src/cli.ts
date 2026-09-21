@@ -55,10 +55,7 @@ export async function resolveFetchOptions(cli: CliOptions = {}) {
   const repoRoot = await findRepoRoot();
   return {
     rssUrl: cli.rssUrl,
-    outputFile: path.resolve(
-      repoRoot,
-      cli.output ?? PODCAST_JSON,
-    ),
+    outputFile: path.resolve(repoRoot, cli.output ?? PODCAST_JSON),
     episodeDir: path.resolve(repoRoot, cli.episodeDir ?? PODCAST_COVER_DIR),
     baseDir: repoRoot,
   };
@@ -76,9 +73,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
 }
 
-const isMain =
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
 if (isMain) {
   await runCli();

@@ -1,15 +1,12 @@
-import * as THREE from 'three';
-import vertexShader from './shaders/particle.vert';
-import fragmentShader from './shaders/particle.frag';
-import shadowVertexShader from './shaders/particle-shadow.vert';
-import shadowFragmentShader from './shaders/particle-shadow.frag';
-import TouchTexture from './TouchTexture.js';
-import { lerp } from './utils/easing.js';
-import { getCategoryColor, getPostYear, hexToRgb, normalizePostPositions } from '../postsData.ts';
-import {
-  drawImageCoverCenter,
-  PARTICLE_LAYOUT_LANDSCAPE,
-} from '../layout.ts';
+import * as THREE from "three";
+import vertexShader from "./shaders/particle.vert";
+import fragmentShader from "./shaders/particle.frag";
+import shadowVertexShader from "./shaders/particle-shadow.vert";
+import shadowFragmentShader from "./shaders/particle-shadow.frag";
+import TouchTexture from "./TouchTexture.js";
+import { lerp } from "./utils/easing.js";
+import { getCategoryColor, getPostYear, hexToRgb, normalizePostPositions } from "../postsData.ts";
+import { drawImageCoverCenter, PARTICLE_LAYOUT_LANDSCAPE } from "../layout.ts";
 const ALPHA_THRESHOLD = 16;
 const SIZE_MIN = 0.3;
 const SIZE_MAX = 0.85;
@@ -25,11 +22,11 @@ function isParticlePixel(data, i) {
 }
 
 function createWhiteTexture() {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = 1;
   canvas.height = 1;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#ffffff';
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, 1, 1);
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
@@ -39,12 +36,12 @@ function createWhiteTexture() {
 export function loadImageTexture(url, width, height) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       drawImageCoverCenter(ctx, img, width, height);
       const texture = new THREE.CanvasTexture(canvas);
       texture.flipY = true;
@@ -83,7 +80,7 @@ export default class Particles {
 
   async reloadLast() {
     if (!this.lastLoad) return this;
-    if (this.lastLoad.kind === 'posts') {
+    if (this.lastLoad.kind === "posts") {
       return this.loadPosts(this.lastLoad.posts);
     }
     return this.load(this.lastLoad.url, this.lastLoad.posts);
@@ -99,7 +96,7 @@ export default class Particles {
     this.texture = texture;
     this.width = w;
     this.height = h;
-    this.lastLoad = { kind: 'image', url: src, posts };
+    this.lastLoad = { kind: "image", url: src, posts };
     this.initBackground();
     this.buildMesh(true);
     if (this.posts) this.buildPostsMesh(this.posts);
@@ -120,7 +117,7 @@ export default class Particles {
     this.texture = createWhiteTexture();
     this.width = w;
     this.height = h;
-    this.lastLoad = { kind: 'posts', posts };
+    this.lastLoad = { kind: "posts", posts };
     this.buildPostsMesh(this.posts);
     this.initHitArea();
     this.attachTouchUniform();
@@ -188,7 +185,7 @@ export default class Particles {
     if (discard) {
       numVisible = 0;
       const canvas = this.texture.image;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       originalColors = imgData.data;
 
@@ -238,14 +235,14 @@ export default class Particles {
     positions.setXYZ(1, 0.5, 0.5, 0.0);
     positions.setXYZ(2, -0.5, -0.5, 0.0);
     positions.setXYZ(3, 0.5, -0.5, 0.0);
-    geometry.setAttribute('position', positions);
+    geometry.setAttribute("position", positions);
 
     const uvs = new THREE.BufferAttribute(new Float32Array(4 * 2), 2);
     uvs.setXY(0, 0.0, 0.0);
     uvs.setXY(1, 1.0, 0.0);
     uvs.setXY(2, 0.0, 1.0);
     uvs.setXY(3, 1.0, 1.0);
-    geometry.setAttribute('uv', uvs);
+    geometry.setAttribute("uv", uvs);
 
     geometry.setIndex(new THREE.BufferAttribute(new Uint16Array([0, 2, 1, 2, 3, 1]), 1));
 
@@ -269,11 +266,11 @@ export default class Particles {
       j++;
     }
 
-    geometry.setAttribute('pindex', new THREE.InstancedBufferAttribute(indices, 1));
-    geometry.setAttribute('offset', new THREE.InstancedBufferAttribute(offsets, 3));
-    geometry.setAttribute('angle', new THREE.InstancedBufferAttribute(angles, 1));
-    geometry.setAttribute('aColor', new THREE.InstancedBufferAttribute(colors, 3));
-    geometry.setAttribute('aVisible', new THREE.InstancedBufferAttribute(visibles, 1));
+    geometry.setAttribute("pindex", new THREE.InstancedBufferAttribute(indices, 1));
+    geometry.setAttribute("offset", new THREE.InstancedBufferAttribute(offsets, 3));
+    geometry.setAttribute("angle", new THREE.InstancedBufferAttribute(angles, 1));
+    geometry.setAttribute("aColor", new THREE.InstancedBufferAttribute(colors, 3));
+    geometry.setAttribute("aVisible", new THREE.InstancedBufferAttribute(visibles, 1));
 
     // this.shadowObject3D = new THREE.Mesh(geometry, shadowMaterial);
     // this.container.add(this.shadowObject3D);
@@ -314,14 +311,14 @@ export default class Particles {
     positions.setXYZ(1, 0.5, 0.5, 0.0);
     positions.setXYZ(2, -0.5, -0.5, 0.0);
     positions.setXYZ(3, 0.5, -0.5, 0.0);
-    geometry.setAttribute('position', positions);
+    geometry.setAttribute("position", positions);
 
     const uvs = new THREE.BufferAttribute(new Float32Array(4 * 2), 2);
     uvs.setXY(0, 0.0, 0.0);
     uvs.setXY(1, 1.0, 0.0);
     uvs.setXY(2, 0.0, 1.0);
     uvs.setXY(3, 1.0, 1.0);
-    geometry.setAttribute('uv', uvs);
+    geometry.setAttribute("uv", uvs);
 
     geometry.setIndex(new THREE.BufferAttribute(new Uint16Array([0, 2, 1, 2, 3, 1]), 1));
 
@@ -332,7 +329,7 @@ export default class Particles {
     const visibles = new Float32Array(numVisible);
 
     this.postMeta = posts.map((post) => ({
-      category: post.category?.label ?? '',
+      category: post.category?.label ?? "",
       year: getPostYear(post),
     }));
 
@@ -350,11 +347,11 @@ export default class Particles {
       visibles[j] = 1.0;
     }
 
-    geometry.setAttribute('pindex', new THREE.InstancedBufferAttribute(indices, 1));
-    geometry.setAttribute('offset', new THREE.InstancedBufferAttribute(offsets, 3));
-    geometry.setAttribute('angle', new THREE.InstancedBufferAttribute(angles, 1));
-    geometry.setAttribute('aColor', new THREE.InstancedBufferAttribute(colors, 3));
-    geometry.setAttribute('aVisible', new THREE.InstancedBufferAttribute(visibles, 1));
+    geometry.setAttribute("pindex", new THREE.InstancedBufferAttribute(indices, 1));
+    geometry.setAttribute("offset", new THREE.InstancedBufferAttribute(offsets, 3));
+    geometry.setAttribute("angle", new THREE.InstancedBufferAttribute(angles, 1));
+    geometry.setAttribute("aColor", new THREE.InstancedBufferAttribute(colors, 3));
+    geometry.setAttribute("aVisible", new THREE.InstancedBufferAttribute(visibles, 1));
 
     this.postsObject3D = new THREE.Mesh(geometry, material);
     this.postsObject3D.renderOrder = 2;
@@ -372,7 +369,7 @@ export default class Particles {
     const attr = this.postsObject3D.geometry.attributes.aVisible;
     for (let i = 0; i < this.postMeta.length; i++) {
       const meta = this.postMeta[i];
-      const categoryMatch = category === 'all' || meta.category === category;
+      const categoryMatch = category === "all" || meta.category === category;
       const yearMatch = Number(meta.year) <= Number(year);
       attr.array[i] = categoryMatch && yearMatch ? 1.0 : 0.0;
     }
@@ -383,7 +380,7 @@ export default class Particles {
     if (!this.activeFilter || !this.postMeta?.[index]) return true;
     const { category, year } = this.activeFilter;
     const meta = this.postMeta[index];
-    const categoryMatch = category === 'all' || meta.category === category;
+    const categoryMatch = category === "all" || meta.category === category;
     return categoryMatch && Number(meta.year) <= Number(year);
   }
 
@@ -447,8 +444,8 @@ export default class Particles {
   addListeners() {
     this.handlerInteractiveMove = this.onInteractiveMove.bind(this);
     this.handlerInteractiveOut = this.onInteractiveOut.bind(this);
-    this.webgl.interactive.on('interactive-move', this.handlerInteractiveMove);
-    this.webgl.interactive.on('interactive-out', this.handlerInteractiveOut);
+    this.webgl.interactive.on("interactive-move", this.handlerInteractiveMove);
+    this.webgl.interactive.on("interactive-out", this.handlerInteractiveOut);
     if (!this.webgl.interactive.objects.includes(this.hitArea)) {
       this.webgl.interactive.objects.push(this.hitArea);
     }
@@ -457,10 +454,10 @@ export default class Particles {
 
   removeListeners() {
     if (this.handlerInteractiveMove) {
-      this.webgl.interactive.off('interactive-move', this.handlerInteractiveMove);
+      this.webgl.interactive.off("interactive-move", this.handlerInteractiveMove);
     }
     if (this.handlerInteractiveOut) {
-      this.webgl.interactive.off('interactive-out', this.handlerInteractiveOut);
+      this.webgl.interactive.off("interactive-out", this.handlerInteractiveOut);
     }
     const idx = this.webgl.interactive.objects.indexOf(this.hitArea);
     if (idx >= 0) this.webgl.interactive.objects.splice(idx, 1);

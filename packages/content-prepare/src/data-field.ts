@@ -22,11 +22,7 @@ export function titleFromBody(body: string, slug: string): string {
 
 export function dateFromSlug(slug: string): Date {
   const info = slug.split("/");
-  return new Date(
-    parseInt(info[0], 10),
-    parseInt(info[1], 10) - 1,
-    parseInt(info[2], 10),
-  );
+  return new Date(parseInt(info[0], 10), parseInt(info[1], 10) - 1, parseInt(info[2], 10));
 }
 
 export function categoryFromFrontmatter(category: string): Link {

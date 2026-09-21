@@ -27,9 +27,7 @@ const POTRACE_OPTIONS = {
 
 export async function traceBufferToSvg(buffer: Buffer): Promise<string> {
   return new Promise<string>((resolve, reject) => {
-    potrace.trace(buffer, POTRACE_OPTIONS, (err, svg) =>
-      err ? reject(err) : resolve(svg),
-    );
+    potrace.trace(buffer, POTRACE_OPTIONS, (err, svg) => (err ? reject(err) : resolve(svg)));
   });
 }
 
@@ -65,12 +63,7 @@ export async function getColorSet(
   imagePathOrUrl: string,
   options: GetColorSetOptions = {},
 ): Promise<ColorSet> {
-  const {
-    baseDir = process.cwd(),
-    relPath,
-    saveTraceToDir,
-    useDepthPrep = false,
-  } = options;
+  const { baseDir = process.cwd(), relPath, saveTraceToDir, useDepthPrep = false } = options;
 
   let bufferForColor: Buffer;
   let buffer: Buffer;
@@ -91,9 +84,7 @@ export async function getColorSet(
     bufferForColor = await sharp(buffer).png().toBuffer();
   }
 
-  const traceInput = useDepthPrep
-    ? await prepareWithDepth(bufferForColor)
-    : bufferForColor;
+  const traceInput = useDepthPrep ? await prepareWithDepth(bufferForColor) : bufferForColor;
   buffer = await sharpSobel(traceInput);
 
   const palette = await Vibrant.from(bufferForColor).getPalette();
@@ -109,8 +100,6 @@ export async function getColorSet(
 
   return {
     bgColor: palette.Muted?.hex ?? "",
-    titleColor: palette.Vibrant?.hex
-      ? findNearestTitleColor(palette.Vibrant.hex)
-      : "",
+    titleColor: palette.Vibrant?.hex ? findNearestTitleColor(palette.Vibrant.hex) : "",
   };
 }

@@ -22,8 +22,8 @@ import {
   IconList,
 } from "@tabler/icons-react";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
-import classes from "./BlogContent.module.css"
-import dayjs from "dayjs"
+import classes from "./BlogContent.module.css";
+import dayjs from "dayjs";
 import type { MarkdownHeading } from "astro";
 import { PostCard, type IPost } from "@/packages/card/PostCard";
 import { Carousel } from "../carousel/BlogCarousel";
@@ -52,18 +52,13 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
             <Group mb="sm">
               {links.map(({ label, href }) => (
                 <Anchor href={href} key={label}>
-                  <Badge variant="outline">
-                    {label}
-                  </Badge>
+                  <Badge variant="outline">{label}</Badge>
                 </Anchor>
               ))}
             </Group>
             <Group className="prose lg:prose-xl" visibleFrom="md">
-              <h1>
-                {title}
-              </h1>
+              <h1>{title}</h1>
             </Group>
-
           </Stack>
 
           <Group justify="space-between" mt={24}>
@@ -111,9 +106,7 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
           </Group>
 
           <Divider />
-          <Stack className={"prose lg:prose-xl " + classes.content}>
-            {children}
-          </Stack>
+          <Stack className={"prose lg:prose-xl " + classes.content}>{children}</Stack>
         </Stack>
       </Paper>
     </CustomMantineProvider>
@@ -122,41 +115,49 @@ const BlogContent: React.FC<IProps> = ({ children, title, links, date, time }) =
 
 export default BlogContent;
 
-export function BlogMenu({ headings, links, post }: {
-  post: IPost,
-  headings: MarkdownHeading[],
-  links: ILink[]
+export function BlogMenu({
+  headings,
+  links,
+  post,
+}: {
+  post: IPost;
+  headings: MarkdownHeading[];
+  links: ILink[];
 }) {
   return (
     <CustomMantineProvider>
-      <Stack gap="xl" style={{ position: 'sticky', top: 100 }}>
+      <Stack gap="xl" style={{ position: "sticky", top: 100 }}>
         <PostCard post={post} hideExcerpt fill />
         <Headings />
         <Tags />
       </Stack>
     </CustomMantineProvider>
-  )
+  );
 
   function Headings() {
     return (
-      <Card shadow="md" radius="lg" p="lg" visibleFrom="lg" >
+      <Card shadow="md" radius="lg" p="lg" visibleFrom="lg">
         <Group mb="lg">
           <IconList size={20} />
           <Title order={4}>Headings</Title>
         </Group>
         <Stack gap="lg">
-          {headings.map(heading => (
-            <Anchor key={heading.slug} href={`#${heading.slug}`} style={{
-              whiteSpace: "nowrap",
-              textOverflow: "ellipsis",
-              overflow: "hidden"
-            }} >
+          {headings.map((heading) => (
+            <Anchor
+              key={heading.slug}
+              href={`#${heading.slug}`}
+              style={{
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+              }}
+            >
               {heading.text}
-            </Anchor>)
-          )}
+            </Anchor>
+          ))}
         </Stack>
       </Card>
-    )
+    );
   }
 
   function Tags() {
@@ -179,28 +180,33 @@ export function BlogMenu({ headings, links, post }: {
           ))}
         </Group>
       </Card>
-    )
+    );
   }
-
 }
 
+export function RelatePosts({ id, category }: { id: string; category: string }) {
+  const _relates = useStore($relates);
+  const isLoading = useStore($isLoading);
 
-export function RelatePosts({ id, category }: { id: string, category: string }) {
-  const _relates = useStore($relates)
-  const isLoading = useStore($isLoading)
-
-  const relates = _relates.filter(p => p.id !== id)
+  const relates = _relates.filter((p) => p.id !== id);
   useEffect(() => {
-    request(category)
-  }, [])
+    request(category);
+  }, []);
 
   return (
     <CustomMantineProvider>
-      <Paper shadow="md" className={classes.relates} radius="lg" p="lg" mt="xl" style={isLoading ? { opacity: 0 } : {}}>
+      <Paper
+        shadow="md"
+        className={classes.relates}
+        radius="lg"
+        p="lg"
+        mt="xl"
+        style={isLoading ? { opacity: 0 } : {}}
+      >
         <Stack gap="md">
           <Carousel posts={relates} />
         </Stack>
       </Paper>
     </CustomMantineProvider>
-  )
+  );
 }

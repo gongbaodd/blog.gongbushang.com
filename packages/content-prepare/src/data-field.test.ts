@@ -11,15 +11,11 @@ import {
 
 describe("titleFromBody", () => {
   test("returns first ATX heading", () => {
-    expect(
-      titleFromBody("# Hello World\n\nSome text", "2024/01/01/hello"),
-    ).toBe("Hello World");
+    expect(titleFromBody("# Hello World\n\nSome text", "2024/01/01/hello")).toBe("Hello World");
   });
 
   test("falls back to slug segment with dashes as spaces", () => {
-    expect(titleFromBody("No heading here", "2024/01/01/hello-world")).toBe(
-      "hello world",
-    );
+    expect(titleFromBody("No heading here", "2024/01/01/hello-world")).toBe("hello world");
   });
 });
 
@@ -57,9 +53,7 @@ describe("categoryFromFrontmatter", () => {
 describe("seriesFromFrontmatter", () => {
   test("uses series.name when present", () => {
     const map = new Map<string, string>();
-    expect(
-      seriesFromFrontmatter({ slug: "vibe-coding", name: "Vibe Coding" }, map),
-    ).toEqual({
+    expect(seriesFromFrontmatter({ slug: "vibe-coding", name: "Vibe Coding" }, map)).toEqual({
       label: "Vibe Coding",
       href: "/series/vibe-coding",
     });

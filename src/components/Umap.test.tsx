@@ -4,12 +4,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { ReactNode } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
-import {
-  $umapError,
-  $umapLoading,
-  $umapPosts,
-  type IUmapPost,
-} from "@/src/stores/umap";
+import { $umapError, $umapLoading, $umapPosts, type IUmapPost } from "@/src/stores/umap";
 
 vi.mock("@/src/stores/umap", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/src/stores/umap")>();
@@ -20,16 +15,10 @@ vi.mock("@/src/stores/umap", async (importOriginal) => {
 });
 
 vi.mock("@mantine/charts", () => ({
-  ScatterChart: ({
-    data,
-  }: {
-    data?: { data?: unknown[] }[];
-  }) => (
+  ScatterChart: ({ data }: { data?: { data?: unknown[] }[] }) => (
     <div
       data-testid="scatter-chart"
-      data-count={
-        data?.reduce((sum, series) => sum + (series.data?.length ?? 0), 0) ?? 0
-      }
+      data-count={data?.reduce((sum, series) => sum + (series.data?.length ?? 0), 0) ?? 0}
     />
   ),
 }));

@@ -8,8 +8,5 @@ export const UMAP_2D_CONFIG = {
 } as const;
 
 export function computeUmapParamsHash(): string {
-  return crypto
-    .createHash("sha256")
-    .update(JSON.stringify(UMAP_2D_CONFIG))
-    .digest("hex");
+  return crypto.createHash("sha256").update(JSON.stringify(UMAP_2D_CONFIG)).digest("hex");
 }

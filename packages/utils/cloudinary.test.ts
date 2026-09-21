@@ -1,9 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  optimizeCloudinaryUrl,
-  optimizeCoverUrl,
-  rehypeCloudinary,
-} from "./cloudinary.ts";
+import { optimizeCloudinaryUrl, optimizeCoverUrl, rehypeCloudinary } from "./cloudinary.ts";
 
 describe("optimizeCloudinaryUrl", () => {
   test("inserts f_auto,q_auto into a versioned image URL", () => {
@@ -27,51 +23,35 @@ describe("optimizeCloudinaryUrl", () => {
   });
 
   test("is idempotent for comma-form transforms", () => {
-    const url =
-      "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg";
+    const url = "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg";
     expect(optimizeCloudinaryUrl(url)).toBe(url);
   });
 
   test("is idempotent for slash-form transforms", () => {
-    const url =
-      "https://res.cloudinary.com/demo/image/upload/f_auto/q_auto/v1/a.jpg";
+    const url = "https://res.cloudinary.com/demo/image/upload/f_auto/q_auto/v1/a.jpg";
     expect(optimizeCloudinaryUrl(url)).toBe(url);
   });
 
   test("does not duplicate partial transforms", () => {
     expect(
-      optimizeCloudinaryUrl(
-        "https://res.cloudinary.com/demo/image/upload/f_auto/v1/a.jpg",
-      ),
-    ).toBe(
-      "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/f_auto/v1/a.jpg",
-    );
+      optimizeCloudinaryUrl("https://res.cloudinary.com/demo/image/upload/f_auto/v1/a.jpg"),
+    ).toBe("https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/f_auto/v1/a.jpg");
   });
 
   test("handles video delivery URLs", () => {
-    expect(
-      optimizeCloudinaryUrl(
-        "https://res.cloudinary.com/demo/video/upload/v1/clip.mp4",
-      ),
-    ).toBe(
+    expect(optimizeCloudinaryUrl("https://res.cloudinary.com/demo/video/upload/v1/clip.mp4")).toBe(
       "https://res.cloudinary.com/demo/video/upload/f_auto,q_auto/v1/clip.mp4",
     );
   });
 
   test("preserves query strings and fragments", () => {
     expect(
-      optimizeCloudinaryUrl(
-        "https://res.cloudinary.com/demo/image/upload/v1/a.jpg?foo=bar#frag",
-      ),
-    ).toBe(
-      "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg?foo=bar#frag",
-    );
+      optimizeCloudinaryUrl("https://res.cloudinary.com/demo/image/upload/v1/a.jpg?foo=bar#frag"),
+    ).toBe("https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg?foo=bar#frag");
   });
 
   test("leaves non-Cloudinary URLs untouched", () => {
-    expect(optimizeCloudinaryUrl("https://example.com/a.jpg")).toBe(
-      "https://example.com/a.jpg",
-    );
+    expect(optimizeCloudinaryUrl("https://example.com/a.jpg")).toBe("https://example.com/a.jpg");
     expect(optimizeCloudinaryUrl("/local/image.png")).toBe("/local/image.png");
     expect(optimizeCloudinaryUrl("")).toBe("");
   });
@@ -79,11 +59,7 @@ describe("optimizeCloudinaryUrl", () => {
 
 describe("optimizeCoverUrl", () => {
   test("optimizes string covers", () => {
-    expect(
-      optimizeCoverUrl(
-        "https://res.cloudinary.com/demo/image/upload/v1/a.jpg",
-      ),
-    ).toBe(
+    expect(optimizeCoverUrl("https://res.cloudinary.com/demo/image/upload/v1/a.jpg")).toBe(
       "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg",
     );
   });
@@ -139,9 +115,7 @@ describe("rehypeCloudinary", () => {
     expect(tree.children[0]!.properties!.src).toBe(
       "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto/v1/a.jpg",
     );
-    expect(tree.children[1]!.properties!.src).toBe(
-      "https://example.com/b.jpg",
-    );
+    expect(tree.children[1]!.properties!.src).toBe("https://example.com/b.jpg");
   });
 
   test("rewrites srcset entries keeping descriptors", () => {

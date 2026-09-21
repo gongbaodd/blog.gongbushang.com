@@ -17,7 +17,10 @@ describe("requestLatestPosts", () => {
     const mockResponse = {
       json: () => Promise.resolve({ posts: mockPosts, totalCounts: 5 }),
     };
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(mockResponse)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(mockResponse)),
+    );
     $latest.set([]);
     $totalCounts.set(0);
   });

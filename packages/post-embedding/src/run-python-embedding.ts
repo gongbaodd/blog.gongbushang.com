@@ -36,8 +36,7 @@ export async function runPythonEmbedding(
       if (code !== 0) {
         reject(
           new Error(
-            stderr.trim() ||
-              `Failed to run embedding via ${path.join("uv", "run")} (exit ${code})`,
+            stderr.trim() || `Failed to run embedding via ${path.join("uv", "run")} (exit ${code})`,
           ),
         );
         return;

@@ -7,11 +7,7 @@ import {
   type GalleryEntry,
 } from "./gallery.ts";
 
-function entry(
-  id: string,
-  doc: string,
-  overrides: Partial<GalleryEntry> = {},
-): GalleryEntry {
+function entry(id: string, doc: string, overrides: Partial<GalleryEntry> = {}): GalleryEntry {
   return {
     id,
     file: id,
@@ -24,9 +20,7 @@ function entry(
 
 describe("parseGalleryDocDate", () => {
   test("parses doc path date", () => {
-    const date = parseGalleryDocDate(
-      "/2019/05/25/take-another-black-golden-roof-again",
-    );
+    const date = parseGalleryDocDate("/2019/05/25/take-another-black-golden-roof-again");
     expect(date).toEqual(new Date(2019, 4, 25));
   });
 
@@ -56,9 +50,9 @@ describe("anniversaryDistance", () => {
 
 describe("galleryDocToPostId", () => {
   test("strips leading slash from doc path", () => {
-    expect(
-      galleryDocToPostId("/2019/05/25/take-another-black-golden-roof-again"),
-    ).toBe("2019/05/25/take-another-black-golden-roof-again");
+    expect(galleryDocToPostId("/2019/05/25/take-another-black-golden-roof-again")).toBe(
+      "2019/05/25/take-another-black-golden-roof-again",
+    );
   });
 
   test("returns undefined for invalid doc", () => {
@@ -74,9 +68,7 @@ describe("pickNearestGalleryEntry", () => {
   });
 
   test("returns single valid entry", () => {
-    const images = [
-      entry("05/25/shenzhen", "/2019/05/25/take-another-black-golden-roof-again"),
-    ];
+    const images = [entry("05/25/shenzhen", "/2019/05/25/take-another-black-golden-roof-again")];
 
     const result = pickNearestGalleryEntry(images, new Date(2026, 4, 30));
     expect(result?.id).toBe("05/25/shenzhen");
@@ -113,10 +105,7 @@ describe("pickNearestGalleryEntry", () => {
   });
 
   test("tie-breaks with missing addedAt by keeping the first seen", () => {
-    const images = [
-      entry("a/entry", "/2019/05/25/a"),
-      entry("b/entry", "/2019/05/25/b"),
-    ];
+    const images = [entry("a/entry", "/2019/05/25/a"), entry("b/entry", "/2019/05/25/b")];
 
     const result = pickNearestGalleryEntry(images, new Date(2026, 4, 30));
     expect(result?.id).toBe("a/entry");

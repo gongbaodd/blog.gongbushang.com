@@ -10,20 +10,18 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { describe, expect, test, vi } from "vitest";
 
-const runDepthEstimationMock = vi.fn(
-  async (_inputPath: string, outputPath: string) => {
-    await sharp({
-      create: {
-        width: 64,
-        height: 64,
-        channels: 3,
-        background: { r: 128, g: 128, b: 128 },
-      },
-    })
-      .png()
-      .toFile(outputPath);
-  },
-);
+const runDepthEstimationMock = vi.fn(async (_inputPath: string, outputPath: string) => {
+  await sharp({
+    create: {
+      width: 64,
+      height: 64,
+      channels: 3,
+      background: { r: 128, g: 128, b: 128 },
+    },
+  })
+    .png()
+    .toFile(outputPath);
+});
 
 vi.mock("./run-depth-estimation.ts", () => ({
   runDepthEstimation: (...args: unknown[]) => runDepthEstimationMock(...args),
@@ -35,11 +33,7 @@ import { prepareWithDepth } from "./prepare-trace-input.ts";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.join(__dirname, "..", "fixtures");
 
-const FIXTURES = [
-  "week-24-graduation.jpg",
-  "deep-knowledge-tracing.png",
-  "battery.png",
-] as const;
+const FIXTURES = ["week-24-graduation.jpg", "deep-knowledge-tracing.png", "battery.png"] as const;
 
 const MIN_SVG_BYTES = 1024;
 const MAX_SVG_BYTES = 512 * 1024;

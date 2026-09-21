@@ -53,10 +53,7 @@ export async function resolveCollectOptions(cli: CliOptions = {}) {
   return {
     repoRoot,
     docsDir: path.resolve(repoRoot, cli.docsDir ?? "src/content/_docs"),
-    outputDir: path.resolve(
-      repoRoot,
-      cli.output ?? POST_METADATA_DIR,
-    ),
+    outputDir: path.resolve(repoRoot, cli.output ?? POST_METADATA_DIR),
     googleApiKey: process.env.GOOGLE_API_KEY,
   };
 }
@@ -68,9 +65,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   await collectMetadata(options);
 }
 
-const isMain =
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
 if (isMain) {
   runCli().catch((error: unknown) => {

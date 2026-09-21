@@ -5,9 +5,7 @@ export const $cardCache = map<Record<string, TClientPost>>({});
 
 const pendingFetches = new Map<string, Promise<TClientPost | undefined>>();
 
-export async function requestCardPost(
-  postId: string,
-): Promise<TClientPost | undefined> {
+export async function requestCardPost(postId: string): Promise<TClientPost | undefined> {
   const cached = $cardCache.get()[postId];
   if (cached) return cached;
 

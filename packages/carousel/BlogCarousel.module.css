@@ -1,31 +1,31 @@
 .carousel {
-    border-radius: var(--mantine-radius-md);
+  border-radius: var(--mantine-radius-md);
 }
 
 .carouselFill {
-    height: 100%;
+  height: 100%;
 }
 
 .carouselFill :global(.mantine-Carousel-viewport),
 .carouselFill :global(.mantine-Carousel-container) {
-    height: 100%;
+  height: 100%;
 }
 
 .carouselFill :global(.mantine-Carousel-container) {
-    align-items: center;
+  align-items: center;
 }
 
 @media screen and (max-width: 88em) {
-    .carousel {
-        max-width: 100%;
-        border-radius: var(--mantine-radius-md);
-    }
+  .carousel {
+    max-width: 100%;
+    border-radius: var(--mantine-radius-md);
+  }
 }
 
 @media screen and (min-width: 88em) {
-    .carousel.titled {
-        flex: 1;
-        max-width: calc(100% - 12em);
-        border-radius: var(--mantine-radius-md);
-    }
+  .carousel.titled {
+    flex: 1;
+    max-width: calc(100% - 12em);
+    border-radius: var(--mantine-radius-md);
+  }
 }

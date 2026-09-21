@@ -1,26 +1,26 @@
-.content>h1 {
-    display: none;
+.content > h1 {
+  display: none;
 }
 
 .content iframe {
-    aspect-ratio: 4/3;
-    border-radius: var(--mantine-radius-lg);
+  aspect-ratio: 4/3;
+  border-radius: var(--mantine-radius-lg);
 }
 
 .content img {
-    border-radius: var(--mantine-radius-lg);
+  border-radius: var(--mantine-radius-lg);
 }
 
 .relates {
-    transition: opacity .2s ease-in-out;
-    opacity: .5;
+  transition: opacity 0.2s ease-in-out;
+  opacity: 0.5;
 }
 
 .relates:hover {
-    opacity: 1;
+  opacity: 1;
 }
 
 .content blockquote {
-    background-color: var(--mantine-primary-color-light);
-    color: var(--mantine-primary-color-light-color);
+  background-color: var(--mantine-primary-color-light);
+  color: var(--mantine-primary-color-light-color);
 }

@@ -8,12 +8,7 @@ interface IPodcastSidebarProps {
   image?: string;
 }
 
-export default function PodcastSidebar({
-  title,
-  description,
-  link,
-  image,
-}: IPodcastSidebarProps) {
+export default function PodcastSidebar({ title, description, link, image }: IPodcastSidebarProps) {
   return (
     <CustomMantineProvider>
       <Stack gap="sm">

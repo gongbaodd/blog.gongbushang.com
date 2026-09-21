@@ -1,0 +1,6 @@
+.astro
+.agents
+dist
+node_modules
+public
+src/content

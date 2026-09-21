@@ -1,9 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  findNearestTitleColor,
-  isRemote,
-  stripQuery,
-} from "./src/color-utils.ts";
+import { findNearestTitleColor, isRemote, stripQuery } from "./src/color-utils.ts";
 
 describe("isRemote", () => {
   test("detects http and https URLs", () => {

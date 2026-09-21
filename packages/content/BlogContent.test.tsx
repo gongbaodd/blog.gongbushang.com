@@ -54,8 +54,22 @@ const { requestMock, subscribeStub } = vi.hoisted(() => ({
 vi.mock("@/src/stores/relates", () => ({
   $relates: {
     get: () => [
-      { id: "blog/2024/test", title: "Test", href: "", date: new Date(), data: {} as IPost["data"], excerpt: "" },
-      { id: "blog/2024/other", title: "Other", href: "", date: new Date(), data: {} as IPost["data"], excerpt: "" },
+      {
+        id: "blog/2024/test",
+        title: "Test",
+        href: "",
+        date: new Date(),
+        data: {} as IPost["data"],
+        excerpt: "",
+      },
+      {
+        id: "blog/2024/other",
+        title: "Other",
+        href: "",
+        date: new Date(),
+        data: {} as IPost["data"],
+        excerpt: "",
+      },
     ],
     set: vi.fn(),
     subscribe: subscribeStub,
@@ -76,7 +90,7 @@ describe("BlogContent", () => {
         time="5 min read"
       >
         <p>Body</p>
-      </BlogContent>
+      </BlogContent>,
     );
     expect(screen.getByText("My Blog Post")).toBeInTheDocument();
     expect(screen.getByText("2024-05-15")).toBeInTheDocument();
@@ -87,14 +101,9 @@ describe("BlogContent", () => {
 
   test("renders children", () => {
     render(
-      <BlogContent
-        title="T"
-        links={[]}
-        date={new Date()}
-        time="0 min"
-      >
+      <BlogContent title="T" links={[]} date={new Date()} time="0 min">
         <p data-testid="child">Child content</p>
-      </BlogContent>
+      </BlogContent>,
     );
     expect(screen.getByTestId("child")).toHaveTextContent("Child content");
   });
@@ -102,9 +111,7 @@ describe("BlogContent", () => {
 
 describe("BlogMenu", () => {
   test("renders PostCard, headings and tags", () => {
-    render(
-      <BlogMenu post={mockPost} headings={mockHeadings} links={mockLinks} />
-    );
+    render(<BlogMenu post={mockPost} headings={mockHeadings} links={mockLinks} />);
     expect(screen.getByTestId("post-card")).toHaveTextContent("Test Post");
     expect(screen.getByText("Headings")).toBeInTheDocument();
     expect(screen.getByText("Tags")).toBeInTheDocument();

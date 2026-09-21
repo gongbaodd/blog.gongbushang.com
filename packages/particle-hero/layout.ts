@@ -11,9 +11,7 @@ export function getParticleLayoutDims(mode: ParticleLayoutMode) {
 
 export function getParticleLayoutModeForViewport(): ParticleLayoutMode {
   if (typeof window === "undefined") return "landscape";
-  return window.matchMedia(PARTICLE_LAYOUT_BELOW_LARGE_MQ).matches
-    ? "square"
-    : "landscape";
+  return window.matchMedia(PARTICLE_LAYOUT_BELOW_LARGE_MQ).matches ? "square" : "landscape";
 }
 
 /** Center-crop source image into target (object-fit: cover). */

@@ -32,8 +32,7 @@ export function optimizeCloudinaryUrl(url: string): string {
 
   const segments = pathPart.split("/");
   const boundary = segments.findIndex((s) => VERSION_RE.test(s));
-  const transformSection =
-    boundary === -1 ? pathPart : segments.slice(0, boundary).join("/");
+  const transformSection = boundary === -1 ? pathPart : segments.slice(0, boundary).join("/");
   const params = transformSection.split(/[/,]/);
   if (params.includes("f_auto") && params.includes("q_auto")) return url;
 
@@ -94,8 +93,7 @@ function visitElements(node: unknown): void {
     for (const attr of OPTIMIZABLE_ATTRS[el.tagName] ?? []) {
       const value = el.properties[attr];
       if (typeof value !== "string" || value === "") continue;
-      el.properties[attr] =
-        attr === "srcset" ? rewriteSrcset(value) : optimizeCloudinaryUrl(value);
+      el.properties[attr] = attr === "srcset" ? rewriteSrcset(value) : optimizeCloudinaryUrl(value);
     }
   }
   if (Array.isArray(el.children)) {

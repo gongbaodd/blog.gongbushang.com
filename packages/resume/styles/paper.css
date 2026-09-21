@@ -1,5 +1,9 @@
-@page { margin: 0 }
-body { margin: 0 }
+@page {
+  margin: 0;
+}
+body {
+  margin: 0;
+}
 .sheet {
   margin: 0;
   overflow: hidden;
@@ -15,14 +19,28 @@ body { margin: 0 }
 }
 
 /** Paper sizes **/
-.A4               .sheet { width: 210mm; height: 296mm }
-.A4.landscape     .sheet { width: 297mm; height: 209mm }
+.A4 .sheet {
+  width: 210mm;
+  height: 296mm;
+}
+.A4.landscape .sheet {
+  width: 297mm;
+  height: 209mm;
+}
 
 /** Padding area **/
-.sheet.padding-10mm { padding: 10mm }
-.sheet.padding-15mm { padding: 15mm }
-.sheet.padding-20mm { padding: 20mm }
-.sheet.padding-25mm { padding: 25mm }
+.sheet.padding-10mm {
+  padding: 10mm;
+}
+.sheet.padding-15mm {
+  padding: 15mm;
+}
+.sheet.padding-20mm {
+  padding: 20mm;
+}
+.sheet.padding-25mm {
+  padding: 25mm;
+}
 
 .sheet .lastUpdate {
   position: absolute;
@@ -38,7 +56,7 @@ body { margin: 0 }
 }
 
 .sheet h2 {
-  margin-top:  var(--mantine-spacing-sm);
+  margin-top: var(--mantine-spacing-sm);
 }
 
 #key-skills {
@@ -60,9 +78,9 @@ a.work {
 
   .sheet {
     background: white;
-    box-shadow: 0 .5mm 2mm rgba(0,0,0,.3);
+    box-shadow: 0 0.5mm 2mm rgba(0, 0, 0, 0.3);
     margin: 1em auto;
-    margin-top: 1em;    
+    margin-top: 1em;
     margin-bottom: 1em;
   }
 
@@ -152,7 +170,6 @@ a.work {
   margin: 0cm;
 }
 
-
 .page-1 > h2 {
   transform: rotate(90deg);
   transform-origin: left bottom;
@@ -168,8 +185,8 @@ a.work {
   margin-left: 2em;
 }
 
-.page-1 .subsection.intro{
-  margin-top: -.5em;
+.page-1 .subsection.intro {
+  margin-top: -0.5em;
   margin-left: 2em;
 }
 

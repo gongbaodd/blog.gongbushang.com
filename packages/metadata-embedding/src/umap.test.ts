@@ -1,9 +1,6 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, test, vi } from "vitest";
-import {
-  runUmapBinary,
-  type UmapBinaryDeps,
-} from "./run-umap-binary.ts";
+import { runUmapBinary, type UmapBinaryDeps } from "./run-umap-binary.ts";
 import { UMAP_2D_CONFIG } from "./umap-params.ts";
 
 class MockChild extends EventEmitter {
@@ -51,7 +48,10 @@ describe("runUmapBinary", () => {
     );
     expect(child.stdin.write).toHaveBeenCalledWith(
       JSON.stringify({
-        embeddings: [[0.1, 0.2], [0.3, 0.4]],
+        embeddings: [
+          [0.1, 0.2],
+          [0.3, 0.4],
+        ],
         config: UMAP_2D_CONFIG,
       }),
     );
@@ -59,7 +59,14 @@ describe("runUmapBinary", () => {
 
     child.stdout.emit(
       "data",
-      Buffer.from(JSON.stringify({ coordinates: [[1, 2], [3, 4]] })),
+      Buffer.from(
+        JSON.stringify({
+          coordinates: [
+            [1, 2],
+            [3, 4],
+          ],
+        }),
+      ),
     );
     child.emit("close", 0);
 
@@ -74,7 +81,13 @@ describe("runUmapBinary", () => {
     const spawnMock = vi.fn(() => child as never);
     const deps = createDeps(spawnMock);
 
-    const promise = runUmapBinary([[0.1, 0.2], [0.3, 0.4]], deps);
+    const promise = runUmapBinary(
+      [
+        [0.1, 0.2],
+        [0.3, 0.4],
+      ],
+      deps,
+    );
     await flushAsyncWork();
     child.stderr.emit("data", Buffer.from("invalid input"));
     child.emit("close", 1);
@@ -91,9 +104,15 @@ describe("runUmapBinary", () => {
       spawn: vi.fn(),
     };
 
-    await expect(runUmapBinary([[0.1, 0.2], [0.3, 0.4]], deps)).rejects.toThrow(
-      "Run `pnpm umap:build` first.",
-    );
+    await expect(
+      runUmapBinary(
+        [
+          [0.1, 0.2],
+          [0.3, 0.4],
+        ],
+        deps,
+      ),
+    ).rejects.toThrow("Run `pnpm umap:build` first.");
     expect(deps.spawn).not.toHaveBeenCalled();
   });
 });

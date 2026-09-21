@@ -1,15 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-  type Mock,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 vi.mock("image-metadata", () => ({
   getColorSet: vi.fn(),
@@ -26,10 +18,7 @@ let galleryDir = "";
 let outputFile = "";
 let traceDir = "";
 
-async function writeGalleryEntry(
-  relativePath: string,
-  data: { image: string; doc: string },
-) {
+async function writeGalleryEntry(relativePath: string, data: { image: string; doc: string }) {
   const filePath = path.join(galleryDir, relativePath);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
@@ -207,12 +196,8 @@ describe("collectGallery", () => {
     await collectGallery({ galleryDir, outputFile, traceDir, baseDir: tmpRoot });
     const secondManifest = await readGalleryManifest();
 
-    const shenzhenEntry = secondManifest.images.find(
-      (image) => image.id === "05/25/shenzhen",
-    );
-    const beijingEntry = secondManifest.images.find(
-      (image) => image.id === "06/01/beijing",
-    );
+    const shenzhenEntry = secondManifest.images.find((image) => image.id === "05/25/shenzhen");
+    const beijingEntry = secondManifest.images.find((image) => image.id === "06/01/beijing");
 
     expect(shenzhenEntry?.addedAt).toBe(firstAddedAt);
     expect(beijingEntry?.addedAt).toBeTruthy();

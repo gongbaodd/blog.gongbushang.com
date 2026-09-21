@@ -1,24 +1,20 @@
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
-import {
-  Card,
-  Image,
-  Flex,
-  Badge,
-  Text,
-  Group,
-  Stack,
-} from "@mantine/core";
+import { Card, Image, Flex, Badge, Text, Group, Stack } from "@mantine/core";
 import { Calendar } from "lucide-react";
 import { optimizeCloudinaryUrl } from "@/packages/utils/cloudinary";
 
 const SUT_IMG = optimizeCloudinaryUrl(
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778328777/STU_kinje0.jpg");
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778328777/STU_kinje0.jpg",
+);
 const TLU_IMG = optimizeCloudinaryUrl(
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330602/copy_of_copy_of_tlu_hvawhg_a86549_6afe2e.jpg");
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330602/copy_of_copy_of_tlu_hvawhg_a86549_6afe2e.jpg",
+);
 const BAT_IMG = optimizeCloudinaryUrl(
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330088/BAT_ihgz7p.jpg");
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330088/BAT_ihgz7p.jpg",
+);
 const UL_IMG = optimizeCloudinaryUrl(
-  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330248/UniversidadeLusofona-logo_wxfo5o.jpg");
+  "https://res.cloudinary.com/dmq8ipket/image/upload/v1778330248/UniversidadeLusofona-logo_wxfo5o.jpg",
+);
 
 const data = [
   {
@@ -151,13 +147,7 @@ function LargeSchoolCard(opts: ISchoolProps) {
       ) : null}
       <Stack gap={8}>
         <Flex direction="row" gap={6} align="center" style={{ minHeight: 64 }}>
-          <Image
-            src={opts.img}
-            w={40}
-            h={40}
-            fit="contain"
-            style={{ flexShrink: 0 }}
-          />
+          <Image src={opts.img} w={40} h={40} fit="contain" style={{ flexShrink: 0 }} />
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
             <Text size="sm" style={{ fontWeight: 500, marginBottom: 0 }}>
               {opts.name}
@@ -182,13 +172,7 @@ function CompactSchoolRow(opts: ISchoolProps) {
   return (
     <Card padding="xs" radius="md" withBorder bg="white" c="black">
       <Flex direction="row" gap={6} align="center">
-        <Image
-          src={opts.img}
-          w={24}
-          h={24}
-          fit="contain"
-          style={{ flexShrink: 0 }}
-        />
+        <Image src={opts.img} w={24} h={24} fit="contain" style={{ flexShrink: 0 }} />
         <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
           <Text size="xs" style={{ fontWeight: 500, marginBottom: 0 }}>
             {opts.name}

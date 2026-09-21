@@ -4,20 +4,13 @@ import path from "node:path";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
 import { toGalleryId, toTraceSvgBasename } from "./path-utils.ts";
-import type {
-  CollectGalleryOptions,
-  GalleryData,
-  GalleryEntry,
-  GallerySource,
-} from "./types.ts";
+import type { CollectGalleryOptions, GalleryData, GalleryEntry, GallerySource } from "./types.ts";
 
 function hashContent(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
-async function loadExistingGallery(
-  outputFile: string,
-): Promise<Map<string, GalleryEntry>> {
+async function loadExistingGallery(outputFile: string): Promise<Map<string, GalleryEntry>> {
   const entries = new Map<string, GalleryEntry>();
 
   try {
@@ -55,9 +48,7 @@ async function processImage(
   };
 }
 
-export async function collectGallery(
-  options: CollectGalleryOptions,
-): Promise<void> {
+export async function collectGallery(options: CollectGalleryOptions): Promise<void> {
   const {
     galleryDir,
     outputFile,
@@ -92,12 +83,7 @@ export async function collectGallery(
       const addedAt = old?.addedAt ?? new Date().toISOString();
       let entry: GalleryEntry;
 
-      if (
-        !regenerateTraces &&
-        !tracesOnly &&
-        old?.image === source.image &&
-        old.colorSet
-      ) {
+      if (!regenerateTraces && !tracesOnly && old?.image === source.image && old.colorSet) {
         entry = {
           ...old,
           hash: contentHash,
@@ -119,9 +105,7 @@ export async function collectGallery(
   }
 
   if (tracesOnly) {
-    console.log(
-      `\n✏️ Regenerated ${changedCount} gallery trace(s) in ${traceDir}`,
-    );
+    console.log(`\n✏️ Regenerated ${changedCount} gallery trace(s) in ${traceDir}`);
     return;
   }
 
@@ -144,14 +128,8 @@ export async function collectGallery(
     images,
   };
 
-  await fs.writeFile(
-    outputFile,
-    JSON.stringify(galleryData, null, 2),
-    "utf-8",
-  );
+  await fs.writeFile(outputFile, JSON.stringify(galleryData, null, 2), "utf-8");
 
-  console.log(
-    `\n📦 Gallery updated in ${outputFile} (${changedCount} image(s) changed)`,
-  );
+  console.log(`\n📦 Gallery updated in ${outputFile} (${changedCount} image(s) changed)`);
   console.log(`📁 Trace SVGs saved to ${traceDir}/`);
 }

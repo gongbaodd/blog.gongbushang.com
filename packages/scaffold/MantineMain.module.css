@@ -1,10 +1,10 @@
 .app {
-    --app-shell-padding: var(--mantine-spacing-md);
+  --app-shell-padding: var(--mantine-spacing-md);
 }
 
 @media screen and (max-width: 48em) {
-    .app {
-         --app-shell-padding: 0px;
-         overflow-x: hidden;
-    }
+  .app {
+    --app-shell-padding: 0px;
+    overflow-x: hidden;
+  }
 }

@@ -112,7 +112,11 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
   return (
     <CustomMantineProvider>
       <Stack justify="center" align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
-        <Box maw={fill ? undefined : CARD_WIDTH} miw={fill ? CARD_MIN_WIDTH : undefined} w={fill ? "100%" : undefined}>
+        <Box
+          maw={fill ? undefined : CARD_WIDTH}
+          miw={fill ? CARD_MIN_WIDTH : undefined}
+          w={fill ? "100%" : undefined}
+        >
           <Card
             key={episode.id}
             shadow="sm"
@@ -126,8 +130,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
               ...(hasCover
                 ? {}
                 : {
-                    backgroundColor:
-                      episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
+                    backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
                   }),
             }}
           >
@@ -148,12 +151,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
                 <Box className={classes.cover_footer}>{titleBlock}</Box>
               </>
             ) : (
-              <Flex
-                direction="column"
-                justify="space-between"
-                flex={1}
-                className={classes.content}
-              >
+              <Flex direction="column" justify="space-between" flex={1} className={classes.content}>
                 {badgeRow}
                 {titleBlock}
                 {episode.audioUrl && (
@@ -168,11 +166,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
           </Card>
           {!hideExcerpt && excerpt && (
             <Flex pl={5} pr={10} pt={5}>
-              <Avatar
-                size="xs"
-                variant="transparent"
-                style={{ transform: "rotateZ(180deg)" }}
-              >
+              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
                 <IconQuoteFilled />
               </Avatar>
               <Text size="sm" lineClamp={2} className={classes.excerpt}>

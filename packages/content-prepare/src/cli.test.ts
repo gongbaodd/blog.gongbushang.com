@@ -15,13 +15,7 @@ describe("parseCliArgs", () => {
 
   test("parses docs and output flags", () => {
     expect(
-      parseCliArgs([
-        "--docs-dir",
-        "custom/docs",
-        "--output",
-        "custom/metadata",
-        "ignored",
-      ]),
+      parseCliArgs(["--docs-dir", "custom/docs", "--output", "custom/metadata", "ignored"]),
     ).toEqual({
       docsDir: "custom/docs",
       output: "custom/metadata",
@@ -58,9 +52,7 @@ describe("resolveCollectOptions", () => {
 
     expect(options.repoRoot).toBe(repoRoot);
     expect(options.docsDir).toBe(path.resolve(repoRoot, "src/content/_docs"));
-    expect(options.outputDir).toBe(
-      path.resolve(repoRoot, "src/content/generated/metadata"),
-    );
+    expect(options.outputDir).toBe(path.resolve(repoRoot, "src/content/generated/metadata"));
   });
 
   test("applies CLI overrides and GOOGLE_API_KEY env", async () => {

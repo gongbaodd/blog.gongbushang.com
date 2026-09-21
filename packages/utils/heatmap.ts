@@ -4,30 +4,38 @@ import { getAllPosts } from "./post";
 import { FILTER_ENTRY } from "../consts";
 
 export async function getHeatmapData() {
-    const posts = await getAllPosts()
-    const result = posts.map(p => {
-        const date = dateFrom(p)
-        const key = dayjs(date).format("YYYY-MM-DD")
-        const count = p.body?.length ?? 0
-        return {key, count} 
-    }).reduce((sum, {key, count } ) => {
-        return ({
-            ...sum,
-            [key]: (sum[key] ?? 0) + count
-        })
-    }, {} as Record<string, number>)
+  const posts = await getAllPosts();
+  const result = posts
+    .map((p) => {
+      const date = dateFrom(p);
+      const key = dayjs(date).format("YYYY-MM-DD");
+      const count = p.body?.length ?? 0;
+      return { key, count };
+    })
+    .reduce(
+      (sum, { key, count }) => {
+        return {
+          ...sum,
+          [key]: (sum[key] ?? 0) + count,
+        };
+      },
+      {} as Record<string, number>,
+    );
 
-    return result
+  return result;
 }
 
 export async function getCounts(): Promise<Record<string, number>> {
-    const posts = await getAllPosts()
-    const counts = posts.reduce((acc, post) => {
-        const year = dayjs(dateFrom(post)).format("YYYY")
-        acc[year] = (acc[year] ?? 0) + 1
-        return acc
-    }, {} as Record<string, number>)
+  const posts = await getAllPosts();
+  const counts = posts.reduce(
+    (acc, post) => {
+      const year = dayjs(dateFrom(post)).format("YYYY");
+      acc[year] = (acc[year] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
-    counts[FILTER_ENTRY.ALL] = posts.length
-    return counts
+  counts[FILTER_ENTRY.ALL] = posts.length;
+  return counts;
 }

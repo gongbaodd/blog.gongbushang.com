@@ -3,11 +3,7 @@
  */
 import { describe, expect, test, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import BlogCarousel, {
-  Carousel,
-  LatestCarousel,
-  HistoryCarousel,
-} from "./BlogCarousel";
+import BlogCarousel, { Carousel, LatestCarousel, HistoryCarousel } from "./BlogCarousel";
 import type { IPost } from "../card/PostCard";
 
 const mockPost: IPost = {
@@ -43,9 +39,7 @@ vi.mock("@mantine/carousel", () => {
 });
 
 vi.mock("../card/PostCard", () => ({
-  PostCard: ({ post }: { post: IPost }) => (
-    <div data-testid="post-card">{post.title}</div>
-  ),
+  PostCard: ({ post }: { post: IPost }) => <div data-testid="post-card">{post.title}</div>,
 }));
 
 vi.mock("@/packages/masonry/PodcastPlock", () => ({
@@ -71,12 +65,12 @@ describe("BlogCarousel", () => {
         title="Latest Posts"
         posts={[mockPost]}
         link={{ label: "View All 10 Posts", href: "/all" }}
-      />
+      />,
     );
     expect(screen.getByText("Latest Posts")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /view all 10 posts/i })).toHaveAttribute(
       "href",
-      "/all"
+      "/all",
     );
   });
 
@@ -86,7 +80,7 @@ describe("BlogCarousel", () => {
         title="Test"
         posts={[mockPost, { ...mockPost, id: "blog/2024/c", title: "Post C" }]}
         link={{ label: "Link", href: "/x" }}
-      />
+      />,
     );
     const carousel = screen.getByTestId("carousel");
     expect(carousel).toBeInTheDocument();
@@ -132,9 +126,6 @@ describe("HistoryCarousel", () => {
     $history.set([mockPost]);
     render(<HistoryCarousel />);
     expect(screen.getByText("Time Machine")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /view archivess/i })).toHaveAttribute(
-      "href",
-      "/year"
-    );
+    expect(screen.getByRole("link", { name: /view archivess/i })).toHaveAttribute("href", "/year");
   });
 });

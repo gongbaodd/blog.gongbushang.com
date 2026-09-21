@@ -1,7 +1,7 @@
-import * as THREE from 'three';
-import InteractiveControls from './InteractiveControls.js';
-import Particles from './Particles.js';
-import { getParticleLayoutDims } from '../layout.ts';
+import * as THREE from "three";
+import InteractiveControls from "./InteractiveControls.js";
+import Particles from "./Particles.js";
+import { getParticleLayoutDims } from "../layout.ts";
 
 export const CANVAS_WIDTH = 320;
 export const CANVAS_HEIGHT = 180;
@@ -25,7 +25,7 @@ export default class App {
     try {
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       if (!this.renderer.getContext()) {
-        throw new Error('WebGL context unavailable');
+        throw new Error("WebGL context unavailable");
       }
       this.renderer.setPixelRatio(1);
       this.container.appendChild(this.renderer.domElement);
@@ -33,16 +33,13 @@ export default class App {
     } catch (error) {
       this.webglFailed = true;
       this.renderer = null;
-      console.error('ParticleHero: WebGL unavailable', error);
+      console.error("ParticleHero: WebGL unavailable", error);
       return false;
     }
   }
 
   initControls() {
-    this.interactive = new InteractiveControls(
-      this.camera,
-      this.renderer.domElement
-    );
+    this.interactive = new InteractiveControls(this.camera, this.renderer.domElement);
   }
 
   initParticles() {
@@ -112,10 +109,7 @@ export default class App {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(w, h, false);
 
-    this.fovHeight =
-      2 *
-      Math.tan((this.camera.fov * Math.PI) / 180 / 2) *
-      this.camera.position.z;
+    this.fovHeight = 2 * Math.tan((this.camera.fov * Math.PI) / 180 / 2) * this.camera.position.z;
 
     if (this.interactive) this.interactive.resize();
     if (this.particles) this.particles.resize();

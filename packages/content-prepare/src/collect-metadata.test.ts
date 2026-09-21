@@ -1,15 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-  type Mock,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 vi.mock("./geocode.ts", () => ({
   geocodeCities: vi.fn(),
@@ -39,11 +31,7 @@ vi.mock("post-embedding", async (importOriginal) => {
 import { collectMetadata } from "./collect-metadata.ts";
 import { geocodeCities } from "./geocode.ts";
 import { getColorSet } from "image-metadata";
-import {
-  EMBEDDING_DIMENSIONS,
-  getEmbedding,
-  isEmbeddingServerRunning,
-} from "post-embedding";
+import { EMBEDDING_DIMENSIONS, getEmbedding, isEmbeddingServerRunning } from "post-embedding";
 import type { MetadataEntry } from "./types.ts";
 
 const geocodeCitiesMock = geocodeCities as Mock;
@@ -124,9 +112,7 @@ cover:
     expect(entry.category).toEqual({ label: "life", href: "/life" });
     expect(entry.tags).toEqual([]);
     expect(entry.city).toEqual(["Tokyo"]);
-    expect(entry.locations).toEqual([
-      { latitude: 35.6762, longitude: 139.6503 },
-    ]);
+    expect(entry.locations).toEqual([{ latitude: 35.6762, longitude: 139.6503 }]);
     expect(entry.cover).toEqual({ url: "./cover.png", alt: "Cover" });
     expect(entry.colorSet).toEqual({
       bgColor: "#111111",
@@ -151,9 +137,9 @@ category: blog
 `,
     );
 
-    await expect(
-      collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir }),
-    ).rejects.toThrow("Embedding server is not running");
+    await expect(collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir })).rejects.toThrow(
+      "Embedding server is not running",
+    );
   });
 
   test("skips posts whose content hash is unchanged", async () => {
@@ -340,9 +326,7 @@ category: blog
     expect(entry.id).toBe("2024/01/04/active");
     expect(entry.title).toBe("Active");
 
-    await expect(
-      fs.access(path.join(outputDir, "2024-01-05-removed.json")),
-    ).rejects.toThrow();
+    await expect(fs.access(path.join(outputDir, "2024-01-05-removed.json"))).rejects.toThrow();
     await expect(fs.access(legacyPath)).rejects.toThrow();
   });
 });

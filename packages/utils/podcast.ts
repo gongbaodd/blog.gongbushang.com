@@ -59,18 +59,14 @@ function readPodcastEpisodes(): PodcastEpisode[] {
 
   return fs
     .readdirSync(podcastDir)
-    .filter(
-      (file) => file.endsWith(".json") && !file.startsWith("."),
-    )
+    .filter((file) => file.endsWith(".json") && !file.startsWith("."))
     .map((file) => {
       const raw = fs.readFileSync(path.join(podcastDir, file), "utf-8");
       const episode = JSON.parse(raw) as PodcastEpisode;
       const umap2D = coordinates[episode.id];
       return umap2D ? { ...episode, umap2D } : episode;
     })
-    .sort(
-      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
-    );
+    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 }
 
 export function readPodcastData(): PodcastData {
@@ -78,13 +74,9 @@ export function readPodcastData(): PodcastData {
     const podcastPath = path.join(process.cwd(), PODCAST_JSON);
     if (!fs.existsSync(podcastPath)) return EMPTY_PODCAST_DATA;
 
-    const manifest = JSON.parse(
-      fs.readFileSync(podcastPath, "utf-8"),
-    ) as Partial<PodcastData>;
+    const manifest = JSON.parse(fs.readFileSync(podcastPath, "utf-8")) as Partial<PodcastData>;
     const episodes =
-      manifest.episodes && manifest.episodes.length > 0
-        ? manifest.episodes
-        : readPodcastEpisodes();
+      manifest.episodes && manifest.episodes.length > 0 ? manifest.episodes : readPodcastEpisodes();
 
     return {
       channel: manifest.channel ?? EMPTY_PODCAST_DATA.channel,

@@ -58,7 +58,7 @@ describe("createPostMap", () => {
       post("2024/01/02/b", { tag: ["react"] }),
     ];
     const map = createPostMap(posts as never, (p) =>
-      (p.data.tag ?? []).map((t: string) => t.toLowerCase())
+      (p.data.tag ?? []).map((t: string) => t.toLowerCase()),
     );
     expect(map.get("react")?.size).toBe(2);
     expect(map.get("typescript")?.size).toBe(1);
@@ -76,10 +76,7 @@ describe("createPostMap", () => {
 
 describe("sortPostsByDate", () => {
   test("sorts posts descending by date from id path", () => {
-    const posts = [
-      post("2023/06/01/older", {}),
-      post("2024/01/15/newer", {}),
-    ];
+    const posts = [post("2023/06/01/older", {}), post("2024/01/15/newer", {})];
     const result = sortPostsByDate(posts as never);
     expect(result[0].id).toBe("2024/01/15/newer");
     expect(result[1].id).toBe("2023/06/01/older");

@@ -11,7 +11,16 @@ import { fileURLToPath } from "node:url";
 import chromium from "@sparticuz/chromium";
 import puppeteer from "puppeteer-core";
 
-const resumeRoles = ["universal", "full-stack", "machine-learning", "devops", "game-dev", "ai-agent", "product-engineer", "qa-tester"];
+const resumeRoles = [
+  "universal",
+  "full-stack",
+  "machine-learning",
+  "devops",
+  "game-dev",
+  "ai-agent",
+  "product-engineer",
+  "qa-tester",
+];
 const resumeLanguages = ["en", "zh"];
 const MAX_BYTES = 2 * 1024 * 1024;
 
@@ -19,7 +28,20 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const dist = join(root, "dist");
 const outDir = join(dist, "resume", "pdfs");
 
-const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json", ".svg": "image/svg+xml", ".woff": "font/woff", ".woff2": "font/woff2", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp", ".ico": "image/x-icon", ".pdf": "application/pdf" };
+const MIME = {
+  ".html": "text/html",
+  ".css": "text/css",
+  ".js": "text/javascript",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".webp": "image/webp",
+  ".ico": "image/x-icon",
+  ".pdf": "application/pdf",
+};
 
 function serveStatic() {
   return createServer((req, res) => {
@@ -36,10 +58,12 @@ function serveStatic() {
       return;
     }
     res.writeHead(200, { "Content-Type": MIME[extname(file)] ?? "application/octet-stream" });
-    readFile(file).then((buf) => res.end(buf)).catch(() => {
-      res.writeHead(500);
-      res.end("read error");
-    });
+    readFile(file)
+      .then((buf) => res.end(buf))
+      .catch(() => {
+        res.writeHead(500);
+        res.end("read error");
+      });
   });
 }
 
@@ -49,7 +73,9 @@ function countPdfPages(buf) {
   return matches ? matches.length : 0;
 }
 
-const combos = resumeRoles.flatMap((role) => resumeLanguages.map((language) => ({ role, language })));
+const combos = resumeRoles.flatMap((role) =>
+  resumeLanguages.map((language) => ({ role, language })),
+);
 
 if (!existsSync(join(dist, "resume", "index.html"))) {
   console.error(`dist not found at ${dist}. Run \`astro build\` first.`);
@@ -62,7 +88,12 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const port = server.address().port;
 
 const browser = await puppeteer.launch({
-  args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox", "--font-render-hinting=none"],
+  args: [
+    ...chromium.args,
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--font-render-hinting=none",
+  ],
   defaultViewport: { width: 1280, height: 900, deviceScaleFactor: 2 },
   executablePath: await chromium.executablePath(),
   headless: chromium.headless,
@@ -71,7 +102,8 @@ const browser = await puppeteer.launch({
 const failures = [];
 try {
   for (const { role, language } of combos) {
-    const pagePath = role === "universal" && language === "en" ? "/resume/" : `/resume/${role}/${language}/`;
+    const pagePath =
+      role === "universal" && language === "en" ? "/resume/" : `/resume/${role}/${language}/`;
     const url = `http://127.0.0.1:${port}${pagePath}`;
     const fileName = `jian-gong-${role}-${language}.pdf`;
     const outFile = join(outDir, fileName);
@@ -122,21 +154,45 @@ try {
           clippedH: el.scrollWidth > el.clientWidth + 2,
         }));
         const bodyText = document.body.innerText ?? "";
-        const pills = [...document.querySelectorAll(".resume-sidebar a.sidebar-link")].map((a) => a.getAttribute("href"));
-        return { sheets: sheets.length, clipped, textLen: bodyText.length, sample: bodyText.slice(0, 200), pills, bodyText };
+        const pills = [...document.querySelectorAll(".resume-sidebar a.sidebar-link")].map((a) =>
+          a.getAttribute("href"),
+        );
+        return {
+          sheets: sheets.length,
+          clipped,
+          textLen: bodyText.length,
+          sample: bodyText.slice(0, 200),
+          pills,
+          bodyText,
+        };
       });
-      if (check.sheets !== 1) failures.push(`${role}/${language}: expected 1 .sheet section, found ${check.sheets}`);
+      if (check.sheets !== 1)
+        failures.push(`${role}/${language}: expected 1 .sheet section, found ${check.sheets}`);
       for (const [i, c] of check.clipped.entries()) {
-        if (c.clippedV || c.clippedH) failures.push(`${role}/${language}: sheet ${i + 1} clipped (v:${c.clippedV} ${c.scrollH}>${c.clientH}, h:${c.clippedH} ${c.scrollW}>${c.clientW})`);
+        if (c.clippedV || c.clippedH)
+          failures.push(
+            `${role}/${language}: sheet ${i + 1} clipped (v:${c.clippedV} ${c.scrollH}>${c.clientH}, h:${c.clippedH} ${c.scrollW}>${c.clientW})`,
+          );
       }
-      if (!check.pills.some((h) => h && h.includes("/resume/"))) failures.push(`${role}/${language}: selector links missing`);
+      if (!check.pills.some((h) => h && h.includes("/resume/")))
+        failures.push(`${role}/${language}: selector links missing`);
       const wantName = language === "zh" ? "宫健" : "Gong Jian";
-      if (!check.bodyText.includes(wantName)) failures.push(`${role}/${language}: name missing from rendered text`);
-      await page.pdf({ path: outFile, format: "A4", printBackground: true, preferCSSPageSize: true, margin: { top: "0", bottom: "0", left: "0", right: "0" } });
+      if (!check.bodyText.includes(wantName))
+        failures.push(`${role}/${language}: name missing from rendered text`);
+      await page.pdf({
+        path: outFile,
+        format: "A4",
+        printBackground: true,
+        preferCSSPageSize: true,
+        margin: { top: "0", bottom: "0", left: "0", right: "0" },
+      });
       const stat = statSync(outFile);
       const pages = countPdfPages(await readFile(outFile));
-      console.log(`${fileName}: ${(stat.size / 1024).toFixed(0)} KB, ${pages} pages, sheets=${check.sheets}`);
-      if (stat.size > MAX_BYTES) failures.push(`${fileName}: ${(stat.size / 1024 / 1024).toFixed(2)} MB exceeds 2 MB limit`);
+      console.log(
+        `${fileName}: ${(stat.size / 1024).toFixed(0)} KB, ${pages} pages, sheets=${check.sheets}`,
+      );
+      if (stat.size > MAX_BYTES)
+        failures.push(`${fileName}: ${(stat.size / 1024 / 1024).toFixed(2)} MB exceeds 2 MB limit`);
       if (pages !== 1) failures.push(`${fileName}: expected 1 PDF page, got ${pages}`);
     } catch (err) {
       failures.push(`${role}/${language}: ${err.message}`);

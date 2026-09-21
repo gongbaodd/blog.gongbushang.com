@@ -4,9 +4,7 @@ import type { EmbeddingOptions } from "./types.ts";
 
 const PROBE_TEXT = "ping";
 
-export async function isEmbeddingServerRunning(
-  options?: EmbeddingOptions,
-): Promise<boolean> {
+export async function isEmbeddingServerRunning(options?: EmbeddingOptions): Promise<boolean> {
   try {
     const embedding = await getEmbedding(PROBE_TEXT, options);
     return embedding.length === EMBEDDING_DIMENSIONS;

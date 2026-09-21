@@ -43,19 +43,16 @@ function dedupeInlineStyles() {
         for (const file of htmlFiles) {
           const original = await fs.promises.readFile(file, "utf-8");
           const seen = new Set();
-          const html = original.replace(
-            /<style[^>]*>([\s\S]*?)<\/style>/g,
-            (match, inner) => {
-              const key = inner.trim();
-              // Keep tiny blocks untouched; only drop exact duplicates.
-              if (key.length > 40 && seen.has(key)) {
-                removed += 1;
-                return "";
-              }
-              seen.add(key);
-              return match;
-            },
-          );
+          const html = original.replace(/<style[^>]*>([\s\S]*?)<\/style>/g, (match, inner) => {
+            const key = inner.trim();
+            // Keep tiny blocks untouched; only drop exact duplicates.
+            if (key.length > 40 && seen.has(key)) {
+              removed += 1;
+              return "";
+            }
+            seen.add(key);
+            return match;
+          });
           if (html !== original) await fs.promises.writeFile(file, html);
         }
         if (removed > 0) {
@@ -94,10 +91,7 @@ export default defineConfig({
       rehypePlugins: [
         rehypeCloudinary,
         [rehypeKatex, { strict: false }],
-        [
-          rehypeExternalLinks,
-          { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] },
-        ],
+        [rehypeExternalLinks, { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] }],
       ],
     }),
     shikiConfig: {
@@ -113,11 +107,7 @@ export default defineConfig({
     plugins: [glsl()],
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
-      exclude: [
-        "onnxruntime-node",
-        "@dimforge/rapier3d-compat",
-        "@react-three/rapier",
-      ],
+      exclude: ["onnxruntime-node", "@dimforge/rapier3d-compat", "@react-three/rapier"],
     },
     build: {
       rollupOptions: {

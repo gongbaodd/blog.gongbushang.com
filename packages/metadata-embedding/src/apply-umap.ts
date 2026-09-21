@@ -1,11 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
-  PODCAST_COVER_DIR,
-  POST_METADATA_DIR,
-  POST_UMAP_STATE,
-} from "consts/config.js";
+import { PODCAST_COVER_DIR, POST_METADATA_DIR, POST_UMAP_STATE } from "consts/config.js";
 import { runUmap } from "./umap.ts";
 import { computeUmapParamsHash } from "./umap-params.ts";
 
@@ -35,9 +31,7 @@ const defaultToBasename = (key: string): string => key.replaceAll("/", "-");
 
 export function computeUmapInputHash(entries: UmapCorpusEntry[]): string {
   const hash = crypto.createHash("sha256");
-  const sorted = [...entries].sort((left, right) =>
-    left.key.localeCompare(right.key),
-  );
+  const sorted = [...entries].sort((left, right) => left.key.localeCompare(right.key));
 
   for (const item of sorted) {
     hash.update(item.key);
@@ -49,9 +43,7 @@ export function computeUmapInputHash(entries: UmapCorpusEntry[]): string {
   return hash.digest("hex");
 }
 
-function hasEmbeddings(
-  entry: JsonRecord,
-): entry is JsonRecord & { embeddings: number[] } {
+function hasEmbeddings(entry: JsonRecord): entry is JsonRecord & { embeddings: number[] } {
   return Array.isArray(entry.embeddings) && entry.embeddings.length > 0;
 }
 
@@ -65,10 +57,7 @@ async function readJsonEntries(dir: string): Promise<JsonRecord[]> {
 
   const entries: JsonRecord[] = [];
   for (const file of files.filter(
-    (name) =>
-      name.endsWith(".json") &&
-      !name.startsWith(".") &&
-      name !== UMAP_STATE_FILENAME,
+    (name) => name.endsWith(".json") && !name.startsWith(".") && name !== UMAP_STATE_FILENAME,
   )) {
     const raw = await fs.readFile(path.join(dir, file), "utf-8");
     entries.push(JSON.parse(raw) as JsonRecord);
@@ -77,21 +66,11 @@ async function readJsonEntries(dir: string): Promise<JsonRecord[]> {
   return entries;
 }
 
-async function writeJsonEntry(
-  dir: string,
-  entry: JsonRecord,
-  basename: string,
-): Promise<void> {
-  await fs.writeFile(
-    path.join(dir, `${basename}.json`),
-    JSON.stringify(entry, null, 2),
-    "utf-8",
-  );
+async function writeJsonEntry(dir: string, entry: JsonRecord, basename: string): Promise<void> {
+  await fs.writeFile(path.join(dir, `${basename}.json`), JSON.stringify(entry, null, 2), "utf-8");
 }
 
-async function readUmapStateFile(
-  statePath: string,
-): Promise<UmapState | undefined> {
+async function readUmapStateFile(statePath: string): Promise<UmapState | undefined> {
   try {
     const raw = await fs.readFile(statePath, "utf-8");
     return JSON.parse(raw) as UmapState;
@@ -100,10 +79,7 @@ async function readUmapStateFile(
   }
 }
 
-async function writeUmapStateFile(
-  statePath: string,
-  state: UmapState,
-): Promise<void> {
+async function writeUmapStateFile(statePath: string, state: UmapState): Promise<void> {
   await fs.mkdir(path.dirname(statePath), { recursive: true });
   await fs.writeFile(statePath, JSON.stringify(state, null, 2), "utf-8");
 }
@@ -222,9 +198,7 @@ export async function applyCombinedUmap2D(
     }
   }
 
-  const coordinateList = await runUmap(
-    embedded.map(({ embeddings }) => embeddings),
-  );
+  const coordinateList = await runUmap(embedded.map(({ embeddings }) => embeddings));
 
   if (coordinateList.length !== embedded.length) {
     throw new Error(
@@ -245,9 +219,7 @@ export async function applyCombinedUmap2D(
     await stripUmap2DFromSource(source);
   }
 
-  console.log(
-    `✅ Updated umap2D for ${embedded.length} embedding(s) in combined corpus`,
-  );
+  console.log(`✅ Updated umap2D for ${embedded.length} embedding(s) in combined corpus`);
 }
 
 export async function applyUmap2D(

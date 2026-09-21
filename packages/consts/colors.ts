@@ -15,9 +15,6 @@ export const TITLE_COLOR_MAP = Object.entries({
   "dark-8": "#1f1f1f",
   "red-3": "#ffa8a8",
   "gray-2": "#e9ecef",
-}).reduce<Record<string, string>>(
-  (sum, [name, value]) => ({ ...sum, [prefix + name]: value }),
-  {},
-);
+}).reduce<Record<string, string>>((sum, [name, value]) => ({ ...sum, [prefix + name]: value }), {});
 
 export const POST_CARD_UNDERLINE_COLORS = Object.keys(TITLE_COLOR_MAP);

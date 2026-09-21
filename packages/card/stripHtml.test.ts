@@ -23,7 +23,7 @@ describe("stripHtml", () => {
   });
 
   test("decodes &quot; to double quote", () => {
-    expect(stripHtml('&quot;x&quot;')).toBe('"x"');
+    expect(stripHtml("&quot;x&quot;")).toBe('"x"');
   });
 
   test("collapses whitespace and trims", () => {

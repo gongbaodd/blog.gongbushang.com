@@ -1,12 +1,4 @@
-import {
-  Card,
-  Stack,
-  Title,
-  Text,
-  Group,
-  Button,
-  MantineProvider,
-} from "@mantine/core";
+import { Card, Stack, Title, Text, Group, Button, MantineProvider } from "@mantine/core";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 
 export default function NewsLetter() {

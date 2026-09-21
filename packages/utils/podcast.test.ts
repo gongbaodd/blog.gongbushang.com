@@ -51,11 +51,7 @@ vi.mock("node:fs", () => ({
   },
 }));
 
-import {
-  processPodcastEpisodes,
-  mapPodcastEpisodesToPosts,
-  readPodcastData,
-} from "./podcast";
+import { processPodcastEpisodes, mapPodcastEpisodesToPosts, readPodcastData } from "./podcast";
 
 describe("readPodcastData", () => {
   test("returns parsed podcast data", () => {

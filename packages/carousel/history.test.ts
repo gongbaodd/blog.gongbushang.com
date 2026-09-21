@@ -17,7 +17,10 @@ describe("requestHistoryPosts", () => {
     const mockResponse = {
       json: () => Promise.resolve({ posts: mockPosts }),
     };
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(mockResponse)));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(mockResponse)),
+    );
     $history.set([]);
   });
 

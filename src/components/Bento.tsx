@@ -1,10 +1,4 @@
-import {
-  BellIcon,
-  CalendarIcon,
-  FileTextIcon,
-  GlobeIcon,
-  IndentIcon
-} from "lucide-react";
+import { BellIcon, CalendarIcon, FileTextIcon, GlobeIcon, IndentIcon } from "lucide-react";
 
 import { BentoCard, BentoGrid } from "@/packages/shadcn/components/magicui/bento-grid";
 
@@ -48,8 +42,7 @@ const features = [
   {
     Icon: BellIcon,
     name: "Notifications",
-    description:
-      "Get notified when someone shares a file or mentions you in a comment.",
+    description: "Get notified when someone shares a file or mentions you in a comment.",
     href: "/",
     cta: "Learn more",
     background: <img className="absolute -right-20 -top-20 opacity-60" />,

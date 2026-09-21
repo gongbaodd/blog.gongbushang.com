@@ -1,8 +1,8 @@
 {
-    "name": "layouts",
-    "version": "1.0.0",
-    "dependencies": {
-        "github-markdown-css": "^5.5.1",
-        "react": "^19.2.6"
-    }
+  "name": "layouts",
+  "version": "1.0.0",
+  "dependencies": {
+    "github-markdown-css": "^5.5.1",
+    "react": "^19.2.6"
+  }
 }

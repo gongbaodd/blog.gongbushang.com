@@ -1,8 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  buildPodcastEmbeddingText,
-  buildPostEmbeddingText,
-} from "./embedding.ts";
+import { buildPodcastEmbeddingText, buildPostEmbeddingText } from "./embedding.ts";
 
 describe("buildPostEmbeddingText", () => {
   test("includes required fields and omits optional ones", () => {
@@ -13,9 +10,7 @@ describe("buildPostEmbeddingText", () => {
       content: "Plain body text",
     });
 
-    expect(text).toBe(
-      "title: Hello\ncategory: travel\ncontent: Plain body text",
-    );
+    expect(text).toBe("title: Hello\ncategory: travel\ncontent: Plain body text");
   });
 
   test("includes series, tags, and city when present", () => {
@@ -23,10 +18,7 @@ describe("buildPostEmbeddingText", () => {
       title: "Hello",
       category: { label: "travel" },
       series: { label: "Tokyo Trip" },
-      tags: [
-        { label: "food" },
-        { label: "japan" },
-      ],
+      tags: [{ label: "food" }, { label: "japan" }],
       city: ["Tokyo", "Kyoto"],
       content: "Plain body text",
     });

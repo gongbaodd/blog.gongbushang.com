@@ -58,7 +58,7 @@ describe("PodcastEpisodeCard", () => {
     expect(screen.getByText("42:00")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Listen" })).toHaveAttribute(
       "href",
-      "https://example.com/audio.mp3"
+      "https://example.com/audio.mp3",
     );
   });
 });

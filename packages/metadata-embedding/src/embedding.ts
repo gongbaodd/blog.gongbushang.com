@@ -11,10 +11,7 @@ export interface PostEmbeddingSource {
 }
 
 export function buildPostEmbeddingText(entry: PostEmbeddingSource): string {
-  const lines: string[] = [
-    `title: ${entry.title}`,
-    `category: ${entry.category.label}`,
-  ];
+  const lines: string[] = [`title: ${entry.title}`, `category: ${entry.category.label}`];
 
   if (entry.series) {
     lines.push(`series: ${entry.series.label}`);
@@ -33,17 +30,11 @@ export function buildPostEmbeddingText(entry: PostEmbeddingSource): string {
   return lines.join("\n");
 }
 
-export function buildPodcastEmbeddingText(entry: {
-  title: string;
-  summary: string;
-}): string {
+export function buildPodcastEmbeddingText(entry: { title: string; summary: string }): string {
   return `${entry.title}|podcast|${entry.summary}`;
 }
 
-export async function embedFromText(
-  text: string,
-  options?: EmbeddingOptions,
-): Promise<number[]> {
+export async function embedFromText(text: string, options?: EmbeddingOptions): Promise<number[]> {
   return getEmbedding(text, options);
 }
 

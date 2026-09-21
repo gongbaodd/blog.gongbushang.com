@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
 const SCROLL_THRESHOLD = 10;
 
@@ -44,21 +44,21 @@ export default class InteractiveControls {
     this.handlerLeave = this.onLeave.bind(this);
     this.handlerCancel = this.onCancel.bind(this);
 
-    this.el.addEventListener('pointerdown', this.handlerDown);
-    this.el.addEventListener('pointermove', this.handlerMove);
-    this.el.addEventListener('pointerup', this.handlerUp);
-    this.el.addEventListener('pointercancel', this.handlerCancel);
-    this.el.addEventListener('pointerleave', this.handlerLeave);
+    this.el.addEventListener("pointerdown", this.handlerDown);
+    this.el.addEventListener("pointermove", this.handlerMove);
+    this.el.addEventListener("pointerup", this.handlerUp);
+    this.el.addEventListener("pointercancel", this.handlerCancel);
+    this.el.addEventListener("pointerleave", this.handlerLeave);
     this.enabled = true;
   }
 
   disable() {
     if (!this.enabled) return;
-    this.el.removeEventListener('pointerdown', this.handlerDown);
-    this.el.removeEventListener('pointermove', this.handlerMove);
-    this.el.removeEventListener('pointerup', this.handlerUp);
-    this.el.removeEventListener('pointercancel', this.handlerCancel);
-    this.el.removeEventListener('pointerleave', this.handlerLeave);
+    this.el.removeEventListener("pointerdown", this.handlerDown);
+    this.el.removeEventListener("pointermove", this.handlerMove);
+    this.el.removeEventListener("pointerup", this.handlerUp);
+    this.el.removeEventListener("pointercancel", this.handlerCancel);
+    this.el.removeEventListener("pointerleave", this.handlerLeave);
     this.activePointerId = null;
     this.pendingPointer = null;
     this.enabled = false;
@@ -75,13 +75,13 @@ export default class InteractiveControls {
   clearHover() {
     this.intersectionData = null;
     if (this.hovered !== null) {
-      this.emit('interactive-out', { object: this.hovered });
+      this.emit("interactive-out", { object: this.hovered });
       this.hovered = null;
     }
   }
 
   isTouchLike(pointerType) {
-    return pointerType === 'touch' || pointerType === 'pen';
+    return pointerType === "touch" || pointerType === "pen";
   }
 
   resolvePendingPointer(e) {
@@ -119,15 +119,15 @@ export default class InteractiveControls {
       this.intersectionData = intersects[0];
       this.plane.setFromNormalAndCoplanarPoint(
         this.camera.getWorldDirection(this.plane.normal),
-        object.position
+        object.position,
       );
 
       if (this.hovered !== object) {
-        this.emit('interactive-out', { object: this.hovered });
-        this.emit('interactive-over', { object });
+        this.emit("interactive-out", { object: this.hovered });
+        this.emit("interactive-over", { object });
         this.hovered = object;
       } else {
-        this.emit('interactive-move', {
+        this.emit("interactive-move", {
           object,
           intersectionData: this.intersectionData,
         });
@@ -140,12 +140,12 @@ export default class InteractiveControls {
   beginInteraction(e) {
     this.activePointerId = e.pointerId;
 
-    if (e.pointerType === 'mouse') {
+    if (e.pointerType === "mouse") {
       this.el.setPointerCapture(e.pointerId);
     }
 
     this.processMove(e);
-    this.emit('interactive-down', {
+    this.emit("interactive-down", {
       object: this.hovered,
       intersectionData: this.intersectionData,
     });
@@ -156,12 +156,12 @@ export default class InteractiveControls {
   }
 
   endInteraction(e) {
-    if (e.pointerType === 'mouse' && this.el.hasPointerCapture(e.pointerId)) {
+    if (e.pointerType === "mouse" && this.el.hasPointerCapture(e.pointerId)) {
       this.el.releasePointerCapture(e.pointerId);
     }
 
     this.activePointerId = null;
-    this.emit('interactive-up', { object: this.hovered });
+    this.emit("interactive-up", { object: this.hovered });
 
     if (this.isTouchLike(e.pointerType)) {
       this.clearHover();
@@ -180,7 +180,7 @@ export default class InteractiveControls {
       return;
     }
 
-    if (e.pointerType === 'mouse') {
+    if (e.pointerType === "mouse") {
       this.processMove(e);
     }
   }
@@ -220,7 +220,7 @@ export default class InteractiveControls {
 
     if (e.pointerId !== this.activePointerId) return;
 
-    if (e.pointerType === 'mouse' && this.el.hasPointerCapture(e.pointerId)) {
+    if (e.pointerType === "mouse" && this.el.hasPointerCapture(e.pointerId)) {
       this.el.releasePointerCapture(e.pointerId);
     }
 

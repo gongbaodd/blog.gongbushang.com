@@ -56,11 +56,7 @@ function traceSvgBasename(id: string): string {
 
 function galleryTracePath(id: string): string | undefined {
   try {
-    const svgPath = path.join(
-      process.cwd(),
-      GALLERY_TRACE_DIR,
-      traceSvgBasename(id),
-    );
+    const svgPath = path.join(process.cwd(), GALLERY_TRACE_DIR, traceSvgBasename(id));
     return fs.existsSync(svgPath) ? svgPath : undefined;
   } catch {
     return undefined;
@@ -84,9 +80,7 @@ export function readGalleryTraceSvg(id: string): string | undefined {
  * inlined into the HTML payload.
  */
 export function readGalleryTraceUrl(id: string): string | undefined {
-  return galleryTracePath(id)
-    ? `/api/gallery/trace/${traceSvgBasename(id)}`
-    : undefined;
+  return galleryTracePath(id) ? `/api/gallery/trace/${traceSvgBasename(id)}` : undefined;
 }
 
 /** Basenames (without .svg) of all generated gallery trace SVGs. */
@@ -145,8 +139,7 @@ export function pickNearestGalleryEntry(
     const distance = anniversaryDistance(refDate, date);
     if (
       distance < bestDistance ||
-      (distance === bestDistance &&
-        (entry.addedAt ?? "") > (best?.addedAt ?? ""))
+      (distance === bestDistance && (entry.addedAt ?? "") > (best?.addedAt ?? ""))
     ) {
       bestDistance = distance;
       best = entry;
@@ -156,9 +149,7 @@ export function pickNearestGalleryEntry(
   return best;
 }
 
-export function findNearestGalleryEntry(
-  refDate: Date = new Date(),
-): GalleryEntry | undefined {
+export function findNearestGalleryEntry(refDate: Date = new Date()): GalleryEntry | undefined {
   return pickNearestGalleryEntry(readGalleryData().images, refDate);
 }
 
@@ -193,12 +184,8 @@ export function applyGalleryEntryToClientPost<T extends IGalleryClientPost>(
         url: optimizeCloudinaryUrl(entry.image),
         alt: clientPost.data.cover?.alt ?? clientPost.title,
       },
-      ...(entry.colorSet?.bgColor
-        ? { bgColor: entry.colorSet.bgColor }
-        : {}),
-      ...(entry.colorSet?.titleColor
-        ? { titleColor: entry.colorSet.titleColor }
-        : {}),
+      ...(entry.colorSet?.bgColor ? { bgColor: entry.colorSet.bgColor } : {}),
+      ...(entry.colorSet?.titleColor ? { titleColor: entry.colorSet.titleColor } : {}),
     },
   };
 }

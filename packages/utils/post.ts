@@ -1,146 +1,143 @@
 import { getCollection, type CollectionEntry } from "astro:content";
-import { date as dateFrom, title as titleFrom, excerpt as excerptFrom, type TLink } from "@/packages/utils/extract";
-import { set } from 'es-toolkit/compat';
+import {
+  date as dateFrom,
+  title as titleFrom,
+  excerpt as excerptFrom,
+  type TLink,
+} from "@/packages/utils/extract";
+import { set } from "es-toolkit/compat";
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import { POST_METADATA_DIR, POST_UMAP_STATE } from "../consts/config.js";
-import {
-  applyGalleryEntryToClientPost,
-  galleryDocToPostId,
-  type GalleryEntry,
-} from "./gallery.ts";
+import { applyGalleryEntryToClientPost, galleryDocToPostId, type GalleryEntry } from "./gallery.ts";
 import { optimizeCoverUrl } from "./cloudinary.ts";
-import fs from "node:fs"
+import fs from "node:fs";
 import path from "node:path";
 import dayjs from "dayjs";
 
 export interface PostMetadataEntry {
-    file: string;
-    hash: string;
-    id: string;
-    href: string;
-    title: string;
-    date: string;
-    content: string;
-    category: TLink;
-    tags: TLink[];
-    series?: TLink;
-    city?: string[];
-    locations?: { latitude: number; longitude: number }[];
-    cover?: { url: string; alt?: string };
-    colorSet?: { bgColor: string; titleColor: string };
-    embeddings?: number[];
-    umap2D?: [number, number];
+  file: string;
+  hash: string;
+  id: string;
+  href: string;
+  title: string;
+  date: string;
+  content: string;
+  category: TLink;
+  tags: TLink[];
+  series?: TLink;
+  city?: string[];
+  locations?: { latitude: number; longitude: number }[];
+  cover?: { url: string; alt?: string };
+  colorSet?: { bgColor: string; titleColor: string };
+  embeddings?: number[];
+  umap2D?: [number, number];
 }
 
 function metadataFileBasename(postId: string): string {
-    return `${postId.replaceAll("/", "-")}.json`;
+  return `${postId.replaceAll("/", "-")}.json`;
 }
 
 export function readUmapCoordinates(): Record<string, [number, number]> {
-    try {
-        const statePath = path.join(process.cwd(), POST_UMAP_STATE);
-        if (!fs.existsSync(statePath)) return {};
-        const state = JSON.parse(fs.readFileSync(statePath, "utf-8")) as {
-            coordinates?: Record<string, [number, number]>;
-        };
-        return state.coordinates ?? {};
-    } catch {
-        return {};
-    }
+  try {
+    const statePath = path.join(process.cwd(), POST_UMAP_STATE);
+    if (!fs.existsSync(statePath)) return {};
+    const state = JSON.parse(fs.readFileSync(statePath, "utf-8")) as {
+      coordinates?: Record<string, [number, number]>;
+    };
+    return state.coordinates ?? {};
+  } catch {
+    return {};
+  }
 }
 
 function enrichWithUmap2D(entry: PostMetadataEntry): PostMetadataEntry {
-    const coordinates = readUmapCoordinates();
-    const umap2D = coordinates[entry.file];
-    return umap2D ? { ...entry, umap2D } : entry;
+  const coordinates = readUmapCoordinates();
+  const umap2D = coordinates[entry.file];
+  return umap2D ? { ...entry, umap2D } : entry;
 }
 
 export function readPostMetadataEntry(postId: string): PostMetadataEntry | undefined {
-    try {
-        const metadataPath = path.join(
-            process.cwd(),
-            POST_METADATA_DIR,
-            metadataFileBasename(postId),
-        );
-        if (!fs.existsSync(metadataPath)) return undefined;
-        const entry = JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry;
-        return enrichWithUmap2D(entry);
-    } catch {
-        return undefined;
-    }
+  try {
+    const metadataPath = path.join(process.cwd(), POST_METADATA_DIR, metadataFileBasename(postId));
+    if (!fs.existsSync(metadataPath)) return undefined;
+    const entry = JSON.parse(fs.readFileSync(metadataPath, "utf-8")) as PostMetadataEntry;
+    return enrichWithUmap2D(entry);
+  } catch {
+    return undefined;
+  }
 }
 
 export function readPostMetadata(): PostMetadataEntry[] | undefined {
-    try {
-        const metadataDir = path.join(process.cwd(), POST_METADATA_DIR);
-        if (!fs.existsSync(metadataDir)) return undefined;
-        const coordinates = readUmapCoordinates();
-        const files = fs.readdirSync(metadataDir).filter(
-            (f) => f.endsWith(".json") && !f.startsWith("."),
-        );
-        return files.map((file) => {
-            const raw = fs.readFileSync(path.join(metadataDir, file), "utf-8");
-            const entry = JSON.parse(raw) as PostMetadataEntry;
-            const umap2D = coordinates[entry.file];
-            return umap2D ? { ...entry, umap2D } : entry;
-        });
-    } catch (error) {
-        console.warn("Could not read post metadata:", error);
-        return undefined;
-    }
+  try {
+    const metadataDir = path.join(process.cwd(), POST_METADATA_DIR);
+    if (!fs.existsSync(metadataDir)) return undefined;
+    const coordinates = readUmapCoordinates();
+    const files = fs
+      .readdirSync(metadataDir)
+      .filter((f) => f.endsWith(".json") && !f.startsWith("."));
+    return files.map((file) => {
+      const raw = fs.readFileSync(path.join(metadataDir, file), "utf-8");
+      const entry = JSON.parse(raw) as PostMetadataEntry;
+      const umap2D = coordinates[entry.file];
+      return umap2D ? { ...entry, umap2D } : entry;
+    });
+  } catch (error) {
+    console.warn("Could not read post metadata:", error);
+    return undefined;
+  }
 }
 
 export interface IPost {
-    id: string;
+  id: string;
+  href: string;
+  title: string;
+  date: Date;
+  content: string;
+  category: TLink;
+  tags: TLink[];
+  series?: {
+    label: string;
     href: string;
-    title: string;
-    date: Date;
-    content: string;
-    category: TLink;
-    tags: TLink[];
-    series?: {
-        label: string;
-        href: string;
-    };
-    city?: string[];
+  };
+  city?: string[];
 }
 
-export type T_PROPS = CollectionEntry<"blog">
+export type T_PROPS = CollectionEntry<"blog">;
 type T_EXT = {
-    layout: string;
-    bgClass: string;
-    bgColor: string;
-    titleColor: string;
-}
-type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT }
+  layout: string;
+  bgClass: string;
+  bgColor: string;
+  titleColor: string;
+};
+type T_EXT_POST = T_PROPS & { data: T_PROPS["data"] & T_EXT };
 
 type Unpromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
-export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0]
+export type TClientPost = Unpromise<ReturnType<typeof mapServerPostToClient>>[0];
 
 export async function mapServerPostToClient(posts: T_PROPS[]) {
   return await Promise.all(
-      posts.map(async (post, i) => {
-          const cPost = await colorizePost(post)
-          const clientPost = await layoutPost(cPost)
-          if (clientPost.data.cover?.url) {
-              clientPost.data = {
-                  ...clientPost.data,
-                  cover: {
-                      ...clientPost.data.cover,
-                      url: optimizeCoverUrl(clientPost.data.cover.url),
-                  },
-              };
-          }
-          const result = {
-              id: clientPost.id,
-              href: `/${post.data.category}/${post.id}`,
-              title: await titleFrom(post),
-              date: dateFrom(post),
-              data: clientPost.data,
-              excerpt: await excerptFrom(post),
-          }          
-          return result
-      })
+    posts.map(async (post, i) => {
+      const cPost = await colorizePost(post);
+      const clientPost = await layoutPost(cPost);
+      if (clientPost.data.cover?.url) {
+        clientPost.data = {
+          ...clientPost.data,
+          cover: {
+            ...clientPost.data.cover,
+            url: optimizeCoverUrl(clientPost.data.cover.url),
+          },
+        };
+      }
+      const result = {
+        id: clientPost.id,
+        href: `/${post.data.category}/${post.id}`,
+        title: await titleFrom(post),
+        date: dateFrom(post),
+        data: clientPost.data,
+        excerpt: await excerptFrom(post),
+      };
+      return result;
+    }),
   );
 }
 
@@ -159,88 +156,87 @@ export async function mapGalleryEntryToClientPost(
   return applyGalleryEntryToClientPost(clientPost, entry);
 }
 
-
 export async function getAllClientPostsForSearch(): Promise<IPost[]> {
-    const entries = readPostMetadata() ?? [];
-    return entries
-        .map((entry) => ({
-            id: entry.id,
-            href: entry.href,
-            title: entry.title,
-            date: new Date(entry.date),
-            content: entry.content,
-            category: entry.category,
-            tags: entry.tags,
-            series: entry.series,
-            city: entry.city,
-        }))
-        .sort((a, b) => b.date.getTime() - a.date.getTime());
+  const entries = readPostMetadata() ?? [];
+  return entries
+    .map((entry) => ({
+      id: entry.id,
+      href: entry.href,
+      title: entry.title,
+      date: new Date(entry.date),
+      content: entry.content,
+      category: entry.category,
+      tags: entry.tags,
+      series: entry.series,
+      city: entry.city,
+    }))
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
 }
 
 export async function getAllPosts() {
-    const posts = await getCollection(BLOG_SOURCE) 
-    return posts
+  const posts = await getCollection(BLOG_SOURCE);
+  return posts;
 }
 
-async function layoutPost(post:T_PROPS | T_EXT_POST) {
-    const title = await titleFrom(post)
-    
-    const { layoutCls } = {
-        get layoutCls() {
-            const count = wordcount(title) + (post.data.tag?.length ?? 0);      
+async function layoutPost(post: T_PROPS | T_EXT_POST) {
+  const title = await titleFrom(post);
 
-            if (count < 3) return POST_CARD_LAYOUT.xs;
-            if (count < 4) return POST_CARD_LAYOUT.sm;
-            if (count < 5) return POST_CARD_LAYOUT.md;
-            if (count < 10) return POST_CARD_LAYOUT.lg;
-            return POST_CARD_LAYOUT.xl;
-        },
-    };
-    return set<T_EXT_POST>(post, "data.layout", layoutCls)
+  const { layoutCls } = {
+    get layoutCls() {
+      const count = wordcount(title) + (post.data.tag?.length ?? 0);
+
+      if (count < 3) return POST_CARD_LAYOUT.xs;
+      if (count < 4) return POST_CARD_LAYOUT.sm;
+      if (count < 5) return POST_CARD_LAYOUT.md;
+      if (count < 10) return POST_CARD_LAYOUT.lg;
+      return POST_CARD_LAYOUT.xl;
+    },
+  };
+  return set<T_EXT_POST>(post, "data.layout", layoutCls);
 }
 
 async function colorizePost(post: T_PROPS | T_EXT_POST): Promise<T_EXT_POST> {
-    if (!post.data.cover) {
-        const title = await titleFrom(post)
-        const count = title.length
-        const date =  dateFrom(post)
-        const index = dayjs(date).date() + dayjs(date).month() + dayjs(date).year() + count;
+  if (!post.data.cover) {
+    const title = await titleFrom(post);
+    const count = title.length;
+    const date = dateFrom(post);
+    const index = dayjs(date).date() + dayjs(date).month() + dayjs(date).year() + count;
 
-        const bgClass = POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length]
-        const result = set<T_EXT_POST>({ ...post }, "data.bgClass", bgClass)
-        return result
+    const bgClass = POST_CARD_CLASSNAMES[index % POST_CARD_CLASSNAMES.length];
+    const result = set<T_EXT_POST>({ ...post }, "data.bgClass", bgClass);
+    return result;
+  }
+
+  try {
+    const matchingEntry = readPostMetadataEntry(post.id);
+
+    if (matchingEntry?.colorSet) {
+      const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor);
+      return set<T_EXT_POST>(r, "data.titleColor", matchingEntry.colorSet.titleColor);
     }
+  } catch (error) {
+    console.warn("Could not read post metadata, falling back to color generation:", error);
+  }
 
-    try {
-        const matchingEntry = readPostMetadataEntry(post.id);
-
-        if (matchingEntry?.colorSet) {
-            const r = set({ ...post }, "data.bgColor", matchingEntry.colorSet.bgColor);
-            return set<T_EXT_POST>(r, "data.titleColor", matchingEntry.colorSet.titleColor);
-        }
-    } catch (error) {
-        console.warn('Could not read post metadata, falling back to color generation:', error);
-    }
-
-
-    return post as T_EXT_POST
+  return post as T_EXT_POST;
 }
 
-
-
 function wordcount(text: string): number {
-    if (!text || typeof text !== 'string') return 0;
-    
-    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-        try {
-            const segmenter = new Intl.Segmenter('en', { granularity: 'word' });
-            const segments = segmenter.segment(text);  
+  if (!text || typeof text !== "string") return 0;
 
-            return [...segments].filter(w => w.isWordLike).length;
-        } catch (error) {
-            console.warn('Intl.Segmenter failed, falling back to simple word counting:', error);
-        }
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    try {
+      const segmenter = new Intl.Segmenter("en", { granularity: "word" });
+      const segments = segmenter.segment(text);
+
+      return [...segments].filter((w) => w.isWordLike).length;
+    } catch (error) {
+      console.warn("Intl.Segmenter failed, falling back to simple word counting:", error);
     }
-    
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0).length;
 }

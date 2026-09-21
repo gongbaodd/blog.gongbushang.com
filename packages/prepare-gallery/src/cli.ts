@@ -62,10 +62,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
 export async function resolveCollectOptions(cli: CliOptions = {}) {
   const repoRoot = await findRepoRoot();
   return {
-    galleryDir: path.resolve(
-      repoRoot,
-      cli.galleryDir ?? "src/content/_gallery",
-    ),
+    galleryDir: path.resolve(repoRoot, cli.galleryDir ?? "src/content/_gallery"),
     outputFile: path.resolve(repoRoot, cli.output ?? GALLERY_JSON),
     traceDir: path.resolve(repoRoot, cli.traceDir ?? GALLERY_TRACE_DIR),
     baseDir: repoRoot,
@@ -82,9 +79,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   await collectGallery(options);
 }
 
-const isMain =
-  process.argv[1] &&
-  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
 if (isMain) {
   runCli().catch((error: unknown) => {

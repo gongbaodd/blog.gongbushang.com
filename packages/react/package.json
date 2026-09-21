@@ -1,9 +1,9 @@
 {
-    "name": "react",
-    "version": "0.0.1",
-    "dependencies": {
-        "@types/react": "^19.1.9",
-        "dayjs": "^1.11.10",
-        "react": "^19.2.6"
-    }
+  "name": "react",
+  "version": "0.0.1",
+  "dependencies": {
+    "@types/react": "^19.1.9",
+    "dayjs": "^1.11.10",
+    "react": "^19.2.6"
+  }
 }

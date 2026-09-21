@@ -66,9 +66,7 @@ describe("tags", () => {
 
   test("returns single tag with label and href", () => {
     const post: PostLike = { id: "x", data: { tag: ["JavaScript"] } };
-    expect(tags(post as never)).toEqual([
-      { label: "javascript", href: "/tag/javascript" },
-    ]);
+    expect(tags(post as never)).toEqual([{ label: "javascript", href: "/tag/javascript" }]);
   });
 
   test("returns multiple tags lowercased", () => {

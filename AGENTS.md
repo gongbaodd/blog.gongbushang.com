@@ -32,20 +32,24 @@ This is an Astro-based blog with React components, using TypeScript, Tailwind CS
 ## Code Style Guidelines
 
 ### TypeScript
+
 - Uses `astro/tsconfigs/strict` with additional options in `tsconfig.json`
 - Path aliases: `@/*` maps to project root
 - JSX: `react-jsx` with `react` import source
 
 ### Naming Conventions
+
 - **Components**: PascalCase (e.g., `ViewCount.tsx`, `Bento.tsx`)
 - **Files**: kebab-case for non-component files (e.g., `search.ts`, `pv.ts`)
 - **CSS Modules**: `.module.css` suffix (e.g., `ViewCount.module.css`)
 - **Interfaces**: PascalCase with `I` prefix for props (e.g., `IViewCountProps`)
 
 ### Imports
+
 - Order: external libs -> internal packages -> relative paths
 - Use path aliases: `@/packages/...` for workspace packages
 - Example:
+
 ```typescript
 import { useStore } from "@nanostores/react";
 import { Group, Flex, Text } from "@mantine/core";
@@ -54,29 +58,34 @@ import classes from "./ViewCount.module.css";
 ```
 
 ### React Components
+
 - Use functional components with TypeScript interfaces for props
 - Default export for page components, named exports for reusable components
 - Use CSS modules for component-scoped styles
 
 ### State Management
+
 - Use **nanostores** for global state (atom, map, computed)
 - Common stores in `src/stores/`
 - Example pattern:
+
 ```typescript
 import { atom, map, computed } from "nanostores";
 import { useStore } from "@nanostores/react";
 
 export const $state = map<{ key: value }>({ key: initialValue });
-export const $derived = computed($state, v => transform(v));
+export const $derived = computed($state, (v) => transform(v));
 ```
 
 ### Styling
+
 - **Tailwind CSS** for utility classes
 - **Mantine** for UI components — wrap any React component that uses Mantine with `CustomMantineProvider` from `@/src/stores/CustomMantineProvider` (see [.agents/skills/mantine-ui/SKILL.md](.agents/skills/mantine-ui/SKILL.md))
 - **shadcn/ui** components in `@/packages/shadcn/`
 - **CSS Modules** for component-specific styles
 
 ### Directory Structure
+
 ```
 src/
 ├── components/     # React/Astro components

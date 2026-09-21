@@ -5,17 +5,20 @@ import dayjs from "dayjs";
 import { Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { TClientPost } from "../utils/post";
-import classes from "./PostCard.module.css"
+import classes from "./PostCard.module.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { optimizeCoverUrl } from "@/packages/utils/cloudinary";
 
-export interface IPost extends TClientPost {
-}
+export interface IPost extends TClientPost {}
 
 const CARD_WIDTH = 360;
 const CARD_MIN_WIDTH = 280;
 
-interface ICardProp { post: IPost; hideExcerpt?: boolean; fill?: boolean }
+interface ICardProp {
+  post: IPost;
+  hideExcerpt?: boolean;
+  fill?: boolean;
+}
 
 export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const title = post.title;
@@ -24,67 +27,55 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const className = [
     classes.item,
     hasCover ? classes.with_bg : classes[post.data.bgClass],
-    classes[post.data.layout]
-  ].join(" ")
+    classes[post.data.layout],
+  ].join(" ");
 
-  const [coverImage, setCoverImage] = useState("")
+  const [coverImage, setCoverImage] = useState("");
 
   useEffect(() => {
-    setCoverImage(c => {
-      const { cover } = post.data
+    setCoverImage((c) => {
+      const { cover } = post.data;
       if (cover) {
         if (typeof cover.url === "string") {
-          return optimizeCoverUrl(cover.url)
+          return optimizeCoverUrl(cover.url);
         }
-        return optimizeCoverUrl(cover.url).src
+        return optimizeCoverUrl(cover.url).src;
       }
-      return c
-    })
+      return c;
+    });
+  }, [post]);
 
-  }, [post])
-
-  const [coverOpacity, setCoverOpacity] = useState(0)
+  const [coverOpacity, setCoverOpacity] = useState(0);
 
   useEffect(() => {
-    if (!coverImage) return
+    if (!coverImage) return;
 
-    const img = new Image()
-    img.src = coverImage
-    img.onload = () => setCoverOpacity(1)
-  }, [coverImage])
+    const img = new Image();
+    img.src = coverImage;
+    img.onload = () => setCoverOpacity(1);
+  }, [coverImage]);
 
   const cardStyle = {
     ...(hasCover ? {} : { backgroundColor: post.data.bgColor }),
     "--underline-color": `var(${post.data.titleColor})`,
     "--transition-name": "p-" + post.id.replaceAll("/", "-"),
-  } as React.CSSProperties
+  } as React.CSSProperties;
 
   const coverAreaStyle = {
     backgroundColor: post.data.bgColor,
     "--cover-opacity": coverOpacity,
     "--cover-image": `url(${coverImage})`,
-  } as React.CSSProperties
+  } as React.CSSProperties;
 
   const badgeRow = (
     <Flex justify={"space-between"} align={"center"}>
-      <Badge
-        color="gray"
-        variant="default"
-        size="sm"
-        className={classes.category}
-      >
+      <Badge color="gray" variant="default" size="sm" className={classes.category}>
         <Group gap={6}>
           <Calendar size={12} />
           <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
         </Group>
       </Badge>
-      <Avatar
-        color="gray"
-        variant="default"
-        size="sm"
-        className={classes.category}
-        p={0}
-      >
+      <Avatar color="gray" variant="default" size="sm" className={classes.category} p={0}>
         <ViewCount path={post.href} />
       </Avatar>
     </Flex>
@@ -93,12 +84,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const metaRow = (
     <Flex gap="xs" justify={"space-between"} align={"end"}>
       <Group flex={1}>
-        <Badge
-          color="gray"
-          variant="default"
-          size="sm"
-          className={classes.category}
-        >
+        <Badge color="gray" variant="default" size="sm" className={classes.category}>
           {post.data.category}
         </Badge>
       </Group>
@@ -117,13 +103,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
         )}
 
         {post.data.tag?.map((tag: string) => (
-          <Badge
-            key={tag}
-            color="gray"
-            variant="default"
-            size="xs"
-            className={classes.category}
-          >
+          <Badge key={tag} color="gray" variant="default" size="xs" className={classes.category}>
             #{tag}
           </Badge>
         ))}
@@ -164,8 +144,17 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   return (
     <CustomMantineProvider>
       <Stack justify={"center"} align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
-        <Box maw={fill ? undefined : CARD_WIDTH} miw={fill ? CARD_MIN_WIDTH : undefined} w={fill ? "100%" : undefined}>
-          <Anchor underline="never" href={post.href} display={fill ? "block" : undefined} w={fill ? "100%" : undefined}>
+        <Box
+          maw={fill ? undefined : CARD_WIDTH}
+          miw={fill ? CARD_MIN_WIDTH : undefined}
+          w={fill ? "100%" : undefined}
+        >
+          <Anchor
+            underline="never"
+            href={post.href}
+            display={fill ? "block" : undefined}
+            w={fill ? "100%" : undefined}
+          >
             <Card
               key={post.id}
               shadow="sm"
@@ -181,11 +170,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
           </Anchor>
           {!hideExcerpt && (
             <Flex pl={5} pr={10} pt={5}>
-              <Avatar
-                size="xs"
-                variant="transparent"
-                style={{ transform: "rotateZ(180deg)" }}
-              >
+              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
                 <IconQuoteFilled />
               </Avatar>
               <Text size="sm" lineClamp={2} className={classes.excerpt}>

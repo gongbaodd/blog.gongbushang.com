@@ -13,9 +13,6 @@ function remarkImagesToAlt() {
 }
 
 export async function md2txt(content: string): Promise<string> {
-  const file = await remark()
-    .use(remarkImagesToAlt)
-    .use(strip)
-    .process(content);
+  const file = await remark().use(remarkImagesToAlt).use(strip).process(content);
   return String(file).trimEnd();
 }

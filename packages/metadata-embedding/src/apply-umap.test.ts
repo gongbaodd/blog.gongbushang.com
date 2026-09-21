@@ -1,15 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  test,
-  vi,
-  type Mock,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi, type Mock } from "vitest";
 
 vi.mock("./umap.ts", () => ({
   runUmap: vi.fn(),
@@ -32,11 +24,7 @@ type TestMetadataEntry = Record<string, unknown> & {
   umap2D?: [number, number];
 };
 
-function entry(
-  file: string,
-  embeddings: number[],
-  umap2D?: [number, number],
-): TestMetadataEntry {
+function entry(file: string, embeddings: number[], umap2D?: [number, number]): TestMetadataEntry {
   return {
     file,
     hash: "hash",
@@ -52,10 +40,7 @@ function entry(
   };
 }
 
-async function writeMetadata(
-  outputDir: string,
-  metadataEntry: TestMetadataEntry,
-): Promise<void> {
+async function writeMetadata(outputDir: string, metadataEntry: TestMetadataEntry): Promise<void> {
   const fileName = `${metadataEntry.file.replaceAll("/", "-")}.json`;
   await fs.writeFile(
     path.join(outputDir, fileName),
@@ -64,10 +49,7 @@ async function writeMetadata(
   );
 }
 
-async function readMetadata(
-  outputDir: string,
-  slug: string,
-): Promise<TestMetadataEntry> {
+async function readMetadata(outputDir: string, slug: string): Promise<TestMetadataEntry> {
   const fileName = `${slug.replaceAll("/", "-")}.json`;
   const raw = await fs.readFile(path.join(outputDir, fileName), "utf-8");
   return JSON.parse(raw) as TestMetadataEntry;
@@ -140,10 +122,7 @@ describe("applyUmap2D", () => {
   });
 
   test("skips UMAP when cache hash matches", async () => {
-    const corpus = [
-      entry("a/post", [0.1, 0.2]),
-      entry("b/post", [0.3, 0.4]),
-    ];
+    const corpus = [entry("a/post", [0.1, 0.2]), entry("b/post", [0.3, 0.4])];
     await writeMetadata(outputDir, corpus[0]!);
     await writeMetadata(outputDir, corpus[1]!);
 
@@ -191,10 +170,7 @@ describe("applyUmap2D", () => {
   });
 
   test("strips legacy umap2D from metadata on cache hit", async () => {
-    const corpus = [
-      entry("a/post", [0.1, 0.2], [9, 9]),
-      entry("b/post", [0.3, 0.4], [8, 8]),
-    ];
+    const corpus = [entry("a/post", [0.1, 0.2], [9, 9]), entry("b/post", [0.3, 0.4], [8, 8])];
     await writeMetadata(outputDir, corpus[0]!);
     await writeMetadata(outputDir, corpus[1]!);
 
@@ -223,10 +199,7 @@ describe("applyUmap2D", () => {
   });
 
   test("migrates legacy umap2D from metadata when state lacks coordinates", async () => {
-    const corpus = [
-      entry("a/post", [0.1, 0.2], [1, 2]),
-      entry("b/post", [0.3, 0.4], [3, 4]),
-    ];
+    const corpus = [entry("a/post", [0.1, 0.2], [1, 2]), entry("b/post", [0.3, 0.4], [3, 4])];
     await writeMetadata(outputDir, corpus[0]!);
     await writeMetadata(outputDir, corpus[1]!);
 
@@ -268,10 +241,7 @@ describe("applyUmap2D", () => {
 
   test("clears stale umap2D when corpus drops below two entries", async () => {
     await writeMetadata(outputDir, entry("a/post", [0.1, 0.2], [9, 9]));
-    await writeMetadata(
-      outputDir,
-      entry("b/post", [0.3, 0.4], [8, 8]),
-    );
+    await writeMetadata(outputDir, entry("b/post", [0.3, 0.4], [8, 8]));
 
     await applyUmap2D(outputDir);
     await fs.unlink(path.join(outputDir, "b-post.json"));

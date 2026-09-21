@@ -5,9 +5,7 @@
     "moduleResolution": "bundler",
     "esModuleInterop": true,
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react"
@@ -16,7 +14,7 @@
     "packages/pv-counter",
     "dist",
     "public",
-    "**/*.test.ts", 
+    "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/__tests__/*"

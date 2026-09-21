@@ -7,9 +7,9 @@ import type { APIRoute } from "astro";
 export const prerender = true;
 
 export const GET: APIRoute<T_PROPS> = async () => {
-    const _posts = await getAllPostByDateDesc();
-    const posts = await mapServerPostToClient(_posts.slice(0, 5));
-    const counts = await getCounts();
-    const totalCounts = counts[FILTER_ENTRY.ALL]
-    return new Response(JSON.stringify({ posts, totalCounts }))
-}
+  const _posts = await getAllPostByDateDesc();
+  const posts = await mapServerPostToClient(_posts.slice(0, 5));
+  const counts = await getCounts();
+  const totalCounts = counts[FILTER_ENTRY.ALL];
+  return new Response(JSON.stringify({ posts, totalCounts }));
+};
