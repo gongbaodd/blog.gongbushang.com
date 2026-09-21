@@ -4,7 +4,6 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./*"
