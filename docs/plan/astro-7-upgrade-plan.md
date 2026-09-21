@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Step 0 ✅ done; next: Step 1 — third-party compatibility)\
+> Status: **IN PROGRESS** (Step 0 ✅, Step 1 ✅; next: Step 2 — Astro 7 dependencies)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -71,6 +71,51 @@ upgrade begins.
 ------------------------------------------------------------------------
 
 ## Step 1 --- Check third-party compatibility
+
+> **Status: ✅ DONE (2026-09-21)** — Researched against Astro `7.3.3`
+> (latest, ships `vite ^8.0.13` and `shiki ^4.0.2`) and Vite `8.3.0`.
+> Findings:
+>
+> - **`astro-mermaid`**: current `^1.0.4` is too old. Latest `2.1.0`
+>   (2026-06-24, after the Astro 7 release) declares `astro: ">=4"`,
+>   `mermaid: ^10 || ^11` (project has `mermaid ^11.11`). **Upgrade to
+>   `^2.1.0`.**
+> - **`vite-plugin-glsl`**: current `^1.3.1`; latest `1.6.1` (2026-07-25)
+>   declares `vite >= 3.x`, `esbuild >= 0.25`, `@rollup/pluginutils ^5`.
+>   Rolldown's compatibility layer should satisfy the Rollup plugin API.
+>   **Upgrade to `^1.6.1`**; fallback if it breaks under Rolldown (verify
+>   in Step 6): replace with a tiny custom plugin or `?raw` imports for
+>   `.glsl`.
+> - **`vitest`**: current `~3.2.4` supports Vite ≤ 7 only. `vitest@5.0.1`
+>   (latest) declares peer `vite ^6.4 || ^7 || ^8`. **Upgrade to
+>   `^5.0.1`** in Step 7. (`vitest@4.1.11` also supports Vite 8 as a
+>   conservative fallback.)
+> - **`jsdom` / `happy-dom` / `@testing-library/react`**: jsdom latest
+>   `30.1.0` requires Node `^22.22.2 || ^24.15.0 || >=26` (project runs
+>   Node `v24.15.0` ✅); happy-dom `20.x` and `@testing-library/react`
+>   `16.3.3` are current. Bump jsdom in Step 7.
+> - **Local `shiki-plantuml`**: exports a plain TextMate
+>   (`PlantUML.tmLanguage.json`) grammar object — grammar JSON is
+>   Shiki-version-agnostic, so it remains compatible with the Shiki `^4`
+>   used by Astro 7. ⚠️ One risk carried to Step 2/4: `astro.config.mjs`
+>   passes `[...Object.values(bundledLanguages), plantumlGrammar]` from
+>   the *project's* `shiki ^3.8.1` into Astro 7's Shiki 4. If that
+>   mismatches, the fallback is to drop `bundledLanguages` (Astro 7
+>   bundles its own langs) and pass only the PlantUML grammar, and/or
+>   bump the dev `shiki` to `^4.1.0`.
+> - **Astro 7 dependency targets confirmed** (for Step 2): `astro 7.3.3`,
+>   `@astrojs/mdx 8.0.1` (peer `astro ^7.2.6`, optional
+>   `@astrojs/markdown-remark ^7.3.0`), `@astrojs/react 6.0.6`,
+>   `@astrojs/sitemap 3.7.4`, `@astrojs/check 0.9.10`,
+>   `@astrojs/markdown-remark 7.3.1`.
+> - **Other upgrade-guide items checked** (no action needed): no
+>   `src/fetch.ts` in the repo; no `@astrojs/db`; no removed
+>   `astro:transitions` internals used (`navigate` + typed
+>   `astro:before-swap` listener + `ClientRouter` only); no
+>   `getContainerRenderer()` usage.
+>
+> **Gate: PASS** — every potentially blocking dependency has a known
+> upgrade or fallback path.
 
 Before changing Astro, verify the dependencies most likely to be
 affected by Astro 7 / Vite 8.
