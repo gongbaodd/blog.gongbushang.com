@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Steps 0–6 ✅; next: Step 7 — test tooling)\
+> Status: **IN PROGRESS** (Steps 0–7 ✅; next: Step 8 — whitespace audit)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -486,6 +486,26 @@ still behaves as expected.
 ------------------------------------------------------------------------
 
 ## Step 7 --- Upgrade and fix test tooling
+
+> **Status: ✅ DONE (2026-09-21)** — Commit `05222f3`. Upgraded
+> `vitest 3.2.4 → 5.0.1` (peer-compatible with Vite 8), `jsdom 25 → 30`,
+> `happy-dom 15 → 20`, `@testing-library/react 16.3.3`, and installed
+> the missing `@testing-library/jest-dom`. Added `vitest.setup.ts`
+> (registered in `vitest.config.ts`) with:
+> `window.matchMedia` / `ResizeObserver` / `IntersectionObserver`
+> polyfills (jsdom lacks matchMedia — Mantine's color-scheme provider
+> crashed on render), jest-dom matcher registration, and explicit
+> `afterEach(cleanup)` (with Vitest `globals: false`,
+> testing-library's auto-cleanup never ran, so DOM leaked between tests
+> causing "Found multiple elements" errors). Fixed
+> `BlogContent.test.tsx`: `vi.mock` hoisting bug (stubs referenced
+> before initialization → `vi.hoisted`) and added `listen()` to the
+> nanostores mocks (`useStore` calls `store.listen`).
+> **Result: `pnpm test` 193 passed / 0 failed / 3 skipped — strictly
+> better than the Step 0 baseline (170 passed / 19 failed on Astro 6);
+> `pnpm test:unit` 164 passed / 3 skipped. Gate: PASS.** The 19
+> "pre-existing" baseline failures turned out to be test-tooling gaps
+> (missing polyfills/matchers/cleanup) that the newer stack surfaced.
 
 Upgrade the Vite-coupled test stack as necessary:
 
