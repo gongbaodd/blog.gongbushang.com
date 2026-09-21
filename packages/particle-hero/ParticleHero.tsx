@@ -55,7 +55,8 @@ export const PARTICLE_VIEW_DISPLAY_HEIGHT = 600;
 
 export interface IGalleryImage {
   url: string;
-  traceSvg?: string;
+  /** URL of the traced SVG placeholder served by /api/gallery/trace/[file].svg */
+  traceUrl?: string;
   colorSet?: {
     bgColor: string;
     titleColor: string;
@@ -63,7 +64,12 @@ export interface IGalleryImage {
 }
 
 export interface IParticleHeroProps {
-  posts: UmapPost[];
+  /**
+   * Posts to render in the particle canvas. When omitted, the data is
+   * fetched at runtime from /api/posts/umap.json to keep the island
+   * props (and therefore the HTML payload) small.
+   */
+  posts?: UmapPost[];
   galleryImage?: IGalleryImage;
   title?: ReactNode;
   description?: ReactNode;
@@ -77,13 +83,44 @@ interface ITooltipState {
   top: number;
 }
 
-function traceSvgToCssBackground(traceSvg?: string): string | undefined {
-  if (!traceSvg) return undefined;
-  return `url("data:image/svg+xml,${encodeURIComponent(traceSvg)}")`;
+const POSTS_ENDPOINT = "/api/posts/umap.json";
+
+function useUmapPosts(initialPosts?: UmapPost[]): {
+  posts: UmapPost[];
+  postsReady: boolean;
+} {
+  const [posts, setPosts] = useState<UmapPost[]>(() => initialPosts ?? []);
+  const [postsReady, setPostsReady] = useState(
+    () => (initialPosts?.length ?? 0) > 0,
+  );
+
+  useEffect(() => {
+    if (postsReady) return;
+    let cancelled = false;
+    fetch(POSTS_ENDPOINT)
+      .then((res) => {
+        if (!res.ok) throw new Error(`${res.status}`);
+        return res.json();
+      })
+      .then((data: { posts?: UmapPost[] }) => {
+        if (cancelled) return;
+        setPosts(data.posts ?? []);
+        setPostsReady(true);
+      })
+      .catch((error) => {
+        console.warn("ParticleHero: failed to load umap posts", error);
+        if (!cancelled) setPostsReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [postsReady]);
+
+  return { posts, postsReady };
 }
 
 export default function ParticleHero({
-  posts,
+  posts: initialPosts,
   galleryImage,
   title,
   description,
@@ -92,6 +129,7 @@ export default function ParticleHero({
   const appRef = useRef<InstanceType<typeof App> | null>(null);
   const rafRef = useRef<number>(0);
   const lastHoveredIdRef = useRef<string | null>(null);
+  const { posts, postsReady } = useUmapPosts(initialPosts);
 
   const initialFilter = useMemo((): PostFilterState => {
     const { years } = getFilterOptions(posts);
@@ -137,11 +175,14 @@ export default function ParticleHero({
   );
 
   const placeholderStyle = useMemo((): CSSProperties | undefined => {
-    if (!galleryImage?.traceSvg && !galleryImage?.colorSet?.bgColor) return undefined;
+    if (!galleryImage?.traceUrl && !galleryImage?.colorSet?.bgColor)
+      return undefined;
 
     return {
       backgroundColor: galleryImage.colorSet?.bgColor,
-      backgroundImage: traceSvgToCssBackground(galleryImage.traceSvg),
+      backgroundImage: galleryImage.traceUrl
+        ? `url(${galleryImage.traceUrl})`
+        : undefined,
       backgroundSize: "cover",
       backgroundPosition: "center",
     };
@@ -181,7 +222,7 @@ export default function ParticleHero({
 
   useEffect(() => {
     const container = canvasRef.current;
-    if (!container) return;
+    if (!container || !postsReady) return;
 
     setWebglFailed(false);
 
@@ -272,12 +313,30 @@ export default function ParticleHero({
     };
     layoutMq.addEventListener("change", onLayoutChange);
 
-    const animate = () => {
-      rafRef.current = requestAnimationFrame(animate);
-      app.update();
-      app.draw();
+    // Pause the render loop while the hero is scrolled out of view so the
+    // main thread (and GPU) stay free for the rest of the page.
+    const startLoop = () => {
+      if (rafRef.current) return;
+      // Flush the delta accumulated while paused so particles don't jump.
+      app.clock.getDelta();
+      const loop = () => {
+        rafRef.current = requestAnimationFrame(loop);
+        app.update();
+        app.draw();
+      };
+      rafRef.current = requestAnimationFrame(loop);
     };
-    animate();
+    const stopLoop = () => {
+      if (!rafRef.current) return;
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+    };
+    const intersectionObserver = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) startLoop();
+      else stopLoop();
+    });
+    intersectionObserver.observe(container);
+    startLoop();
 
     (async () => {
       setLoading(true);
@@ -290,14 +349,15 @@ export default function ParticleHero({
     })();
 
     return () => {
-      cancelAnimationFrame(rafRef.current);
+      stopLoop();
+      intersectionObserver.disconnect();
       window.removeEventListener("resize", onResize);
       layoutMq.removeEventListener("change", onLayoutChange);
       resizeObserver.disconnect();
       void app.dispose();
       appRef.current = null;
     };
-  }, [posts, applyFilter, loadScene]);
+  }, [posts, postsReady, applyFilter, loadScene]);
 
   return (
     <CustomMantineProvider>

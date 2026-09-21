@@ -17,8 +17,15 @@ export function usePostFilter(
   const [yearIndex, setYearIndex] = useState(() =>
     Math.max(0, years.length - 1),
   );
+  const [yearTouched, setYearTouched] = useState(false);
 
-  const selectedYear = years[yearIndex] ?? years[years.length - 1] ?? "";
+  // Posts may arrive asynchronously (island props are kept small), so until
+  // the user picks a year keep following the latest known year.
+  const effectiveYearIndex = yearTouched
+    ? Math.min(yearIndex, Math.max(0, years.length - 1))
+    : Math.max(0, years.length - 1);
+
+  const selectedYear = years[effectiveYearIndex] ?? years[years.length - 1] ?? "";
   const lastYear = years[years.length - 1] ?? "";
   const hasYears = years.length > 0;
 
@@ -32,6 +39,7 @@ export function usePostFilter(
   }
 
   function onYearChange(value: number) {
+    setYearTouched(true);
     setYearIndex(value);
     const year = years[value] ?? lastYear;
     emitChange(selectedCategory, year);
@@ -41,7 +49,7 @@ export function usePostFilter(
     categories,
     years,
     selectedCategory,
-    yearIndex,
+    yearIndex: effectiveYearIndex,
     lastYear,
     hasYears,
     selectCategory,

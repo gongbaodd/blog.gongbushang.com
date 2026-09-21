@@ -8,7 +8,7 @@ import { getBadges } from "@/packages/utils/badges";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import BlogSections from "../components/BlogSections.astro";
 import SpotifyPlayer from "../components/SpotifyPlayer";
-import Tags, { TagGroup } from "../../packages/tags/Tags";
+import Tags from "@/packages/tags/Tags.astro";
 import Footer from "@/packages/footer/Footer.astro";
 import Header from "@/packages/header/Header.astro";
 import MantineHeatWrapper from "@/packages/heat/MantineHeatWrapper.astro";
@@ -16,7 +16,7 @@ import WorldMap from "../components/WorldMap.astro";
 import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
 import {
   findNearestGalleryEntry,
-  readGalleryTraceSvg,
+  readGalleryTraceUrl,
 } from "@/packages/utils/gallery";
 
 
@@ -27,7 +27,7 @@ const nearest = findNearestGalleryEntry();
 const galleryImage = nearest
   ? {
       url: nearest.image,
-      traceSvg: readGalleryTraceSvg(nearest.id),
+      traceUrl: readGalleryTraceUrl(nearest.id),
       colorSet: nearest.colorSet,
     }
   : undefined;
@@ -42,10 +42,8 @@ const galleryImage = nearest
       <MantineHeatWrapper />
       <BlogSections />
       <WorldMap />
-      <Tags client:load>
-        <TagGroup tags={badges} slot="tagGroup" />
-      </Tags>
-      <SpotifyPlayer client:load />
+      <Tags tags={badges} />
+      <SpotifyPlayer client:visible />
       <!-- <NewsLetter /> -->
       <Footer slug={"index"} />
     </MantineMain>

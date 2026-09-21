@@ -2,6 +2,7 @@ import { Container, Flex, Stack, Group, Text, Anchor, Button, Center } from "@ma
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import Folder from "@/src/bits/Components/Folder/Folder";
 import { Heatmap } from "@mantine/charts";
+import "@mantine/charts/styles.css";
 import dayjs from "dayjs";
 import { FILTER_ENTRY } from "@/packages/consts";
 import classes from "./Folder.module.css"

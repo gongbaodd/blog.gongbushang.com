@@ -1,14 +1,14 @@
 ---
 // Import the global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
+// Page-specific styles (KaTeX for posts, Mantine charts for /lab & /umap)
+// are imported by the components that use them to keep this sheet small.
 import { ColorSchemeScript } from "@mantine/core";
 import "react-loading-skeleton/dist/skeleton.css";
 import "../shadcn/app/globals.css"
 import "@mantine/core/styles.css";
-import '@mantine/charts/styles.css';
 import '@mantine/carousel/styles.css';
 import '@mantine/spotlight/styles.css';
-import "katex/dist/katex.min.css";
 import "./view-transition.css";
 
 interface Props {

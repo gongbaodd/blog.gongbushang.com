@@ -1,4 +1,14 @@
 ---
 import GLMap from "@/packages/map/GLMap";
 ---
-<GLMap client:idle />
+<!-- Below the fold: skip layout/paint until near the viewport -->
+<div class="cv-deferred">
+  <GLMap client:idle />
+</div>
+
+<style>
+  .cv-deferred {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 700px;
+  }
+</style>

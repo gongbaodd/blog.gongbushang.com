@@ -2,11 +2,10 @@
 import ParticleHeroReact from "./ParticleHero.tsx";
 import { Content } from "@/packages/hero/fragments/description.mdx";
 import { Content as TitleContent } from "@/packages/hero/fragments/title.mdx";
-import { loadUmapPosts } from "./loadUmapPosts";
 
 interface IGalleryImageProp {
   url: string;
-  traceSvg?: string;
+  traceUrl?: string;
   colorSet?: {
     bgColor: string;
     titleColor: string;
@@ -18,11 +17,9 @@ interface Props {
 }
 
 const { galleryImage } = Astro.props;
-
-const posts = loadUmapPosts();
 ---
 
-<ParticleHeroReact posts={posts} galleryImage={galleryImage} client:load>
+<ParticleHeroReact galleryImage={galleryImage} client:load>
   <TitleContent slot="title" />
   <Content slot="description" />
 </ParticleHeroReact>

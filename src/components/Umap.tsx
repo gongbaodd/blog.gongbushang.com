@@ -1,4 +1,5 @@
 import { ScatterChart, type ScatterChartProps } from "@mantine/charts";
+import "@mantine/charts/styles.css";
 import { Anchor, Card, Center, Loader, Paper, Stack, Text } from "@mantine/core";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";

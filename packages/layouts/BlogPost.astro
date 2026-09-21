@@ -1,5 +1,7 @@
 ---
 import { getEntry, type CollectionEntry } from "astro:content";
+// KaTeX styles are only needed on post pages (math rendering).
+import "katex/dist/katex.min.css";
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../footer/Footer.astro";
 import Global from "./Global.astro";
@@ -49,6 +51,8 @@ async function getLinks() {
     description={postExcerpt}
     slot="head"
   />
+  <!-- Post covers & content images are served from Cloudinary. -->
+  <link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
   <Header />
   <MantineMain client:load>
     <GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }}>

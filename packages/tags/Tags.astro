@@ -1,0 +1,62 @@
+---
+/**
+ * Static tag cloud (replaces the former React `Tags` island).
+ *
+ * The homepage renders ~460 badges; the Mantine `Badge` island used to
+ * serialize every badge's inline CSS variables into the HTML (~140 KB).
+ * This Astro component renders plain anchors styled like Mantine light
+ * badges instead — no island JS, and a tiny inline script only for the
+ * Show More / Show Less toggle.
+ */
+import classes from "./Tags.module.css";
+
+interface ITagLink {
+  label: string;
+  href: string;
+}
+
+interface Props {
+  tags: ITagLink[];
+}
+
+const { tags } = Astro.props;
+---
+
+<div class={classes.area} data-tags-area data-collapsed>
+  <h3 class={classes.title}># Topics</h3>
+  <div class={classes.cloud}>
+    {tags.map(({ label, href }) => <a class={classes.tag} href={href}>{label}</a>)}
+  </div>
+  <div class={classes.button}>
+    <button type="button" class={classes.toggle} data-tags-toggle>
+      Show More
+    </button>
+  </div>
+</div>
+
+<script>
+  function initTags() {
+    document
+      .querySelectorAll<HTMLElement>("[data-tags-area]")
+      .forEach((area) => {
+        if (area.dataset.tagsInit) return;
+        area.dataset.tagsInit = "true";
+        const toggle = area.querySelector<HTMLButtonElement>(
+          "[data-tags-toggle]",
+        );
+        toggle?.addEventListener("click", () => {
+          const collapsed = area.hasAttribute("data-collapsed");
+          area.toggleAttribute("data-collapsed", !collapsed);
+          if (toggle) toggle.textContent = collapsed ? "Show More" : "Show Less";
+        });
+      });
+  }
+
+  if (document.readyState !== "loading") {
+    initTags();
+  } else {
+    document.addEventListener("DOMContentLoaded", initTags);
+  }
+  // Re-init after view-transition navigations (ClientRouter).
+  document.addEventListener("astro:page-load", initTags);
+</script>

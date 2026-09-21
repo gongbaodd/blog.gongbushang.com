@@ -4,8 +4,17 @@ import { HistoryCarousel, LatestCarousel } from "@/packages/carousel/BlogCarouse
 
 ---
 
-<GridHalf>
-  <LatestCarousel slot="left" client:load />
-  <HistoryCarousel slot="right" client:load />
-</GridHalf>
+<!-- Below the fold: defer hydration and skip layout/paint until near the viewport -->
+<div class="cv-deferred">
+  <GridHalf>
+    <LatestCarousel slot="left" client:visible />
+    <HistoryCarousel slot="right" client:visible />
+  </GridHalf>
+</div>
 
+<style>
+  .cv-deferred {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
+  }
+</style>

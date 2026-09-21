@@ -8,7 +8,7 @@ import Footer from "@/packages/footer/Footer.astro";
 import ParticleHero from "@/packages/particle-hero/ParticleHero.astro";
 import {
   readGalleryEntry,
-  readGalleryTraceSvg,
+  readGalleryTraceUrl,
 } from "@/packages/utils/gallery";
 
 /** Change this to test a different gallery image (see src/content/generated/gallery.json). */
@@ -20,7 +20,7 @@ const entry = readGalleryEntry(GALLERY_IMAGE_ID);
 const galleryImage = entry
   ? {
       url: entry.image,
-      traceSvg: readGalleryTraceSvg(entry.id),
+      traceUrl: readGalleryTraceUrl(entry.id),
       colorSet: entry.colorSet,
     }
   : undefined;

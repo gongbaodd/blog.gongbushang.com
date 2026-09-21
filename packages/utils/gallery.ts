@@ -54,17 +54,52 @@ function traceSvgBasename(id: string): string {
   return `${id.replaceAll("/", "-")}.svg`;
 }
 
-export function readGalleryTraceSvg(id: string): string | undefined {
+function galleryTracePath(id: string): string | undefined {
   try {
     const svgPath = path.join(
       process.cwd(),
       GALLERY_TRACE_DIR,
       traceSvgBasename(id),
     );
-    if (!fs.existsSync(svgPath)) return undefined;
+    return fs.existsSync(svgPath) ? svgPath : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function readGalleryTraceSvg(id: string): string | undefined {
+  const svgPath = galleryTracePath(id);
+  if (!svgPath) return undefined;
+  try {
     return fs.readFileSync(svgPath, "utf-8");
   } catch {
     return undefined;
+  }
+}
+
+/**
+ * URL of the traced SVG served by the prerendered
+ * `src/pages/api/gallery/trace/[file].svg.ts` endpoint.
+ * Prefer this over `readGalleryTraceSvg` so the SVG bytes are not
+ * inlined into the HTML payload.
+ */
+export function readGalleryTraceUrl(id: string): string | undefined {
+  return galleryTracePath(id)
+    ? `/api/gallery/trace/${traceSvgBasename(id)}`
+    : undefined;
+}
+
+/** Basenames (without .svg) of all generated gallery trace SVGs. */
+export function listGalleryTraceFiles(): string[] {
+  try {
+    const dir = path.join(process.cwd(), GALLERY_TRACE_DIR);
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .filter((file) => file.endsWith(".svg"))
+      .map((file) => file.replace(/\.svg$/, ""));
+  } catch {
+    return [];
   }
 }
 

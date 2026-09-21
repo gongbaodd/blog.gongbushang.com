@@ -125,8 +125,13 @@ import OpenSource from "./fragments/opensource.mdx"
     fill="currentcolor"
     slot="iconV2ex"
   />
-  <ViewCount path={Astro.url.pathname} slot="viewCount" client:load />
+  <ViewCount path={Astro.url.pathname} slot="viewCount" client:visible />
   <OpenSource slot="openSource" />
 </MantineFooter>
-<script data-goatcounter="https://gongbaodd.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script
+  data-goatcounter="https://gongbaodd.goatcounter.com/count"
+  async
+  fetchpriority="low"
+  src="//gc.zgo.at/count.js"
+></script>
 
