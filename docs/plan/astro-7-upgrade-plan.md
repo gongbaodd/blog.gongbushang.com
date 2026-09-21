@@ -1,7 +1,7 @@
 # Astro 6 → 7 Upgrade Plan
 
 > Created: 2026-09-21\
-> Status: **IN PROGRESS** (Steps 0–5 ✅; next: Step 6 — Vite 8 / Rolldown validation)\
+> Status: **IN PROGRESS** (Steps 0–6 ✅; next: Step 7 — test tooling)\
 > Scope: `growgen.xyz` --- Astro `6.3.8` → `7.x` and Astro/Vite-coupled
 > dependencies.\
 > Deployment: **Cloudflare**
@@ -386,6 +386,42 @@ pnpm build
 ------------------------------------------------------------------------
 
 ## Step 6 --- Validate Vite 8 / Rolldown behavior
+
+> **Status: ✅ DONE (2026-09-21)** — Verified against the Step 0 baseline:
+>
+> - **GLSL**: `vite-plugin-glsl` 1.6.1 transforms `.glsl`/`.vert`/`.frag`
+>   through Rolldown — built `ParticleHero` chunk contains the shader
+>   source with the `noise.glsl` **include** resolved and inlined
+>   (`gl_Position`/`gl_FragColor`, `uniform` declarations, 6 `snoise`
+>   hits). Island module serves 200 in dev.
+> - **Tree shaking**: `treeshake.moduleSideEffects: "no-external"`
+>   behavior preserved via Vite 8's compat layer. Bundle comparison vs
+>   baseline: dist **312 MB** (was 326 MB), `_astro/` **49 MB** (=),
+>   `MantineHero.js` 2.5 MB (=), `maplibre-gl.js` 1004 KB (was 1.1 MB),
+>   `three.module.js` 660 KB (was 668 KB). **No tabler-icons regression**
+>   (no tabler chunk; `createLucideIcon` chunk is 4 KB).
+> - **Rapier / deps optimization**: dev server serves the full chain
+>   `Lanyard.tsx → @react-three/rapier → @dimforge/rapier3d-compat/rapier.mjs`
+>   (3.3 MB with inlined base64 WASM `AGFzbQ`), honoring the
+>   `pnpm.overrides` pin to `0.19.2`; `optimizeDeps.exclude` entries
+>   intact. Prod build green (prerender instantiates the islands).
+> - **Aliases**: `react-plock` alias resolved — client chunk
+>   `BlogPlock.C6pIxCSy.js` emitted and referenced by
+>   `dist/world/index.html`; `onnxruntime-node` → `src/empty-module.js`
+>   works (zero `onnxruntime` references in dist).
+> - **SSR noExternal `react-plock`**: prerender of all 1617 pages
+>   succeeded (would crash if the ESM-only package were externalized).
+> - **Dev server**: started (first start takes ~50 s — the reason
+>   `astro dev --background`'s 30 s startup window times out; noted as a
+>   minor agent-ergonomics quirk, not a defect). `/`, `/world`,
+>   `/fe/2025/09/08/mermaid/`, `/fe/2025/08/18/blog-cards/` all 200;
+>   log clean (no errors/warnings after first-run dep-opt churn).
+> - **Runtime WebGL/WASM rendering** could not be executed headlessly
+>   (no browser connected in this session) — all static/module-level
+>   evidence is green; do a manual eyeball of the homepage hero
+>   (ParticleHero + Lanyard) and `/world` before merge.
+>
+> **Gate: PASS** (with the runtime-eyeball caveat noted above).
 
 With the compiler green, verify bundler-specific behavior separately.
 
