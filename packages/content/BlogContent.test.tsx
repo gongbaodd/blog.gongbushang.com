@@ -41,11 +41,16 @@ vi.mock("../carousel/BlogCarousel", () => ({
   ),
 }));
 
-const requestMock = vi.fn();
-const subscribeStub = vi.fn((cb: () => void) => {
-  cb();
-  return () => {};
-});
+// vi.mock factories are hoisted above module scope, so any stubs they
+// reference must be created via vi.hoisted (a plain `const` below would
+// throw "Cannot access ... before initialization").
+const { requestMock, subscribeStub } = vi.hoisted(() => ({
+  requestMock: vi.fn(),
+  subscribeStub: vi.fn((cb: () => void) => {
+    cb();
+    return () => {};
+  }),
+}));
 vi.mock("@/src/stores/relates", () => ({
   $relates: {
     get: () => [
@@ -54,8 +59,10 @@ vi.mock("@/src/stores/relates", () => ({
     ],
     set: vi.fn(),
     subscribe: subscribeStub,
+    // @nanostores/react's useStore() calls store.listen()
+    listen: subscribeStub,
   },
-  $isLoading: { get: () => false, set: vi.fn(), subscribe: subscribeStub },
+  $isLoading: { get: () => false, set: vi.fn(), subscribe: subscribeStub, listen: subscribeStub },
   request: requestMock,
 }));
 
