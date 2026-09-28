@@ -7,13 +7,14 @@ export const resumeRoles = [
   "ai-agent",
   "product-engineer",
   "qa-tester",
+  "xr-developer",
 ] as const;
 export const resumeLanguages = ["en", "zh"] as const;
 export type ResumeRole = (typeof resumeRoles)[number];
 export type ResumeLanguage = (typeof resumeLanguages)[number];
 export type Localized = Record<ResumeLanguage, string>;
 
-export const updated = "2026-09-16";
+export const updated = "2026-09-28";
 export const roleLabels: Record<ResumeRole, Localized> = {
   universal: { en: "Universal", zh: "综合" },
   "full-stack": { en: "Full-Stack Dev", zh: "全栈开发" },
@@ -23,6 +24,7 @@ export const roleLabels: Record<ResumeRole, Localized> = {
   "ai-agent": { en: "AI Agent", zh: "AI 智能体" },
   "product-engineer": { en: "Product Engineer", zh: "产品工程师" },
   "qa-tester": { en: "QA Tester", zh: "测试工程师" },
+  "xr-developer": { en: "VR / XR Developer", zh: "VR / XR 开发工程师" },
 };
 
 export const labels: Record<ResumeLanguage, Record<string, string>> = {
@@ -211,6 +213,17 @@ export const experience = {
 } satisfies Record<string, ResumeEntry>;
 
 export const projects = {
+  // Source: /tech/2026/09/28/mahu-qr
+  mahuQr: {
+    name: { en: "MahuQR", zh: "MahuQR 艺术二维码生成器" },
+    detail: {
+      en: "Built a browser-based artistic QR code maker with a reusable WebAssembly-compatible renderer published to npm; generates and exports QR artwork locally.",
+      zh: "开发浏览器端艺术二维码生成器，并将可复用、兼容 WebAssembly 的渲染器发布至 npm；支持本地生成与导出二维码图案。",
+    },
+    tags: ["AI-Native", "Next.js", "WebAssembly", "TypeScript", "npm"],
+    url: "https://qr.growgen.xyz",
+    image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1790593980/IMG_3896_nwqlne.jpg",
+  },
   // Source: /tech/2026/06/06/xr-drone-sim; thesis linked below
   drone: {
     name: { en: "XR Drone Simulator", zh: "XR 无人机模拟器" },
@@ -399,11 +412,11 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
     education: ["tlu", "ul", "bat", "sut"],
     experience: ["lecturer", "kickstart", "aftership", "trip"],
     projects: [
+      "mahuQr",
       "drone",
       "grandpa",
       "tetris",
       "hearing",
-      "tour",
       "kitchen",
       "aftership",
       "trip",
@@ -439,8 +452,8 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
     projects: [
       "aftership",
       "trip",
+      "mahuQr",
       "website",
-      "missile",
       "tour",
       "tetris",
       "kitchen",
@@ -610,7 +623,7 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
       "aftership",
       "grandpa",
       "website",
-      "missile",
+      "mahuQr",
       "tour",
       "kitchen",
       "tetris",
@@ -656,6 +669,40 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
       "website",
       "missile",
       "kitchen",
+      "tetris",
+    ],
+  },
+  "xr-developer": {
+    headline: { en: "VR / XR Developer", zh: "VR / XR 开发工程师" },
+    summary: {
+      en: "XR developer with an MSc in Digital Learning Games, building immersive simulations, games and interactive experiences across Unity and the web. Published an XR drone simulator developed for a thesis and created projects spanning Quest-tested campus tours, hand tracking and Godot XR.",
+      zh: "拥有数字学习游戏硕士学位的 XR 开发者，使用 Unity 和 Web 构建沉浸式仿真、游戏与交互体验。发布了为硕士论文开发的 XR 无人机模拟器，并制作了 Quest 实测校园导览、手势追踪及 Godot XR 项目。",
+    },
+    skills: [
+      skill("XR development", "Unity, MRTK and Godot XR", "Unity、MRTK 与 Godot XR"),
+      skill(
+        "Web-based 3D",
+        "BabylonJS, WebXR and 3D Gaussian splatting",
+        "BabylonJS、WebXR 与 3D 高斯泼溅",
+      ),
+      skill(
+        "Interaction",
+        "Hand tracking with MediaPipe and JavaScript-to-Unity integration",
+        "MediaPipe 手势追踪与 JavaScript 到 Unity 的集成",
+      ),
+      skill("Simulation", "PID control, ML-Agents and interactive prototyping", "PID 控制、ML-Agents 与交互原型开发"),
+    ],
+    education: ["tlu", "bat", "ul", "sut"],
+    experience: ["kickstart", "lecturer", "aftership", "trip"],
+    projects: [
+      "drone",
+      "tour",
+      "kitchen",
+      "wizard",
+      "ninja",
+      "grandpa",
+      "missile",
+      "website",
       "tetris",
     ],
   },

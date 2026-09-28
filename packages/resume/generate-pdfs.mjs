@@ -20,6 +20,7 @@ const resumeRoles = [
   "ai-agent",
   "product-engineer",
   "qa-tester",
+  "xr-developer",
 ];
 const resumeLanguages = ["en", "zh"];
 const MAX_BYTES = 2 * 1024 * 1024;
