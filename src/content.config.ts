@@ -6,6 +6,7 @@ const schema = ({ image }: SchemaContext) =>
   z.object({
     type: z.enum(["post", "draft"]),
     category: z.string(),
+    adsense: z.boolean().default(false),
     tag: z.array(z.string()).optional(),
     series: z
       .object({

@@ -116,6 +116,7 @@ export function mapPodcastEpisodesToPosts(): T_PROPS[] {
       type: "post" as const,
       title: episode.title,
       category: "podcast",
+      adsense: false,
       description: episode.description || episode.summary || "",
       summary: episode.summary,
       date: new Date(episode.pubDate),

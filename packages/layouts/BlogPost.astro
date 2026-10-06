@@ -14,9 +14,15 @@ import { render } from "astro:content";
 import Header from "../header/Header.astro";
 import { GridWithMenu } from "../scaffold/GridWithMenu";
 import { mapServerPostToClient, type T_PROPS } from "../utils/post";
+import AdSenseHead from "../ads/AdSenseHead.astro";
+import AdSenseSlot from "../ads/AdSenseSlot.astro";
 
 type Props = T_PROPS;
 const post = Astro.props;
+const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
+const adsenseSlotId = post.data.adsense && adsenseConsentReady
+  ? import.meta.env.PUBLIC_ADSENSE_SLOT_ID?.trim()
+  : undefined;
 const [clientPost] = await mapServerPostToClient([post]);
 
 const entry = await getEntry("blog", post.id);
@@ -51,6 +57,7 @@ async function getLinks() {
     description={postExcerpt}
     slot="head"
   />
+  {adsenseSlotId && <AdSenseHead slot="head" />}
   <!-- Post covers & content images are served from Cloudinary. -->
   <link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
   <Header />
@@ -72,6 +79,7 @@ async function getLinks() {
         >
           <slot />
         </BlogContent>
+        {adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} />}
         <RelatePosts id={post.id} category={post.data.category} client:idle />
       </section>
     </GridWithMenu>

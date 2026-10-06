@@ -300,9 +300,9 @@ export default function MantineFooter({
               </Text>
             </Group>
 
-            <Group gap="md" visibleFrom="sm">
-              <Anchor href="#cookies" size="sm" c="dimmed" td="none">
-                About Cookie
+            <Group gap="md">
+              <Anchor href="/privacy#ad-preferences" size="sm" c="dimmed" td="none">
+                Privacy &amp; ad settings
               </Anchor>
             </Group>
           </Group>

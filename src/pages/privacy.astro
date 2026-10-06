@@ -1,0 +1,169 @@
+---
+import AdSenseHead from "@/packages/ads/AdSenseHead.astro";
+import BaseHead from "@/packages/components/BaseHead.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import Header from "@/packages/header/Header.astro";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+
+const description =
+  "Privacy, analytics, advertising, and consent information for GrowGen.";
+const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
+---
+
+<Global>
+  <BaseHead title="Privacy | GrowGen" description={description} slot="head" />
+  {adsenseConsentReady && <AdSenseHead slot="head" />}
+  <Header />
+  <section id="privacy-page" class="main">
+    <MantineMain>
+      <main class="mx-auto w-full max-w-4xl px-4 py-10">
+        <article class="mx-auto max-w-3xl space-y-6">
+          <header class="space-y-2">
+            <h1 class="text-3xl font-bold">Privacy &amp; advertising</h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Last updated: October 6, 2026</p>
+          </header>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">About this site</h2>
+            <p>
+              GrowGen is a personal website operated by Jian Gong. For privacy questions, contact
+              {" "}
+              <a class="underline" href="mailto:gongbaodd@outlook.com">gongbaodd@outlook.com</a>.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Traffic measurement</h2>
+            <p>
+              This site uses GoatCounter to measure page views and understand aggregate site traffic.
+              GoatCounter documents that its hosted service stores aggregate statistics and does not
+              store IP addresses, full user-agent strings, or tracking identifiers in its database;
+              it may process an IP address and user-agent temporarily in memory to avoid counting
+              repeat visits. Its analytics script does not use browser cookies or local storage.
+              {" "}
+              <a class="underline" href="https://www.goatcounter.com/help/privacy" rel="noopener noreferrer">
+                GoatCounter privacy details
+              </a>.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Advertising and consent</h2>
+            <p>
+              This site is set up for Google AdSense on manually approved blog articles. Ads can be
+              requested only when an article is explicitly opted in and an AdSense display-unit ID
+              is configured; this page itself has no ad unit. When the AdSense script or an ad is
+              requested, Google and configured ad partners may receive request and device data such
+              as the page URL, IP address, browser, and ad interaction data. They may use cookies
+              or similar technologies to deliver, measure, and protect advertising. Personalization
+              depends on the user's choices and the account's regional settings.
+            </p>
+            <p>
+              Google explains how partner sites use data in its
+              {" "}
+              <a class="underline" href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer">
+                information about Google's partner sites
+              </a> and
+              {" "}
+              <a class="underline" href="https://policies.google.com/technologies/ads" rel="noopener noreferrer">
+                advertising technologies
+              </a>.
+            </p>
+            <p>
+              {adsenseConsentReady
+                ? "Google's European regulations message lists the configured ad partners and consent choices. Use the control below to reopen it and review or withdraw consent."
+                : "Google's European regulations message will list the configured ad partners and consent choices once published for GrowGen. The consent-settings control will appear here after the message is published in AdSense Privacy & messaging and enabled for this site."}
+            </p>
+            <div id="ad-preferences" class="space-y-2">
+              {adsenseConsentReady ? (
+                <>
+                  <button
+                    id="manage-ad-preferences"
+                    type="button"
+                    class="rounded-md border border-gray-400 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Manage ad consent
+                  </button>
+                  <p id="ad-preferences-status" class="text-sm text-gray-600 dark:text-gray-400" role="status" aria-live="polite"></p>
+                </>
+              ) : (
+                <p class="text-sm text-gray-600 dark:text-gray-400" role="status">
+                  Google consent settings will appear here after Google Privacy &amp; messaging is configured for GrowGen.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Third-party services</h2>
+            <p>
+              Post images may be delivered by Cloudinary. Some pages link to or embed third-party
+              media, including podcast services. When your browser requests those resources or you
+              follow those links, the provider may receive technical request data and apply its own
+              privacy policy.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Your choices</h2>
+            <p>
+              You can manage advertising consent with the control above when Google's message is
+              available. You can also review or change Google ad personalization settings at
+              {" "}
+              <a class="underline" href="https://myadcenter.google.com/" rel="noopener noreferrer">
+                Google My Ad Center
+              </a>. Browser settings can be used to manage cookies and local storage.
+            </p>
+          </section>
+        </article>
+      </main>
+      <Footer slug="privacy" />
+    </MantineMain>
+  </section>
+</Global>
+
+<script is:inline>
+  (() => {
+    const button = document.getElementById("manage-ad-preferences");
+    const status = document.getElementById("ad-preferences-status");
+
+    const openConsentMessage = () => {
+      if (typeof window.googlefc?.showRevocationMessage === "function") {
+        window.googlefc.showRevocationMessage();
+        return;
+      }
+
+      const callbackQueue = window.googlefc?.callbackQueue;
+      if (!callbackQueue) {
+        if (status) {
+          status.textContent = "Google's consent message is not available. Try again later.";
+        }
+        return;
+      }
+
+      if (status) status.textContent = "Loading Google consent settings…";
+      let timedOut = false;
+      const timeout = window.setTimeout(() => {
+        timedOut = true;
+        if (status) {
+          status.textContent = "Google's consent message is not available. Try again later.";
+        }
+      }, 8000);
+
+      callbackQueue.push({
+        CONSENT_API_READY: () => {
+          window.clearTimeout(timeout);
+          if (timedOut) return;
+          if (typeof window.googlefc?.showRevocationMessage === "function") {
+            window.googlefc.showRevocationMessage();
+          } else if (status) {
+            status.textContent = "Google's consent message is not available. Try again later.";
+          }
+        },
+      });
+    };
+
+    button?.addEventListener("click", openConsentMessage);
+  })();
+</script>

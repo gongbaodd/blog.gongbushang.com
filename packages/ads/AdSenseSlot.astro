@@ -1,0 +1,27 @@
+---
+interface Props {
+  slotId: string;
+}
+
+const { slotId } = Astro.props;
+---
+
+<aside
+  aria-label="Advertisements"
+  class="mx-auto my-10 w-full max-w-3xl border-y border-gray-200 py-4 dark:border-gray-700"
+>
+  <p class="mb-2 text-center text-xs text-gray-600 dark:text-gray-400">Advertisements</p>
+  <ins
+    class="adsbygoogle"
+    style="display:block; min-height:100px"
+    data-ad-client="ca-pub-7617483459228974"
+    data-ad-slot={slotId}
+    data-ad-format="auto"
+    data-full-width-responsive="true"
+  ></ins>
+</aside>
+
+<script is:inline>
+  window.adsbygoogle = window.adsbygoogle || [];
+  window.adsbygoogle.push({});
+</script>
