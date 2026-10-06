@@ -96,7 +96,6 @@
     "potrace": "^2.1.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-loading-skeleton": "^3.5.0",
     "react-map-gl": "^8.0.4",
     "react-plock": "^3.5.1",
     "recharts": "^3.2.1",

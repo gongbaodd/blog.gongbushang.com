@@ -191,9 +191,6 @@ importers:
       react-dom:
         specifier: ^19.2.6
         version: 19.2.6(react@19.2.6)
-      react-loading-skeleton:
-        specifier: ^3.5.0
-        version: 3.5.0(react@19.2.6)
       react-map-gl:
         specifier: ^8.0.4
         version: 8.1.1(mapbox-gl@3.24.0)(maplibre-gl@5.24.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -6954,11 +6951,6 @@ packages:
 
   react-is@19.2.6:
     resolution: {integrity: sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==}
-
-  react-loading-skeleton@3.5.0:
-    resolution: {integrity: sha512-gxxSyLbrEAdXTKgfbpBEFZCO/P153DnqSCQau2+o6lNy1jgMRr2MmRmOzMmyrwSaSYLRB8g7b0waYPmUjz7IhQ==}
-    peerDependencies:
-      react: '>=16.8.0'
 
   react-map-gl@8.1.1:
     resolution: {integrity: sha512-aSqFAFoxvY7wxbGI93Dz0E41171mkAb3GcNbnkFIotmu88OFw495os6mIDZSi7irYNT/PZEIOEHUxhun4ToGuQ==}
@@ -15356,10 +15348,6 @@ snapshots:
   react-is@17.0.2: {}
 
   react-is@19.2.6: {}
-
-  react-loading-skeleton@3.5.0(react@19.2.6):
-    dependencies:
-      react: 19.2.6
 
   react-map-gl@8.1.1(mapbox-gl@3.24.0)(maplibre-gl@5.24.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
     dependencies:
