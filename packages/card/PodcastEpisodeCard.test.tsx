@@ -7,7 +7,7 @@ import { PodcastEpisodeCard } from "./PodcastEpisodeCard";
 import type { IPodcastEpisode } from "@/src/stores/podcast";
 
 const minimalEpisode: IPodcastEpisode = {
-  id: "https://example.com/ep1",
+  id: "ep1",
   title: "Episode One",
   link: "https://example.com/ep1",
   pubDate: "2024-01-15T00:00:00Z",
@@ -26,11 +26,11 @@ const episodeWithDuration: IPodcastEpisode = {
 };
 
 describe("PodcastEpisodeCard", () => {
-  test("renders episode title and link", () => {
+  test("links the episode title to its local detail page", () => {
     render(<PodcastEpisodeCard episode={minimalEpisode} />);
     expect(screen.getByText("Episode One")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: /episode one/i });
-    expect(link).toHaveAttribute("href", "https://example.com/ep1");
+    expect(link).toHaveAttribute("href", "/podcast/ep1");
   });
 
   test("renders pubDate in YYYY-MM-DD format", () => {

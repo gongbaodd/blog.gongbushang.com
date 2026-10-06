@@ -6,6 +6,7 @@ Hi, I'm **J. Gong** 👋 – A web developer from China with a passion for conti
 
 This is my digital space to share:
 
+- 🎙️ **[Podcast](/podcast)** – Browse episode pages and choose to listen on Spotify
 - 🛠️ **[Tech journals](/tech)** – Web development insights and technical reflections
 - ✍️ **[Daily life notes](/plan)** – Thoughts and observations from everyday life
 - ✈️ **[Travel stories](/world)** – Adventures and experiences around the globe

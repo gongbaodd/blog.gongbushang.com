@@ -1,0 +1,75 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import Header from "@/packages/header/Header.astro";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import { SITE_TITLE } from "@/packages/consts";
+import { processPodcastEpisodes } from "@/packages/utils/podcast";
+import { stripHtml } from "@/packages/card/stripHtml";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+  return processPodcastEpisodes().map((episode) => ({
+    params: { id: episode.id },
+    props: { episode },
+  }));
+}
+
+const { episode } = Astro.props;
+const description = stripHtml(episode.description || episode.summary || "");
+const metaDescription = stripHtml(episode.summary || description).slice(0, 200);
+const publishedDate = new Date(episode.pubDate);
+---
+
+<Global>
+  <BaseHead
+    title={`${episode.title} | ${SITE_TITLE}`}
+    description={metaDescription}
+    image={episode.image}
+    slot="head"
+  />
+  <Header transition:persist />
+  <section id="podcast-episode-page" class="main">
+    <MantineMain>
+      <main class="mx-auto w-full max-w-3xl px-4 py-10">
+        <a href="/podcast" class="mb-6 inline-flex items-center gap-2 text-sm underline underline-offset-4">
+          <span aria-hidden="true">←</span>
+          All episodes
+        </a>
+        <article class="overflow-hidden rounded-2xl border bg-background shadow-sm">
+          {episode.image && (
+            <img
+              src={episode.image}
+              alt={episode.title}
+              class="max-h-[28rem] w-full object-cover"
+            />
+          )}
+          <div class="space-y-5 p-6 sm:p-8">
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <time datetime={publishedDate.toISOString()}>
+                {publishedDate.toLocaleDateString("en-US", { dateStyle: "long" })}
+              </time>
+              {episode.duration && <span>{episode.duration}</span>}
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{episode.title}</h1>
+            {description && <p class="whitespace-pre-wrap leading-7">{description}</p>}
+            {episode.link && (
+              <a
+                href={episode.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center rounded-full bg-green-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-green-700"
+              >
+                Listen on Spotify
+                <span class="ml-2" aria-hidden="true">↗</span>
+              </a>
+            )}
+          </div>
+        </article>
+      </main>
+      <Footer slug="podcast" />
+    </MantineMain>
+  </section>
+</Global>

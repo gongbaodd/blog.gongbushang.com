@@ -102,7 +102,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
   );
 
   const titleBlock = (
-    <Anchor underline="never" href={episode.link} target="_blank">
+    <Anchor underline="never" href={`/podcast/${encodeURIComponent(episode.id)}`}>
       <Title className={classes.title}>
         <span>{episode.title}</span>
       </Title>
