@@ -13,17 +13,32 @@ vi.mock("../consts", () => ({
   BLOG_SOURCE: "blog",
 }));
 
-import { date, tags, category } from "./extract";
+import { getEntry } from "astro:content";
+import { date, tags, category, title } from "./extract";
 
 type PostLike = {
   id: string;
   data: {
     category?: string;
+    title?: string;
     tag?: string[];
     date?: Date;
     series?: { slug: string; name?: string };
   };
 };
+
+describe("title", () => {
+  test("uses synthetic post title without looking up a content entry", async () => {
+    vi.clearAllMocks();
+    const post = {
+      id: "Codex-e3pvsak",
+      data: { category: "podcast", title: "给我整一下Codex" },
+    };
+
+    await expect(title(post as never)).resolves.toBe("给我整一下Codex");
+    expect(getEntry).not.toHaveBeenCalled();
+  });
+});
 
 describe("date", () => {
   test("returns data.date for synthetic post", () => {

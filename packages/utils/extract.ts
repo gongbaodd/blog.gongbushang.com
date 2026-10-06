@@ -8,11 +8,13 @@ import { BLOG_SOURCE } from "../consts";
 type T_POST = T_PROPS;
 
 export async function title(post: T_POST) {
+  // Synthetic posts (e.g. podcast) are not content collection entries.
+  const dataTitle =
+    "title" in post.data && typeof post.data.title === "string" ? post.data.title : undefined;
+  if (dataTitle) return dataTitle;
+
   const entry = await getEntry(BLOG_SOURCE, post.id);
   if (!entry) {
-    // Synthetic posts (e.g. podcast) not in content collection — use data.title or id fallback
-    const dataTitle = (post as { data?: { title?: string } }).data?.title;
-    if (dataTitle) return dataTitle;
     const lastIndex = post.id?.lastIndexOf("/");
     return lastIndex >= 0 ? post.id.slice(lastIndex + 1).replace(/-/g, " ") : post.id;
   }
