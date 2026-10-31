@@ -117,7 +117,7 @@ export default function MantineHeader({
   function NavLinks() {
     const links = useStore($links);
     return (
-      <Group gap="lg" visibleFrom="sm">
+      <Group gap="lg" visibleFrom="md">
         {links.map((link, i) => (
           <NavLink key={i} link={link} />
         ))}
@@ -179,7 +179,7 @@ export default function MantineHeader({
           </Stack>
         </Drawer>
         <Button
-          hiddenFrom="sm"
+          hiddenFrom="md"
           variant="transparent"
           radius={"xl"}
           c="dimmed"
