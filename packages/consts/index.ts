@@ -63,7 +63,7 @@ export const PV_URL = "https://pv.growgen.xyz/";
 
 export const POST_COUNT_PER_PAGE = 16;
 /** Upper limit of cards rendered into the server HTML; the client loads the rest. */
-export const INITIAL_SSR_POSTS = 5;
+export const INITIAL_SSR_POSTS = 8;
 
 export enum POST_CARD_LAYOUT {
   xs = "xs",

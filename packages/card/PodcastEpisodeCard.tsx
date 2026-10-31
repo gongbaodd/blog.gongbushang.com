@@ -14,6 +14,7 @@ import {
 import { IconPlayerPlay, IconQuoteFilled } from "@tabler/icons-react";
 import { Calendar, Headphones } from "lucide-react";
 import { useEffect, useState } from "react";
+import { AsciiReveal } from "ascii-reveal";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import type { IPodcastEpisode } from "@/src/stores/podcast";
 import classes from "./PostCard.module.css";
@@ -28,7 +29,11 @@ interface IPodcastEpisodeCardProps {
   fill?: boolean;
 }
 
-export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpisodeCardProps) {
+export function PodcastEpisodeCard({
+  episode,
+  hideExcerpt,
+  fill,
+}: IPodcastEpisodeCardProps) {
   const excerpt = stripHtml(episode.summary || episode.description || "");
   const [coverOpacity, setCoverOpacity] = useState(0);
   const hasCover = !!episode.image;
@@ -38,7 +43,10 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
     const img = new Image();
     img.src = episode.image;
     img.onload = () => setCoverOpacity(1);
+    img.onerror = () => setCoverOpacity(1);
   }, [episode.image]);
+
+  const loading = hasCover && coverOpacity === 0;
 
   const className = [
     classes.item,
@@ -61,14 +69,24 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
 
   const badgeRow = (
     <Flex justify="space-between" align="center">
-      <Badge color="gray" variant="default" size="sm" className={classes.category}>
+      <Badge
+        color="gray"
+        variant="default"
+        size="sm"
+        className={classes.category}
+      >
         <Group gap={6}>
           <Calendar size={12} />
           <Text size="xs">{formatPubDate(episode.pubDate)}</Text>
         </Group>
       </Badge>
       {episode.duration && (
-        <Badge color="gray" variant="default" size="sm" className={classes.category}>
+        <Badge
+          color="gray"
+          variant="default"
+          size="sm"
+          className={classes.category}
+        >
           <Group gap={6}>
             <Headphones size={12} />
             <Text size="xs">{episode.duration}</Text>
@@ -101,7 +119,10 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
   );
 
   const titleBlock = (
-    <Anchor underline="never" href={`/podcast/${encodeURIComponent(episode.id)}`}>
+    <Anchor
+      underline="never"
+      href={`/podcast/${encodeURIComponent(episode.id)}`}
+    >
       <Title className={classes.title}>
         <span>{episode.title}</span>
       </Title>
@@ -110,62 +131,83 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
 
   return (
     <CustomMantineProvider>
-      <Stack justify="center" align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
+      <Stack
+        justify="center"
+        align={fill ? "stretch" : "center"}
+        w={fill ? "100%" : undefined}
+      >
         <Box
           maw={fill ? undefined : CARD_WIDTH}
           miw={fill ? CARD_MIN_WIDTH : undefined}
           w={fill ? "100%" : undefined}
         >
-          <Card
-            key={episode.id}
-            shadow="sm"
-            padding={hasCover ? 0 : "lg"}
-            radius="lg"
-            withBorder
-            w={fill ? "100%" : undefined}
-            className={className}
-            style={{
-              ...cardStyle,
-              ...(hasCover
-                ? {}
-                : {
-                    backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
-                  }),
-            }}
+          <AsciiReveal
+            loading={loading}
+            revealOnMount={false}
+            style={{ width: "100%" }}
           >
-            {hasCover ? (
-              <>
-                <Box className={classes.cover_area} style={coverAreaStyle}>
-                  <Flex
-                    direction="column"
-                    justify="space-between"
-                    p="lg"
-                    flex={1}
-                    className={classes.cover_content}
-                  >
-                    {badgeRow}
-                    {metaRow}
-                  </Flex>
-                </Box>
-                <Box className={classes.cover_footer}>{titleBlock}</Box>
-              </>
-            ) : (
-              <Flex direction="column" justify="space-between" flex={1} className={classes.content}>
-                {badgeRow}
-                {titleBlock}
-                {episode.audioUrl && (
-                  <Group gap="xs">
-                    <Anchor href={episode.audioUrl} target="_blank" size="xs">
-                      Listen
-                    </Anchor>
-                  </Group>
-                )}
-              </Flex>
-            )}
-          </Card>
+            <Card
+              key={episode.id}
+              shadow="sm"
+              padding={hasCover ? 0 : "lg"}
+              radius="lg"
+              withBorder
+              w={fill ? "100%" : undefined}
+              className={className}
+              style={{
+                ...cardStyle,
+                ...(hasCover
+                  ? {}
+                  : {
+                      backgroundColor:
+                        episode.colorSet?.bgColor ||
+                        "var(--mantine-color-gray-2)",
+                    }),
+              }}
+            >
+              {hasCover ? (
+                <>
+                  <Box className={classes.cover_area} style={coverAreaStyle}>
+                    <Flex
+                      direction="column"
+                      justify="space-between"
+                      p="lg"
+                      flex={1}
+                      className={classes.cover_content}
+                    >
+                      {badgeRow}
+                      {metaRow}
+                    </Flex>
+                  </Box>
+                  <Box className={classes.cover_footer}>{titleBlock}</Box>
+                </>
+              ) : (
+                <Flex
+                  direction="column"
+                  justify="space-between"
+                  flex={1}
+                  className={classes.content}
+                >
+                  {badgeRow}
+                  {titleBlock}
+                  {episode.audioUrl && (
+                    <Group gap="xs">
+                      <Anchor href={episode.audioUrl} target="_blank" size="xs">
+                        Listen
+                      </Anchor>
+                    </Group>
+                  )}
+                </Flex>
+              )}
+            </Card>
+          </AsciiReveal>
           {!hideExcerpt && excerpt && (
             <Flex pl={5} pr={10} pt={5}>
-              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
+              <Avatar
+                size="xs"
+                variant="transparent"
+                style={{ transform: "rotateZ(180deg)" }}
+              >
                 <IconQuoteFilled />
               </Avatar>
               <Text size="sm" lineClamp={2} className={classes.excerpt}>
