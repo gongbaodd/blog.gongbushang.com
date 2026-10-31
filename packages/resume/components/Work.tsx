@@ -28,7 +28,7 @@ const data = [
     name: "Tetris AI",
     height: 200,
     items: ["PixiJS", "Mini-Max"],
-    url: "https://www.growgen.xyz/fe/2025/09/09/tetris-ai",
+    url: "https://growgen.xyz/fe/2025/09/09/tetris-ai",
   },
   {
     key: "missile",
@@ -37,7 +37,7 @@ const data = [
     name: "3D Missile Command MMRPG",
     height: 200,
     items: ["BabylonJS", "Colyseus", "Node.js"],
-    url: "https://www.growgen.xyz/plan/2025/10/08/remake-of-missile-command",
+    url: "https://growgen.xyz/plan/2025/10/08/remake-of-missile-command",
   },
   {
     key: "hearing",
@@ -46,7 +46,7 @@ const data = [
     name: "Hearing Aid",
     height: 220,
     items: ["Arduino", "Edge ML", "MFCC", "CNN"],
-    url: "https://www.growgen.xyz/plan/2025/08/02/week-32-edge-impulse",
+    url: "https://growgen.xyz/plan/2025/08/02/week-32-edge-impulse",
   },
   {
     key: "ninja_paws",
@@ -55,7 +55,7 @@ const data = [
     name: "Ninja Paws",
     height: 160,
     items: ["Unity", "Behavior Tree"],
-    url: "https://www.growgen.xyz/lab/2025/07/04/ninja-paws",
+    url: "https://growgen.xyz/lab/2025/07/04/ninja-paws",
   },
   {
     key: "school_tour",
@@ -63,7 +63,7 @@ const data = [
     name: "Tallinn University XR tour",
     height: 200,
     items: ["BabylonJS", "3DGS"],
-    url: "https://www.growgen.xyz/lab/2025/05/19/tlu-xr-tour",
+    url: "https://growgen.xyz/lab/2025/05/19/tlu-xr-tour",
   },
   {
     key: "kitchen",
@@ -72,7 +72,7 @@ const data = [
     name: "Baltic Kitchen Kaos",
     height: 180,
     items: ["Unity", "ReactJS", "MediaPipe"],
-    url: "https://www.growgen.xyz/lab/2025/05/20/baltic-kitchen-chaos",
+    url: "https://growgen.xyz/lab/2025/05/20/baltic-kitchen-chaos",
   },
   {
     key: "Enchanted",
@@ -80,7 +80,7 @@ const data = [
     name: "Enchanted Wizard",
     height: 200,
     items: ["Godot"],
-    url: "https://www.growgen.xyz/lab/2025/02/15/enchanted-wizard",
+    url: "https://growgen.xyz/lab/2025/02/15/enchanted-wizard",
   },
   {
     key: "Aftership.com",
@@ -110,7 +110,7 @@ const data = [
     name: "Read More on My Website",
     height: 280,
     items: ["Astro", "ReactJS", "Mantine"],
-    url: "https://www.growgen.xyz/lab",
+    url: "https://growgen.xyz/lab",
   },
 ];
 

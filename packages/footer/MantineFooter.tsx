@@ -115,7 +115,7 @@ export default function MantineFooter({
                 <Anchor href="#sitemap" size="sm" c="dimmed" td="none">
                   Sitemap
                 </Anchor>
-                <Anchor href="/archive" size="sm" c="dimmed" td="none">
+                <Anchor href="/year" size="sm" c="dimmed" td="none">
                   Archive
                 </Anchor>
                 <Anchor href="#tags" size="sm" c="dimmed" td="none">

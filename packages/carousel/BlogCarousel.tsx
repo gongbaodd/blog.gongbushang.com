@@ -68,7 +68,7 @@ export function HistoryCarousel() {
     <BlogCarousel
       title="Time Machine"
       posts={posts}
-      link={{ label: "View Archivess", href: "/year" }}
+      link={{ label: "View Archive", href: "/year" }}
     />
   );
 }

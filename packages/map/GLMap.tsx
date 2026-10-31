@@ -87,7 +87,7 @@ export default function GLMap({}: IMapProps) {
         {showButton && (
           <Group justify="center" h={"10vh"}>
             <Anchor href={"/world"}>
-              <Button size="xl">See {data.length} Desinations</Button>
+              <Button size="xl">See {data.length} Destinations</Button>
             </Anchor>
           </Group>
         )}

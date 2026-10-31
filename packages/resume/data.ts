@@ -66,7 +66,7 @@ export const profile = {
   email: "gongbaodd@outlook.com",
   location: { en: "Tallinn, Estonia", zh: "爱沙尼亚·塔林" },
   github: "https://github.com/gongbaodd",
-  website: "https://www.growgen.xyz",
+  website: "https://growgen.xyz",
   linkedin: "https://www.linkedin.com/in/jian-gong-27762aa8/",
   languages: [
     {
@@ -261,7 +261,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1758702645/Screenshot_2025-09-24_112929_iaqeay.png",
     tags: ["PixiJS", "Minimax"],
-    url: "https://www.growgen.xyz/fe/2025/09/09/tetris-ai",
+    url: "https://growgen.xyz/fe/2025/09/09/tetris-ai",
   },
   // Source: /plan/2025/10/31/week-45-colyseus follows the initial Firebase prototype
   missile: {
@@ -273,7 +273,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1778365995/defender_instruction_erc481_j9xs7w.png",
     tags: ["BabylonJS", "Colyseus", "Node.js"],
-    url: "https://www.growgen.xyz/plan/2025/10/08/remake-of-missile-command",
+    url: "https://growgen.xyz/plan/2025/10/08/remake-of-missile-command",
   },
   // Source: /plan/2025/08/02/week-32-edge-impulse; collaborative prototype, not a medical product
   hearing: {
@@ -285,7 +285,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1778360397/hearing-aid.Auxz8chm_vscant.jpg",
     tags: ["ESP32", "Edge ML", "MFCC", "CNN"],
-    url: "https://www.growgen.xyz/plan/2025/08/02/week-32-edge-impulse",
+    url: "https://growgen.xyz/plan/2025/08/02/week-32-edge-impulse",
   },
   // Source: /fe/2025/07/04/ninja-paws
   ninja: {
@@ -297,7 +297,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1757494717/Screenshot_2025-09-10_115254_xrklg6.png",
     tags: ["Unity", "Behavior Tree"],
-    url: "https://www.growgen.xyz/lab/2025/07/04/ninja-paws",
+    url: "https://growgen.xyz/lab/2025/07/04/ninja-paws",
   },
   // Source: /fe/2025/05/19/tlu-xr-tour
   tour: {
@@ -308,7 +308,7 @@ export const projects = {
     },
     image: "https://res.cloudinary.com/dmq8ipket/image/upload/v1757489746/1747656883140_hkuw9u.jpg",
     tags: ["BabylonJS", "3DGS"],
-    url: "https://www.growgen.xyz/lab/2025/05/19/tlu-xr-tour",
+    url: "https://growgen.xyz/lab/2025/05/19/tlu-xr-tour",
   },
   // Source: /fe/2025/05/20/baltic-kitchen-chaos; teammates handled narrative, sound and design
   kitchen: {
@@ -320,7 +320,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1778361472/Screenshot_20260510_001659-1_gaycsj.png",
     tags: ["Unity", "ReactJS", "MediaPipe"],
-    url: "https://www.growgen.xyz/lab/2025/05/20/baltic-kitchen-chaos",
+    url: "https://growgen.xyz/lab/2025/05/20/baltic-kitchen-chaos",
   },
   // Source: /fe/2025/02/15/enchanted-wizard
   wizard: {
@@ -331,7 +331,7 @@ export const projects = {
     },
     image: "https://img.itch.zone/aW1nLzE5ODg1ODg3LnBuZw==/347x500/AC%2BLS0.png",
     tags: ["Godot"],
-    url: "https://www.growgen.xyz/lab/2025/02/15/enchanted-wizard",
+    url: "https://growgen.xyz/lab/2025/02/15/enchanted-wizard",
   },
   // Source: Existing project scope: packages/resume/components/Work.tsx
   aftership: {
@@ -365,7 +365,7 @@ export const projects = {
     image:
       "https://res.cloudinary.com/dmq8ipket/image/upload/v1786047419/Screenshot_20260806_231621_rjikuc.png",
     tags: ["Astro", "ReactJS", "Mantine"],
-    url: "https://www.growgen.xyz/lab",
+    url: "https://growgen.xyz/lab",
   },
 } satisfies Record<string, ResumeEntry>;
 
