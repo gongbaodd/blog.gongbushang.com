@@ -29,3 +29,8 @@
     border-radius: var(--mantine-radius-md);
   }
 }
+
+/* Narrow sidebar: let cards shrink below the horizontal-carousel min width */
+.vertical :global(.mantine-Carousel-slide) div {
+  min-width: 0;
+}

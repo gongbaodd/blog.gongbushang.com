@@ -1,0 +1,15 @@
+/* Three-column post layout: the side columns are clamped, the content takes the rest. */
+.threeCol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--mantine-spacing-lg);
+}
+
+@media (min-width: 75em) {
+  .threeCol {
+    grid-template-columns:
+      clamp(260px, 22%, 300px)
+      minmax(0, 1fr)
+      clamp(240px, 19%, 280px);
+  }
+}

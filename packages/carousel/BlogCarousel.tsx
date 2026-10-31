@@ -107,7 +107,8 @@ export function Carousel({
       withControls
       withIndicators
       emblaOptions={{ dragFree: true, align: "start" }}
-      className={[classes.carousel, fill ? classes.carouselFill : undefined, className]
+      className={[classes.carousel, fill ? classes.carouselFill : undefined,
+        vertical ? classes.vertical : undefined, className]
         .filter(Boolean)
         .join(" ")}
     >

@@ -11,7 +11,6 @@ import {
   ActionIcon,
   Anchor,
   Card,
-  Box,
 } from "@mantine/core";
 import {
   IconHeart,
@@ -128,10 +127,13 @@ export function BlogMenu({
 }) {
   return (
     <CustomMantineProvider>
-      <Stack gap="xl" style={{ position: "sticky", top: 100 }}>
-        <Box maw={{ base: 360, lg: "100%" }} w="100%" mx={{ base: "auto", lg: 0 }}>
-          <PostCard post={post} hideExcerpt fill />
-        </Box>
+      <Stack
+        gap="xl"
+        maw={300}
+        mx={{ base: "auto", lg: 0 }}
+        style={{ position: "sticky", top: 100 }}
+      >
+        <PostCard post={post} hideExcerpt fill />
         <Headings />
         <Tags />
       </Stack>
