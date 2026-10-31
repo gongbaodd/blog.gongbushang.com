@@ -1,7 +1,20 @@
 # Plan — Server-render post lists (Step 2) and fix hydration #418 (Step 3)
 
 > Parent: `docs/plan/adsense-rejection-fix-plan.md`
-> Status: **NOT STARTED**
+> Status: **DONE** (branch `adsense-reject-fix`)
+>
+> Outcome:
+> - **#418 root cause 1:** `dedupeInlineStyles` in `astro.config.mjs` deleted duplicate `<style>` blocks (Mantine's
+>   `data-mantine-styles="classes"`) from the built HTML, so every island's server HTML lacked elements React rendered.
+>   Removed the plugin; the Mantine helper classes are now emitted once in `BaseHead` (`packages/utils/mantine-classes.ts`)
+>   and `CustomMantineProvider` uses `withGlobalClasses={false}`.
+> - **Root cause 2:** `$pathname` was empty on the first client render (set only in an effect), so the active nav link differed.
+>   `MantineHeader` now receives `pathname` and seeds the store before rendering.
+> - **Step 2:** a visible server-rendered `PostIndexList` was tried and removed (not wanted). Only the build-time counts remain
+>   ("View All N Posts", "N posts in 2026", "See N Destinations"). List pages still load cards client-side, so crawlers see no
+>   post links there; revisit via passing initial posts to the islands if needed.
+> - `pnpm check:hydration` (`scripts/hydration-check.mjs <baseUrl>`) checks `/`, `/all`, `/year/2025`, `/lab`, `/tag/react`.
+>   For readable messages build with `NODE_ENV=development npx astro build` and serve `dist`.
 
 ## Why these two go together
 

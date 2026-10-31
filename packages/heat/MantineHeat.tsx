@@ -6,13 +6,16 @@ import { useStore } from "@nanostores/react";
 import { $countsMap, $currentYear, $heatmap, requestHeatData } from "./store/heatmap";
 import { useEffect } from "react";
 
-interface IHeat {}
+interface IHeat {
+  /** Build-time count for the current year, shown until the heatmap data arrives. */
+  initialCount?: number;
+}
 
-export default function MantineHeat({}: IHeat) {
+export default function MantineHeat({ initialCount = 0 }: IHeat) {
   const data = useStore($heatmap);
   const countsMap = useStore($countsMap);
   const currentYear = useStore($currentYear);
-  const count = countsMap[currentYear] ?? 0;
+  const count = countsMap[currentYear] ?? initialCount;
 
   const startDate = dayjs(currentYear).startOf("year").format("YYYY-MM-DD");
   const endDate = dayjs(currentYear).endOf("year").format("YYYY-MM-DD");

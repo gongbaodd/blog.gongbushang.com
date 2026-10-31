@@ -23,9 +23,11 @@ export interface IMapData {
 
 interface IMapProps {
   showButton?: boolean;
+  /** Build-time destination count, shown until the cities data arrives. */
+  cityCount?: number;
 }
 
-export default function GLMap({}: IMapProps) {
+export default function GLMap({ cityCount = 0 }: IMapProps) {
   const data = useStore($cities);
   const pathname = useStore($pathnameNormalized);
   const showButton = pathname !== ROUTE_HREF.World;
@@ -87,7 +89,7 @@ export default function GLMap({}: IMapProps) {
         {showButton && (
           <Group justify="center" h={"10vh"}>
             <Anchor href={"/world"}>
-              <Button size="xl">See {data.length} Destinations</Button>
+              <Button size="xl">See {data.length || cityCount} Destinations</Button>
             </Anchor>
           </Group>
         )}

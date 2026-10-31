@@ -4,6 +4,7 @@
 // Page-specific styles (KaTeX for posts, Mantine charts for /lab & /umap)
 // are imported by the components that use them to keep this sheet small.
 import { ColorSchemeScript } from "@mantine/core";
+import { mantineGlobalClasses } from "../utils/mantine-classes";
 import "../shadcn/app/globals.css"
 import "@mantine/core/styles.css";
 import '@mantine/carousel/styles.css';
@@ -61,6 +62,8 @@ const { title, description, image = '/blog-placeholder-1.jpg', noindex = false }
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
 
 
+<!-- Mantine responsive helper classes, emitted once (providers use withGlobalClasses={false}) -->
+<style is:inline set:html={mantineGlobalClasses()} />
 <ColorSchemeScript defaultColorScheme="dark" color="auto"/>
 <slot />
 

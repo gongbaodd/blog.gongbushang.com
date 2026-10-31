@@ -1,13 +1,16 @@
 ---
 import GridHalf from "@/packages/scaffold/GridHalf";
 import { HistoryCarousel, LatestCarousel } from "@/packages/carousel/BlogCarousel";
+import { getAllPosts } from "@/packages/utils/post";
+import { sortPostsByDate } from "@/packages/utils/filter";
 
+const posts = sortPostsByDate(await getAllPosts());
 ---
 
 <!-- Below the fold: defer hydration and skip layout/paint until near the viewport -->
 <div class="cv-deferred">
   <GridHalf>
-    <LatestCarousel slot="left" client:visible />
+    <LatestCarousel slot="left" totalCount={posts.length} client:visible />
     <HistoryCarousel slot="right" client:visible />
   </GridHalf>
 </div>

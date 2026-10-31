@@ -23,7 +23,7 @@ import { useCallback, useState, type ReactElement, type ReactNode } from "react"
 import { navigate } from "astro:transitions/client";
 import { ROUTE_HREF, ROUTE_LABEL, ROUTES } from "../consts";
 import { Carousel as MantineCarousel } from "@mantine/carousel";
-import { $pathnameNormalized } from "./store/pathname";
+import { $pathname, $pathnameNormalized } from "./store/pathname";
 import MantineAnchor from "@/src/components/MantineAnchor";
 
 const Icons: Record<string, ReactElement> = {
@@ -41,6 +41,7 @@ interface IProps {
   loaderWorld?: ReactNode;
   loaderArchive?: ReactNode;
   loaderLab?: ReactNode;
+  pathname?: string;
 }
 
 export default function MantineHeader({
@@ -50,7 +51,11 @@ export default function MantineHeader({
   loaderBlog,
   loaderLab,
   loaderWorld,
+  pathname,
 }: IProps) {
+  // Seed the store before the first render so the client's first output (active link)
+  // matches the server HTML; HeaderNanoStore only updates it after hydration.
+  if (pathname !== undefined && $pathname.get() !== pathname) $pathname.set(pathname);
   const loaders: Record<ROUTE_LABEL, ReactNode | undefined> = {
     [ROUTE_LABEL.Home]: loaderHome,
     [ROUTE_LABEL.Blog]: loaderBlog,

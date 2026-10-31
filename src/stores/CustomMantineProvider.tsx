@@ -17,6 +17,7 @@ export default function CustomMantineProvider({
     return (
       <div ref={rootRef} data-mantine-island={islandId} style={{ width: "100%" }}>
         <MantineProvider
+          withGlobalClasses={false}
           forceColorScheme={forced}
           cssVariablesSelector={selector}
           getRootElement={() => rootRef.current ?? undefined}
@@ -27,5 +28,5 @@ export default function CustomMantineProvider({
     );
   }
 
-  return <MantineProvider defaultColorScheme={theme ?? "auto"}>{children}</MantineProvider>;
+  return <MantineProvider withGlobalClasses={false} defaultColorScheme={theme ?? "auto"}>{children}</MantineProvider>;
 }
