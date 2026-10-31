@@ -7,15 +7,25 @@ interface IGridWithMenuProps {
   contentCol: GridColProps["span"];
   menuNode?: ReactNode;
   gridContent?: ReactNode;
+  sidebarCol?: GridColProps["span"];
+  sidebarNode?: ReactNode;
 }
 
-export function GridWithMenu({ menuNode, gridContent, menuCol, contentCol }: IGridWithMenuProps) {
+export function GridWithMenu({
+  menuNode,
+  gridContent,
+  menuCol,
+  contentCol,
+  sidebarCol,
+  sidebarNode,
+}: IGridWithMenuProps) {
   return (
     <CustomMantineProvider>
       <Container fluid style={{ marginInline: "initial" }} p={0}>
         <Grid gap="lg">
           <Grid.Col span={menuCol}>{menuNode}</Grid.Col>
           <Grid.Col span={contentCol}>{gridContent}</Grid.Col>
+          {sidebarNode && <Grid.Col span={sidebarCol}>{sidebarNode}</Grid.Col>}
         </Grid>
       </Container>
     </CustomMantineProvider>

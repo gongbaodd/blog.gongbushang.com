@@ -11,6 +11,7 @@ import {
   ActionIcon,
   Anchor,
   Card,
+  Box,
 } from "@mantine/core";
 import {
   IconHeart,
@@ -28,6 +29,7 @@ import type { MarkdownHeading } from "astro";
 import { PostCard, type IPost } from "@/packages/card/PostCard";
 import { Carousel } from "../carousel/BlogCarousel";
 import { useStore } from "@nanostores/react";
+import { useMediaQuery } from "@mantine/hooks";
 import { $isLoading, $relates, request } from "@/src/stores/relates";
 
 interface ILink {
@@ -127,7 +129,9 @@ export function BlogMenu({
   return (
     <CustomMantineProvider>
       <Stack gap="xl" style={{ position: "sticky", top: 100 }}>
-        <PostCard post={post} hideExcerpt fill />
+        <Box maw={{ base: 360, lg: "100%" }} w="100%" mx={{ base: "auto", lg: 0 }}>
+          <PostCard post={post} hideExcerpt fill />
+        </Box>
         <Headings />
         <Tags />
       </Stack>
@@ -187,6 +191,7 @@ export function BlogMenu({
 export function RelatePosts({ id, category }: { id: string; category: string }) {
   const _relates = useStore($relates);
   const isLoading = useStore($isLoading);
+  const isDesktop = useMediaQuery("(min-width: 75em)") ?? false;
 
   const relates = _relates.filter((p) => p.id !== id);
   useEffect(() => {
@@ -200,11 +205,14 @@ export function RelatePosts({ id, category }: { id: string; category: string }) 
         className={classes.relates}
         radius="lg"
         p="lg"
-        mt="xl"
+        mt={isDesktop ? 0 : "xl"}
         style={isLoading ? { opacity: 0 } : {}}
       >
         <Stack gap="md">
-          <Carousel posts={relates} />
+          <Title order={2} size="h3">
+            More to discover
+          </Title>
+          <Carousel posts={relates} vertical={isDesktop} height={isDesktop ? "calc(100dvh - 90px - 2 * var(--mantine-spacing-lg) - 2.5rem - var(--mantine-spacing-md))" : 560} />
         </Stack>
       </Paper>
     </CustomMantineProvider>

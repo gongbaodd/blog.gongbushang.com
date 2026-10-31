@@ -88,17 +88,20 @@ export function Carousel({
   className,
   height = 560,
   fill = false,
+  vertical = false,
 }: {
   posts: IPost[];
   className?: string;
   height?: number | string;
   fill?: boolean;
+  vertical?: boolean;
 }) {
   return (
     <MantineCarousel
-      slideSize="80%"
+      orientation={vertical ? "vertical" : "horizontal"}
+      slideSize={vertical ? "50%" : "80%"}
       height={fill ? "100%" : height}
-      slideGap="lg"
+      slideGap={vertical ? "xs" : "lg"}
       controlsOffset="lg"
       controlSize={40}
       withControls
