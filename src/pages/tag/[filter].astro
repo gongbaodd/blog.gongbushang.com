@@ -15,4 +15,4 @@ const isValid = await isValidTagFilter(filter);
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.TAG} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.TAG} posts={Astro.props.posts} /> : <NotFound />}

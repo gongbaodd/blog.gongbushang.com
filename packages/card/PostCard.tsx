@@ -72,7 +72,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
       <Badge color="gray" variant="default" size="sm" className={classes.category}>
         <Group gap={6}>
           <Calendar size={12} />
-          <Text size="xs">{dayjs(post.date).format("YYYY-MM-DD")}</Text>
+          <Text size="xs">{post.dateText ?? dayjs(post.date).format("YYYY-MM-DD")}</Text>
         </Group>
       </Badge>
       <Avatar color="gray" variant="default" size="sm" className={classes.category} p={0}>

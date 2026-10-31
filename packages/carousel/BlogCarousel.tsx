@@ -40,12 +40,20 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: IB
   );
 }
 
-export function LatestCarousel({ totalCount = 0 }: { totalCount?: number }) {
+export function LatestCarousel({
+  totalCount = 0,
+  initialPosts,
+}: {
+  totalCount?: number;
+  initialPosts?: IPost[];
+}) {
+  // Seed before the first render so the client's first output equals the server HTML.
+  if (initialPosts?.length && $latest.get().length === 0) $latest.set(initialPosts);
   const posts = useStore($latest);
   const totalCounts = useStore($totalCounts);
 
   useEffect(() => {
-    requestLatestPosts();
+    if (!initialPosts?.length) requestLatestPosts();
   }, []);
 
   return (
@@ -57,11 +65,12 @@ export function LatestCarousel({ totalCount = 0 }: { totalCount?: number }) {
   );
 }
 
-export function HistoryCarousel() {
+export function HistoryCarousel({ initialPosts }: { initialPosts?: IPost[] }) {
+  if (initialPosts?.length && $history.get().length === 0) $history.set(initialPosts);
   const posts = useStore($history);
 
   useEffect(() => {
-    requestHistoryPosts();
+    if (!initialPosts?.length) requestHistoryPosts();
   }, []);
 
   return (

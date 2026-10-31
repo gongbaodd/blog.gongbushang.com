@@ -13,4 +13,4 @@ const isValid = await isValidSeriesFilter(filter);
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.SERIES} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={filter} entryType={FILTER_ENTRY.SERIES} posts={Astro.props.posts} /> : <NotFound />}

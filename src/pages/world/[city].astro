@@ -14,4 +14,4 @@ const isValid = await isValidCityFilter(city);
 const totalPostsCount = Astro.props.posts.length;
 ---
 
-{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={city} entryType={FILTER_ENTRY.WORLD} /> : <NotFound />}
+{isValid ? <BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={city} entryType={FILTER_ENTRY.WORLD} posts={Astro.props.posts} /> : <NotFound />}

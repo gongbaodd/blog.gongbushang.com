@@ -133,6 +133,8 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
         href: `/${post.data.category}/${post.id}`,
         title: await titleFrom(post),
         date: dateFrom(post),
+        // Formatted at build time so server and client render the same day in any time zone.
+        dateText: dayjs(dateFrom(post)).format("YYYY-MM-DD"),
         data: clientPost.data,
         excerpt: await excerptFrom(post),
       };

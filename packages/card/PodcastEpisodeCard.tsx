@@ -12,7 +12,6 @@ import {
   Anchor,
 } from "@mantine/core";
 import { IconPlayerPlay, IconQuoteFilled } from "@tabler/icons-react";
-import dayjs from "dayjs";
 import { Calendar, Headphones } from "lucide-react";
 import { useEffect, useState } from "react";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
@@ -65,7 +64,7 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
       <Badge color="gray" variant="default" size="sm" className={classes.category}>
         <Group gap={6}>
           <Calendar size={12} />
-          <Text size="xs">{dayjs(episode.pubDate).format("YYYY-MM-DD")}</Text>
+          <Text size="xs">{formatPubDate(episode.pubDate)}</Text>
         </Group>
       </Badge>
       {episode.duration && (
@@ -178,4 +177,10 @@ export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpiso
       </Stack>
     </CustomMantineProvider>
   );
+}
+
+/** UTC day, so the server HTML and the browser agree regardless of time zone. */
+function formatPubDate(pubDate: string) {
+  const d = new Date(pubDate);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 }

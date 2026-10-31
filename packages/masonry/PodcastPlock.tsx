@@ -1,4 +1,3 @@
-import { Masonry } from "react-plock";
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
 import { Button, Center, Loader, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
@@ -8,6 +7,7 @@ import {
   streamPodcastEpisodes,
   type IPodcastEpisode,
 } from "../../src/stores/podcast";
+import { SsrMasonry } from "./SsrMasonry";
 import { PodcastEpisodeCard } from "@/packages/card/PodcastEpisodeCard";
 import { useCallback, useEffect } from "react";
 import type { IPost } from "@/packages/card/PostCard";
@@ -58,17 +58,21 @@ export function PodcastCardFromPost({
 
 export interface IPodcastPlockProps {
   totalCount: number;
+  /** First episodes rendered into the server HTML; the rest is streamed after mount. */
+  initialEpisodes?: IPodcastEpisode[];
 }
 
-export default function PodcastPlock({ totalCount }: IPodcastPlockProps) {
+export default function PodcastPlock({ totalCount, initialEpisodes }: IPodcastPlockProps) {
+  // Seed before the first render so the client's first output equals the server HTML.
+  if (initialEpisodes?.length && !$episodes.get()[PODCAST_KEY]) {
+    $episodes.setKey(PODCAST_KEY, initialEpisodes);
+  }
   const episodes = useStore($episodes)[PODCAST_KEY] ?? [];
   const isLoading = useStore($loading);
   const hasMore = episodes.length < totalCount;
 
-  const columns = [1, 2, 3, 4, 5];
-
   useEffect(() => {
-    streamPodcastEpisodes();
+    if (episodes.length < totalCount) streamPodcastEpisodes();
   }, []);
 
   const loadMore = useCallback(() => {
@@ -78,13 +82,8 @@ export default function PodcastPlock({ totalCount }: IPodcastPlockProps) {
   return (
     <CustomMantineProvider>
       <Stack mih="100vh">
-        <Masonry
+        <SsrMasonry
           items={episodes}
-          config={{
-            columns,
-            gap: [48, 16, 32, 32, 32],
-            media: [28, 48, 75, 88, 110].map((i) => i * 16),
-          }}
           render={(episode) => <PodcastEpisodeCard key={episode.id} episode={episode} fill />}
         />
         {hasMore && (

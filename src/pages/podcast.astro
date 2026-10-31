@@ -1,20 +1,36 @@
 ---
 import Global from "../../packages/layouts/Global.astro";
 import BaseHead from "../../packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
+import { INITIAL_SSR_POSTS, SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
 import MantineMain from "../../packages/scaffold/MantineMain";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import PodcastPlock from "@/packages/masonry/PodcastPlock";
 import PodcastSidebar from "../components/PodcastSidebar";
-import { readPodcastData } from "@/packages/utils/podcast";
+import { processPodcastEpisodes, readPodcastData } from "@/packages/utils/podcast";
 
 export const prerender = true;
 
 const data = readPodcastData();
 const totalCount = data.episodes.length;
 const channel = data.channel;
+// Only the fields the card renders: episodes also carry large `embeddings`/`umap2D` data that would be
+// serialized into the page twice (HTML + island props).
+const initialEpisodes = processPodcastEpisodes()
+  .slice(0, INITIAL_SSR_POSTS)
+  .map(({ id, title, link, pubDate, summary, description, duration, audioUrl, image, colorSet }) => ({
+    id,
+    title,
+    link,
+    pubDate,
+    summary,
+    description,
+    duration,
+    audioUrl,
+    image,
+    colorSet,
+  }));
 ---
 
 <Global>
@@ -38,7 +54,7 @@ const channel = data.channel;
           link={channel.link}
           image={channel.image}
         />
-        <PodcastPlock totalCount={totalCount} slot="gridContent" client:load />
+        <PodcastPlock totalCount={totalCount} initialEpisodes={initialEpisodes} slot="gridContent" client:load />
       </GridWithMenu>
       <Footer slug="podcast" />
     </MantineMain>

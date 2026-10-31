@@ -5,6 +5,7 @@ import {
   SITE_DESCRIPTION,
   SITE_TITLE,
   FILTER_ENTRY,
+  INITIAL_SSR_POSTS,
   ROUTE_LABEL,
 } from "@/packages/consts";
 import MantineMain from "@/packages/scaffold/MantineMain";
@@ -13,12 +14,15 @@ import { BlogListMenu } from "@/packages/menu/BlogListMenu";
 import Header from "@/packages/header/Header.astro";
 import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
 import BlogPlock from "@/packages/masonry/BlogPlock";
+import { mapServerPostToClient, type T_PROPS } from "@/packages/utils/post";
 
 interface Props {
   subTitle: string;
   totalCount: number;
   filter: string;
   entryType?: FILTER_ENTRY;
+  /** Sorted posts of this list; the first few are rendered into the HTML. */
+  posts?: T_PROPS[];
 }
 
 const {
@@ -26,7 +30,10 @@ const {
   filter,
   entryType,
   totalCount,
+  posts = [],
 } = Astro.props;
+
+const initialPosts = await mapServerPostToClient(posts.slice(0, INITIAL_SSR_POSTS));
 
 ---
 
@@ -46,6 +53,7 @@ const {
         <BlogListMenu slot="menuNode" client:load />
         <BlogPlock 
           totalCount={totalCount} 
+          initialPosts={initialPosts}
           entryType={entryType}
           filter={filter}
           slot="gridContent" 

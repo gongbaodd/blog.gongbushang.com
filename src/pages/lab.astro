@@ -14,4 +14,4 @@ const subTitle = ["|", filter].join(" ");
 const totalPostsCount = result.props.posts.length;
 ---
 
-<BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={"portfolio"} entryType={FILTER_ENTRY.TAG} />
+<BlogListPage subTitle={subTitle} totalCount={totalPostsCount} filter={"portfolio"} entryType={FILTER_ENTRY.TAG} posts={result.props.posts} />

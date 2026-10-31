@@ -3,7 +3,7 @@
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:4321";
-const routes = ["/", "/all", "/year/2025", "/lab", "/tag/react"];
+const routes = ["/", "/all", "/year/2025", "/lab", "/tag/react", "/podcast"];
 
 const browser = await chromium.launch();
 let failed = false;
