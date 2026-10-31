@@ -76,7 +76,7 @@ export default defineConfig({
     sitemap({
       // Unfinished/duplicate pages and thin list pages stay out of the sitemap.
       filter: (page) =>
-        !/\/(cv|gemini|umap|hero|hero-gallery|privacy|contact)\/?$/.test(page) &&
+        !/\/(cv|gemini|umap|hero|hero-gallery|privacy)\/?$/.test(page) &&
         !/\/hero\//.test(page) &&
         !/\/tag\//.test(page) &&
         !/\/world\//.test(page) &&

@@ -1,7 +1,7 @@
 # AdSense Rejection Fix Plan — "Screens without publisher content" + "Low value content"
 
 > Created: 2026-10-31 (re-analysed same day against the live site, see "Re-analysis" below)
-> Status: **NOT STARTED**
+> Status: **IN PROGRESS** (branch `adsense-reject-fix`; steps 0,1,1b,4,5,7-code,8 done; 2,3 → `adsense-step2-3-ssr-hydration-plan.md`; visual sitemap → `sitemap-treemap-plan.md`)
 > Scope: https://growgen.xyz (Astro static blog, Cloudflare)
 > Related: `docs/plan/google-adsense-plan.md` (original rollout plan), `docs/plan/website-optimization-plan.md`
 > Source: external crawler analysis of the live site (1,790 sitemap URLs) plus a review of this repo.
