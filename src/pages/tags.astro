@@ -1,0 +1,59 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import { SITE_TITLE } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import Header from "@/packages/header/Header.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import { getCategories, getTags, getSeries } from "@/packages/utils/badges";
+
+export const prerender = true;
+
+const [categories, tags, series] = await Promise.all([getCategories(), getTags(), getSeries()]);
+const byCount = <T extends { count: number; label: string }>(xs: T[]) =>
+  xs.toSorted((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+const sections = [
+  { title: "Categories", items: byCount(categories) },
+  { title: "Series", items: byCount(series) },
+  { title: "Tags", items: byCount(tags) },
+];
+---
+
+<Global>
+  <BaseHead
+    title={`${SITE_TITLE} | Topics`}
+    description={`All ${categories.length} categories, ${series.length} series and ${tags.length} tags on GrowGen, with post counts.`}
+    slot="head"
+  />
+  <Header />
+  <section id="tags-page" class="main">
+    <MantineMain>
+      <div class="mx-auto my-10 max-w-5xl px-4">
+        <h1 class="mb-6 text-3xl font-bold"># Topics</h1>
+        {
+          sections.map(({ title, items }) => (
+            <section class="mb-10">
+              <h2 class="mb-3 text-2xl font-semibold">
+                {title} ({items.length})
+              </h2>
+              <ul class="flex flex-wrap gap-2">
+                {items.map(({ label, href, count }) => (
+                  <li>
+                    <a
+                      class="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm dark:border-gray-600"
+                      href={href}
+                    >
+                      {label} <span class="opacity-60">{count}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        }
+      </div>
+      <Footer slug={"tags"} />
+    </MantineMain>
+  </section>
+</Global>

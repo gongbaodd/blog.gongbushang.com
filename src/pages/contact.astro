@@ -1,20 +1,26 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
+import { SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import Hero from "../../packages/hero/Hero.astro";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
+import Follow from "@/packages/follow/Follow.astro";
+
+export const prerender = true;
 ---
 
 <Global>
-  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead
+    title={`${SITE_TITLE} | Contact`}
+    description="How to contact Gong and where to follow new posts, projects and podcast episodes."
+    slot="head"
+  />
   <Header />
-
-  <section>
+  <section id="contact-page" class="main">
     <MantineMain>
-      <Hero />
+      <h1 class="mx-auto mt-10 max-w-5xl px-4 text-3xl font-bold">Contact</h1>
+      <Follow />
       <Footer slug={"contact"} />
     </MantineMain>
   </section>

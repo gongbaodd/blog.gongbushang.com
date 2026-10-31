@@ -15,7 +15,7 @@ $pathname.set(pathName);
 ---
 
 <HeaderNanoStore pathname={pathName} client:load />
-<MantineHeader client:load>
+<MantineHeader pathname={pathName} client:load>
   <Search slot={"searchNode"} client:idle />
   <section transition:name={ROUTE_LABEL.Home} slot={"loaderHome"}>
     <HomeSkeleton />

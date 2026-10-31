@@ -8,6 +8,7 @@
   ],
   "type": "module",
   "scripts": {
+    "check:hydration": "node scripts/hydration-check.mjs",
     "test": "vitest run",
     "test:unit": "vitest run --exclude '**/*.test.tsx'",
     "test:e2e:run": "cucumber-js --config cucumber.mjs",

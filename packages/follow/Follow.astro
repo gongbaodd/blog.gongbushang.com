@@ -1,0 +1,43 @@
+---
+/**
+ * "Follow me" list for the /contact page. Plain anchors so the text is in the
+ * served HTML.
+ */
+const links = [
+  { label: "GitHub", href: "https://github.com/gongbaodd" },
+  { label: "X / Twitter", href: "https://twitter.com/gongbaodd" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/jian-gong-27762aa8/" },
+  { label: "YouTube", href: "https://www.youtube.com/@gongbaodd" },
+  { label: "Bilibili", href: "https://space.bilibili.com/3368538" },
+  { label: "Instagram", href: "https://www.instagram.com/mia_takeshi" },
+  { label: "Threads", href: "https://www.threads.com/@mia_takeshi" },
+  { label: "Spotify (podcast)", href: "https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz" },
+  { label: "itch.io (games)", href: "https://gongbaodd.itch.io" },
+  { label: "V2EX", href: "https://www.v2ex.com/member/gongbaodd" },
+];
+---
+
+<section id="follow" class="mx-auto my-12 max-w-5xl px-4">
+  <h2 class="mb-2 text-2xl font-bold">Follow me on social media</h2>
+  <p class="mb-4">
+    I share new posts, side projects and podcast episodes in these places. You can also write to
+    me at <a href="mailto:gongbaodd@outlook.com">gongbaodd@outlook.com</a> or subscribe via
+    <a href="/rss.xml">RSS</a>.
+  </p>
+  <ul class="flex flex-wrap gap-2">
+    {
+      links.map(({ label, href }) => (
+        <li>
+          <a
+            class="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm dark:border-gray-600"
+            href={href}
+            rel="me noopener"
+            target="_blank"
+          >
+            {label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>

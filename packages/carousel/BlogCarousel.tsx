@@ -40,7 +40,7 @@ export default function BlogCarousel({ title, posts, link: { label, href } }: IB
   );
 }
 
-export function LatestCarousel() {
+export function LatestCarousel({ totalCount = 0 }: { totalCount?: number }) {
   const posts = useStore($latest);
   const totalCounts = useStore($totalCounts);
 
@@ -52,7 +52,7 @@ export function LatestCarousel() {
     <BlogCarousel
       title="Latest Posts"
       posts={posts}
-      link={{ label: `View All ${totalCounts} Posts`, href: "/all" }}
+      link={{ label: `View All ${totalCounts || totalCount} Posts`, href: "/all" }}
     />
   );
 }
@@ -68,7 +68,7 @@ export function HistoryCarousel() {
     <BlogCarousel
       title="Time Machine"
       posts={posts}
-      link={{ label: "View Archivess", href: "/year" }}
+      link={{ label: "View Archive", href: "/year" }}
     />
   );
 }

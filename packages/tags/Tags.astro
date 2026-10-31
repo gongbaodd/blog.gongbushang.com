@@ -23,7 +23,7 @@ const { tags } = Astro.props;
 ---
 
 <div class={classes.area} data-tags-area data-collapsed>
-  <h3 class={classes.title}># Topics</h3>
+  <h3 class={classes.title}># <a href="/tags">Topics</a></h3>
   <div class={classes.cloud}>
     {tags.map(({ label, href }) => <a class={classes.tag} href={href}>{label}</a>)}
   </div>

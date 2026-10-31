@@ -1,9 +1,12 @@
 ---
 import GLMap from "@/packages/map/GLMap";
+import { getFilterByCityPage } from "@/packages/utils/filter";
+
+const cityCount = (await getFilterByCityPage()).length;
 ---
 <!-- Below the fold: skip layout/paint until near the viewport -->
 <div class="cv-deferred">
-  <GLMap client:idle />
+  <GLMap cityCount={cityCount} client:idle />
 </div>
 
 <style>

@@ -20,9 +20,14 @@ import AdSenseSlot from "../ads/AdSenseSlot.astro";
 type Props = T_PROPS;
 const post = Astro.props;
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
+// Tag on every post (site review needs to see it); ad units only on opted-in posts.
+const adsenseEnabled = import.meta.env.PUBLIC_ADSENSE_ENABLED === "true";
+const adsenseTest = import.meta.env.DEV || import.meta.env.PUBLIC_ADSENSE_TEST === "true";
 const adsenseSlotId = post.data.adsense && adsenseConsentReady
   ? import.meta.env.PUBLIC_ADSENSE_SLOT_ID?.trim()
-  : undefined;
+  : adsenseTest
+    ? "0000000000"
+    : undefined;
 const [clientPost] = await mapServerPostToClient([post]);
 
 const entry = await getEntry("blog", post.id);
@@ -57,7 +62,7 @@ async function getLinks() {
     description={postExcerpt}
     slot="head"
   />
-  {adsenseSlotId && <AdSenseHead slot="head" />}
+  {(adsenseEnabled || adsenseSlotId) && <AdSenseHead slot="head" />}
   <!-- Post covers & content images are served from Cloudinary. -->
   <link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
   <Header />
@@ -79,7 +84,7 @@ async function getLinks() {
         >
           <slot />
         </BlogContent>
-        {adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} />}
+        {adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} test={adsenseTest} />}
         <RelatePosts id={post.id} category={post.data.category} client:idle />
       </section>
     </GridWithMenu>

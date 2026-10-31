@@ -72,7 +72,7 @@ export default function MantineFooter({
                 <Anchor href="/about" size="sm" c="dimmed" td="none">
                   About me
                 </Anchor>
-                <Anchor href="#socials" size="sm" c="dimmed" td="none">
+                <Anchor href="/contact" size="sm" c="dimmed" td="none">
                   Contact
                 </Anchor>
                 <Anchor href="/resume" size="sm" c="dimmed" td="none">
@@ -112,13 +112,13 @@ export default function MantineFooter({
                 <Anchor href="/rss.xml" size="sm" c="dimmed" td="none">
                   RSS
                 </Anchor>
-                <Anchor href="#sitemap" size="sm" c="dimmed" td="none">
+                <Anchor href="/sitemap-index.xml" size="sm" c="dimmed" td="none">
                   Sitemap
                 </Anchor>
-                <Anchor href="/archive" size="sm" c="dimmed" td="none">
+                <Anchor href="/year" size="sm" c="dimmed" td="none">
                   Archive
                 </Anchor>
-                <Anchor href="#tags" size="sm" c="dimmed" td="none">
+                <Anchor href="/tags" size="sm" c="dimmed" td="none">
                   Tags
                 </Anchor>
               </Stack>

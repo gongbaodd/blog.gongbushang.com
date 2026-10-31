@@ -1,20 +1,74 @@
 ---
 import BaseHead from "@/packages/components/BaseHead.astro";
-import { SITE_TITLE, SITE_DESCRIPTION } from "@/packages/consts";
+import { SITE_TITLE } from "@/packages/consts";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
-import Hero from "../../packages/hero/Hero.astro";
 import Header from "@/packages/header/Header.astro";
 import Footer from "@/packages/footer/Footer.astro";
+
+export const prerender = true;
+
+const description =
+  "About GrowGen: who writes this blog, what it covers, and how the posts are made.";
 ---
 
 <Global>
-  <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} slot="head" />
+  <BaseHead title={`${SITE_TITLE} | About`} description={description} slot="head" />
   <Header />
 
   <section>
     <MantineMain>
-      <Hero />
+      <article class="mx-auto my-10 max-w-3xl space-y-5 px-4 leading-relaxed">
+        <h1 class="text-3xl font-bold">About this site</h1>
+        <p>
+          GrowGen is a personal blog written by Gong, a web developer from China who has been
+          building for the web since the jQuery era and now works mostly with React, TypeScript
+          and Astro. Gong is currently studying Digital Learning Games in Tallinn, Estonia, and
+          believes the future of human–computer interaction lies in gamification.
+        </p>
+
+        <h2 class="text-2xl font-semibold">What you will find here</h2>
+        <ul class="list-disc space-y-2 pl-6">
+          <li>
+            <a href="/tech">Tech journals</a> — write-ups of things built or debugged, from front-end
+            work to WebGL experiments and small games.
+          </li>
+          <li>
+            <a href="/plan">Daily life notes</a> — short weekly logs about study, projects and
+            everyday life.
+          </li>
+          <li>
+            <a href="/world">Travel stories</a> — trips and city diaries, including time in Estonia,
+            Finland and elsewhere in Europe.
+          </li>
+          <li>
+            <a href="/fe">Study reflections</a> — notes on courses, readings and language learning.
+          </li>
+          <li>
+            <a href="/podcast">Podcast</a> — episodes recorded alongside the blog.
+          </li>
+        </ul>
+
+        <h2 class="text-2xl font-semibold">About the name</h2>
+        <p>
+          “Grow Gen” comes from the idea that every generation keeps learning. It also echoes the
+          Northeastern Chinese phrase “给我整” (gěi wǒ zhěng), roughly “just do it”, and sounds
+          like the author's name in Mandarin. Posts are written in English and Chinese, depending
+          on the topic and the audience.
+        </p>
+
+        <h2 class="text-2xl font-semibold">How the posts are written</h2>
+        <p>
+          Posts are written and edited by the author. They are personal notes, so some are short
+          logs and others are longer technical or travel pieces. Code and projects mentioned in
+          posts are usually available on <a href="https://github.com/gongbaodd">GitHub</a>. For a
+          professional summary, see the <a href="/resume">CV</a>.
+        </p>
+
+        <p>
+          Advertising, if shown, follows the notes in the <a href="/privacy">privacy policy</a>.
+        </p>
+      </article>
       <Footer slug={"about"} />
     </MantineMain>
   </section>
