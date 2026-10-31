@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Masonry } from "react-plock";
+import { AsciiPlaceholderContext } from "../card/RevealCard";
 import classes from "./SsrMasonry.module.css";
 
 interface ISsrMasonryProps<T> {
@@ -25,11 +26,13 @@ export function SsrMasonry<T>({ items, render }: ISsrMasonryProps<T>) {
 
   if (!mounted) {
     return (
-      <div className={classes.ssr}>
-        {items.map((item, i) => (
-          <div key={i}>{render(item, i)}</div>
-        ))}
-      </div>
+      <AsciiPlaceholderContext.Provider value={true}>
+        <div className={classes.ssr}>
+          {items.map((item, i) => (
+            <div key={i}>{render(item, i)}</div>
+          ))}
+        </div>
+      </AsciiPlaceholderContext.Provider>
     );
   }
 

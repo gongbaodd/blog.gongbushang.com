@@ -113,6 +113,9 @@ importers:
       animate.css:
         specifier: ^4.1.1
         version: 4.1.1
+      ascii-reveal:
+        specifier: ^0.3.0
+        version: 0.3.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       astro:
         specifier: 7.3.3
         version: 7.3.3(@astrojs/markdown-remark@7.3.1)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@25.9.1)(@vercel/functions@3.6.0)(jiti@1.21.7)(tsx@4.23.15)(yaml@2.9.0)
@@ -4200,6 +4203,17 @@ packages:
 
   array-iterate@2.0.1:
     resolution: {integrity: sha512-I1jXZMjAgCMmxT4qxXfPXa6SthSoE8h6gkSI9BGGNv8mP8G/v0blc+qFnZu6K42vTOiuME596QaLO0TP3Lk0xg==}
+
+  ascii-reveal@0.3.0:
+    resolution: {integrity: sha512-u8wBHB+D2rvb8mGqWifSBqEgIXy1TOkqL4dp2GMbjQS6XLCZ2jQnVKwbmdA7ugLbDoYQ5O6+ESc8XlbBD4dQjw==}
+    peerDependencies:
+      react: '>=17'
+      react-dom: '>=17'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
 
   assertion-error-formatter@3.0.0:
     resolution: {integrity: sha512-6YyAVLrEze0kQ7CmJfUgrLHb+Y7XghmL2Ie7ijVa2Y9ynP3LV+VDiwFk62Dn0qtqbmY0BT0ss6p1xxpiF2PYbQ==}
@@ -11932,6 +11946,11 @@ snapshots:
   arr-union@3.1.0: {}
 
   array-iterate@2.0.1: {}
+
+  ascii-reveal@0.3.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6):
+    optionalDependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
 
   assertion-error-formatter@3.0.0:
     dependencies:

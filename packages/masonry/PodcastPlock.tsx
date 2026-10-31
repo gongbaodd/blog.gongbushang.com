@@ -1,5 +1,5 @@
 import CustomMantineProvider from "../../src/stores/CustomMantineProvider";
-import { Button, Center, Loader, Stack } from "@mantine/core";
+import { Button, Center, Stack } from "@mantine/core";
 import { useStore } from "@nanostores/react";
 import {
   $episodes,
@@ -8,6 +8,13 @@ import {
   type IPodcastEpisode,
 } from "../../src/stores/podcast";
 import { SsrMasonry } from "./SsrMasonry";
+import { RevealCard } from "@/packages/card/RevealCard";
+import {
+  CardSkeleton,
+  isSkeletonItem,
+  skeletonItems,
+  type ISkeletonItem,
+} from "@/packages/card/CardSkeletons";
 import { PodcastEpisodeCard } from "@/packages/card/PodcastEpisodeCard";
 import { useCallback, useEffect } from "react";
 import type { IPost } from "@/packages/card/PostCard";
@@ -70,6 +77,12 @@ export default function PodcastPlock({ totalCount, initialEpisodes }: IPodcastPl
   const episodes = useStore($episodes)[PODCAST_KEY] ?? [];
   const isLoading = useStore($loading);
   const hasMore = episodes.length < totalCount;
+  // While a page streams in, placeholder cards occupy the next masonry slots.
+  const items: (IPodcastEpisode | ISkeletonItem)[] =
+    isLoading && hasMore ? [
+          ...episodes,
+          ...skeletonItems(episodes.map((e) => ({ ...e.colorSet }))),
+        ] : episodes;
 
   useEffect(() => {
     if (episodes.length < totalCount) streamPodcastEpisodes();
@@ -83,20 +96,27 @@ export default function PodcastPlock({ totalCount, initialEpisodes }: IPodcastPl
     <CustomMantineProvider>
       <Stack mih="100vh">
         <SsrMasonry
-          items={episodes}
-          render={(episode) => <PodcastEpisodeCard key={episode.id} episode={episode} fill />}
-        />
-        {hasMore && (
-          <Center w="100%" pt="xl">
-            {isLoading ? (
-              <Button variant="default" leftSection={<Loader size="xs" c="dimmed" />}>
-                Loading
-              </Button>
+          items={items}
+          render={(episode) =>
+            isSkeletonItem(episode) ? (
+              <CardSkeleton
+                key={`sk-${episode.skeleton}`}
+                seed={episode.skeleton + 1}
+                bgColor={episode.bgColor}
+                titleColor={episode.titleColor}
+              />
             ) : (
-              <Button variant="default" onClick={loadMore}>
-                Load More
-              </Button>
-            )}
+              <RevealCard key={episode.id} id={episode.id}>
+                <PodcastEpisodeCard episode={episode} fill />
+              </RevealCard>
+            )
+          }
+        />
+        {hasMore && !isLoading && (
+          <Center w="100%" pt="xl">
+            <Button variant="default" onClick={loadMore}>
+              Load More
+            </Button>
           </Center>
         )}
       </Stack>

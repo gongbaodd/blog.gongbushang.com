@@ -4,6 +4,7 @@ import { IconX } from "@tabler/icons-react";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import classes from "./BlogCarousel.module.css";
 import { PostCard, type IPost } from "../card/PostCard";
+import { RevealCard } from "../card/RevealCard";
 import { PodcastCardFromPost } from "@/packages/masonry/PodcastPlock";
 import { useStore } from "@nanostores/react";
 import { $latest, $totalCounts, requestLatestPosts } from "@/packages/carousel/latest";
@@ -114,11 +115,13 @@ export function Carousel({
           display={"flex"}
           style={{ justifyContent: "center", alignItems: "center" }}
         >
-          {post.data.category === "podcast" ? (
-            <PodcastCardFromPost post={post} hideExcerpt />
-          ) : (
-            <PostCard post={post} hideExcerpt />
-          )}
+          <RevealCard id={post.id} revealOnHydrate>
+            {post.data.category === "podcast" ? (
+              <PodcastCardFromPost post={post} hideExcerpt />
+            ) : (
+              <PostCard post={post} hideExcerpt />
+            )}
+          </RevealCard>
         </MantineCarousel.Slide>
       ))}
     </MantineCarousel>
