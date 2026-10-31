@@ -11,7 +11,7 @@ interface ISsrMasonryProps<T> {
 const config = {
   columns: [1, 2, 3, 4, 5],
   gap: [48, 16, 32, 32, 32],
-  media: [28, 48, 75, 88, 110].map((i) => i * 16),
+  media: [24, 48, 75, 88, 110].map((i) => i * 16),
 };
 
 /**

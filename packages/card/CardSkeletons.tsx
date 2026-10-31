@@ -45,7 +45,6 @@ export function CardSkeleton({
     <Stack
       gap="xs"
       w="100%"
-      miw={280}
       role="status"
       aria-label="Loading"
       style={{

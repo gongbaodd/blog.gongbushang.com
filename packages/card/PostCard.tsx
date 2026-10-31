@@ -24,7 +24,7 @@ import { optimizeCoverUrl } from "@/packages/utils/cloudinary";
 export interface IPost extends TClientPost {}
 
 const CARD_WIDTH = 360;
-const CARD_MIN_WIDTH = 280;
+const CARD_MIN_WIDTH = 0;
 
 interface ICardProp {
   post: IPost;

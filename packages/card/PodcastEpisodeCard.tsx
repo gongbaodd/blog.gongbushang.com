@@ -21,7 +21,7 @@ import classes from "./PostCard.module.css";
 import { stripHtml } from "./stripHtml";
 
 const CARD_WIDTH = 360;
-const CARD_MIN_WIDTH = 280;
+const CARD_MIN_WIDTH = 0;
 
 interface IPodcastEpisodeCardProps {
   episode: IPodcastEpisode;

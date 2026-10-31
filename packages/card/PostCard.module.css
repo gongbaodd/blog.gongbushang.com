@@ -67,6 +67,18 @@
   font-size: var(--mantine-h3-font-size);
 }
 
+/* Two-column phone layout: cards are ~170px wide, so the footer title shrinks to fit. */
+@media (max-width: 47.99em) {
+  .item.with_bg .cover_footer {
+    padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  }
+
+  .item.with_bg .cover_footer .title {
+    font-size: var(--mantine-font-size-lg);
+    line-height: 1.3;
+  }
+}
+
 [data-mantine-color-scheme="dark"] .item.with_bg .cover_footer .title {
   color: var(--mantine-color-gray-2);
 }
