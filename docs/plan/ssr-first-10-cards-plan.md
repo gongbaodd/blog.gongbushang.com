@@ -2,7 +2,7 @@
 
 > Parent: `docs/plan/adsense-rejection-fix-plan.md` (Step 2), follows `adsense-step2-3-ssr-hydration-plan.md`
 > Status: **IMPLEMENTED** (option A, uncommitted on `master`). Verified: `pnpm check:hydration` clean on `/`, `/all`, `/year/2025`,
-> `/lab`, `/tag/react`, `/podcast`; first 10 cards in the HTML; Load More adds 16 at a time with no duplicates; 165 unit tests pass.
+> `/lab`, `/tag/react`, `/podcast`; first 5 cards in the HTML; Load More adds 16 at a time with no duplicates; 165 unit tests pass.
 > Notes: `SsrMasonry` (`packages/masonry/`) wraps `react-plock` again (cards flow left to right, as before). Until mount, server and first client render show the cards flat and visually hidden (in the HTML for crawlers); after mount the normal masonry replaces them. The CSS multi-column version (option A) was dropped because it flowed down columns. Load More streams one card at a time as before. Card dates are now formatted at build time (`dateText`) / in UTC (podcast) so server and client agree in any time zone.
 > At 1440 px cards overlap slightly because of the card `min-width: 280px`; the live site did the same before this change.
 >
@@ -65,7 +65,7 @@ Please confirm A, or tell me which option you prefer.
 4. `BlogPlock.tsx`: accept `initialPosts?: IPost[]`. Seed the store **synchronously before the first render**
    (same pattern used for `$pathname` in `MantineHeader`): `if (initialPosts && !$posts.get()[key]) $posts.setKey(key, initialPosts)`.
    Keep the existing `useEffect` that calls `streamPosts(key)`.
-5. Add a constant `INITIAL_SSR_POSTS = 10` (upper limit) in `packages/consts`; always use `posts.slice(0, INITIAL_SSR_POSTS)`, so shorter lists simply render fewer. `hasMorePosts` stays `posts.length < totalCount`, so no "Load More" button appears when everything is already rendered.
+5. Add a constant `INITIAL_SSR_POSTS` (now 5) (upper limit) in `packages/consts`; always use `posts.slice(0, INITIAL_SSR_POSTS)`, so shorter lists simply render fewer. `hasMorePosts` stays `posts.length < totalCount`, so no "Load More" button appears when everything is already rendered.
 
 ### B. Home page carousels
 
