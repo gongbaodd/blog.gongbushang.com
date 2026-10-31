@@ -1,13 +1,14 @@
 import Map, { Marker } from "react-map-gl/maplibre";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
-import { Anchor, Button, Card, Group, Stack } from "@mantine/core";
+import { Anchor, Button, Card, Group } from "@mantine/core";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { MapPin } from "lucide-react";
 import { useMediaQuery } from "@mantine/hooks";
 import { useStore } from "@nanostores/react";
 import { $cities, requestCitiesData } from "./store/city";
 import { useEffect } from "react";
-import { AsciiReveal, AsciiSkeleton } from "ascii-reveal";
+import { AsciiReveal } from "ascii-reveal";
+import { ScaledAsciiSkeleton } from "@/packages/react/ScaledAsciiSkeleton";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import { $pathnameNormalized } from "../header/store/pathname";
 import { ROUTE_HREF } from "../consts";
@@ -73,19 +74,7 @@ export default function GLMap({ cityCount = 0 }: IMapProps) {
                 "--ascii-skeleton": "var(--mantine-primary-color-filled)",
               } as React.CSSProperties}
             >
-              {/* A skeleton's glyph pattern has a fixed width (~900px), so tile it across wide maps. */}
-              <div style={{ display: "flex", width: "100%", height: "100%" }}>
-                {[1, 2, 3].map((seed) => (
-                  <AsciiSkeleton
-                    key={seed}
-                    as="div"
-                    rows={40}
-                    height="100%"
-                    seed={seed}
-                    style={{ flex: "1 1 0", minWidth: 0 }}
-                  />
-                ))}
-              </div>
+              <ScaledAsciiSkeleton variant="terminal" rows={40} />
             </div>
           )}
           <ReactErrorBoundary label="GLMap failed to render">

@@ -22,6 +22,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { AsciiReveal } from "ascii-reveal";
+import { ScaledAsciiSkeleton } from "@/packages/react/ScaledAsciiSkeleton";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { TooltipStackCarousel } from "@/packages/carousel/BlogCarousel";
@@ -361,16 +363,6 @@ export default function ParticleHero({
 
           <Group className={classes.heroGroup} align="center" gap="xl" justify="center">
             <Stack gap="md" className={classes.canvasColumn}>
-              {filter.hasYears && (
-                <Flex className={classes.legendChipsRow} justify="flex-end">
-                  <LegendCategoryChips
-                    categories={filter.categories}
-                    selectedCategory={filter.selectedCategory}
-                    onSelectCategory={filter.selectCategory}
-                  />
-                </Flex>
-              )}
-
               <Card p={0} radius="lg" shadow="lg" className={classes.canvasCard}>
                 <Flex className={classes.canvasContainer}>
                   {galleryImage && placeholderStyle && (
@@ -382,6 +374,16 @@ export default function ParticleHero({
                       }
                       style={placeholderStyle}
                     />
+                  )}
+
+                  {loading && !webglFailed && (
+                    <Box
+                      aria-hidden
+                      className={classes.canvasSkeleton}
+                      style={{ "--ascii-skeleton": "var(--mantine-primary-color-filled)" } as CSSProperties}
+                    >
+                      <ScaledAsciiSkeleton rows={40} />
+                    </Box>
                   )}
 
                   {tooltip && (
@@ -412,20 +414,36 @@ export default function ParticleHero({
                     </Paper>
                   )}
 
-                  <ReactErrorBoundary label="ParticleHero failed to render">
-                    <Flex
-                      flex={1}
-                      className={
-                        classes.canvas +
-                        (webglFailed ? " " + classes.canvasUnavailable : "") +
-                        (!loading && !webglFailed ? " " + classes.loaded : "")
-                      }
-                    >
-                      <Box ref={canvasRef} className={classes.canvasInner} />
-                    </Flex>
-                  </ReactErrorBoundary>
+                  <AsciiReveal
+                    loading={loading}
+                    revealOnMount={false}
+                    style={{ position: "relative", zIndex: 1, flex: 1, width: "100%", height: "100%" }}
+                  >
+                    <ReactErrorBoundary label="ParticleHero failed to render">
+                      <Flex
+                        flex={1}
+                        className={
+                          classes.canvas +
+                          (webglFailed ? " " + classes.canvasUnavailable : "") +
+                          (!loading && !webglFailed ? " " + classes.loaded : "")
+                        }
+                      >
+                        <Box ref={canvasRef} className={classes.canvasInner} />
+                      </Flex>
+                    </ReactErrorBoundary>
+                  </AsciiReveal>
                 </Flex>
               </Card>
+
+              {filter.hasYears && (
+                <Flex className={classes.legendChipsRow} justify="flex-end">
+                  <LegendCategoryChips
+                    categories={filter.categories}
+                    selectedCategory={filter.selectedCategory}
+                    onSelectCategory={filter.selectCategory}
+                  />
+                </Flex>
+              )}
 
               {filter.hasYears && (
                 <Flex className={classes.legendYearRow} justify="flex-start">
