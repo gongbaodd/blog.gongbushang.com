@@ -1,0 +1,79 @@
+---
+import BaseHead from "@/packages/components/BaseHead.astro";
+import { SITE_TITLE } from "@/packages/consts";
+import Global from "@/packages/layouts/Global.astro";
+import MantineMain from "@/packages/scaffold/MantineMain";
+import Header from "@/packages/header/Header.astro";
+import Footer from "@/packages/footer/Footer.astro";
+import SitemapTreemap from "@/packages/sitemap/SitemapTreemap";
+import { buildSitemapTree } from "@/packages/sitemap/buildSitemapTree";
+import { getAllPosts } from "@/packages/utils/post";
+import { date } from "@/packages/utils/extract";
+import dayjs from "dayjs";
+
+export const prerender = true;
+
+const posts = await getAllPosts();
+const tree = buildSitemapTree(
+  posts.map((post) => ({
+    category: post.data.category,
+    year: dayjs(date(post)).format("YYYY"),
+  })),
+);
+
+if (tree.value !== posts.length) {
+  throw new Error(`Sitemap tree counts ${tree.value} posts but the collection has ${posts.length}.`);
+}
+
+const years = new Set(tree.children.flatMap((c) => c.children.map((y) => y.name)));
+---
+
+<Global>
+  <BaseHead
+    title={`${SITE_TITLE} | Sitemap`}
+    description={`Every one of the ${tree.value} posts on GrowGen, grouped by ${tree.children.length} categories and ${years.size} years.`}
+    slot="head"
+  />
+  <Header />
+  <section id="sitemap-page" class="main">
+    <MantineMain>
+      <div class="mx-auto my-10 max-w-5xl px-4">
+        <h1 class="mb-2 text-3xl font-bold"># Sitemap</h1>
+        <p class="mb-6 opacity-70">
+          {tree.value} posts in {tree.children.length} categories across {years.size} years. Cell size
+          is the number of posts; click a cell to open that year.
+        </p>
+        <SitemapTreemap categories={tree.children} client:visible />
+        <nav aria-label="Sitemap" class="mt-10">
+          <ul class="space-y-6">
+            {
+              tree.children.map((category) => (
+                <li>
+                  <h2 class="mb-2 text-xl font-semibold">
+                    <a href={category.href}>{category.name}</a>{" "}
+                    <span class="text-base font-normal opacity-60">
+                      {category.value} {category.value === 1 ? "post" : "posts"}
+                    </span>
+                  </h2>
+                  <ul class="flex flex-wrap gap-2">
+                    {category.children.map((year) => (
+                      <li>
+                        <a
+                          class="inline-block rounded-full border border-gray-300 px-3 py-1 text-sm dark:border-gray-600"
+                          href={year.href}
+                        >
+                          {year.name} <span class="opacity-60">{year.value}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+      <Footer slug={"sitemap"} />
+    </MantineMain>
+  </section>
+</Global>

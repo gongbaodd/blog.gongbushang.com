@@ -1,4 +1,6 @@
+import { SHORT_POST_WORDS } from "consts/config.js";
 import { md2txt } from "utils/md2txt";
+import { getWordNumber } from "utils/readingTime";
 import type { Link, MetadataEntry } from "./types.ts";
 
 export interface FrontmatterData {
@@ -57,6 +59,10 @@ export function seriesFromFrontmatter(
   };
 }
 
+export function isShortPost(body: string, threshold = SHORT_POST_WORDS): boolean {
+  return getWordNumber(body) < threshold;
+}
+
 export function normalizeCity(city?: string | string[]): string[] | undefined {
   if (!city) return undefined;
   return Array.isArray(city) ? city : [city];
@@ -84,7 +90,16 @@ export async function extractDataFields(
 ): Promise<
   Pick<
     MetadataEntry,
-    "id" | "href" | "title" | "date" | "content" | "category" | "tags" | "series" | "city"
+    | "id"
+    | "href"
+    | "title"
+    | "date"
+    | "content"
+    | "category"
+    | "tags"
+    | "series"
+    | "city"
+    | "isShort"
   >
 > {
   const city = normalizeCity(frontmatter.city);
@@ -99,5 +114,6 @@ export async function extractDataFields(
     tags: tagsFromFrontmatter(frontmatter.tag),
     series: seriesFromFrontmatter(frontmatter.series, seriesNameMap),
     city,
+    isShort: isShortPost(body),
   };
 }

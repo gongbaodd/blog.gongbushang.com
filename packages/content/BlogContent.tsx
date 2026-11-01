@@ -190,15 +190,14 @@ export function BlogMenu({
   }
 }
 
-export function RelatePosts({ id, category }: { id: string; category: string }) {
-  const _relates = useStore($relates);
+export function RelatePosts({ id }: { id: string }) {
+  const relates = useStore($relates);
   const isLoading = useStore($isLoading);
   const isDesktop = useMediaQuery("(min-width: 75em)") ?? false;
 
-  const relates = _relates.filter((p) => p.id !== id);
   useEffect(() => {
-    request(category);
-  }, []);
+    request(id);
+  }, [id]);
 
   return (
     <CustomMantineProvider>

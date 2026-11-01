@@ -9,3 +9,6 @@ export const PODCAST_COVER_DIR = `${CONTENT_GENERATED_DIR}/podcast`;
 
 export const GALLERY_JSON = `${CONTENT_GENERATED_DIR}/gallery.json`;
 export const GALLERY_TRACE_DIR = `${CONTENT_GENERATED_DIR}/gallery`;
+
+/** Posts whose body has fewer words (Latin words + CJK characters) than this are marked `isShort`. */
+export const SHORT_POST_WORDS = 150;

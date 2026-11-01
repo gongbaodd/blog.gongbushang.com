@@ -31,6 +31,7 @@ export interface PostMetadataEntry {
   colorSet?: { bgColor: string; titleColor: string };
   embeddings?: number[];
   umap2D?: [number, number];
+  isShort?: boolean;
 }
 
 function metadataFileBasename(postId: string): string {

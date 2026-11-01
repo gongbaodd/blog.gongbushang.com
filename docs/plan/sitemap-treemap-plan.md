@@ -1,7 +1,7 @@
 # Plan — Visual sitemap page (treemap)
 
-> Status: **NOT STARTED**
-> Related: `docs/plan/adsense-rejection-fix-plan.md` (footer "Sitemap" link currently points to `#sitemap`)
+> Status: **DONE** (see "Implementation notes" at the end)
+> Related: `docs/plan/adsense-rejection-fix-plan.md` (the footer "Sitemap" link now points to `/sitemap`)
 
 ## Goal
 
@@ -55,3 +55,22 @@ treemap is progressive enhancement; the list is the content Google sees.
 
 `pnpm build` green; `/sitemap` has > 300 characters of server-rendered text; clicking a cell opens the
 right list page; unit test covers the tree totals equalling `getAllPosts().length`.
+
+## Implementation notes
+
+- `packages/sitemap/`: `buildSitemapTree.ts` (Category → Year tree, unit-tested), `cell.ts` (colour, label-fit and
+  tooltip helpers, unit-tested) and `SitemapTreemap.tsx` (Recharts `Treemap` island, `client:visible`, error boundary
+  with an empty fallback because the link list below is the fallback).
+- `src/pages/sitemap.astro` builds the tree from `getAllPosts()` and throws at build time if the tree total differs
+  from `getAllPosts().length`. It renders the treemap plus a server-rendered `<nav>` list (category → year links with
+  counts).
+- Cells are real `<a href>` elements inside the SVG, not `window.location.assign` handlers, so they work with the
+  keyboard, middle-click and prefetch.
+- **Year cells link to `/year/<year>`, not `/<category>/<year>`.** There is no category + year list page (only the post
+  route `[category]/[year]/[month]/[day]/[slug]` exists), so a year cell opens that year across all categories. The
+  category name in the link list links to `/<category>`. Adding a real `/<category>/<year>` page is a separate task.
+- The Series level was left out: the Data section only specifies Category → Year, and series already have `/series/*`.
+- The footer link now points to `/sitemap`; the XML sitemap stays at `/sitemap-index.xml`. The header menu is unchanged
+  (changing `ROUTES` would also change the e2e navigation scenarios).
+- e2e: a `/sitemap` scenario was added to `e2e/features/static-routes.feature`.
+- Verified: 984 posts, 9 categories, 12 years; server-rendered text ~1.2k characters; `/sitemap/` is in `sitemap-0.xml`.

@@ -4,6 +4,7 @@ import {
   categoryFromFrontmatter,
   dateFromSlug,
   extractDataFields,
+  isShortPost,
   seriesFromFrontmatter,
   tagsFromFrontmatter,
   titleFromBody,
@@ -115,5 +116,26 @@ describe("extractDataFields", () => {
       href: "/series/vibe-coding",
     });
     expect(result.city).toEqual(["Krakow, Poland"]);
+    expect(result.isShort).toBe(true);
+  });
+});
+
+describe("isShortPost", () => {
+  test("empty body is short", () => {
+    expect(isShortPost("")).toBe(true);
+  });
+
+  test("counts latin words against the threshold", () => {
+    expect(isShortPost("one two three", 3)).toBe(false);
+    expect(isShortPost("one two", 3)).toBe(true);
+  });
+
+  test("counts each CJK character as a word", () => {
+    expect(isShortPost("你好世界", 4)).toBe(false);
+    expect(isShortPost("你好世", 4)).toBe(true);
+  });
+
+  test("long body is not short with the default threshold", () => {
+    expect(isShortPost("word ".repeat(400))).toBe(false);
   });
 });

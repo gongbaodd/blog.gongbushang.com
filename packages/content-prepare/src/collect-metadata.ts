@@ -5,7 +5,12 @@ import matter from "gray-matter";
 import fg from "fast-glob";
 import { getColorSet } from "image-metadata";
 import { isEmbeddingServerRunning } from "post-embedding";
-import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "./data-field.ts";
+import {
+  buildSeriesNameMap,
+  extractDataFields,
+  isShortPost,
+  type FrontmatterData,
+} from "./data-field.ts";
 import { applyBlogUmapCorpus, embedPostMetadata, UMAP_STATE_FILENAME } from "metadata-embedding";
 import { geocodeCities } from "./geocode.ts";
 import { toMetadataFileBasename, toMetadataSlug } from "./path-utils.ts";
@@ -158,6 +163,13 @@ export async function collectMetadata(options: CollectMetadataOptions): Promise<
     const hashUnchanged = old?.hash === contentHash;
 
     if (hashUnchanged && hasDataFields(old) && hasEmbeddings(old)) {
+      // Cheap backfill: refresh the short flag without re-embedding.
+      const isShort = isShortPost(body);
+      if (old.isShort !== isShort) {
+        await writeMetadataEntry(outputDir, { ...old, isShort });
+        changedCount++;
+        console.log(`✅ Marked isShort=${isShort}: ${relPath}`);
+      }
       continue;
     }
 

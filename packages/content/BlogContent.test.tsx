@@ -127,10 +127,10 @@ describe("RelatePosts", () => {
     requestMock.mockClear();
   });
 
-  test("calls request with category and renders Carousel with relates excluding id", () => {
-    render(<RelatePosts id="blog/2024/test" category="blog" />);
-    expect(requestMock).toHaveBeenCalledWith("blog");
-    // relates = _relates.filter(p => p.id !== id) => one post excluded, so 1 post
-    expect(screen.getByTestId("carousel")).toHaveTextContent("1 posts");
+  test("requests nearest posts by id and renders them all in the Carousel", () => {
+    render(<RelatePosts id="blog/2024/test" />);
+    expect(requestMock).toHaveBeenCalledWith("blog/2024/test");
+    // The relates endpoint already excludes the current post, so nothing is filtered client-side.
+    expect(screen.getByTestId("carousel")).toHaveTextContent("2 posts");
   });
 });

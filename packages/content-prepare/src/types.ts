@@ -36,6 +36,8 @@ export interface MetadataEntry {
   cover?: Cover;
   colorSet?: ColorSet;
   embeddings?: number[];
+  /** Body is shorter than `SHORT_POST_WORDS`; short posts relate to other short posts. */
+  isShort?: boolean;
 }
 
 export interface CollectMetadataOptions {

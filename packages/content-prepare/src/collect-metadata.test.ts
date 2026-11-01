@@ -286,6 +286,43 @@ cover:
     expect(getEmbeddingMock).toHaveBeenCalled();
   });
 
+  test("marks short and long posts", async () => {
+    await writePost("2024/01/09/short.md", `---\ncategory: blog\n---\n\n# Short\n`);
+    await writePost(
+      "2024/01/10/long.md",
+      `---\ncategory: blog\n---\n\n# Long\n\n${"word ".repeat(400)}\n`,
+    );
+
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
+
+    expect((await readMetadata("2024/01/09/short")).isShort).toBe(true);
+    expect((await readMetadata("2024/01/10/long")).isShort).toBe(false);
+  });
+
+  test("backfills isShort without re-embedding when hash is unchanged", async () => {
+    await writePost("2024/01/11/flag-backfill.md", `---\ncategory: blog\n---\n\n# Flag\n`);
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
+    const first = await readMetadata("2024/01/11/flag-backfill");
+
+    const { isShort: _removed, ...withoutFlag } = first;
+    await fs.writeFile(
+      path.join(outputDir, "2024-01-11-flag-backfill.json"),
+      JSON.stringify(withoutFlag),
+      "utf-8",
+    );
+
+    getEmbeddingMock.mockClear();
+    isEmbeddingServerRunningMock.mockClear();
+    isEmbeddingServerRunningMock.mockResolvedValue(false);
+
+    await collectMetadata({ repoRoot: tmpRoot, docsDir, outputDir });
+    const second = await readMetadata("2024/01/11/flag-backfill");
+
+    expect(second).toEqual(first);
+    expect(second.isShort).toBe(true);
+    expect(getEmbeddingMock).not.toHaveBeenCalled();
+  });
+
   test("loads legacy metadata.json and removes orphaned per-post files", async () => {
     await writePost(
       "2024/01/04/active.md",

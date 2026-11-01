@@ -26,3 +26,9 @@ Feature: Static routes
     Given I open "/about"
     Then I see the heading "Hi, I’m Gong 👋"
     And I do not see the not-found page
+
+  Scenario: Sitemap lists every category and year
+    Given I open "/sitemap"
+    Then I see the page title "Sitemap"
+    And I see the heading "Sitemap"
+    And I do not see the not-found page

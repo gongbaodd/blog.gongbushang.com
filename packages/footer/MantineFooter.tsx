@@ -112,7 +112,7 @@ export default function MantineFooter({
                 <Anchor href="/rss.xml" size="sm" c="dimmed" td="none">
                   RSS
                 </Anchor>
-                <Anchor href="/sitemap-index.xml" size="sm" c="dimmed" td="none">
+                <Anchor href="/sitemap" size="sm" c="dimmed" td="none">
                   Sitemap
                 </Anchor>
                 <Anchor href="/year" size="sm" c="dimmed" td="none">

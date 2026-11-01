@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "type": "module",
   "exports": {
-    "./md2txt": "./md2txt.ts"
+    "./md2txt": "./md2txt.ts",
+    "./readingTime": "./readingTime.ts"
   },
   "dependencies": {
     "@types/mdast": "^4.0.4",

@@ -87,7 +87,7 @@ async function getLinks() {
         {adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} test={adsenseTest} />}
       </section>
       <aside slot="sidebarNode" class="relates-sidebar">
-        <RelatePosts id={post.id} category={post.data.category} client:idle />
+        <RelatePosts id={post.id} client:idle />
       </aside>
     </GridWithMenu>
     <Footer slug={post.id} />
