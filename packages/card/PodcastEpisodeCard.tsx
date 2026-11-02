@@ -110,7 +110,7 @@ export function PodcastEpisodeCard({
           color="gray"
           size="lg"
           radius="xl"
-          className={classes.category}
+          className={`${classes.category} ${classes.above_link}`}
         >
           <IconPlayerPlay size={16} />
         </ActionIcon>
@@ -121,6 +121,7 @@ export function PodcastEpisodeCard({
   const titleBlock = (
     <Anchor
       underline="never"
+      className={classes.stretched_link}
       href={`/podcast/${encodeURIComponent(episode.id)}`}
     >
       <Title className={classes.title}>
@@ -173,7 +174,7 @@ export function PodcastEpisodeCard({
                       justify="space-between"
                       p="lg"
                       flex={1}
-                      className={classes.cover_content}
+                      className={`${classes.cover_content} ${classes.click_through}`}
                     >
                       {badgeRow}
                       {metaRow}
@@ -192,7 +193,12 @@ export function PodcastEpisodeCard({
                   {titleBlock}
                   {episode.audioUrl && (
                     <Group gap="xs">
-                      <Anchor href={episode.audioUrl} target="_blank" size="xs">
+                      <Anchor
+                        href={episode.audioUrl}
+                        target="_blank"
+                        size="xs"
+                        className={classes.above_link}
+                      >
                         Listen
                       </Anchor>
                     </Group>
