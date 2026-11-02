@@ -1,4 +1,5 @@
 import { Heatmap } from "@mantine/charts";
+import "@mantine/charts/styles.css";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { Anchor, Button, Flex, Stack, Title } from "@mantine/core";
 import dayjs from "dayjs";
