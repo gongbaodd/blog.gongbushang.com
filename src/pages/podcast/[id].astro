@@ -5,19 +5,37 @@ import Header from "@/packages/header/Header.astro";
 import Global from "@/packages/layouts/Global.astro";
 import MantineMain from "@/packages/scaffold/MantineMain";
 import { SITE_TITLE } from "@/packages/consts";
-import { processPodcastEpisodes } from "@/packages/utils/podcast";
+import { GridWithMenu } from "@/packages/scaffold/GridWithMenu";
+import { processPodcastEpisodes, readPodcastData } from "@/packages/utils/podcast";
+import { findNearest } from "@/packages/utils/nearest";
+import PodcastEpisodeMenu from "../../components/PodcastEpisodeMenu";
+import PodcastEpisodeContent from "../../components/PodcastEpisodeContent";
+import PodcastDiscover from "../../components/PodcastDiscover";
 import { stripHtml } from "@/packages/card/stripHtml";
 
 export const prerender = true;
 
 export function getStaticPaths() {
-  return processPodcastEpisodes().map((episode) => ({
-    params: { id: episode.id },
-    props: { episode },
-  }));
+  const episodes = processPodcastEpisodes();
+  const candidates = episodes.map((e) => ({ ...e, category: { label: "podcast" } }));
+  // Episodes also carry large `embeddings`/`umap2D` data; strip them before they reach island props.
+  const slim = ({ id, title, link, pubDate, summary, description, duration, audioUrl, image, colorSet }: (typeof episodes)[number]) => ({
+    id, title, link, pubDate, summary, description, duration, audioUrl, image, colorSet,
+  });
+  return episodes.map((episode) => {
+    const target = candidates.find((c) => c.id === episode.id)!;
+    return {
+      params: { id: episode.id },
+      props: {
+        episode: slim(episode),
+        related: findNearest(target, candidates, 4).map(slim),
+      },
+    };
+  });
 }
 
-const { episode } = Astro.props;
+const { episode, related } = Astro.props;
+const channel = readPodcastData().channel;
 const description = stripHtml(episode.description || episode.summary || "");
 const metaDescription = stripHtml(episode.summary || description).slice(0, 200);
 const publishedDate = new Date(episode.pubDate);
@@ -30,46 +48,40 @@ const publishedDate = new Date(episode.pubDate);
     image={episode.image}
     slot="head"
   />
-  <Header transition:persist />
-  <section id="podcast-episode-page" class="main">
-    <MantineMain>
-      <main class="mx-auto w-full max-w-3xl px-4 py-10">
-        <a href="/podcast" class="mb-6 inline-flex items-center gap-2 text-sm underline underline-offset-4">
-          <span aria-hidden="true">←</span>
-          All episodes
-        </a>
-        <article class="overflow-hidden rounded-2xl border bg-background shadow-sm">
-          {episode.image && (
-            <img
-              src={episode.image}
-              alt={episode.title}
-              class="max-h-[28rem] w-full object-cover"
-            />
-          )}
-          <div class="space-y-5 p-6 sm:p-8">
-            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-              <time datetime={publishedDate.toISOString()}>
-                {publishedDate.toLocaleDateString("en-US", { dateStyle: "long" })}
-              </time>
-              {episode.duration && <span>{episode.duration}</span>}
-            </div>
-            <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">{episode.title}</h1>
-            {description && <p class="whitespace-pre-wrap leading-7">{description}</p>}
-            {episode.link && (
-              <a
-                href={episode.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center rounded-full bg-green-600 px-5 py-3 font-semibold text-white transition-colors hover:bg-green-700"
-              >
-                Listen on Spotify
-                <span class="ml-2" aria-hidden="true">↗</span>
-              </a>
-            )}
-          </div>
-        </article>
-      </main>
-      <Footer slug="podcast" />
-    </MantineMain>
-  </section>
+  <Header />
+  <MantineMain client:load>
+    <GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }}>
+      <PodcastEpisodeMenu
+        slot="menuNode"
+        client:load
+        title={channel.title}
+        description={channel.description}
+        link={channel.link}
+        image={channel.image}
+      />
+      <section slot="gridContent">
+        <PodcastEpisodeContent
+          title={episode.title}
+          date={publishedDate.toISOString()}
+          duration={episode.duration}
+          image={episode.image}
+          description={description}
+          link={episode.link}
+        />
+      </section>
+      <aside slot="sidebarNode" class="relates-sidebar">
+        <PodcastDiscover episodes={related} client:idle />
+      </aside>
+    </GridWithMenu>
+    <Footer slug="podcast" />
+  </MantineMain>
 </Global>
+
+<style>
+  @media (min-width: 75em) {
+    .relates-sidebar {
+      position: sticky;
+      top: 90px;
+    }
+  }
+</style>
