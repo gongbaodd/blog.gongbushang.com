@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   anniversaryDistance,
+  galleryDocToPodcastId,
   galleryDocToPostId,
   parseGalleryDocDate,
   pickNearestGalleryEntry,
@@ -22,6 +23,12 @@ describe("parseGalleryDocDate", () => {
   test("parses doc path date", () => {
     const date = parseGalleryDocDate("/2019/05/25/take-another-black-golden-roof-again");
     expect(date).toEqual(new Date(2019, 4, 25));
+  });
+
+  test("uses the episode pubDate for podcast docs", () => {
+    const lookup = (id: string) => (id === "ep-1" ? "2025-03-04T10:00:00" : undefined);
+    expect(parseGalleryDocDate("/podcast/ep-1", lookup)).toEqual(new Date(2025, 2, 4));
+    expect(parseGalleryDocDate("/podcast/missing", lookup)).toBeUndefined();
   });
 
   test("returns undefined for invalid doc", () => {
@@ -109,5 +116,17 @@ describe("pickNearestGalleryEntry", () => {
 
     const result = pickNearestGalleryEntry(images, new Date(2026, 4, 30));
     expect(result?.id).toBe("a/entry");
+  });
+});
+
+describe("galleryDocToPodcastId", () => {
+  test("extracts the episode id from a podcast doc", () => {
+    expect(galleryDocToPodcastId("/podcast/2025-e3cmo9q")).toBe("2025-e3cmo9q");
+    expect(galleryDocToPodcastId("/podcast/a%20b/")).toBe("a b");
+  });
+
+  test("ignores blog docs", () => {
+    expect(galleryDocToPodcastId("/2019/05/25/post")).toBeUndefined();
+    expect(galleryDocToPodcastId("/podcast/")).toBeUndefined();
   });
 });

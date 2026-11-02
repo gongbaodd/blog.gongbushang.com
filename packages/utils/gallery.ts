@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { GALLERY_JSON, GALLERY_TRACE_DIR } from "../consts/config.js";
 import { optimizeCloudinaryUrl } from "./cloudinary.ts";
+import { readPodcastData } from "./podcast.ts";
 
 export interface GalleryEntry {
   id: string;
@@ -99,7 +100,43 @@ export function listGalleryTraceFiles(): string[] {
 
 const DOC_DATE_RE = /^\/(\d{4})\/(\d{2})\/(\d{2})\//;
 
-export function parseGalleryDocDate(doc: string): Date | undefined {
+const PODCAST_DOC_PREFIX = "/podcast/";
+
+/** `/podcast/<episode id>` -> `<episode id>`; undefined for any other doc. */
+export function galleryDocToPodcastId(doc: string): string | undefined {
+  if (!doc.startsWith(PODCAST_DOC_PREFIX)) return undefined;
+  const raw = doc.slice(PODCAST_DOC_PREFIX.length).replace(/\/$/, "");
+  if (!raw) return undefined;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+let podcastPubDates: Map<string, string> | undefined;
+
+function defaultPodcastPubDate(episodeId: string): string | undefined {
+  podcastPubDates ??= new Map(readPodcastData().episodes.map((ep) => [ep.id, ep.pubDate]));
+  return podcastPubDates.get(episodeId);
+}
+
+/**
+ * Date a gallery doc refers to: the path date for blog posts (`/2019/05/25/slug`), or the episode's
+ * publish date for podcast docs (`/podcast/<id>`).
+ */
+export function parseGalleryDocDate(
+  doc: string,
+  podcastPubDate: (episodeId: string) => string | undefined = defaultPodcastPubDate,
+): Date | undefined {
+  const episodeId = galleryDocToPodcastId(doc);
+  if (episodeId) {
+    const pubDate = podcastPubDate(episodeId);
+    const d = pubDate ? new Date(pubDate) : undefined;
+    if (!d || Number.isNaN(d.getTime())) return undefined;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
   const match = doc.match(DOC_DATE_RE);
   if (!match) return undefined;
 

@@ -8,7 +8,13 @@ import {
 import { set } from "es-toolkit/compat";
 import { BLOG_SOURCE, POST_CARD_CLASSNAMES, POST_CARD_LAYOUT } from "../consts";
 import { POST_METADATA_DIR, POST_UMAP_STATE } from "../consts/config.js";
-import { applyGalleryEntryToClientPost, galleryDocToPostId, type GalleryEntry } from "./gallery.ts";
+import {
+  applyGalleryEntryToClientPost,
+  galleryDocToPodcastId,
+  galleryDocToPostId,
+  type GalleryEntry,
+} from "./gallery.ts";
+import { mapPodcastEpisodesToPosts } from "./podcast.ts";
 import { optimizeCoverUrl } from "./cloudinary.ts";
 import fs from "node:fs";
 import path from "node:path";
@@ -147,6 +153,22 @@ export async function mapServerPostToClient(posts: T_PROPS[]) {
 export async function mapGalleryEntryToClientPost(
   entry: GalleryEntry,
 ): Promise<TClientPost | undefined> {
+  const episodeId = galleryDocToPodcastId(entry.doc);
+  if (episodeId) {
+    const episodePost = mapPodcastEpisodesToPosts().find((post) => post.id === episodeId);
+    if (!episodePost) return undefined;
+
+    const [episodeClientPost] = await mapServerPostToClient([episodePost]);
+    const result = applyGalleryEntryToClientPost(episodeClientPost, entry);
+    // Podcast cards read `data.image` / `data.colorSet` before cover / bgColor, so mirror the override.
+    const cover = result.data.cover?.url;
+    const override: Record<string, unknown> = {
+      image: typeof cover === "string" ? cover : cover?.src,
+      ...(entry.colorSet ? { colorSet: entry.colorSet } : {}),
+    };
+    return { ...result, data: { ...result.data, ...override } };
+  }
+
   const postId = galleryDocToPostId(entry.doc);
   if (!postId) return undefined;
 
