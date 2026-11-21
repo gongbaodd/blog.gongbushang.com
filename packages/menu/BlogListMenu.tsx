@@ -16,6 +16,7 @@ import {
   requestAllTags,
 } from "../../src/stores/links";
 import { useMounted } from "@mantine/hooks";
+import { track } from "@/packages/analytics";
 
 interface IMenuProps {
   title: string;
@@ -117,7 +118,11 @@ function MenuTag() {
     <Menu title={"Tags"} loadFunc={requestAllTags}>
       <Group gap="xs">
         {tags.map(({ label, href }) => (
-          <Anchor href={href} key={label}>
+          <Anchor
+            href={href}
+            key={label}
+            onClick={() => track("tag_clicked", { tag: label, location: "list-menu" })}
+          >
             <Badge variant={"outline"} color="green" style={{ cursor: "pointer" }} size="sm">
               {label}
             </Badge>

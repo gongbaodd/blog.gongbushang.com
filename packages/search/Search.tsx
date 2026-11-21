@@ -12,7 +12,7 @@ import {
   Container,
 } from "@mantine/core";
 import { useDebouncedCallback, useDisclosure, useHotkeys } from "@mantine/hooks";
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
 import { Calendar, Search as SearchIcon } from "lucide-react";
 import { useStore } from "@nanostores/react";
 import dayjs from "dayjs";
@@ -21,21 +21,23 @@ import type { SearchResult } from "minisearch";
 import { Spotlight, spotlight } from "@mantine/spotlight";
 import LetterGlitch from "@/src/bits/Backgrounds/LetterGlitch/LetterGlitch";
 import { $index, $posts, loadPostsToIndex, search } from "@/src/stores/search";
+import { track } from "@/packages/analytics";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 
 export default function Search() {
   const [_searchOpened, { open: openSearch, close: closeSearch }] = useDisclosure(false);
   const postsToIndex = useStore($index);
   const isLoading = postsToIndex.isLoading;
-  const loadPosts = useCallback(async () => {
+  const loadPosts = useCallback(async (source: "button" | "hotkey" = "button") => {
+    track("search_opened", { source });
     openSearch();
     await loadPostsToIndex();
     spotlight.open();
   }, []);
 
   useHotkeys([
-    ["mod+K", loadPosts],
-    ["/", loadPosts],
+    ["mod+K", () => loadPosts("hotkey")],
+    ["/", () => loadPosts("hotkey")],
     ["Escape", closeSearch],
   ]);
 
@@ -47,7 +49,7 @@ export default function Search() {
         variant="outline"
         c="dimmed"
         style={{ borderColor: "var(--mantine-color-dimmed)" }}
-        onClick={loadPosts}
+        onClick={() => loadPosts("button")}
         visibleFrom="sm"
       >
         {isLoading ? "Loading..." : "Search..."}
@@ -59,7 +61,7 @@ export default function Search() {
       </Button>
       <Button
         hiddenFrom="sm"
-        onClick={loadPosts}
+        onClick={() => loadPosts("button")}
         c="dimmed"
         radius={"xl"}
         variant="outline"
@@ -75,12 +77,20 @@ export default function Search() {
 function SpotlightModal({ onSpotlightClose }: { onSpotlightClose: () => void }) {
   const [query, _setQuery] = useState("");
   const posts = useStore($posts);
+  const lastTracked = useRef("");
 
-  const actions: ReactNode[] = posts.map((post) => (
+  const actions: ReactNode[] = posts.map((post, i) => (
     <Spotlight.Action
       key={post.id}
       px={0}
-      onClick={() => (location.href = `/${post.category.label}/${post.id}`)}
+      onClick={() => {
+        track("search_result_clicked", {
+          rank: i + 1,
+          slug: String(post.id),
+          ...(query.trim() ? { query: query.trim() } : {}),
+        });
+        location.href = `/${post.category.label}/${post.id}`;
+      }}
       closeSpotlightOnTrigger
     >
       <Group justify="space-between" align="flex-start" p={"xs"}>
@@ -119,6 +129,15 @@ function SpotlightModal({ onSpotlightClose }: { onSpotlightClose: () => void }) 
 
   const handleSearch = useDebouncedCallback((query: string) => {
     search(query);
+    const q = query.trim();
+    if (q.length >= 2 && q !== lastTracked.current) {
+      lastTracked.current = q;
+      track("search_performed", {
+        query: q,
+        query_length: q.length,
+        result_count: $posts.get().length,
+      });
+    }
   }, 200);
 
   const setQuery = (query: string) => {
@@ -150,6 +169,7 @@ export function SearchBanner() {
   const postsToIndex = useStore($index);
   const isLoading = postsToIndex.isLoading;
   const loadPosts = useCallback(async () => {
+    track("search_opened", { source: "button" });
     await loadPostsToIndex();
     spotlight.open();
   }, []);

@@ -1,5 +1,6 @@
 ---
 import TransitionFrom from "@/src/components/TransitionFrom.astro";
+import ConsentBanner from "@/packages/analytics/ConsentBanner.astro";
 import { ClientRouter } from "astro:transitions";
 ---
 <!doctype html>
@@ -9,5 +10,6 @@ import { ClientRouter } from "astro:transitions";
   </head>
   <body>
     <slot />
+    <ConsentBanner />
   </body>
 </html>

@@ -41,6 +41,8 @@ const postExcerpt = await excerpt(post);
 const links = await getLinks();
 
 const createDate = date(post);
+const rawTags = (post.data as { tags?: unknown }).tags;
+const readTags = Array.isArray(rawTags) ? rawTags.map(String) : [];
 const { minutes } = getReadingTime(post.body ?? "");
 
 async function getLinks() {
@@ -76,14 +78,23 @@ async function getLinks() {
         slot="menuNode"
       />
       <section slot="gridContent">
-        <BlogContent
-          title={postTitle}
-          links={links}
-          date={createDate}
-          time={minutes + "min"}
+        <div
+          data-post-read
+          data-slug={post.id}
+          data-category={String(post.data.category)}
+          data-year={post.id.split("/")[0]}
+          data-reading-time-min={minutes}
+          data-tags={JSON.stringify(readTags)}
         >
-          <slot />
-        </BlogContent>
+          <BlogContent
+            title={postTitle}
+            links={links}
+            date={createDate}
+            time={minutes + "min"}
+          >
+            <slot />
+          </BlogContent>
+        </div>
         {adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} test={adsenseTest} />}
       </section>
       <aside slot="sidebarNode" class="relates-sidebar">
@@ -93,6 +104,97 @@ async function getLinks() {
     <Footer slug={post.id} />
   </MantineMain>
 </Global>
+
+<script>
+  // post_read: fires once per depth (25/50/75/100) per page load, measured over the
+  // article wrapper only (not related posts/footer). A passive, rAF-throttled scroll
+  // handler computes how far the viewport bottom has travelled through the wrapper,
+  // so it works for any post length. Short posts (fully visible on load) reach all
+  // thresholds at once; to avoid counting bounces, nothing fires until the tab has been
+  // visible for DWELL_MS (2s), after which pending thresholds fire in order.
+  import { track } from "@/packages/analytics";
+  import { newlyReached, readProgress } from "@/packages/analytics/read-depth";
+
+  const DWELL_MS = 2000;
+
+  function initPostRead() {
+    const el = document.querySelector<HTMLElement>("[data-post-read]");
+    if (!el || el.dataset.readInit === "1") return;
+    el.dataset.readInit = "1";
+
+    const { slug, category, year, readingTimeMin, tags } = el.dataset;
+    if (!slug || !category) return;
+    let tagList: string[] = [];
+    try {
+      tagList = JSON.parse(tags ?? "[]");
+    } catch {
+      /* ignore */
+    }
+    const minutes = Number(readingTimeMin);
+
+    const fired = new Set<number>();
+    let visibleMs = 0;
+    let visibleSince: number | null = document.visibilityState === "visible" ? performance.now() : null;
+    let raf = 0;
+    let timer = 0;
+
+    const dwellLeft = () =>
+      DWELL_MS - visibleMs - (visibleSince === null ? 0 : performance.now() - visibleSince);
+
+    const check = () => {
+      raf = 0;
+      if (fired.size === 4) return;
+      const left = dwellLeft();
+      if (visibleSince === null) return; // hidden tab: resume on visibilitychange
+      if (left > 0) {
+        clearTimeout(timer);
+        timer = window.setTimeout(schedule, left + 20);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const progress = readProgress(rect.top, rect.height, window.innerHeight);
+      for (const depth of newlyReached(progress, fired, rect.height)) {
+        fired.add(depth);
+        track("post_read", {
+          slug,
+          category,
+          year: year ?? "",
+          depth,
+          ...(Number.isFinite(minutes) ? { reading_time_min: minutes } : {}),
+          ...(tagList.length ? { tags: tagList } : {}),
+        });
+      }
+      if (fired.size === 4) cleanup();
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        visibleSince = performance.now();
+        schedule();
+      } else if (visibleSince !== null) {
+        visibleMs += performance.now() - visibleSince;
+        visibleSince = null;
+      }
+    };
+    function cleanup() {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimeout(timer);
+    }
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    schedule();
+  }
+
+  // Idempotent: guarded by data-read-init on the element, so firing both is safe.
+  initPostRead();
+  document.addEventListener("astro:page-load", initPostRead);
+</script>
 
 <style>
   @media (min-width: 75em) {

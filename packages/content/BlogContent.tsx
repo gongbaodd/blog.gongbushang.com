@@ -30,6 +30,7 @@ import { Carousel } from "../carousel/BlogCarousel";
 import { useStore } from "@nanostores/react";
 import { useMediaQuery } from "@mantine/hooks";
 import { $isLoading, $relates, request } from "@/src/stores/relates";
+import { track } from "@/packages/analytics";
 
 interface ILink {
   label: string;
@@ -208,6 +209,14 @@ export function RelatePosts({ id }: { id: string }) {
         p="lg"
         mt={isDesktop ? 0 : "xl"}
         style={isLoading ? { opacity: 0 } : {}}
+        onClickCapture={(e) => {
+          // Delegated: one handler for all cards; rank is the 1-based index in the related list.
+          const href = (e.target as Element).closest?.("a[href]")?.getAttribute("href");
+          if (!href) return;
+          const idx = relates.findIndex((p) => p.href === href);
+          if (idx < 0) return;
+          track("related_post_clicked", { from_slug: id, to_slug: relates[idx].id, rank: idx + 1 });
+        }}
       >
         <Stack gap="md">
           <Title order={2} size="h3">

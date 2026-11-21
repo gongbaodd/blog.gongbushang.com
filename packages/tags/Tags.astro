@@ -35,7 +35,26 @@ const { tags } = Astro.props;
 </div>
 
 <script>
+  import { track } from "@/packages/analytics";
+
+  let tagClicksBound = false;
+
+  function bindTagClicks() {
+    if (tagClicksBound) return;
+    tagClicksBound = true;
+    document.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>("a[href^='/tag/']");
+      if (!link || !link.closest("[data-tags-area]")) return;
+      track("tag_clicked", {
+        tag: link.textContent?.trim() ?? "",
+        location: "tag-cloud",
+      });
+    });
+  }
+
   function initTags() {
+    bindTagClicks();
     document
       .querySelectorAll<HTMLElement>("[data-tags-area]")
       .forEach((area) => {

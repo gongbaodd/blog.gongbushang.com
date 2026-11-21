@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       "packages/utils/**/*.test.ts",
       "packages/utils/**/*.spec.ts",
+      "packages/analytics/**/*.test.ts",
       "packages/card/**/*.test.ts",
       "packages/card/**/*.test.tsx",
       "packages/carousel/**/*.test.ts",

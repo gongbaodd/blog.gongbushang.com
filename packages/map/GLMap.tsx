@@ -12,6 +12,7 @@ import { ScaledAsciiSkeleton } from "@/packages/react/ScaledAsciiSkeleton";
 import ReactErrorBoundary from "@/src/components/ReactErrorBoundary";
 import { $pathnameNormalized } from "../header/store/pathname";
 import { ROUTE_HREF } from "../consts";
+import { track } from "@/packages/analytics";
 
 export interface IMapData {
   name: string;
@@ -92,6 +93,7 @@ export default function GLMap({ cityCount = 0 }: IMapProps) {
                   >
                     <Anchor
                       href={`/world/${d.slug}`}
+                      onClick={() => track("city_opened", { city: d.name })}
                       style={{ fontSize: "24px", cursor: "pointer" }}
                       c={"red"}
                     >

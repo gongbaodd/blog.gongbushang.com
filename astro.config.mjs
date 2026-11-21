@@ -65,6 +65,11 @@ export default defineConfig({
   output: "static",
   vite: {
     plugins: [glsl()],
+    define: {
+      "import.meta.env.PUBLIC_BUILD_SHA": JSON.stringify(
+        (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7),
+      ),
+    },
     optimizeDeps: {
       include: ["react-plock"], // prebundle it
       exclude: ["onnxruntime-node", "@dimforge/rapier3d-compat", "@react-three/rapier"],

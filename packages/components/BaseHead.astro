@@ -10,6 +10,7 @@ import "@mantine/core/styles.css";
 import '@mantine/carousel/styles.css';
 import '@mantine/spotlight/styles.css';
 import "./view-transition.css";
+import MixpanelHead from "../analytics/MixpanelHead.astro";
 
 interface Props {
 	title: string;
@@ -65,5 +66,6 @@ const { title, description, image = '/blog-placeholder-1.jpg', noindex = false }
 <!-- Mantine responsive helper classes, emitted once (providers use withGlobalClasses={false}) -->
 <style is:inline set:html={mantineGlobalClasses()} />
 <ColorSchemeScript defaultColorScheme="dark" color="auto"/>
+<MixpanelHead />
 <slot />
 

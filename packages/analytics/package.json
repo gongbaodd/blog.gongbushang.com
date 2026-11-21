@@ -1,0 +1,7 @@
+{
+  "name": "analytics",
+  "version": "1.0.0",
+  "dependencies": {
+    "mixpanel-browser": "^2.86.0"
+  }
+}

@@ -11,8 +11,17 @@ import {
 } from "@mantine/core";
 import { IconCalendar, IconClock, IconExternalLink } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import { track } from "@/packages/analytics";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "@/packages/content/BlogContent.module.css";
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "unknown";
+  }
+}
 
 interface IPodcastEpisodeContentProps {
   title: string;
@@ -89,6 +98,9 @@ export default function PodcastEpisodeContent({
               color="green"
               radius="xl"
               size="md"
+              onClick={() =>
+                track("podcast_listen_clicked", { episode: title, provider: hostOf(link) })
+              }
               rightSection={<IconExternalLink size={16} />}
               style={{ alignSelf: "flex-start" }}
             >

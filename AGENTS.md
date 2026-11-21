@@ -99,3 +99,13 @@ packages/           # Workspace packages
 ├── pv-counter/     # Cloudflare Worker for view counts
 └── ...
 ```
+
+## Mixpanel analytics
+
+- Code lives in `packages/analytics/` (`index.ts` API, `events.ts` typed event map, `outbound.ts`, `read-depth.ts`, `MixpanelHead.astro` in `BaseHead`, `ConsentBanner.astro` in `Global.astro`). Plan: `docs/plan/mixpanel-analytics-plan.md`.
+- Config via env: `PUBLIC_MIXPANEL_TOKEN` (empty → nothing loads), `PUBLIC_MIXPANEL_API_HOST` (default `https://api-eu.mixpanel.com`), `PUBLIC_MIXPANEL_DEBUG`.
+- Consent is opt-in: Mixpanel inits opted out; only the banner / `/privacy` controls call `optIn()`. Choice is stored in localStorage `growgen_analytics_consent`. Never call `opt_in_tracking` elsewhere.
+- Track only via `track(name, props)` from `@/packages/analytics`; add new events to `events.ts` first. Names: `object_verb` snake_case (e.g. `post_read`, `search_performed`), snake_case properties, no `$`/`mp_` prefixes, no dynamic event names, numbers unquoted, omit missing values (null/"" are stripped).
+- Reuse existing events/properties before adding new ones. Only discrete user actions — never inside WebGL/`useFrame`/map render loops.
+- No user accounts on this site: no `identify`, `people.set`, or `reset`.
+- Tests: `pnpm vitest run packages/analytics`; e2e `pnpm test:e2e:analytics-on` (token build) and `@analytics-off` in `pnpm test:e2e`.
