@@ -273,7 +273,7 @@ gantt
   Wheel notes S3-S5           :sc3, 2026-12-21, 2d
 
   section Builder-Infra (Sonnet 5.5)
-  S0-2 scaffold apps/web      :crit, bi1, 2026-11-30, 3d
+  S0-2 scaffold apps/web      :active, crit, bi1, 2026-11-30, 3d
   S0-6 publish->rebuild       :bi2, after bi1, 1d
   INF-1 local supabase        :bi3, 2026-12-07, 2d
   INF-2 supabase projects     :bi4, after bi3, 1d

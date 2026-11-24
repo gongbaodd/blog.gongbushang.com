@@ -1,0 +1,30 @@
+import cloudflare from "@astrojs/cloudflare";
+import react from "@astrojs/react";
+import { hyperdrive, r2 } from "@emdash-cms/cloudflare";
+import { defineConfig } from "astro/config";
+import emdash from "emdash/astro";
+
+export default defineConfig({
+	output: "server",
+	adapter: cloudflare(),
+	image: {
+		layout: "constrained",
+		responsiveStyles: true,
+	},
+	integrations: [
+		react(),
+		emdash({
+			database: hyperdrive({ binding: "HYPERDRIVE" }),
+			storage: r2({ binding: "MEDIA" }),
+		}),
+	],
+	vite: {
+		ssr: {
+			optimizeDeps: {
+				// pg is CJS; without this workerd dev fails with "require is not defined"
+				include: ["@emdash-cms/cloudflare > pg"],
+			},
+		},
+	},
+	devToolbar: { enabled: false },
+});

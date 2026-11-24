@@ -35,7 +35,10 @@
     "embedding:hello": "uv run --package embedding python -c \"from embedding import get_embedding; print(len(get_embedding('Hello, world!')))\"",
     "depth:sync": "uv sync",
     "depth:photo": "uv run --package depth-estimation depth-photo",
-    "resume:pdfs": "node ./packages/resume/generate-pdfs.mjs"
+    "resume:pdfs": "node ./packages/resume/generate-pdfs.mjs",
+    "db:start": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,studio,edge-runtime,logflare,vector,supavisor,postgres-meta",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset"
   },
   "dependencies": {
     "@astrojs/check": "0.9.10",
