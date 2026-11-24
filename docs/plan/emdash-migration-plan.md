@@ -183,6 +183,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | S0-6 ✅ | **Spike:** an `afterPublish` plugin that sends `repository_dispatch` (D9), tested locally against a dummy endpoint | Builder-Core | 2 |
 | S0-7 ✅ | agy model calibration (§3.2) | Reviewer-Gemini, Lead | 1 |
 | S0-8 ✅ | Gemini plan review (`neon-xhigh`); 15 findings, dispositions in §11 | Reviewer-Gemini, Lead | 1 |
+| FIX-1 ✅ | Gemini S0-7 findings: every public route prerendered plus a build guard, static 404 and robots, root tsconfig excludes `apps`, local media tab disabled, Worker types regenerated, deploy scripts fixed, `/.well-known/*` routed to the Worker | Builder-Core | 3 |
 
 ### EPIC E1: Environments and infrastructure
 | ID | Story | Agent | Pts |
@@ -301,6 +302,7 @@ gantt
   S0-4 markdown render spike  :done, bc2, after bc1, 2d
   S0-5 cloudinary spike       :done, bc3, after bc2, 2d
   S0-6 afterPublish plugin    :done, bc4, after bc3, 1d
+  FIX-1 Gemini findings       :done, bc4b, 2026-11-24, 1d
   CMS-1 model script          :done, bc5, 2026-12-07, 3d
   CMS-4 types + helpers       :bc6, after bc5, 1d
   CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
