@@ -308,7 +308,7 @@ gantt
   CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
   PORT-1 shell                :done, bc8, 2026-12-21, 3d
   PORT-2 post page            :done, bc9, after bc8, 3d
-  PORT-3 listings + APIs      :active, bc10, 2027-01-04, 5d
+  PORT-3 listings + APIs      :done, bc10, 2027-01-04, 5d
   PORT-4 home + webgl         :bc11, after bc10, 2d
   DATA-1 relocate generated   :bc12, after bc11, 1d
   PORT-5 podcast/gallery/cv   :bc13, 2027-01-18, 1d
