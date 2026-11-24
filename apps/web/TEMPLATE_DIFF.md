@@ -43,3 +43,12 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `astro.config.mjs` | Added `astro-mermaid` integration | Reuses its client script (loads `mermaid` only when a `pre.mermaid` exists). Its remark plugin is not exported, so `src/lib/markdown.ts` carries a ~10-line copy |
 | `package.json` | Added `@astrojs/markdown-remark`, `remark-attributes`, `remark-math`, `rehype-katex`, `rehype-external-links`, `shiki`, `shiki-plantuml` (`file:../../packages/shiki-plantuml`), `astro-mermaid`, `mermaid`, `katex`, `unist-util-visit` | Markdown pipeline (D5) |
 | `src/pages/spike/**`, `src/lib/{markdown,cloudinary}.ts`, `scripts/schema/add-body-md.sh`, `PORTING.md` | Added | Spikes; `cloudinary.ts` is a copy of `packages/utils/cloudinary.ts` |
+
+## S0-5 additions (Cloudinary media, D6)
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | Removed `storage: r2({ binding: "MEDIA" })`; added `mediaProviders: [cloudinaryMedia(...)]`; `cloudflare({ imageService: "passthrough" })` | No R2 (D6). Adapter default `cloudflare-binding` injects the `IMAGES` binding; passthrough drops it (Cloudinary does transforms) |
+| `wrangler.jsonc` | Removed `r2_buckets` (`MEDIA`) | D6; dry-run bindings are now EMDASH_ROOMS, SESSION, HYPERDRIVE, ASSETS only |
+| `.dev.vars.example` | Added `CLOUDINARY_CLOUD_NAME/_API_KEY/_API_SECRET` | Provider reads them from Worker env |
+| `src/lib/cloudinary-media/**`, `vitest.config.ts` | Added | Media provider (list/get/upload/delete/embed), signing, tests (`pnpm exec vitest run` in `apps/web`) |

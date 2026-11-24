@@ -1,13 +1,15 @@
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
-import { hyperdrive, r2 } from "@emdash-cms/cloudflare";
+import { hyperdrive } from "@emdash-cms/cloudflare";
 import { defineConfig } from "astro/config";
 import emdash from "emdash/astro";
 import mermaid from "astro-mermaid";
+import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
 export default defineConfig({
 	output: "server",
-	adapter: cloudflare(),
+	// passthrough: no IMAGES binding (Cloudflare Images transforms may be paid); Cloudinary does transforms (D6).
+	adapter: cloudflare({ imageService: "passthrough" }),
 	image: {
 		layout: "constrained",
 		responsiveStyles: true,
@@ -18,7 +20,8 @@ export default defineConfig({
 		mermaid({ theme: "default", autoTheme: true }),
 		emdash({
 			database: hyperdrive({ binding: "HYPERDRIVE" }),
-			storage: r2({ binding: "MEDIA" }),
+			// Media lives on Cloudinary (D6): no R2 storage; media provider only.
+			mediaProviders: [cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],
 	vite: {

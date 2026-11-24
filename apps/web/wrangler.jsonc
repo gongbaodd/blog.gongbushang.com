@@ -12,12 +12,6 @@
 			"localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
 		},
 	],
-	"r2_buckets": [
-		{
-			"binding": "MEDIA",
-			"bucket_name": "my-emdash-media",
-		},
-	],
 	// Co-editing rooms, one Durable Object per entry being edited
 	"durable_objects": {
 		"bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }],
