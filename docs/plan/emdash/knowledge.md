@@ -59,3 +59,6 @@ Maintained by **Archivist**. Facts observed during the migration only, each date
 - Gotcha: build against a fresh remote DB auto-seeds default collections; Postgres logs "Full-text search is only available with SQLite" (we use client minisearch). (INF-3)
 - EmDash quirk: term slugs are stored verbatim (no slugify), but REST term routes don't decode path params, so `c#` can't be fetched or edited by slug in admin. Static build lists terms, so `/tag/c%23/` still builds. `unique: true` on fields is metadata only (no DB constraint): importers must look up `legacy_id` first. (CMS-1)
 - Verified: MIG-0 snapshot covers 4,945 legacy paths; 995 posts (not 994); 4 `type: draft` posts are publicly built → kept published. (MIG-0)
+- Gotcha: `astro check` in apps/web crashed (`Cannot read properties of undefined (reading 'fileExists')`) because it resolved TypeScript 7 (native, no JS API). Fix: pin `typescript: npm:@typescript/typescript6@^6.0.2` in apps/web devDeps, as the root does. Now 0 errors. (PORT-1)
+- Gotcha: the EmDash admin CSS is Tailwind v4; our site uses Tailwind 3.4, so `apps/web/postcss.config.mjs` runs Tailwind v3 only for CSS outside `node_modules`. (PORT-1)
+- Verified: the ported shell (Mantine, React islands) adds nothing to the Worker bundle (21.36 MiB, 668 modules) because everything is prerendered. (PORT-1)
