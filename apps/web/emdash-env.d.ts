@@ -5,12 +5,54 @@
 
 import type { BylineSummary, ContentBylineCredit, TaxonomyTerm, PortableTextBlock } from "emdash";
 
+export interface Gallery {
+  id: string;
+  slug: string | null;
+  status: string;
+  title: string;
+  legacy_id?: string;
+  file?: string;
+  hash?: string;
+  image_url?: string;
+  doc?: string;
+  added_at?: string;
+  color_set?: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt: Date | null;
+  byline?: BylineSummary | null;
+  bylines?: ContentBylineCredit[];
+  terms?: Record<string, TaxonomyTerm[]>;
+}
+
 export interface Page {
   id: string;
   slug: string | null;
   status: string;
   title: string;
   content?: PortableTextBlock[];
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt: Date | null;
+  byline?: BylineSummary | null;
+  bylines?: ContentBylineCredit[];
+  terms?: Record<string, TaxonomyTerm[]>;
+}
+
+export interface Podcast {
+  id: string;
+  slug: string | null;
+  status: string;
+  title: string;
+  legacy_id?: string;
+  link?: string;
+  pub_date?: string;
+  description?: string;
+  summary?: string;
+  duration?: string;
+  audio_url?: string;
+  image_url?: string;
+  color_set?: unknown;
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
@@ -28,6 +70,11 @@ export interface Post {
   content?: PortableTextBlock[];
   excerpt?: string;
   body_md?: string;
+  legacy_id?: string;
+  legacy_date?: string;
+  adsense?: boolean;
+  series_number?: number;
+  legacy_frontmatter_extra?: unknown;
   createdAt: Date;
   updatedAt: Date;
   publishedAt: Date | null;
@@ -38,7 +85,9 @@ export interface Post {
 
 declare module "emdash" {
   interface EmDashCollections {
+    gallery: Gallery;
     pages: Page;
+    podcasts: Podcast;
     posts: Post;
   }
 }
