@@ -375,6 +375,9 @@ importers:
       rehype-katex:
         specifier: ^7.0.1
         version: 7.0.1
+      remark:
+        specifier: ^15.0.1
+        version: 15.0.1
       remark-attributes:
         specifier: ^0.3.2
         version: 0.3.2
@@ -387,6 +390,9 @@ importers:
       shiki-plantuml:
         specifier: file:../../packages/shiki-plantuml
         version: file:packages/shiki-plantuml
+      strip-markdown:
+        specifier: ^6.0.0
+        version: 6.0.0
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.23.15)(yaml@2.9.1)
