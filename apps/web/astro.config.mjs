@@ -1,13 +1,20 @@
 import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 import { hyperdrive } from "@emdash-cms/cloudflare";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
 import emdash from "emdash/astro";
 import mermaid from "astro-mermaid";
 import { rebuildOnPublish } from "./src/plugins/rebuild-on-publish/index.ts";
 import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
+// Public origin: env-driven (EMDASH_SITE_URL / SITE_URL), default production domain.
+const site = process.env.EMDASH_SITE_URL || process.env.SITE_URL || "https://growgen.xyz";
+
 export default defineConfig({
+	site,
+	// Legacy parity: prefetch every link on hover.
+	prefetch: { prefetchAll: true, defaultStrategy: "hover" },
 	output: "server",
 	// passthrough: no IMAGES binding (Cloudflare Images transforms may be paid); Cloudinary does transforms (D6).
 	adapter: cloudflare({ imageService: "passthrough" }),
@@ -27,6 +34,10 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+		resolve: {
+			// Legacy import style `@/src/...` (see PORTING.md): `@` = apps/web root.
+			alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+		},
 		ssr: {
 			optimizeDeps: {
 				// pg is CJS; without this workerd dev fails with "require is not defined"

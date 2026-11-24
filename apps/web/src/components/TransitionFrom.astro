@@ -1,0 +1,25 @@
+---
+import BlogSkeleton from "../skeletons/blog";
+import HomeSkeleton from "../skeletons/home";
+import WorldSkeleton from "../skeletons/world";
+import { TransitionSkeletons } from "./TransitionSkeletons";
+import ArchiveSkeleton from "../skeletons/archive";
+---
+
+<TransitionSkeletons client:only>
+  <section slot="home" id="home-page-skeleton">
+    <HomeSkeleton />
+  </section>
+  <section slot="blog" id="blog-page-skeleton">
+    <BlogSkeleton />
+  </section>
+  <section slot="lab" id="lab-page-skeleton">
+    <BlogSkeleton />
+  </section>  
+  <section slot="world" id="world-page-skeleton">
+    <WorldSkeleton />
+  </section>
+  <section slot="archive" id="year-page-skeleton">
+    <ArchiveSkeleton />
+  </section>
+</TransitionSkeletons>

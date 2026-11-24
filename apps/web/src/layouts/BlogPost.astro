@@ -1,0 +1,51 @@
+---
+// Layout skeleton for a blog post, ported from packages/layouts/BlogPost.astro.
+// PORT-2 wires the post data (EmDash entry, headings, related posts, reading time,
+// post_read tracking) into the slots below. Nothing here reads content.
+import Global from "./Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import AdSenseHead from "../ads/AdSenseHead.astro";
+import AdSenseSlot from "../ads/AdSenseSlot.astro";
+import { SITE_TITLE } from "../consts";
+
+interface Props {
+	title: string;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	content?: { collection: string; id: string; slug?: string | null };
+	/** Slug passed to <Footer> (legacy: post id). */
+	slug?: string;
+	/** TODO(PORT-2/PORT-7): ad slot id when the post opts in. */
+	adsenseSlotId?: string;
+}
+
+const { title, description, image, canonical, content, slug = "post", adsenseSlotId } = Astro.props;
+const adsenseEnabled = import.meta.env.PUBLIC_ADSENSE_ENABLED === "true";
+---
+
+<Global
+	title={`${SITE_TITLE} | ${title}`}
+	description={description}
+	image={image}
+	canonical={canonical}
+	content={content}
+>
+	{(adsenseEnabled || adsenseSlotId) && <AdSenseHead slot="head" />}
+	<!-- Post covers & content images are served from Cloudinary. -->
+	<link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
+	<Header />
+	<!-- TODO(PORT-2): <MantineMain client:load> + <GridWithMenu> with BlogMenu / BlogContent / RelatePosts -->
+	<main>
+		<div data-post-read data-slug={slug}>
+			<h1>{title}</h1>
+			<slot />
+		</div>
+		{adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} />}
+		<slot name="sidebar" />
+	</main>
+	<Footer slug={slug} />
+</Global>
+
+<!-- TODO(PORT-2/PORT-7): port the post_read scroll-depth <script> from the legacy BlogPost.astro. -->

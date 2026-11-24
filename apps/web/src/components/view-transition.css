@@ -1,0 +1,37 @@
+@view-transition {
+  navigation: auto;
+}
+
+@media not (prefers-reduced-motion: reduce) {
+  #home-page {
+    view-transition-name: home;
+  }
+
+  #home-page-skeleton {
+    view-transition-name: home;
+  }
+
+  #world-page {
+    view-transition-name: world;
+  }
+
+  #world-page-skeleton {
+    view-transition-name: world;
+  }
+
+  #year-page {
+    view-transition-name: year;
+  }
+
+  #year-page-skeleton {
+    view-transition-name: year;
+  }
+
+  #blog-page {
+    view-transition-name: blog;
+  }
+
+  #blog-page-skeleton {
+    view-transition-name: blog;
+  }
+}

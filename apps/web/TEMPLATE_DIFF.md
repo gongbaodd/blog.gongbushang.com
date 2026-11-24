@@ -68,3 +68,14 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `wrangler.jsonc` | name `growgen-web`; `env.testing` (own Hyperdrive/KV/DO/cron, `workers_dev`), `vars.SITE_ENV`, cron `*/5` (prod) / `*/15` (testing) | D3/D11/§10 |
 | `src/middleware.ts` | Added: SETUP_TOKEN gate on `/_emdash/admin/setup` and `/_emdash/api/setup/*`; `X-Robots-Tag` on SSR responses when `SITE_ENV` != production | D11 |
 | `scripts/post-build.mjs` | Added: writes noindex `_headers` rule + disallow-all `robots.txt` into `dist/client` for non-production | D11 |
+
+## PORT-1 (site shell)
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | `site` env-driven (`EMDASH_SITE_URL`/`SITE_URL`, default https://growgen.xyz); `prefetch: { prefetchAll: true, defaultStrategy: "hover" }`; Vite alias `@` -> apps/web root | Legacy parity |
+| `tsconfig.json` | `jsx: react-jsx`, `baseUrl`, `paths: {"@/*": ["./*"]}` | Legacy import style |
+| `postcss.config.mjs` | `plugins: []` replaced by Tailwind v3 + autoprefixer, skipped for CSS under `node_modules` | Public site uses Tailwind 3.4; EmDash admin CSS is Tailwind v4 and must not be processed by v3 |
+| `tailwind.config.mjs`, `public/*` icons, `src/{components,layouts,header,footer,stores,skeletons,icons,styles,analytics,ads,utils}/**`, `src/consts.ts` | Added | See PORTING.md |
+| `src/pages/index.astro` | Rewritten to use `layouts/Global.astro` + Header/Footer, `prerender = true` | Home inside the shell |
+| `package.json` | Added `@mantine/{core,hooks,carousel}`, `nanostores`, `@nanostores/react`, `lucide-react`, `embla-carousel(-react)`, `es-toolkit`, `tailwindcss@3`, `tailwindcss-animate`, `@fontsource/noto-sans-sc`; dev: `@tailwindcss/typography`, `autoprefixer`, `postcss`, `vitest`, `@types/react(-dom)` | Shell deps, same ranges as repo root |
