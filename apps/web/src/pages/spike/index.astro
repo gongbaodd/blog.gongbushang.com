@@ -1,0 +1,9 @@
+---
+import { getEmDashCollection } from "emdash";
+export const prerender = true;
+const { entries } = await getEmDashCollection("posts");
+---
+<html lang="en"><head><title>Spike list</title></head><body>
+<h1>Spike posts</h1>
+<ul>{entries.map((e) => <li><a href={`/spike/${e.id}`}>{e.data.title}</a></li>)}</ul>
+</body></html>
