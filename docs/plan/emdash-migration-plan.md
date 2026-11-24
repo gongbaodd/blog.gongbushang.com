@@ -261,7 +261,7 @@ gantt
   axisFormat %m-%d
 
   section Lead (Opus 5.5)
-  S0-1 agent defs + workspace :lead1, 2026-11-30, 1d
+  S0-1 agent defs + workspace :done, lead1, 2026-11-30, 1d
   S0-8 plan review update     :lead2, after agy1, 1d
   Sprint planning (weekly)    :milestone, lead3, 2026-12-07, 0d
   Launch next.growgen.xyz     :milestone, lead4, 2027-01-22, 0d
