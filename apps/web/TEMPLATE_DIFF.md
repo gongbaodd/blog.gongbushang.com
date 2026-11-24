@@ -35,3 +35,11 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `emdash migrate` CLI: `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=<url> pnpm --filter web exec emdash migrate --from-config --status` (or `--check`; omit both to apply). The env var name is `migrationConnectionStringEnv`'s default for the `HYPERDRIVE` binding. `DATABASE_URL` is only for the plain `postgres()` adapter.
 - `emdash init|seed|doctor|export-seed` are SQLite-only (`--database ./data.db`); they do not work against Postgres. Use the running instance instead: `emdash content create posts -u http://localhost:4322 --slug hello --data '{"title":"Hello"}'` (localhost dev bypass supplies the token).
 - Wrangler quirk: the repo-root `wrangler.json` (legacy) confuses wrangler's generated-config redirect. In `apps/web` use `pnpm exec wrangler deploy --dry-run --outdir <dir> -c dist/server/wrangler.json`.
+
+## S0-3 / S0-4 additions
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | Added `astro-mermaid` integration | Reuses its client script (loads `mermaid` only when a `pre.mermaid` exists). Its remark plugin is not exported, so `src/lib/markdown.ts` carries a ~10-line copy |
+| `package.json` | Added `@astrojs/markdown-remark`, `remark-attributes`, `remark-math`, `rehype-katex`, `rehype-external-links`, `shiki`, `shiki-plantuml` (`file:../../packages/shiki-plantuml`), `astro-mermaid`, `mermaid`, `katex`, `unist-util-visit` | Markdown pipeline (D5) |
+| `src/pages/spike/**`, `src/lib/{markdown,cloudinary}.ts`, `scripts/schema/add-body-md.sh`, `PORTING.md` | Added | Spikes; `cloudinary.ts` is a copy of `packages/utils/cloudinary.ts` |
