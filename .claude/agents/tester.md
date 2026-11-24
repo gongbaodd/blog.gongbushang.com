@@ -14,8 +14,9 @@ Run the checks that apply to the story:
 - `pnpm --filter web test` (or `pnpm vitest run <path>`)
 - e2e smoke, once PORT-9 exists
 - the URL-parity test (QA-1), once it exists
-- `npx emdash doctor` and `npx emdash migrate --check`, run in `apps/web`
-- Worker size: `npx wrangler deploy --dry-run --outdir /tmp/...` inside `apps/web`, then report the compressed size against 3 MB
+- `pnpm exec emdash migrate --from-config --check`, run in `apps/web` (`emdash doctor` is SQLite-only, so skip it)
+- Worker size: run `pnpm exec wrangler deploy --dry-run --outdir <scratch> -c dist/server/wrangler.json` inside `apps/web`, then report the uncompressed size against 64 MiB and the asset file count against 20,000
+- CPU: on deployed envs, report admin request CPU-ms from `wrangler tail` against the 10 ms Free limit
 - Cloudinary usage: `~/.local/bin/cld admin usage`, reporting `credits.used_percent` (sprint-end only)
 
 Report as a short table: check | command | result (pass/fail plus key numbers) | first error lines. Quote errors exactly. Don't paraphrase them, and never claim a pass you didn't observe.

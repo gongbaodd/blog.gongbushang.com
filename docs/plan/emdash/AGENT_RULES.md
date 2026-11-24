@@ -1,10 +1,10 @@
 # Agent rules: EmDash migration
 
-Every agent on the migration reads this file first. The plan is `docs/plan/emdash-migration-plan.md`. Decisions D1–D10 and the free-tier budget in §10 are binding. To change one, raise it with Lead; don't work around it.
+Every agent on the migration reads this file first. The plan is `docs/plan/emdash-migration-plan.md`. Decisions D1–D11 and the free-tier budget in §10 are binding. To change one, raise it with Lead; don't work around it.
 
 ## Hard rules
 1. **Wheel first.** Before writing code for a story, read the Scout note `docs/plan/emdash/scout/<story-id>.md`. If it says an existing package, CLI command or plugin covers the need, use it. Custom code is glue only.
-2. **Free plans only.** Nothing may require a paid tier of Cloudflare, Supabase, Cloudinary or GitHub. Watch the 3 MB Worker script size, the 100k Worker requests/day, Supabase's 500 MB DB and 7-day pause, and Cloudinary's 25 credits.
+2. **Free plans only.** R2 and Cloudflare Images are not used. Supabase is reached from outside Cloudflare only through the IPv4 session pooler. Nothing may require a paid tier of Cloudflare, Supabase, Cloudinary or GitHub. Watch the **10 ms CPU per Worker invocation** (the main risk), the 64 MiB uncompressed script size, 20,000 static-asset files, the 100k Worker requests/day, Supabase's 500 MB DB and 7-day pause, and Cloudinary's 25 credits.
 3. **URLs never change.** Public paths must match `apps/web/tests/legacy-urls.txt` once MIG-0 creates it.
 4. **Secrets.** Never print, commit or paste secrets. Read them from the repo-root `.env`, `apps/web/.dev.vars`, wrangler secrets or GitHub environment secrets, and refer to them only by variable name.
 5. **No outward-facing actions without Lead.** Creating cloud projects, DNS, custom domains, production deploys and deleting remote resources all go through Lead, who asks the owner.

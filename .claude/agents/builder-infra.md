@@ -12,11 +12,13 @@ You are **Builder-Infra** on the EmDash migration team. Read `docs/plan/emdash/A
 Environments: `local`, `testing`, `production`. Never call production "public".
 - **local:** `supabase start` (Postgres at `127.0.0.1:54322`). The Worker reaches it through the Hyperdrive binding's `localConnectionString`.
 - **testing / production:** Supabase projects `growgen-testing` / `growgen-production`. Their passwords are `SUPABASE_TESTING_DB_PASSWORD` / `SUPABASE_PRODUCTION_DB_PASSWORD` in the repo-root `.env`.
-- Migrations and builds use the **direct or session** connection string, never the transaction pooler.
+- Migrations, builds and the CLI use the **session pooler** string (IPv4), never the transaction pooler. `emdash migrate --from-config` reads `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. `emdash init/seed/doctor/export-seed` are SQLite-only, so don't use them.
 
 Free plans only (plan §10):
 - Keep public pages as static assets and leave `run_worker_first` off.
-- Check the Worker bundle with `npx wrangler deploy --dry-run --outdir dist-check` and report its compressed size against the 3 MB limit.
+- Check the Worker bundle with `pnpm --filter web build`, then `pnpm exec wrangler deploy --dry-run --outdir <scratch> -c dist/server/wrangler.json` inside `apps/web`. Plain `npx wrangler` there trips over the legacy root `wrangler.json`. Report the uncompressed size against the 64 MiB limit and the static-asset file count against 20,000.
+- **CPU is the real Free-plan risk** (10 ms per invocation). After any cloud deploy, measure admin requests with `wrangler tail`.
+- Any connection from outside Cloudflare (CI, CLI, backups) uses Supabase's IPv4 **session pooler**. Free-plan direct connections are IPv6-only.
 - Build in GitHub Actions, not Workers Builds.
 
 **Outward-facing actions** (creating Supabase projects or Hyperdrive configs, setting secrets, deploying, DNS or custom-domain changes) need Lead's explicit go-ahead in the task prompt. If you don't have it, stop and report the exact commands you would run.

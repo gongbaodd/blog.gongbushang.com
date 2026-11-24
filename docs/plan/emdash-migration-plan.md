@@ -1,7 +1,8 @@
 # EmDash Migration Plan
 
-> Status: **DRAFT v2, waiting for owner approval**. No implementation has started.
-> Branch: `feat/emdash-migration-plan` · Drafted 2026-11-24 · Orchestrator: Claude Opus 5.5
+> Status: **v3, approved and in progress** (Sprint 0). Integration branch: `feat/emdash` · Updated 2026-11-24 · Orchestrator: Claude Opus 5.5
+>
+> v3 changes: the S0-2 scaffold results, the Scout notes (S0-3…S0-6) and the Gemini plan review (S0-8, 15 findings; dispositions in §11) are folded in. Key shifts: free-tier limits corrected (Workers 64 MiB; Supabase IPv4 only via the pooler), Markdown rendered with `createMarkdownProcessor()`, R2 dropped, security and passkey handling (D11), data relocation (DATA-1), and the sprints resequenced.
 >
 > v2 changes after owner feedback: we build a **fresh EmDash site** (`npm create emdash`) as one workspace package, `apps/web`. It goes live on a **new domain** first and moves to growgen.xyz once stable. **All three environments use Supabase**, local included. The agy (Gemini) models are confirmed from `agy models`.
 
@@ -106,20 +107,21 @@ supabase/            ← Supabase CLI project (local stack config)
 
 Why a fresh scaffold: EmDash upgrades come through the `emdash` package, and our config stays close to the official template, so upgrade notes and docs apply as written. We also leave behind Vercel config, the submodule, and the triple UI-library setup where we can.
 
-### 2.2 Key decisions (each validated by a Sprint 0 spike)
+### 2.2 Key decisions (v3: updated after the S0-2 scaffold, the Scout notes and the S0-8 Gemini review)
 
 | ID | Decision | Existing wheel we reuse | Risk / fallback |
 |---|---|---|---|
-| D1 | Scaffold with `npm create emdash@latest -- --template cloudflare` in `apps/web`, then add our integrations (`@astrojs/react`, `@astrojs/mdx`, `@astrojs/rss`, `@astrojs/sitemap`, `astro-mermaid`). The template's D1 and R2 bindings are replaced by Hyperdrive and Cloudinary. | EmDash starter, `@emdash-cms/cloudflare` | Keep a `TEMPLATE_DIFF.md` that records every deviation from the template, so upgrades stay easy. |
-| D2 | `output: "server"` with the Cloudflare adapter (from the template). Every public page sets `export const prerender = true` and reads EmDash at build time. Only `/_emdash/*` stays SSR. | Astro prerender, Workers Static Assets | If prerendering against EmDash doesn't work, fall back to SSR plus `cacheCloudflare()` route caching. EmDash purges cache tags on publish. |
-| D3 | **Supabase Postgres everywhere.** Runtime: `hyperdrive({ binding: "HYPERDRIVE" })` with caching disabled on the primary binding. Node CLI, migrations and build use `postgres({ connectionString: DATABASE_URL })` with Supabase's **direct or session** connection string. The role must own EmDash tables. | `emdash/db`, Hyperdrive, Supabase CLI | EmDash docs don't name Supabase, but it's standard Postgres. On Postgres there's no core FTS and no sandboxed registry plugins (those are D1-only). We keep our own minisearch and use native npm plugins only. |
-| D4 | Environments:<br/>**local**: `supabase start` (Docker, Postgres on `127.0.0.1:54322`). `wrangler dev` / `astro dev` reach it through Hyperdrive's `localConnectionString`.<br/>**testing**: Supabase project `growgen-testing`, `wrangler deploy --env testing` on `*.workers.dev`.<br/>**production**: Supabase project `growgen-production`, production Worker on **`next.growgen.xyz`** now and **growgen.xyz** after cutover. | Supabase CLI, wrangler `env.*`, `npx emdash migrate` | All envs run the same dialect, so nothing drifts between them. Secrets live in `.dev.vars`, wrangler secrets, and GitHub environment secrets. Content moves between envs with EmDash's own `site export` / `site import` (or `export-seed` / `seed`). |
-| D5 | Post body stays **Markdown** in a long-text field, rendered at build time by our existing unified pipeline (KaTeX, Mermaid, PlantUML, attributes kept with no loss). | Our pipeline, plus a markdown field from `@emdash-cms/plugin-field-kit` if one exists | Portable Text conversion is backlog item `BL-PT`. |
-| D6 | Media on Cloudinary. Preference order: (1) an existing EmDash Cloudinary adapter or provider (registry, npm); (2) a thin adapter implementing EmDash's `Storage` interface over Cloudinary's REST Upload API using signed `fetch` (the Node SDK doesn't run on Workers); (3) the no-code fallback, `s3()` to R2 plus Cloudinary auto-upload mapping. | Cloudinary Upload API, existing `optimizeCloudinaryUrl` | Hot-linked images (Douban and others) are re-hosted to Cloudinary during migration. |
-| D7 | Taxonomies `category`, `tag`, `series`, `city` become EmDash taxonomies; series order (`number`) is a post field. | EmDash taxonomies | — |
-| D8 | **URL preservation.** Each post stores `legacy_slug` and `published_at` exactly as the legacy build produces them. Astro routes in `apps/web` rebuild the same paths. Every legacy URL is snapshotted from the current build (all HTML and JSON paths plus the sitemap) into `apps/web/tests/legacy-urls.txt`. A CI test fails if the new build is missing any of them. Unavoidable exceptions go into Cloudflare `_redirects`, with a target of zero. | `@astrojs/sitemap`, Cloudflare redirects | Risk: EmDash slug normalisation differs from Astro's. That's why we store `legacy_slug` separately and don't rely on EmDash's own `slug`. |
-| D9 | Republishing: EmDash publish fires a webhook, which triggers a GitHub `repository_dispatch`, which builds and runs `wrangler deploy`. We reuse the pattern already in `sync-content.yml` and keep a nightly cron rebuild as a safety net. | existing workflow pattern | A webhook plugin is preferred; otherwise a tiny native plugin using the `content:afterPublish` hook. |
-| D10 | Data pipelines (F13–F15) read EmDash (`npx emdash content list --json` or direct SQL read) instead of the submodule, and write the same JSON. | existing pipelines | Option: embeddings in Supabase `pgvector` (`BL-VEC`). |
+| D1 | ✅ **Done (S0-2).** `apps/web` was scaffolded with `pnpm create emdash@latest web --template cloudflare:starter` (emdash 1.6.0, astro 7.4.13, @astrojs/cloudflare 14.4.9). Every deviation from the template is listed in `apps/web/TEMPLATE_DIFF.md`. | EmDash starter | Root (legacy) stays on astro 7.3.3; web has its own versions. Root `postcss.config.mjs` and `wrangler.json` leak into web; worked around until CUT-2. |
+| D2 | `output: "server"`. Public pages use `export const prerender = true` and read EmDash at build time. Only `/_emdash/*` runs on the Worker. Astro 7 prerenders **in workerd**, so the `hyperdrive()` dialect works at build if CI sets `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` to the Supabase session-pooler string. This keeps one config, and the deployed Worker still binds `HYPERDRIVE`. **S0-3 proves it.** | Astro prerender (workerd), Workers Static Assets | Fallback A: `prerenderEnvironment: "node"` with a `postgres()` dialect chosen by environment. **There is no SSR fallback for public pages.** Rendering Markdown with KaTeX and all Shiki languages would exceed Free's 10 ms CPU limit (Gemini #1). |
+| D3 | **Supabase Postgres everywhere. Any connection from outside Cloudflare uses the IPv4 *session pooler*** (`aws-…-ap-southeast-1.pooler.supabase.com:5432`, user `postgres.<ref>`): CI builds, `emdash migrate`, backups, keep-alive. Free-plan direct connections are IPv6-only, and GitHub runners are IPv4-only (Gemini #3, verified). **Hyperdrive's origin** is decided in INF-3: Cloudflare recommends the direct string, but it's IPv6-only on Free, so test direct first and fall back to the session pooler. Never use the transaction pooler (prepared statements). The role must own EmDash tables. | `emdash/db`, Hyperdrive, Supabase CLI | The EmDash CLI reads `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` for `migrate --from-config` (S0-2). `emdash init/seed/doctor/export-seed` are **SQLite-only** and not usable here. |
+| D4 | Environments `local` / `testing` / `production`. **local** runs `pnpm db:start` (Supabase DB container only, `127.0.0.1:54322`), done in S0-2. **testing** is `growgen-testing` on `*.workers.dev`. **production** is `growgen-production`, on `next.growgen.xyz` and later growgen.xyz. Both cloud projects are in **ap-southeast-1**. Content moves between envs with **`supabase db dump --data-only` + `psql`** through the pooler, excluding auth, passkey and session tables. `export-seed` is SQLite-only. | Supabase CLI, `pg_dump` | — |
+| D5 | Post body is the core **`text` field** (TEXT column, plain textarea): raw Markdown. Field Kit has no Markdown field, and `portableText` converts on write, which loses our syntax (S0-4 note). Rendering: Astro's `markdown` config only handles content-collection files, not DB strings (Gemini #5). We therefore call **`createMarkdownProcessor()` from `@astrojs/markdown-remark`** with the existing remark/rehype plugins and `shikiConfig`. That returns the HTML plus `headings` for the table of contents and H1 extraction. Mermaid becomes a rehype step that emits `<pre class="mermaid">`, hydrated on the client the same way `astro-mermaid` does it. | `@astrojs/markdown-remark` (already a dependency), existing plugins, the `shiki-plantuml` **submodule** (kept, checked out in CI) | `BL-PT` (Portable Text) stays in the icebox. |
+| D6 | Media goes to Cloudinary. **No adapter or plugin exists** (S0-5 Scout: npm, GitHub and registry all searched). S0-5 first checks whether EmDash's *media provider* hook (the one used by Cloudflare Images) can be registered by a native plugin. If so, it's the better fit, because it stores Cloudinary URLs and public_ids rather than raw bytes (Gemini #6). Otherwise we write a thin **Storage adapter** over Cloudinary's REST Upload API (signed with SHA-1 through Web Crypto `fetch`). Template bindings `MEDIA` (R2) and `IMAGES` are **removed** before the first cloud deploy: R2 may need a payment method on file. | Cloudinary Upload API, `optimizeCloudinaryUrl` | Zero-code fallback: upload with `cld uploader upload` and paste the URL into an `image_url` text field. The R2 fallback is dropped. |
+| D7 | Taxonomies `category`, `tag`, `series`, `city` store **the exact legacy slug** (no auto-slugify), so `/tag/…`, `/series/…`, `/world/<city>` stay identical (Gemini #7). | EmDash taxonomies | — |
+| D8 | **URL preservation.** Each post stores `legacy_id` (`YYYY/MM/DD/<glob slug>`, also the key for `PV_URL` and gallery `doc` links) and a **timezone-free `legacy_date` string**, so posts never shift ±1 day. MIG-0 snapshots **every non-`_astro` file in the legacy `dist/`**, including `.pdf`, `.svg`, `.ndjson`, `/cv`, `/resume`, `/hero/*`. The legacy `type: draft` posts that are publicly built are audited in MIG-0. `wrangler` assets use `not_found_handling: "404-page"` so 404s never wake the Worker. | `@astrojs/sitemap`, Workers assets config | Unavoidable exceptions go in `_redirects` (target: zero). |
+| D9 | Publish → rebuild uses a **tiny native plugin on the `content:afterPublish` hook** (it also fires on scheduled publishes). It POSTs a GitHub `repository_dispatch` with an `event_type`, authenticated by a fine-grained PAT stored as a wrangler secret. `@emdash-cms/plugin-webhook-notifier` was **rejected**: it fires `afterSave` (drafts too) and sends no `event_type`, which GitHub rejects with 422 (S0-6 Scout). A nightly cron rebuild remains as a safety net. | EmDash plugin hooks, existing `sync-content.yml` pattern | — |
+| D10 | Generated data (F13–F15) currently lives **inside the `src/content` submodule** (`src/content/generated/`). **DATA-1** moves it into the tracked `apps/web/data/generated/` before CUT-2. The **build** computes everything derivable from EmDash on every build: RSS items, search index, excerpts, `isShort`, cover colours from the Cloudinary URL. **Embeddings and UMAP** need LM Studio, Python and Rust, so they stay an owner-run offline step (`pnpm content:prepare`). Posts without them build fine: they're omitted from related posts and `/umap` until the next offline run, and nothing disappears from RSS or search (Gemini #2). | existing pipelines | `BL-VEC` (pgvector) stays in the icebox. |
+| D11 | **Security.** On the *first* cloud deploy of each env, the owner completes the setup wizard and enrolls a passkey **in the same session**, before the URL is shared; otherwise anyone could claim the admin. `EMDASH_ENCRYPTION_KEY` and `EMDASH_SITE_URL` are per-env wrangler secrets (generated with `npx emdash secrets generate`). **Passkeys are bound to the domain**, so CUT-1 includes enrolling a new passkey on growgen.xyz before `next.growgen.xyz` is retired (Gemini #4). `testing` and `next.growgen.xyz` send `X-Robots-Tag: noindex` and a disallow-all `robots.txt` until CUT-1. | EmDash setup wizard, passkeys, `_headers` | Cloudflare Access (free for up to 50 users) is the backup lock if the wizard can't be claimed in time. |
 
 ---
 
@@ -159,99 +161,108 @@ The agy listing doesn't say how the Neon, Carbon, Argon and Hydrogen families di
 
 ## 4. Backlog (epics → stories)
 
-Points: 1 = a few hours, 8 = several days.
-**Definition of Done:** `pnpm --filter web build` passes · unit tests green · URL-parity green (once QA-1 exists) · e2e `@smoke` green on `testing` · Reviewer-Gemini notes resolved · Gantt updated · Archivist entry written.
+Points: 1 = a few hours, 8 = several days. ✅ = done.
+**Definition of Done:**
+- `pnpm --filter web build` passes, and the legacy `pnpm test:unit` stays green.
+- Unit tests are green.
+- URL parity is green **for the route groups ported so far** (QA-1).
+- e2e `@smoke` is green on `testing` (once INF-4 exists).
+- Reviewer-Gemini's notes are resolved.
+- The Gantt chart is updated and the Archivist entry is written.
 
 ### EPIC E0: Foundation and spikes
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| S0-1 | Agent definitions (`.claude/agents/*.md`), agy review prompt template, `pnpm-workspace.yaml` adds `apps/*` | Lead | 2 |
-| S0-2 | **Scaffold** `apps/web` with `npm create emdash@latest -- --template cloudflare`; swap D1 → Hyperdrive and local Supabase; "hello post" deployed to `*.workers.dev`; **measure the Worker bundle against the 3 MB Free limit** (§10); start `TEMPLATE_DIFF.md` | Builder-Infra | 5 |
-| S0-3 | **Spike:** prerendered page calling `getEmDashCollection` at build time (D2) | Builder-Core | 3 |
-| S0-4 | **Spike:** Markdown body field rendering a KaTeX + Mermaid + PlantUML post (D5) | Builder-Core | 3 |
-| S0-5 | **Spike:** Cloudinary media (D6). Scout searches first, then a prototype or the fallback | Scout → Builder-Core | 5 |
-| S0-6 | **Spike:** publish → rebuild trigger (D9) | Builder-Infra | 2 |
+| S0-1 ✅ | Agent definitions, rules, knowledge base, `apps/*` workspace | Lead | 2 |
+| S0-2 ✅ | Scaffold `apps/web` on Postgres via Hyperdrive with local Supabase; bundle 20.9 MiB uncompressed (33% of 64 MiB) | Builder-Infra | 5 |
+| S0-3 | **Spike:** prerendered pages read EmDash at build time through the workerd + Hyperdrive local-string path (D2). Build 3 posts, grep `dist/`, confirm no drafts, confirm the Worker still binds `HYPERDRIVE` | Builder-Core | 3 |
+| S0-4 | **Spike:** a `text` body rendered by `createMarkdownProcessor()` with KaTeX, Shiki + PlantUML, Mermaid and attributes; headings returned (D5) | Builder-Core | 3 |
+| S0-5 | **Spike:** Cloudinary through a media provider or Storage adapter (D6); remove the `MEDIA` and `IMAGES` bindings | Builder-Core | 5 |
+| S0-6 | **Spike:** an `afterPublish` plugin that sends `repository_dispatch` (D9), tested locally against a dummy endpoint | Builder-Core | 2 |
 | S0-7 | agy model calibration (§3.2) | Reviewer-Gemini, Lead | 1 |
-| S0-8 | Reviewer-Gemini reviews this plan (`neon-xhigh`); Lead updates decisions | Reviewer-Gemini, Lead | 1 |
+| S0-8 ✅ | Gemini plan review (`neon-xhigh`); 15 findings, dispositions in §11 | Reviewer-Gemini, Lead | 1 |
 
 ### EPIC E1: Environments and infrastructure
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| INF-1 | **local**: `supabase/` project; `pnpm db:start`, `db:reset`, `emdash migrate`; `pnpm --filter web dev` connects through Hyperdrive `localConnectionString` | Builder-Infra | 3 |
-| INF-2 | **testing** and **production** Supabase projects, an EmDash-owner role, and connection strings in GitHub environment secrets | Builder-Infra | 2 |
-| INF-3 | Hyperdrive configs per env; `wrangler.jsonc` `env.testing` plus production; custom domain `next.growgen.xyz` | Builder-Infra | 3 |
-| INF-4 | CI: PR → migrate `--check`, build, deploy to `testing`, e2e smoke. `master` → migrate, deploy to `production` | Builder-Infra | 5 |
-| INF-6 | Free-tier guards: daily keep-alive query to both Supabase projects (prevents pausing); Worker size check in CI (fail above 3 MB); Cloudinary usage report | Builder-Infra | 2 |
-| INF-5 | Env content sync: `pnpm content:pull testing` (EmDash `site export/import`) to seed local from testing | Builder-Infra | 2 |
+| INF-1 ✅ | Local Supabase (`pnpm db:start/stop/reset`), done in S0-2 | Builder-Infra | — |
+| INF-2 | Create `growgen-testing` and `growgen-production` (ap-southeast-1, passwords from `.env`); record the session-pooler strings as GitHub environment secrets | Builder-Infra | 2 |
+| INF-3 | Hyperdrive per env (direct vs pooler origin test, D3); `wrangler.jsonc` `env.testing` + production; secrets `EMDASH_ENCRYPTION_KEY` / `EMDASH_SITE_URL`; `not_found_handling`; noindex headers; **first testing deploy with the owner claiming the admin** (D11); **CPU-ms check** of admin requests via `wrangler tail` | Builder-Infra | 5 |
+| INF-4 | CI: on PR, `migrate --check`, build, deploy to testing, e2e smoke. On `master`, migrate and deploy to production. `PUBLIC_BUILD_SHA` comes from `GITHUB_SHA`; the `shiki-plantuml` submodule is checked out | Builder-Infra | 5 |
+| INF-5 | Env content sync: `pnpm content:pull testing` (`supabase db dump --data-only` + `psql` through the pooler, excluding auth tables) | Builder-Infra | 2 |
+| INF-6 | Free-tier guards: keep-alive query for `testing` (production is kept alive by the nightly rebuild); **nightly encrypted `pg_dump` backup** of production (age-encrypted artifact, because the repo is public); Worker size check (fail above 60 MiB uncompressed or 18k asset files); Cloudinary usage report | Builder-Infra | 3 |
 
 ### EPIC E2: CMS model and media
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| CMS-1 | `seed/seed.json`: `posts` (title, legacy_slug, published_at, status, category, adsense, cover, body markdown, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies (D7) | Builder-Core | 5 |
-| CMS-2 | Cloudinary storage wired in, per the S0-5 outcome | Builder-Core | 5 |
-| CMS-3 | Passkey admin login on testing and production; author role | Builder-Infra | 2 |
-| CMS-4 | `npx emdash types` in the build; typed data helpers in `apps/web/src/lib/content.ts` (same function signatures as legacy `packages/utils`) | Builder-Core | 2 |
+| CMS-1 | Model via the remote `emdash schema` CLI, kept as a reproducible script: `posts` (title, legacy_id, legacy_date, status, category, adsense, cover, body `text`, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies with exact slugs (D7) | Builder-Core | 5 |
+| CMS-2 | Cloudinary media wired in, per the S0-5 outcome | Builder-Core | 5 |
+| CMS-3 | Passkey admin on testing and production (after INF-3); author role | Builder-Infra | 2 |
+| CMS-4 | `npx emdash types` in the build; typed helpers in `apps/web/src/lib/content.ts` with the same signatures as legacy `packages/utils` | Builder-Core | 2 |
 
 ### EPIC E3: Content migration
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| MIG-0 | **Legacy URL snapshot**: build the legacy site and record every HTML/JSON/XML path plus the sitemap into `apps/web/tests/legacy-urls.txt` | Migrator | 2 |
-| MIG-1 | Import the 994 posts through EmDash's CLI/API (no custom DB writes), keeping `legacy_slug` and dates exactly as the legacy build produces them | Migrator | 5 |
-| MIG-2 | Rehost non-Cloudinary images to Cloudinary using **`cld migrate`** (an existing CLI command, run with an auto-upload mapping and a URL list), rewrite URLs, report broken links | Migrator | 3 |
-| MIG-3 | Import gallery and podcasts; `fetch-podcast` writes into EmDash | Migrator, Builder-Core | 3 |
-| MIG-4 | Parity: old vs new rendered HTML diff for all posts; Reviewer-Gemini sweep (`flash-medium`) | Migrator, Reviewer-Gemini | 3 |
-| MIG-5 | Idempotent re-import (`--on-conflict update`) for the final sync at cutover | Migrator | 2 |
+| MIG-0 | Legacy snapshot: every non-`_astro` file in legacy `dist/` written to `apps/web/tests/legacy-urls.txt`; audit of `type: draft` posts; slug-collision report | Migrator | 2 |
+| MIG-2 | Image rehost **before** import: download external images with browser `User-Agent`/`Referer` headers (Douban blocks hotlinks), upload with `cld uploader upload` under deterministic `public_id`s, write `rewrite-map.json`, and report dead links. `cld migrate` was rejected (Gemini #8) | Migrator | 3 |
+| MIG-1 | Import script: the 994 posts, with the rewrite map applied, via the remote `emdash content` CLI/API as an **idempotent upsert** keyed on `legacy_id`. The same script is reused by MIG-5 | Migrator | 5 |
+| MIG-3 | Gallery and podcasts imported; `fetch-podcast` writes into EmDash | Migrator, Builder-Core | 3 |
+| MIG-4 | Parity: **deterministic DOM diff** of old and new HTML (normalised, with headings, links and images asserted) for all posts; Gemini (`flash`) only triages flagged diffs | Migrator, Reviewer-Gemini | 3 |
+| MIG-5 | Final sync: freeze legacy authoring, re-run the MIG-1 upsert, **before** SOAK-1 starts | Migrator | 1 |
 
 ### EPIC E4: Port features into `apps/web`
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| PORT-1 | Shell: BaseHead, Global layout, Mantine provider, header, footer, view transitions, prefetch, fonts, Tailwind | Builder-Core | 5 |
-| PORT-2 | Post page plus the Markdown pipeline (F2, F10–F12), with identical URLs | Builder-Core | 5 |
-| PORT-3 | Listing pages and NDJSON/JSON APIs (F3, F4), with identical URLs | Builder-Core | 8 |
-| PORT-4 | Home: hero, carousel, masonry, bento, WebGL/Rapier (F18–F19), including the Vite config from the webgl skill | Builder-Core | 5 |
-| PORT-5 | Podcast, gallery, resume + PDFs, static pages (F5–F8) | Builder-Core | 5 |
-| PORT-6 | Search, related posts, world map, heatmap, `/umap`, sitemap treemap, view count (F17, F18, F21) | Builder-Core | 5 |
-| PORT-7 | Mixpanel + consent, AdSense, newsletter and follow, RSS, sitemap (F9, F22–F24) | Builder-Core | 3 |
-| PORT-8 | Data pipelines read EmDash instead of the submodule (D10) | Builder-Core | 5 |
-| PORT-9 | Move vitest and e2e suites to target `apps/web` | Tester | 3 |
+| PORT-1 | Shell: BaseHead, Global, Mantine provider, header and footer, view transitions, prefetch, fonts, Tailwind; peer-version check of Mantine 9, MUI 7 and React with EmDash's Astro 7.4 | Builder-Core | 5 |
+| PORT-2 | Post page with the D5 Markdown renderer (F2, F10–F12), identical URLs | Builder-Core | 5 |
+| PORT-3 | Listing pages and NDJSON/JSON APIs (F3, F4), identical URLs | Builder-Core | 8 |
+| PORT-4 | Home: hero, carousel, masonry, bento, WebGL/Rapier (F18–F19) with the webgl skill's Vite config | Builder-Core | 5 |
+| PORT-5 | Podcast, gallery (including trace SVGs), resume with `generate-pdfs.mjs` targeting `apps/web/dist/client`, static pages (F5–F8) | Builder-Core | 5 |
+| PORT-6 | Search, related posts, world map, heatmap, `/umap`, sitemap treemap, view count (CORS for the new domain) (F17, F18, F21) | Builder-Core | 5 |
+| PORT-7 | Mixpanel + consent, AdSense, newsletter and follow, RSS and sitemap (F9, F22–F24); noindex switch per env | Builder-Core | 3 |
+| PORT-8 | Pipelines read EmDash; build-time derivations (D10) | Builder-Core | 5 |
+| DATA-1 | Move generated artifacts from `src/content/generated/` to `apps/web/data/generated/`; offline `content:prepare` writes there | Builder-Core | 2 |
+| PORT-9 | Vitest, e2e (including `@analytics-on`), `check:hydration`, oxlint/oxfmt all target `apps/web` | Tester | 3 |
 
 ### EPIC E5: Quality, soak, cutover
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| QA-1 | URL-parity test in CI against `legacy-urls.txt` (D8) | Tester | 2 |
-| QA-2 | e2e on testing, plus admin login and the publish → rebuild path | Tester | 3 |
+| QA-1 | URL-parity test in CI, **scoped per ported route group** (each PORT story adds its group); the full list is required from S6 | Tester | 2 |
+| QA-2 | e2e on testing, admin login, publish → rebuild, CPU-ms under 10 for admin routes | Tester | 3 |
 | QA-3 | Lighthouse / CWV no worse than legacy | Tester | 2 |
-| QA-4 | Security review: secrets, admin exposure, Supabase role grants and RLS (`neon-xhigh`) | Reviewer-Gemini | 2 |
-| SOAK-1 | Run `next.growgen.xyz` as the live candidate for 2 weeks; owner writes new posts in EmDash; bugs fixed as they come | All | — |
-| CUT-1 | Cutover runbook: content freeze → MIG-5 final sync → point growgen.xyz at the Worker → smoke test → rollback (Vercel kept warm for 7 days) | Builder-Infra, Lead | 2 |
-| CUT-2 | Retire legacy: delete `src/`, ported `packages/*`, the content submodule, `sync-content.yml`, `vercel.json`; archive the content repo read-only | Builder-Infra | 2 |
+| QA-4 | Security review: secrets, admin exposure, DB roles/RLS, backups (`neon-xhigh`) | Reviewer-Gemini | 2 |
+| SOAK-1 | `next.growgen.xyz` live for 2 weeks; the owner writes only in EmDash | All | — |
+| CUT-1 | Cutover: point growgen.xyz at the Worker, `EMDASH_SITE_URL` → growgen.xyz, enroll a passkey on growgen.xyz, flip noindex off, smoke test; rollback is Vercel, still warm | Builder-Infra, Lead | 3 |
+| CUT-2 | **≥ 7 days after CUT-1:** delete legacy `src/`, ported `packages/*`, the content submodule, `sync-content.yml`, `vercel.json`; keep `shiki-plantuml` and the data pipelines | Builder-Infra | 2 |
 | CUT-3 | Update `CLAUDE.md`, `AGENTS.md`, skills (new `emdash` skill); final retro | Archivist | 2 |
 
 ### Icebox
-`BL-PT` Portable Text bodies · `BL-VEC` pgvector embeddings · `BL-COMMENTS` EmDash comments · `BL-I18N` i18n · `BL-SEARCH` Cloudflare AI Search (needs D1).
+`BL-PT` Portable Text · `BL-VEC` pgvector embeddings · `BL-COMMENTS` · `BL-I18N` · `BL-SEARCH` (AI Search needs D1) · `BL-TRIM` (drop unused admin locale chunks, ~9 MB)
 
 ---
 
-## 5. Sprints (1 week each)
+## 5. Sprints (1 week each; each agent's lane is serialized)
 
 | Sprint | Dates | Goal | Stories | Pts |
 |---|---|---|---|---|
-| S0 | 2026-11-30 → 12-04 | Scaffold, prove the risky decisions, agent team ready | S0-1 … S0-8 | 22 |
-| S1 | 12-07 → 12-11 | Three Supabase environments, CMS model, URL snapshot, free-tier guards | INF-1…3, INF-6, CMS-1, CMS-3, CMS-4, MIG-0 | 21 |
-| S2 | 12-14 → 12-18 | Content in EmDash, images on Cloudinary, CI deploys | CMS-2, MIG-1, MIG-2, MIG-3, INF-4 | 21 |
-| S3 | 12-21 → 2027-01-08 (holiday-stretched) | Shell, posts and listings live on testing | PORT-1, PORT-2, PORT-3, QA-1 | 20 |
-| S4 | 01-11 → 01-15 | Remaining features ported | PORT-4, PORT-5, PORT-6, PORT-7 | 18 |
-| S5 | 01-18 → 01-22 | Pipelines, tests, parity, quality; launch `next.growgen.xyz` | PORT-8, PORT-9, MIG-4, INF-5, QA-2…4 | 20 |
-| Soak | 01-25 → 02-05 | Live on new URL, fix as found | SOAK-1 | — |
-| S6 | 02-08 → 02-12 | Cut over to growgen.xyz and clean up | MIG-5, CUT-1…3 | 8 |
+| S0 | 2026-11-24 → 12-04 | Scaffold ✅, prove the risky decisions | S0-1✅, S0-2✅, S0-8✅, S0-3…S0-7 | 14 open |
+| S1 | 12-07 → 12-11 | Cloud envs, admin claimed, model, legacy snapshot | INF-2, INF-3, CMS-1, CMS-4, MIG-0 | 16 |
+| S2 | 12-14 → 12-18 | Media, CI, images rehosted, guards | CMS-2, CMS-3, INF-4, INF-6, MIG-2 | 18 |
+| S3 | 12-21 → 2027-01-08 (holidays) | Content imported, shell and post page | MIG-1, MIG-3, INF-5, PORT-1, PORT-2, QA-1 | 22 |
+| S4 | 01-11 → 01-15 | Listings, home, data relocation | PORT-3, PORT-4, DATA-1 | 15 |
+| S5 | 01-18 → 01-22 | Remaining features, tests | PORT-5, PORT-6, PORT-7, PORT-8, PORT-9 | 23 |
+| S6 | 01-25 → 01-29 | Parity, quality, fix buffer, final sync, **launch `next.growgen.xyz`** | MIG-4, QA-2, QA-3, QA-4, MIG-5 | 11 |
+| Soak | 02-01 → 02-12 | Live on the new URL; legacy frozen | SOAK-1 | — |
+| S7 | 02-15 → 02-19 | Cutover to growgen.xyz | CUT-1 | 3 |
+| S8 | 02-26 → 03-02 | Retire legacy (≥ 7 days after cutover), docs | CUT-2, CUT-3 | 4 |
 
-Ceremonies: **planning** (Lead) at sprint start · **daily** Gantt check (Lead) · **review/demo** for the owner on `testing` at sprint end · **retrospective** (Archivist).
+Ceremonies: **planning** (Lead) · **daily** Gantt check (Lead) · **review/demo** on `testing` · **retrospective** (Archivist).
 
 ---
 
 ## 6. Gantt chart: work per agent
 
-One section per agent. Agents update status with `active` / `done`; Lead marks blockers `crit`.
+One section per agent. Each agent's tasks are chained with `after`, so no agent runs two stories at once. Status uses `done` / `active`, and blockers are marked `crit`.
 
 ```mermaid
 gantt
@@ -261,71 +272,72 @@ gantt
   axisFormat %m-%d
 
   section Lead (Opus 5.5)
-  S0-1 agent defs + workspace :done, lead1, 2026-11-30, 1d
-  S0-8 plan review update     :lead2, after agy1, 1d
+  S0-1 agent defs + workspace :done, lead1, 2026-11-24, 1d
+  S0-8 plan review → v3       :done, lead2, 2026-11-24, 1d
   Sprint planning (weekly)    :milestone, lead3, 2026-12-07, 0d
-  Launch next.growgen.xyz     :milestone, lead4, 2027-01-22, 0d
-  CUT-1 go/no-go              :crit, lead5, 2027-02-09, 1d
+  Launch next.growgen.xyz     :milestone, lead4, 2027-01-29, 0d
+  CUT-1 go/no-go              :crit, lead5, 2027-02-15, 1d
 
   section Scout (Haiku 5.5)
-  Wheel notes S0              :sc1, 2026-11-30, 1d
-  Wheel notes S1-S2           :sc2, 2026-12-07, 2d
-  Wheel notes S3-S5           :sc3, 2026-12-21, 2d
+  Wheel notes S0-3..S0-6      :done, sc1, 2026-11-24, 1d
+  Wheel notes S1-S2           :sc2, 2026-12-04, 2d
+  Wheel notes S3-S5           :sc3, 2026-12-18, 2d
 
   section Builder-Infra (Sonnet 5.5)
-  S0-2 scaffold apps/web      :active, crit, bi1, 2026-11-30, 3d
-  S0-6 publish->rebuild       :bi2, after bi1, 1d
-  INF-1 local supabase        :bi3, 2026-12-07, 2d
-  INF-2 supabase projects     :bi4, after bi3, 1d
-  INF-3 hyperdrive+domains    :bi5, after bi4, 2d
-  CMS-3 admin auth            :bi6, 2026-12-10, 1d
-  INF-6 free-tier guards      :bi6b, 2026-12-11, 1d
-  INF-4 CI pipeline           :bi7, 2026-12-14, 3d
-  INF-5 env content sync      :bi8, 2027-01-18, 1d
-  CUT-1 cutover               :crit, bi9, 2027-02-09, 2d
-  CUT-2 retire legacy         :bi10, after bi9, 1d
+  S0-2 scaffold apps/web      :done, bi1, 2026-11-24, 1d
+  INF-2 supabase projects     :bi2, 2026-12-07, 1d
+  INF-3 hyperdrive+envs+claim :crit, bi3, after bi2, 3d
+  CMS-3 passkeys + roles      :bi4, 2026-12-14, 1d
+  INF-4 CI pipeline           :bi5, after bi4, 3d
+  INF-6 guards + backups      :bi6, after bi5, 1d
+  INF-5 env content sync      :bi7, 2026-12-21, 1d
+  CUT-1 cutover               :crit, bi8, 2027-02-15, 2d
+  CUT-2 retire legacy         :bi9, 2027-02-26, 1d
 
   section Builder-Core (Sonnet 5.5)
-  S0-3 prerender spike        :crit, bc1, after bi1, 1d
-  S0-4 markdown body spike    :bc2, 2026-12-01, 2d
-  S0-5 cloudinary spike       :bc3, after bc2, 2d
-  CMS-1 seed model            :bc4, 2026-12-07, 3d
-  CMS-4 types + helpers       :bc5, after bc4, 1d
-  CMS-2 cloudinary storage    :bc6, 2026-12-14, 3d
-  PORT-1 shell                :bc7, 2026-12-21, 3d
-  PORT-2 post page            :bc8, after bc7, 3d
-  PORT-3 listings + APIs      :bc9, after bc8, 5d
-  PORT-4 home + webgl         :bc10, 2027-01-11, 2d
-  PORT-5 podcast/gallery/cv   :bc11, after bc10, 2d
-  PORT-6 search/map/umap      :bc12, 2027-01-11, 3d
-  PORT-7 analytics/ads/rss    :bc13, after bc11, 1d
-  PORT-8 pipelines            :bc14, 2027-01-18, 3d
+  S0-3 prerender spike        :crit, bc1, 2026-11-25, 1d
+  S0-4 markdown render spike  :bc2, after bc1, 2d
+  S0-5 cloudinary spike       :crit, bc3, after bc2, 2d
+  S0-6 afterPublish plugin    :bc4, after bc3, 1d
+  CMS-1 model script          :bc5, 2026-12-07, 3d
+  CMS-4 types + helpers       :bc6, after bc5, 1d
+  CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
+  PORT-1 shell                :bc8, 2026-12-21, 3d
+  PORT-2 post page            :bc9, after bc8, 3d
+  PORT-3 listings + APIs      :bc10, 2027-01-04, 5d
+  PORT-4 home + webgl         :bc11, after bc10, 2d
+  DATA-1 relocate generated   :bc12, after bc11, 1d
+  PORT-5 podcast/gallery/cv   :bc13, 2027-01-18, 1d
+  PORT-6 search/map/umap      :bc14, after bc13, 2d
+  PORT-7 analytics/ads/rss    :bc15, after bc14, 1d
+  PORT-8 pipelines            :bc16, after bc15, 1d
+  Fix buffer                  :bc17, 2027-01-25, 4d
 
   section Migrator (Haiku 5.5)
-  MIG-0 legacy URL snapshot   :mg0, 2026-12-07, 1d
-  MIG-1 import 994 posts      :mg1, 2026-12-14, 3d
-  MIG-2 image rehost          :mg2, after mg1, 2d
-  MIG-3 gallery+podcast       :mg3, 2026-12-16, 2d
-  MIG-4 parity diff           :mg4, 2027-01-19, 2d
-  MIG-5 final sync            :crit, mg5, 2027-02-08, 1d
+  MIG-0 legacy snapshot       :mg0, 2026-12-07, 1d
+  MIG-2 image rehost          :mg1, 2026-12-14, 2d
+  MIG-1 import 994 posts      :crit, mg2, 2026-12-21, 3d
+  MIG-3 gallery + podcast     :mg3, after mg2, 2d
+  MIG-4 DOM parity diff       :mg4, 2027-01-25, 2d
+  MIG-5 final sync + freeze   :crit, mg5, 2027-01-29, 1d
 
   section Tester (Haiku 5.5)
-  Spike verification          :t1, 2026-12-04, 1d
+  Spike verification          :t1, 2026-12-03, 2d
   Per-story checks S1-S2      :t2, 2026-12-08, 9d
-  QA-1 URL parity in CI       :t3, 2026-12-21, 2d
-  Per-story checks S3-S4      :t4, 2026-12-23, 15d
+  QA-1 parity (scoped)        :t3, 2026-12-21, 2d
+  Per-story checks S3-S4      :t4, after t3, 15d
   PORT-9 move test suites     :t5, 2027-01-18, 2d
-  QA-2 e2e on testing         :t6, after t5, 2d
-  QA-3 perf / CWV             :t7, 2027-01-22, 1d
-  Soak monitoring             :t8, 2027-01-25, 10d
+  QA-2 e2e + CPU on testing   :t6, 2027-01-25, 2d
+  QA-3 perf / CWV             :t7, after t6, 1d
+  Soak monitoring             :t8, 2027-02-01, 10d
 
   section Reviewer-Gemini (agy)
-  S0-8 plan review (neon-xhigh) :agy1, 2026-11-30, 1d
-  S0-7 model calibration      :agy2, 2026-12-03, 1d
+  S0-8 plan review            :done, agy1, 2026-11-24, 1d
+  S0-7 model calibration      :agy2, 2026-12-01, 1d
   PR reviews S1-S5            :agy3, 2026-12-08, 34d
-  MIG-4 sweep (flash)         :agy4, 2027-01-20, 1d
-  QA-4 security (neon-xhigh)  :agy5, 2027-01-21, 1d
-  Cutover review              :agy6, 2027-02-08, 1d
+  QA-4 security (neon-xhigh)  :agy4, 2027-01-27, 1d
+  MIG-4 triage (flash)        :agy5, 2027-01-27, 1d
+  Cutover review              :agy6, 2027-02-12, 1d
 
   section Archivist (Sonnet 5.5)
   Retro S0                    :ar0, 2026-12-04, 1d
@@ -334,8 +346,8 @@ gantt
   Retro S3                    :ar3, 2027-01-08, 1d
   Retro S4                    :ar4, 2027-01-15, 1d
   Retro S5                    :ar5, 2027-01-22, 1d
-  Soak learnings              :ar6, 2027-02-05, 1d
-  CUT-3 docs+skills+final retro :ar7, 2027-02-11, 2d
+  Retro S6 + soak learnings   :ar6, 2027-02-12, 1d
+  CUT-3 docs + final retro    :ar7, 2027-03-01, 2d
 ```
 
 ---
@@ -344,15 +356,19 @@ gantt
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Prerendering against EmDash at build time isn't a documented path | No static public site | S0-3 tests it on day 3. Fallback: SSR plus Cloudflare route caching |
-| EmDash on Postgres is less exercised than D1 (no FTS, no sandboxed plugins) | Missing features | We have our own search; native npm plugins only. S0-2 is the go/no-go |
-| EmDash slug rules differ from Astro's slugger | Changed URLs | Store `legacy_slug` (D8) and enforce it with the QA-1 parity test |
-| No Cloudinary adapter exists | Extra code | Thin REST adapter, or the R2 + auto-upload fallback |
-| Porting WebGL/Rapier into a fresh Vite config | Broken hero | Follow the `webgl-components` skill; port the Vite config first in PORT-4 |
-| Worker script over the 3 MB Free limit | Admin can't deploy | Measured in S0-2; fallback is a local-only admin (§10) |
-| Supabase Free pauses idle projects | Admin and builds fail | INF-6 daily keep-alive |
-| Supabase pooler vs EmDash migrations | Migration failures | Direct or session string for migrations; Hyperdrive for runtime |
-| Content written on legacy during the build | Lost posts | MIG-5 idempotent re-import at cutover; freeze legacy writes during soak |
+| Prerendering through workerd + Hyperdrive at build doesn't work | No static site | S0-3 (day 2). Fallback A: node prerender with the `postgres()` dialect. There is no SSR fallback on Free (CPU). |
+| Admin requests exceed Free's 10 ms CPU | Admin errors (1102) | Measured in INF-3 and QA-2. Fallback: admin runs locally against production DB through the pooler (§10). |
+| Hyperdrive can't reach the IPv6-only direct host | Admin can't reach DB | Use the session pooler as the Hyperdrive origin (INF-3). |
+| Admin claimed by a stranger on first deploy | Site takeover | Owner claims it in the same session (D11); Cloudflare Access as backup. |
+| Passkeys bound to `next.growgen.xyz` | Locked out after cutover | Enroll on growgen.xyz during CUT-1 before retiring next. |
+| Slug, date or taxonomy drift | Changed URLs | `legacy_id`, timezone-free date, exact taxonomy slugs; QA-1 parity. |
+| New posts lack offline embeddings | Missing in related posts / UMAP | Graceful omission (D10); owner reruns `content:prepare`. |
+| Supabase Free has no backups | Data loss | INF-6 nightly encrypted `pg_dump`. |
+| Supabase Free pauses idle projects | Builds fail | Nightly rebuild (production) and keep-alive (testing). |
+| Duplicate-content SEO during soak | Ranking hit | noindex until CUT-1 (D11). |
+| Writes on legacy during soak are overwritten | Lost edits | Legacy is frozen at MIG-5, before soak. |
+
+---
 
 ## 8. Access and credentials
 
@@ -369,27 +385,48 @@ Secrets are never pasted into chat or committed. `.env` and `.dev.vars*` are git
 | agy (Gemini) | ✅ Logged in, agy 1.5.16 | S0-7 | |
 | Mixpanel / AdSense | Copy existing values from Vercel env vars | PORT-7 | |
 
-## 9. Owner decisions (2026-11-24)
-1. Temporary domain: **`next.growgen.xyz`**. growgen.xyz DNS is already on Cloudflare (`*.ns.cloudflare.com`).
-2. Post body: **Markdown field** (D5).
-3. **Every service stays on its free plan.** See §10.
-4. Sprint 0 has **not started yet**. The owner is still reviewing.
+## 9. Owner decisions
+- 2026-11-24: temporary domain **`next.growgen.xyz`**; growgen.xyz DNS is already on Cloudflare.
+- 2026-11-24: post body is a **Markdown text field** (D5).
+- 2026-11-24: **every service stays on its free plan** (§10).
+- 2026-11-24: the team may create free-plan resources as stories need them: Supabase projects in **ap-southeast-1**, Hyperdrive configs, Worker deploys to `*.workers.dev`. **DNS, the custom domain and growgen.xyz still need the owner's confirmation every time.**
+- 2026-11-24: implementation started (S0-1, S0-2 and S0-8 are done).
 
-## 10. Free-tier budget (every service on its free plan)
+## 10. Free-tier budget (verified 2026-11-24)
 
-| Service | Free-plan limit | Our expected use | Verdict / guard |
+| Service | Free-plan limit (source) | Our use | Verdict / guard |
 |---|---|---|---|
-| **Cloudflare Workers** | 100k requests/day; 10 ms CPU per invocation (DB/network waits don't count); 128 MB memory; 50 subrequests per request; script size **3 MB compressed** on Free (verify in S0-2) | Public pages are **static assets**. Static-asset requests are free and don't invoke the Worker, provided `run_worker_first` stays off. Only the admin and its API run the Worker. | ✅ Requests and CPU OK for one author. ⚠️ **Script size is the main risk**: the EmDash admin bundle plus the Postgres driver may exceed 3 MB. S0-2 measures it with `wrangler deploy --dry-run --outdir`. |
-| **Hyperdrive** | Included in Free since 2025-04; 100k queries/day | Admin use only. Builds connect to Postgres directly from GitHub Actions, not through Hyperdrive. | ✅ |
-| **Supabase** | 2 active projects; 500 MB DB per project; **paused after 1 week of low activity** | 2 projects (testing, production); `map` stays paused. Posts are a few MB of text in the DB. Images live on Cloudinary, not Supabase Storage. | ✅ Size OK. ⚠️ **Pausing**: a paused production DB breaks the admin and builds. **INF-6** adds a daily GitHub Actions keep-alive query to both projects. The existing nightly rebuild reads the DB too. |
-| **Cloudinary** | 25 credits / rolling 30 days (1 credit = 1 GB storage, 1 GB bandwidth, or 1k transformations) | Current usage **4.42 / 25 credits (17.7%)**: 1.29 GB storage, 1.75 GB bandwidth, 1.4k transformations. Rehosting Douban images adds little. | ✅ About 5× headroom. Keep the `f_auto,q_auto` URLs stable so derived images are reused, not regenerated. The Tester checks `cld admin usage` each sprint. |
-| **GitHub Actions** | Unlimited minutes for **public** repos | Both repos are public | ✅ Build and deploy run here, not in Workers Builds (whose free plan has a minute cap). |
-| **Cloudflare DNS / custom domain** | Free zone plan | `next.growgen.xyz`, then growgen.xyz | ✅ |
-| **Mixpanel, AdSense** | Free tiers, unchanged | Same as today | ✅ |
+| **Cloudflare Workers** | 100k requests/day; **10 ms CPU** per invocation; 128 MB memory; **64 MiB uncompressed** script, with no compressed limit (the old 3 MB figure is gone, limits page 2026-11-19); **20,000 static-asset files** per version | Bundle **20.9 MiB** (S0-2). Public pages are static assets that never invoke the Worker. A cron runs every minute (1,440 invocations/day). | ✅ Size and requests. ⚠️ **CPU is the real risk**: measured in INF-3 and QA-2. Asset count: about 1,000 posts plus listings plus `_astro`, well under 20k; INF-6 guards it. |
+| **Hyperdrive** | Free since 2025-04; 100k queries/day | Admin and cron only; builds use the local-string path | ✅ |
+| **Durable Objects (SQLite) / KV** | Template bindings `EMDASH_ROOMS`, `SESSION` | Admin collaboration and sessions | ⚠️ Free availability is verified on the first deploy (INF-3); otherwise they're removed |
+| **R2 / Cloudflare Images** | Billing may require a payment method | **Not used.** The `MEDIA` and `IMAGES` bindings are removed (S0-5) | ✅ |
+| **Supabase** | 2 active projects; 500 MB DB each; pause after 7 idle days; **no backups**; direct connection is IPv6-only (IPv4 is a Pro add-on); the shared pooler is IPv4 | testing and production; `map` stays paused; external access only through the session pooler | ✅ with INF-6 (keep-alive, encrypted nightly `pg_dump`) |
+| **Cloudinary** | 25 credits per rolling 30 days | 4.42 / 25 (17.7%) | ✅ About 5× headroom; usage reported each sprint |
+| **GitHub Actions** | Unlimited for public repos | Builds, deploys, backups | ✅ Backups are age-encrypted because artifacts are visible to logged-in users |
+| **DNS** | Free zone | `next.growgen.xyz`, then growgen.xyz | ✅ |
 
-**Features we rule out because they need a paid plan:** EmDash sandboxed registry plugins (need Workers Paid, and D1 rather than Postgres anyway), Cloudflare Images / Stream media providers, Supabase branching / PITR, Workers Logpush.
+**Ruled out (paid):** sandboxed registry plugins, Cloudflare Images/Stream, R2 (payment method), Supabase IPv4 add-on, branching and PITR.
+**Fallback if admin CPU exceeds 10 ms:** the public site stays static on Cloudflare. The admin runs locally with `pnpm --filter web dev`, pointed at production through the session pooler. Publishing still fires the rebuild.
 
-**Fallback if the Worker exceeds 3 MB (decided in S0-2):** the public site stays 100% static on Workers Static Assets, which needs no script. The EmDash admin then runs **locally** (`pnpm --filter web dev` against production Supabase, using the password in `.env`). Publishing still triggers the GitHub Actions rebuild. This costs nothing; the trade-off is no browser admin away from the laptop.
+## 11. S0-8 Gemini review: what we did with each finding
+
+| # | Finding (short) | Disposition |
+|---|---|---|
+| 1 | One config can't serve hyperdrive at runtime and postgres at build; SSR fallback too heavy for Free | **Accepted in part.** Scout found workerd prerender plus the Hyperdrive local string keeps one config (S0-3 proves it). SSR fallback dropped (D2). |
+| 2 | Generated artifacts live in the deleted submodule; new posts miss metadata | **Accepted.** DATA-1 and D10 build-time derivations |
+| 3 | Supabase Free direct connection is IPv6-only; GitHub is IPv4 | **Accepted, verified.** Session pooler for every external connection (D3) |
+| 4 | Passkeys domain-bound; secrets missing; open setup wizard | **Accepted.** D11, INF-3, CUT-1 |
+| 5 | Astro markdown config doesn't render DB strings; headings needed; shiki-plantuml is a submodule | **Accepted.** `createMarkdownProcessor()` (D5); submodule kept |
+| 6 | R2 may need a card; Storage interface is a poor fit for Cloudinary | **Accepted.** R2 dropped; media provider evaluated first (D6) |
+| 7 | URL gaps (pdf/svg/ndjson, drafts, timezone, taxonomy slugs, 404 handling) | **Accepted.** D7, D8, MIG-0 |
+| 8 | `cld migrate` fails on Douban hotlink protection; no rewrite map | **Accepted.** MIG-2 rewritten |
+| 9 | The 3 MB limit is obsolete (64 MiB); CPU is unmeasured | **Accepted, verified.** §10, INF-3, QA-2 |
+| 10 | Dependency inversions; CUT-2 one day after CUT-1; MIG-5 overwrites soak edits | **Accepted.** §5 and §6 resequenced |
+| 11 | QA-1 breaks CI for weeks; MIG order; double-booked agents | **Accepted.** Scoped QA-1, MIG-2 before MIG-1, serialized lanes |
+| 12 | `export-seed` is SQLite-only; INF-5 too late | **Accepted.** `supabase db dump` (D4); INF-5 moved to S3 |
+| 13 | No backups, no noindex, untracked legacy bits | **Accepted.** INF-6, D11, INF-4, PORT-6, PORT-9 |
+| 14 | Use `emdash seed --on-conflict update` instead of custom import; deterministic diffs | **Partly rejected.** `emdash seed` is SQLite-only (observed in S0-2), so the import is an idempotent upsert script over the remote CLI. Deterministic DOM diff accepted. |
+| 15 | Stale status; root `package.json` workspaces | **Noted.** Status is correct now. pnpm reads only `pnpm-workspace.yaml`. |
 
 ## Sources
 - EmDash docs (database, storage, Cloudflare deployment, CLI, plugins, route caching): https://docs.emdashcms.com
