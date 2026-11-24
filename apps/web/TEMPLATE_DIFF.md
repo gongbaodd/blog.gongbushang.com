@@ -79,3 +79,18 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `tailwind.config.mjs`, `public/*` icons, `src/{components,layouts,header,footer,stores,skeletons,icons,styles,analytics,ads,utils}/**`, `src/consts.ts` | Added | See PORTING.md |
 | `src/pages/index.astro` | Rewritten to use `layouts/Global.astro` + Header/Footer, `prerender = true` | Home inside the shell |
 | `package.json` | Added `@mantine/{core,hooks,carousel}`, `nanostores`, `@nanostores/react`, `lucide-react`, `embla-carousel(-react)`, `es-toolkit`, `tailwindcss@3`, `tailwindcss-animate`, `@fontsource/noto-sans-sc`; dev: `@tailwindcss/typography`, `autoprefixer`, `postcss`, `vitest`, `@types/react(-dom)` | Shell deps, same ranges as repo root |
+
+## FIX-1 (S0-7 Gemini review fixes)
+
+| File | Change | Why |
+|---|---|---|
+| `src/pages/{posts/index,posts/[slug],[slug],category/[slug],tag/[slug]}.astro` | Deleted | Starter SSR pages; with `not_found_handling: "404-page"` and `run_worker_first: ["/_emdash/*"]` they would 404 in production. Replaced by PORT-2/3 prerendered routes |
+| `src/pages/404.astro` | Prerendered, uses `Global` + Header/Footer | `dist/client/404.html` must exist |
+| `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. Sitemap is a stub (TODO PORT-7) |
+| `scripts/check-static-routes.mjs`, `package.json` `build` | Added guard; `build` = guard + `astro build` + `post-build.mjs` | Fail the build if any `src/pages` route is not prerendered |
+| `scripts/post-build.mjs` | `_headers` append is idempotent | Root `deploy:testing:build` runs it a second time |
+| `package.json` | `deploy` = `pnpm build && wrangler deploy -c dist/server/wrangler.json`; added `types` script; devDependency `@types/node` | Legacy root `wrangler.json` hijack; tsconfig `types: ["node"]` needs it |
+| `astro.config.mjs` | `localMedia({ enabled: false })` first in `mediaProviders` | Built-in "Library" provider is on by default; Cloudinary is now the only one |
+| `wrangler.jsonc` | top-level `kv_namespaces` SESSION (placeholder id); `assets.binding: "ASSETS"` | Declare production bindings; typed `ASSETS` |
+| `worker-configuration.d.ts` | Regenerated (`wrangler types -c wrangler.jsonc`) | `Env` now has SESSION, HYPERDRIVE, ASSETS, SITE_ENV, EMDASH_ROOMS (no DB/MEDIA) |
+| repo-root `tsconfig.json` | `exclude` += `apps`, `.claude` | Legacy `astro check` no longer typechecks apps/web |

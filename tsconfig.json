@@ -12,6 +12,8 @@
   },
   "exclude": [
     "packages/pv-counter",
+    "apps",
+    ".claude",
     "dist",
     "e2e",
     "public",
