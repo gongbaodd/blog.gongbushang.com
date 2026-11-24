@@ -1,0 +1,233 @@
+import {
+  ActionIcon,
+  Avatar,
+  Badge,
+  Box,
+  Card,
+  Flex,
+  Group,
+  Stack,
+  Text,
+  Title,
+  Anchor,
+} from "@mantine/core";
+import { Calendar, Headphones, Play, Quote } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AsciiReveal } from "ascii-reveal";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import type { IPodcastEpisode } from "@/src/stores/podcast";
+import classes from "./PostCard.module.css";
+import { stripHtml } from "./stripHtml";
+
+const CARD_WIDTH = 360;
+const CARD_MIN_WIDTH = 0;
+
+interface IPodcastEpisodeCardProps {
+  episode: IPodcastEpisode;
+  hideExcerpt?: boolean;
+  fill?: boolean;
+}
+
+export function PodcastEpisodeCard({
+  episode,
+  hideExcerpt,
+  fill,
+}: IPodcastEpisodeCardProps) {
+  const excerpt = stripHtml(episode.summary || episode.description || "");
+  const [coverOpacity, setCoverOpacity] = useState(0);
+  const hasCover = !!episode.image;
+
+  useEffect(() => {
+    if (!episode.image) return;
+    const img = new Image();
+    img.src = episode.image;
+    img.onload = () => setCoverOpacity(1);
+    img.onerror = () => setCoverOpacity(1);
+  }, [episode.image]);
+
+  const loading = hasCover && coverOpacity === 0;
+
+  const className = [
+    classes.item,
+    hasCover ? classes.with_bg : classes.liquid_cheese,
+    classes.md,
+  ].join(" ");
+
+  const cardStyle = {
+    "--underline-color": episode.colorSet?.titleColor
+      ? `var(${episode.colorSet.titleColor})`
+      : "var(--mantine-color-dark-8)",
+    "--transition-name": "podcast-" + episode.id.replaceAll("/", "-"),
+  } as React.CSSProperties;
+
+  const coverAreaStyle = {
+    backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
+    "--cover-opacity": coverOpacity,
+    "--cover-image": `url(${episode.image})`,
+  } as React.CSSProperties;
+
+  const badgeRow = (
+    <Flex justify="space-between" align="center">
+      <Badge
+        color="gray"
+        variant="default"
+        size="sm"
+        className={classes.category}
+      >
+        <Group gap={6}>
+          <Calendar size={12} />
+          <Text size="xs">{formatPubDate(episode.pubDate)}</Text>
+        </Group>
+      </Badge>
+      {episode.duration && (
+        <Badge
+          color="gray"
+          variant="default"
+          size="sm"
+          className={classes.category}
+        >
+          <Group gap={6}>
+            <Headphones size={12} />
+            <Text size="xs">{episode.duration}</Text>
+          </Group>
+        </Badge>
+      )}
+    </Flex>
+  );
+
+  const metaRow = episode.audioUrl && (
+    <Flex gap="xs" justify="space-between" align="end">
+      <Group flex={1} />
+      <Group gap="xs" flex={0}>
+        <ActionIcon
+          component="a"
+          href={episode.audioUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Listen"
+          variant="default"
+          color="gray"
+          size="lg"
+          radius="xl"
+          className={`${classes.category} ${classes.above_link}`}
+        >
+          <Play size={16} />
+        </ActionIcon>
+      </Group>
+    </Flex>
+  );
+
+  const titleBlock = (
+    <Anchor
+      underline="never"
+      className={classes.stretched_link}
+      href={`/podcast/${encodeURIComponent(episode.id)}`}
+    >
+      <Title className={classes.title}>
+        <span>{episode.title}</span>
+      </Title>
+    </Anchor>
+  );
+
+  return (
+    <CustomMantineProvider>
+      <Stack
+        justify="center"
+        align={fill ? "stretch" : "center"}
+        w={fill ? "100%" : undefined}
+      >
+        <Box
+          maw={fill ? undefined : CARD_WIDTH}
+          miw={fill ? CARD_MIN_WIDTH : undefined}
+          w={fill ? "100%" : undefined}
+        >
+          <AsciiReveal
+            loading={loading}
+            revealOnMount={false}
+            style={{ width: "100%" }}
+          >
+            <Card
+              key={episode.id}
+              shadow="sm"
+              padding={hasCover ? 0 : "lg"}
+              radius="lg"
+              withBorder
+              w={fill ? "100%" : undefined}
+              className={className}
+              style={{
+                ...cardStyle,
+                ...(hasCover
+                  ? {}
+                  : {
+                      backgroundColor:
+                        episode.colorSet?.bgColor ||
+                        "var(--mantine-color-gray-2)",
+                    }),
+              }}
+            >
+              {hasCover ? (
+                <>
+                  <Box className={classes.cover_area} style={coverAreaStyle}>
+                    <Flex
+                      direction="column"
+                      justify="space-between"
+                      p="lg"
+                      flex={1}
+                      className={`${classes.cover_content} ${classes.click_through}`}
+                    >
+                      {badgeRow}
+                      {metaRow}
+                    </Flex>
+                  </Box>
+                  <Box className={classes.cover_footer}>{titleBlock}</Box>
+                </>
+              ) : (
+                <Flex
+                  direction="column"
+                  justify="space-between"
+                  flex={1}
+                  className={classes.content}
+                >
+                  {badgeRow}
+                  {titleBlock}
+                  {episode.audioUrl && (
+                    <Group gap="xs">
+                      <Anchor
+                        href={episode.audioUrl}
+                        target="_blank"
+                        size="xs"
+                        className={classes.above_link}
+                      >
+                        Listen
+                      </Anchor>
+                    </Group>
+                  )}
+                </Flex>
+              )}
+            </Card>
+          </AsciiReveal>
+          {!hideExcerpt && excerpt && (
+            <Flex pl={5} pr={10} pt={5}>
+              <Avatar
+                size="xs"
+                variant="transparent"
+                style={{ transform: "rotateZ(180deg)" }}
+              >
+                <Quote />
+              </Avatar>
+              <Text size="sm" lineClamp={2} className={classes.excerpt}>
+                {excerpt}
+              </Text>
+            </Flex>
+          )}
+        </Box>
+      </Stack>
+    </CustomMantineProvider>
+  );
+}
+
+/** UTC day, so the server HTML and the browser agree regardless of time zone. */
+function formatPubDate(pubDate: string) {
+  const d = new Date(pubDate);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}

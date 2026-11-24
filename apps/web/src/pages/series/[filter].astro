@@ -1,0 +1,19 @@
+---
+import BlogListPage from "../../components/BlogListPage.astro";
+import { FILTER_ENTRY } from "../../consts-list";
+import { seriesPages } from "../../lib/listing";
+
+export const prerender = true;
+export const getStaticPaths = seriesPages;
+
+const { filter } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BlogListPage
+	subTitle={filter!}
+	totalCount={posts.length}
+	filter={filter!}
+	entryType={FILTER_ENTRY.SERIES}
+	posts={posts}
+/>

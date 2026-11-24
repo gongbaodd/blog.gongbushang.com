@@ -1,0 +1,19 @@
+---
+import BlogListPage from "../../components/BlogListPage.astro";
+import { FILTER_ENTRY } from "../../consts-list";
+import { cityPages } from "../../lib/listing";
+
+export const prerender = true;
+export const getStaticPaths = cityPages;
+
+const { city } = Astro.params;
+const { posts, cityName } = Astro.props;
+---
+
+<BlogListPage
+	subTitle={cityName}
+	totalCount={posts.length}
+	filter={city!}
+	entryType={FILTER_ENTRY.WORLD}
+	posts={posts}
+/>

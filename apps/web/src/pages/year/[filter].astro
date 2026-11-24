@@ -1,0 +1,19 @@
+---
+import BlogListPage from "../../components/BlogListPage.astro";
+import { FILTER_ENTRY } from "../../consts-list";
+import { yearPages } from "../../lib/listing";
+
+export const prerender = true;
+export const getStaticPaths = yearPages;
+
+const { filter } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BlogListPage
+	subTitle={filter!}
+	totalCount={posts.length}
+	filter={filter!}
+	entryType={FILTER_ENTRY.YEAR}
+	posts={posts}
+/>

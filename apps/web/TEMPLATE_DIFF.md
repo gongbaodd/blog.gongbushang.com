@@ -104,3 +104,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `src/pages/index.astro` | post links use `mapPost(post).href` instead of `/posts/<id>` | the starter route was deleted in FIX-1 |
 | `package.json` | Added `remark`, `strip-markdown` | legacy excerpt rule; build-time only (prerendered page), nothing lands in the Worker |
 | `scripts/dev/seed-sample-posts.mjs`, `scripts/dev/parity-post.cjs` | Added | Dev seeding of real legacy posts through the remote CLI/REST (idempotent, MIG-1 overwrites); structural old-vs-new HTML diff |
+
+## PORT-3
+- `astro.config.mjs`: `vite.ssr.noExternal: ["react-plock"]` (masonry).
+- `package.json`: build runs `scripts/legacy-data.mjs` first; new deps `ascii-reveal`, `react-plock`, `dayjs`, `@mantine/charts`, `recharts`, `remark-smartypants`.
+- `.gitignore`: `src/generated/`, `public/api/`.

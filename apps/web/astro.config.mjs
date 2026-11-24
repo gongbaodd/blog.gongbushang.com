@@ -41,6 +41,8 @@ export default defineConfig({
 			alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
 		},
 		ssr: {
+			// react-plock (PORT-3 masonry) ships CJS-ish ESM; legacy forced it into the SSR bundle too.
+			noExternal: ["react-plock"],
 			optimizeDeps: {
 				// pg is CJS; without this workerd dev fails with "require is not defined"
 				include: ["@emdash-cms/cloudflare > pg"],
