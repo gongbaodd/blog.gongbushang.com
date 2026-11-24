@@ -7,6 +7,8 @@
 	"main": "./src/worker.ts",
 	"compatibility_date": "2026-02-24",
 	"compatibility_flags": ["nodejs_compat"],
+	// Static pages never invoke the Worker; only the EmDash admin/API does. Unknown paths get the static 404 page (D8, §10).
+	"assets": { "not_found_handling": "404-page", "run_worker_first": ["/_emdash/*"] },
 	"hyperdrive": [
 		{
 			"binding": "HYPERDRIVE",

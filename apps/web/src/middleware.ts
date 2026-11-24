@@ -39,8 +39,18 @@ async function withRobots(next: () => Promise<Response>): Promise<Response> {
 	return res;
 }
 
+/** Decode, lowercase and collapse slashes so encoded/cased variants (e.g. `/_emdash/api/%73etup`) can't bypass the gate. */
+function normalize(pathname: string): string | null {
+	try {
+		return decodeURIComponent(pathname).toLowerCase().replace(/\/{2,}/g, "/");
+	} catch {
+		return null;
+	}
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
-	const { pathname } = context.url;
+	const pathname = normalize(context.url.pathname);
+	if (pathname === null) return new Response("Bad request", { status: 400 });
 	if (!GATED.some((re) => re.test(pathname))) return withRobots(next);
 	if (import.meta.env.DEV) return withRobots(next);
 
