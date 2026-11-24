@@ -1,0 +1,63 @@
+# Free-tier guards (INF-6): Supabase keep-alive for testing and nightly encrypted backup of production.
+# The repo is public, so dumps are age-encrypted with a PUBLIC recipient key before upload; the private key stays offline.
+name: web-guards
+
+on:
+  schedule:
+    - cron: "41 3 * * *" # backup (also keeps production active)
+    - cron: "23 5 * * *" # keep-alive for testing
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  keepalive-testing:
+    # Free projects pause after 7 idle days. Production is also kept alive by the nightly backup and web-deploy.
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 5 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: testing
+    steps:
+      - name: select 1 via session pooler
+        env:
+          DATABASE_POOLER_URL: ${{ secrets.DATABASE_POOLER_URL }}
+        run: psql "$DATABASE_POOLER_URL" -v ON_ERROR_STOP=1 -tAc 'select 1'
+
+  backup-production:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 3 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Install pg_dump 17 and age
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release; echo $VERSION_CODENAME)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 age
+
+      - name: Dump and encrypt
+        env:
+          DATABASE_POOLER_URL: ${{ secrets.DATABASE_POOLER_URL }} # production session pooler (IPv4)
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }} # age public key (age1...)
+        run: |
+          [ -n "$BACKUP_AGE_RECIPIENT" ] || { echo "::error::secret BACKUP_AGE_RECIPIENT is not set"; exit 1; }
+          out="growgen-production-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_POOLER_URL" --format=custom --schema=public --no-owner --no-privileges \
+            | age -r "$BACKUP_AGE_RECIPIENT" -o "$out"
+          ls -l "$out"
+          [ "$(stat -c %s "$out")" -gt 1024 ] || { echo "::error::backup is suspiciously small"; exit 1; }
+          echo "BACKUP_FILE=$out" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: production-db-backup
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 14
+          if-no-files-found: error

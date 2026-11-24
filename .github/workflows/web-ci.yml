@@ -1,0 +1,106 @@
+# EmDash site (apps/web) CI: verify and deploy to the `testing` environment (INF-4).
+# Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
+# Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
+name: web-ci
+
+on:
+  pull_request:
+    branches: [feat/emdash, master]
+    # Legacy-only changes (src/, packages/* except the plantuml submodule, e2e/) do not trigger this.
+    paths:
+      - "apps/web/**"
+      - "supabase/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/shiki-plantuml"
+      - ".github/workflows/web-*.yml"
+  workflow_dispatch:
+
+concurrency:
+  # One build/deploy to testing at a time; a newer push supersedes an older one.
+  group: web-testing-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
+  CLOUDFLARE_ENV: testing
+  SITE_ENV: testing
+  PUBLIC_BUILD_SHA: ${{ github.sha }}
+  # Empty-build guard thresholds (repository variables, optional). Raise WEB_MIN_POSTS to ~990 once MIG-1 is imported.
+  WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
+  WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
+
+jobs:
+  web:
+    # Forks get no secrets; skip them rather than fail.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: testing
+    env:
+      # Session pooler (IPv4). Used by `emdash migrate --from-config` and by the build's prerender (Hyperdrive local connection string).
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # packages/shiki-plantuml (and the legacy content submodule, which apps/web does not read)
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm --filter web exec vitest run
+
+      - name: Type check
+        run: pnpm --filter web typecheck
+
+      - name: Migrations are up to date (read-only)
+        working-directory: apps/web
+        run: pnpm exec emdash migrate --from-config --check
+
+      - name: Build
+        run: |
+          set -o pipefail
+          pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Empty-build guard
+        # If the DB is unreachable the build still exits 0 and emits an empty site (S0-3).
+        run: |
+          if grep -q 'runtime init failed' "$RUNNER_TEMP/build.log"; then
+            echo "::error::build log contains 'runtime init failed': the site was built without CMS data"; exit 1
+          fi
+          cd apps/web/dist/client
+          pages=$(find . -name index.html | wc -l)
+          posts=$(find . -path './[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*' -name index.html | wc -l)
+          echo "prerendered pages=$pages posts=$posts (min pages=$WEB_MIN_PAGES, min posts=$WEB_MIN_POSTS)"
+          if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
+          if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
+
+      - name: Free-tier size guard (Worker 60 MiB, 18k assets)
+        working-directory: apps/web
+        run: |
+          pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json 2>&1 | tee "$RUNNER_TEMP/dry.log"
+          bytes=$(find "$RUNNER_TEMP/wrangler-dry" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.wasm' \) -print0 | xargs -0 cat | wc -c)
+          assets=$(find dist/client -type f | wc -l)
+          echo "worker uncompressed=$((bytes/1048576)) MiB (limit 64), static assets=$assets (limit 20000)"
+          if [ "$bytes" -gt $((60*1048576)) ]; then echo "::error::Worker above 60 MiB"; exit 1; fi
+          if [ "$assets" -gt 18000 ]; then echo "::error::more than 18000 static assets"; exit 1; fi
+
+      - name: Deploy to testing
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: pnpm exec wrangler deploy -c dist/server/wrangler.json
