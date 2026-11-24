@@ -60,3 +60,11 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `astro.config.mjs` | Added `plugins: [rebuildOnPublish()]` | Registers the native plugin |
 | `.dev.vars.example` | Added `GITHUB_DISPATCH_TOKEN`, `GITHUB_DISPATCH_REPO`, `GITHUB_API_URL` | Plugin config (secrets via wrangler secret in deployed envs) |
 | `src/plugins/rebuild-on-publish/**` | Added | `content:afterPublish` -> `repository_dispatch` (`event_type: emdash-publish`) |
+
+## INF-3 (testing env)
+
+| File | Change | Why |
+|---|---|---|
+| `wrangler.jsonc` | name `growgen-web`; `env.testing` (own Hyperdrive/KV/DO/cron, `workers_dev`), `vars.SITE_ENV`, cron `*/5` (prod) / `*/15` (testing) | D3/D11/§10 |
+| `src/middleware.ts` | Added: SETUP_TOKEN gate on `/_emdash/admin/setup` and `/_emdash/api/setup/*`; `X-Robots-Tag` on SSR responses when `SITE_ENV` != production | D11 |
+| `scripts/post-build.mjs` | Added: writes noindex `_headers` rule + disallow-all `robots.txt` into `dist/client` for non-production | D11 |

@@ -13,3 +13,7 @@ GITHUB_DISPATCH_TOKEN=
 GITHUB_DISPATCH_REPO=gongbaodd/blog.gongbushang.com
 # Optional override (local testing against a fake GitHub); default https://api.github.com
 GITHUB_API_URL=
+# Worker secret gating the first-admin setup wizard (src/middleware.ts). Unset => setup closed in deployed envs.
+SETUP_TOKEN=
+# "production" = indexable; anything else = noindex + disallow-all robots.txt (wrangler vars.SITE_ENV)
+SITE_ENV=local
