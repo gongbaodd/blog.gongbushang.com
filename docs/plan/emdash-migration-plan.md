@@ -175,8 +175,8 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 |---|---|---|---|
 | S0-1 ✅ | Agent definitions, rules, knowledge base, `apps/*` workspace | Lead | 2 |
 | S0-2 ✅ | Scaffold `apps/web` on Postgres via Hyperdrive with local Supabase; bundle 20.9 MiB uncompressed (33% of 64 MiB) | Builder-Infra | 5 |
-| S0-3 | **Spike:** prerendered pages read EmDash at build time through the workerd + Hyperdrive local-string path (D2). Build 3 posts, grep `dist/`, confirm no drafts, confirm the Worker still binds `HYPERDRIVE` | Builder-Core | 3 |
-| S0-4 | **Spike:** a `text` body rendered by `createMarkdownProcessor()` with KaTeX, Shiki + PlantUML, Mermaid and attributes; headings returned (D5) | Builder-Core | 3 |
+| S0-3 ✅ | **Spike:** prerendered pages read EmDash at build time through the workerd + Hyperdrive local-string path (D2). Build 3 posts, grep `dist/`, confirm no drafts, confirm the Worker still binds `HYPERDRIVE` | Builder-Core | 3 |
+| S0-4 ✅ | **Spike:** a `text` body rendered by `createMarkdownProcessor()` with KaTeX, Shiki + PlantUML, Mermaid and attributes; headings returned (D5) | Builder-Core | 3 |
 | S0-5 | **Spike:** Cloudinary through a media provider or Storage adapter (D6); remove the `MEDIA` and `IMAGES` bindings | Builder-Core | 5 |
 | S0-6 | **Spike:** an `afterPublish` plugin that sends `repository_dispatch` (D9), tested locally against a dummy endpoint | Builder-Core | 2 |
 | S0-7 | agy model calibration (§3.2) | Reviewer-Gemini, Lead | 1 |
@@ -188,7 +188,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | INF-1 ✅ | Local Supabase (`pnpm db:start/stop/reset`), done in S0-2 | Builder-Infra | — |
 | INF-2 | Create `growgen-testing` and `growgen-production` (ap-southeast-1, passwords from `.env`); record the session-pooler strings as GitHub environment secrets | Builder-Infra | 2 |
 | INF-3 | Hyperdrive per env (direct vs pooler origin test, D3); `wrangler.jsonc` `env.testing` + production; secrets `EMDASH_ENCRYPTION_KEY` / `EMDASH_SITE_URL`; `not_found_handling`; noindex headers; **first testing deploy with the owner claiming the admin** (D11); **CPU-ms check** of admin requests via `wrangler tail` | Builder-Infra | 5 |
-| INF-4 | CI: on PR, `migrate --check`, build, deploy to testing, e2e smoke. On `master`, migrate and deploy to production. `PUBLIC_BUILD_SHA` comes from `GITHUB_SHA`; the `shiki-plantuml` submodule is checked out | Builder-Infra | 5 |
+| INF-4 | CI: on PR, `migrate --check`, build, deploy to testing, e2e smoke. On `master`, migrate and deploy to production. `PUBLIC_BUILD_SHA` comes from `GITHUB_SHA`; the `shiki-plantuml` submodule is checked out. **Empty-build guard:** if the DB is unreachable, the build still exits 0 and emits an empty site (S0-3), so CI fails the build when the log contains `runtime init failed` or the prerendered post count is below the expected minimum | Builder-Infra | 5 |
 | INF-5 | Env content sync: `pnpm content:pull testing` (`supabase db dump --data-only` + `psql` through the pooler, excluding auth tables) | Builder-Infra | 2 |
 | INF-6 | Free-tier guards: keep-alive query for `testing` (production is kept alive by the nightly rebuild); **nightly encrypted `pg_dump` backup** of production (age-encrypted artifact, because the repo is public); Worker size check (fail above 60 MiB uncompressed or 18k asset files); Cloudinary usage report | Builder-Infra | 3 |
 
@@ -295,8 +295,8 @@ gantt
   CUT-2 retire legacy         :bi9, 2027-02-26, 1d
 
   section Builder-Core (Sonnet 5.5)
-  S0-3 prerender spike        :crit, bc1, 2026-11-25, 1d
-  S0-4 markdown render spike  :bc2, after bc1, 2d
+  S0-3 prerender spike        :done, bc1, 2026-11-25, 1d
+  S0-4 markdown render spike  :done, bc2, after bc1, 2d
   S0-5 cloudinary spike       :crit, bc3, after bc2, 2d
   S0-6 afterPublish plugin    :bc4, after bc3, 1d
   CMS-1 model script          :bc5, 2026-12-07, 3d
@@ -363,6 +363,7 @@ gantt
 | Passkeys bound to `next.growgen.xyz` | Locked out after cutover | Enroll on growgen.xyz during CUT-1 before retiring next. |
 | Slug, date or taxonomy drift | Changed URLs | `legacy_id`, timezone-free date, exact taxonomy slugs; QA-1 parity. |
 | New posts lack offline embeddings | Missing in related posts / UMAP | Graceful omission (D10); owner reruns `content:prepare`. |
+| DB unreachable during CI build → empty site deployed (seen in S0-3) | Site wiped | INF-4 empty-build guard (log line plus a post-count check) |
 | Supabase Free has no backups | Data loss | INF-6 nightly encrypted `pg_dump`. |
 | Supabase Free pauses idle projects | Builds fail | Nightly rebuild (production) and keep-alive (testing). |
 | Duplicate-content SEO during soak | Ranking hit | noindex until CUT-1 (D11). |
