@@ -307,8 +307,8 @@ gantt
   CMS-4 types + helpers       :bc6, after bc5, 1d
   CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
   PORT-1 shell                :done, bc8, 2026-12-21, 3d
-  PORT-2 post page            :active, bc9, after bc8, 3d
-  PORT-3 listings + APIs      :bc10, 2027-01-04, 5d
+  PORT-2 post page            :done, bc9, after bc8, 3d
+  PORT-3 listings + APIs      :active, bc10, 2027-01-04, 5d
   PORT-4 home + webgl         :bc11, after bc10, 2d
   DATA-1 relocate generated   :bc12, after bc11, 1d
   PORT-5 podcast/gallery/cv   :bc13, 2027-01-18, 1d
@@ -320,7 +320,7 @@ gantt
   section Migrator (Haiku 5.5)
   MIG-0 legacy snapshot       :done, mg0, 2026-12-07, 1d
   MIG-2 image rehost          :active, mg1, 2026-12-14, 2d
-  MIG-1 import 994 posts      :crit, mg2, 2026-12-21, 3d
+  MIG-1 import 994 posts      :active, crit, mg2, 2026-12-21, 3d
   MIG-3 gallery + podcast     :mg3, after mg2, 2d
   MIG-4 DOM parity diff       :mg4, 2027-01-25, 2d
   MIG-5 final sync + freeze   :crit, mg5, 2027-01-29, 1d

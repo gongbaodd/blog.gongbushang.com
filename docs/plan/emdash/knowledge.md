@@ -74,3 +74,7 @@ Maintained by **Archivist**. Facts observed during the migration only, each date
 - Gotcha: `wrangler secret …` inside apps/web needs `-c wrangler.jsonc --env testing`; without `-c` it picks the legacy root `wrangler.json`. (INF-4)
 - Gotcha: `repository_dispatch` only triggers workflows on the **default branch**, so `web-deploy.yml` reacts to EmDash publishes only after it reaches `master`. (INF-4)
 - Gotcha: Cloudinary provider on testing → 401, caused by a wrong `CLOUDINARY_CLOUD_NAME` in `.dev.vars` (not `dmq8ipket`). Waiting on the owner. (INF-4)
+- Verified: local import of 995 posts in ~45 s (concurrency 4); re-run 0 changes in 24 s; 995/995 `body_md` sha256 identical to legacy. Terms created: category 6, tag 423, series 24, city 148. REST create needs an explicit publish afterwards, and each PUT leaves a draft until published. (MIG-1)
+- Gotcha: `c#` works for term create and assignment through REST (only fetch/edit by slug is broken). Legacy tag links rendered `/tag/c#` (a broken fragment); the new site links `/tag/c%23`, which matches the built file. (MIG-1, PORT-2)
+- Verified: 995 post pages prerender in ~37 s; 996 `index.html` all ∈ legacy-urls; `dist/client` 1,291 files / 162 MB. The 3 `.mdx` posts only use `<DescriptionImage>`, rewritten to HTML by `src/lib/mdx-lite.ts` (no MDX runtime). (PORT-2)
+- Gotcha: after merging a story that adds deps, run `pnpm install --frozen-lockfile` in the main checkout before building (Rolldown "failed to resolve import"). (PORT-2)
