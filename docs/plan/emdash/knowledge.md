@@ -39,3 +39,11 @@ Maintained by **Archivist**. Facts observed during the migration only, each date
 - Verified: `emdash schema add-field posts body_md --type text` (no CLI flag for field options); `content create --file` round-trips Markdown byte-identically. (S0-4)
 - Verified: `createMarkdownProcessor()` with the legacy plugins renders KaTeX, Shiki + PlantUML, attributes, external-link rel, Cloudinary `f_auto,q_auto`, and returns headings; build-only, +27 KiB to the Worker. Mermaid uses the `astro-mermaid` client script plus a 10-line remark copy (its remark plugin isn't exported). (S0-4)
 - Free tier: there is no compressed (gzip) Worker limit any more; ~5.7 MiB gzip is irrelevant. Only 64 MiB uncompressed counts. (S0-4 question, answered from the 2026-11-19 limits page)
+
+## S0-5 / S0-6 (2026-11-24)
+- EmDash quirk: custom **media providers** register via `emdash({ mediaProviders: [{id,name,entrypoint,capabilities,config}] })`; the entrypoint module exports `createMediaProvider` (same shape as `cloudflareImages()`). `storage` is optional. (S0-5)
+- Gotcha: the `IMAGES` binding is injected by `@astrojs/cloudflare`, not wrangler.jsonc; drop it with `cloudflare({ imageService: "passthrough" })`. (S0-5)
+- Verified: built bindings after S0-5: HYPERDRIVE, SESSION (KV), EMDASH_ROOMS (DO), ASSETS, cron `* * * * *`; `r2_buckets: []`. (S0-5)
+- Hook: `content:afterPublish` signature `(event: {content, collection}, ctx)`, needs capability `content:read`. Draft saves don't fire it; explicit publish does. (S0-6)
+- Gotcha: `emdash content create/update` **auto-publish** unless `--draft` is passed, which matters for MIG-1 imports. (S0-6)
+- Tests: `apps/web/vitest.config.ts` (the root vitest config doesn't include apps/web); 16 tests pass. (S0-5/S0-6)
