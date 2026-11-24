@@ -186,7 +186,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | ID | Story | Agent | Pts |
 |---|---|---|---|
 | INF-1 ✅ | Local Supabase (`pnpm db:start/stop/reset`), done in S0-2 | Builder-Infra | — |
-| INF-2 | Create `growgen-testing` and `growgen-production` (ap-southeast-1, passwords from `.env`); record the session-pooler strings as GitHub environment secrets | Builder-Infra | 2 |
+| INF-2 ✅ | Create `growgen-testing` and `growgen-production` (ap-southeast-1, passwords from `.env`); record the session-pooler strings as GitHub environment secrets | Builder-Infra | 2 |
 | INF-3 | Hyperdrive per env (direct vs pooler origin test, D3); `wrangler.jsonc` `env.testing` + production; secrets `EMDASH_ENCRYPTION_KEY` / `EMDASH_SITE_URL`; `not_found_handling`; noindex headers; **first testing deploy with the owner claiming the admin** (D11); **CPU-ms check** of admin requests via `wrangler tail` | Builder-Infra | 5 |
 | INF-4 | CI: on PR, `migrate --check`, build, deploy to testing, e2e smoke. On `master`, migrate and deploy to production. `PUBLIC_BUILD_SHA` comes from `GITHUB_SHA`; the `shiki-plantuml` submodule is checked out. **Empty-build guard:** if the DB is unreachable, the build still exits 0 and emits an empty site (S0-3), so CI fails the build when the log contains `runtime init failed` or the prerendered post count is below the expected minimum | Builder-Infra | 5 |
 | INF-5 | Env content sync: `pnpm content:pull testing` (`supabase db dump --data-only` + `psql` through the pooler, excluding auth tables) | Builder-Infra | 2 |
@@ -195,7 +195,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 ### EPIC E2: CMS model and media
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| CMS-1 | Model via the remote `emdash schema` CLI, kept as a reproducible script: `posts` (title, legacy_id, legacy_date, status, category, adsense, cover, body `text`, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies with exact slugs (D7) | Builder-Core | 5 |
+| CMS-1 ✅ (local; applied to testing once the admin is claimed) | Model via the remote `emdash schema` CLI, kept as a reproducible script: `posts` (title, legacy_id, legacy_date, status, category, adsense, cover, body `text`, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies with exact slugs (D7) | Builder-Core | 5 |
 | CMS-2 | Cloudinary media wired in, per the S0-5 outcome | Builder-Core | 5 |
 | CMS-3 | Passkey admin on testing and production (after INF-3); author role | Builder-Infra | 2 |
 | CMS-4 | `npx emdash types` in the build; typed helpers in `apps/web/src/lib/content.ts` with the same signatures as legacy `packages/utils` | Builder-Core | 2 |
@@ -203,7 +203,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 ### EPIC E3: Content migration
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| MIG-0 | Legacy snapshot: every non-`_astro` file in legacy `dist/` written to `apps/web/tests/legacy-urls.txt`; audit of `type: draft` posts; slug-collision report | Migrator | 2 |
+| MIG-0 ✅ (4,945 paths; 995 posts) | Legacy snapshot: every non-`_astro` file in legacy `dist/` written to `apps/web/tests/legacy-urls.txt`; audit of `type: draft` posts; slug-collision report | Migrator | 2 |
 | MIG-2 | Image rehost **before** import: download external images with browser `User-Agent`/`Referer` headers (Douban blocks hotlinks), upload with `cld uploader upload` under deterministic `public_id`s, write `rewrite-map.json`, and report dead links. `cld migrate` was rejected (Gemini #8) | Migrator | 3 |
 | MIG-1 | Import script: the 994 posts, with the rewrite map applied, via the remote `emdash content` CLI/API as an **idempotent upsert** keyed on `legacy_id`. The same script is reused by MIG-5 | Migrator | 5 |
 | MIG-3 | Gallery and podcasts imported; `fetch-podcast` writes into EmDash | Migrator, Builder-Core | 3 |
@@ -285,8 +285,8 @@ gantt
 
   section Builder-Infra (Sonnet 5.5)
   S0-2 scaffold apps/web      :done, bi1, 2026-11-24, 1d
-  INF-2 supabase projects     :bi2, 2026-12-07, 1d
-  INF-3 hyperdrive+envs+claim :crit, bi3, after bi2, 3d
+  INF-2 supabase projects     :done, bi2, 2026-12-07, 1d
+  INF-3 hyperdrive+envs+claim :active, crit, bi3, after bi2, 3d
   CMS-3 passkeys + roles      :bi4, 2026-12-14, 1d
   INF-4 CI pipeline           :bi5, after bi4, 3d
   INF-6 guards + backups      :bi6, after bi5, 1d
@@ -299,7 +299,7 @@ gantt
   S0-4 markdown render spike  :done, bc2, after bc1, 2d
   S0-5 cloudinary spike       :done, bc3, after bc2, 2d
   S0-6 afterPublish plugin    :done, bc4, after bc3, 1d
-  CMS-1 model script          :bc5, 2026-12-07, 3d
+  CMS-1 model script          :done, bc5, 2026-12-07, 3d
   CMS-4 types + helpers       :bc6, after bc5, 1d
   CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
   PORT-1 shell                :bc8, 2026-12-21, 3d
@@ -314,7 +314,7 @@ gantt
   Fix buffer                  :bc17, 2027-01-25, 4d
 
   section Migrator (Haiku 5.5)
-  MIG-0 legacy snapshot       :mg0, 2026-12-07, 1d
+  MIG-0 legacy snapshot       :done, mg0, 2026-12-07, 1d
   MIG-2 image rehost          :mg1, 2026-12-14, 2d
   MIG-1 import 994 posts      :crit, mg2, 2026-12-21, 3d
   MIG-3 gallery + podcast     :mg3, after mg2, 2d
