@@ -9,9 +9,10 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs",
     "preview": "astro preview",
-    "deploy": "astro build && wrangler deploy",
+    "types": "wrangler types",
+    "deploy": "pnpm build && wrangler deploy -c dist/server/wrangler.json",
     "typecheck": "astro check"
   },
   "dependencies": {
@@ -51,6 +52,7 @@
     "@astrojs/check": "^0.9.10",
     "@cloudflare/workers-types": "^5.20260820.1",
     "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^24.12.4",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.0",

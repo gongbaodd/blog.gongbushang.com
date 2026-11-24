@@ -25,7 +25,7 @@ pnpm deploy:testing:build        # CLOUDFLARE_ENV=testing bakes env.testing into
 pnpm deploy:testing:dry-run
 cd apps/web && pnpm exec wrangler deploy -c dist/server/wrangler.json     # needs Lead go-ahead
 ```
-Env selection is by `CLOUDFLARE_ENV` at build time; the generated config has no `env` block, so do not pass `--env`. Note the build applies EmDash migrations/seed to the testing DB.
+Env selection is by `CLOUDFLARE_ENV` at build time; the generated config has no `env` block, so do not pass `--env`. `pnpm --filter web build` now runs the static-route guard, `astro build` and `post-build.mjs` (idempotent, so the root script running it again is harmless). Note the build applies EmDash migrations/seed to the testing DB.
 
 ## First-deploy claim procedure (D11)
 Anyone who reaches `/_emdash/admin/setup` first becomes admin. The Worker gates it (src/middleware.ts): 404 unless `SETUP_TOKEN` matches.
