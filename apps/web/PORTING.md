@@ -42,3 +42,16 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/lib/content.ts` | `packages/utils/{extract,post}.ts` (title, excerpt, links) | EmDash entry mapping; title = first heading (legacy rule), excerpt via remark + strip-markdown |
 | `src/lib/mdx-lite.ts` | `packages/image/DescriptionImage.tsx` | the 3 `.mdx` posts: `<DescriptionImage>` rewritten to plain HTML at render time |
 | `public/profile.jpg` | `public/profile.jpg` | author avatar |
+
+## PORT-3 (listing pages + JSON/NDJSON APIs) - copied, originals stay until CUT-2
+
+| New (`apps/web/`) | Legacy original | Notes |
+|---|---|---|
+| `src/pages/{[filter],tags,year,world}.astro`, `tag/[filter]`, `series/[filter]`, `year/[filter]`, `world/[city]` | same names under `src/pages` | data from EmDash via `src/lib/listing.ts`; `[filter]` skips `podcast` (PORT-8 owns `/podcast/`); no `/sitemap/` (treemap, PORT-6) |
+| `src/pages/api/**` (all legacy endpoints) | `src/pages/api/**` | same paths and JSON/NDJSON shapes; `gallery/trace/*.svg`, `posts/all.json`, `posts/umap.json` are static copies generated into `public/api/` |
+| `src/lib/listing-core.ts`, `listing.ts`, `smartypants.ts`, `api.ts` | `packages/utils/{post,filter,badges,heatmap,cards,city}.ts` | `mapServerPostToClient` port; dates use the legacy build TZ (Europe/Tallinn) so `date` instants match |
+| `src/consts-list.ts` | `packages/consts/{index,colors}.ts` | listing constants |
+| `src/card/*`, `src/masonry/*`, `src/menu/BlogListMenu.tsx`, `src/folder/*`, `src/bits/Folder.tsx` | `packages/{card,masonry,menu,folder}`, `src/bits/Components/Folder` | tabler icons -> lucide; `track("tag_clicked")` removed (TODO PORT-7) |
+| `src/stores/{links,podcast,yearCovers,heatmap}.ts` | `src/stores/*`, `packages/heat/store/heatmap.ts` | import paths only |
+| `src/components/{BlogListPage,YearFolders,WorldMap}.astro` | `src/components/*` | `WorldMap` is a placeholder (TODO PORT-6); `/year/` search banner TODO (search story) |
+| `scripts/legacy-data.mjs`, `src/lib/legacy-data.ts` | `src/content/generated/**` | **TODO DATA-1 / PORT-6 / PORT-8**: covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order. Reads `LEGACY_GENERATED_DIR` (default `../../src/content/generated`); missing dir = empty data. Output `src/generated/`, `public/api/` is git-ignored |

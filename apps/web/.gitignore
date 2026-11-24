@@ -14,3 +14,7 @@ data.db-*
 .dev.vars
 .dev.vars.*
 !.dev.vars.example
+
+# PORT-3: generated from legacy data by scripts/legacy-data.mjs (TODO DATA-1)
+src/generated/
+public/api/

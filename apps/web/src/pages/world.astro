@@ -1,0 +1,35 @@
+---
+// /world/: map (placeholder, PORT-6) + the list of posts that have a city (ported from src/pages/world.astro).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import { GridWithMenu } from "../components/GridWithMenu";
+import { BlogListMenu } from "../menu/BlogListMenu";
+import BlogPlock from "../masonry/BlogPlock";
+import WorldMap from "../components/WorldMap.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { FILTER_ENTRY } from "../consts-list";
+import { cityPages, worldPosts } from "../lib/listing";
+
+export const prerender = true;
+
+const totalCount = (await worldPosts()).length;
+const cityCount = (await cityPages()).length;
+---
+
+<Global title={SITE_TITLE + " | World"} description={SITE_DESCRIPTION}>
+	<Header />
+	<section id="world-page" class="main">
+		<MantineMain>
+			<GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
+				<BlogListMenu slot="menuNode" client:idle />
+				<section slot="gridContent" class="flex flex-col gap-8">
+					<WorldMap cityCount={cityCount} />
+					<BlogPlock totalCount={totalCount} entryType={FILTER_ENTRY.WORLD} filter="" client:load />
+				</section>
+			</GridWithMenu>
+			<Footer slug={"world"} />
+		</MantineMain>
+	</section>
+</Global>

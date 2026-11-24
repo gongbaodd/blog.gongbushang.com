@@ -1,0 +1,15 @@
+---
+// Category list: /all/ and /<category>/ (book, fe, life, movie, music, plan, sport, tech, tv).
+// /podcast/ is its own page (PORT-8), so the podcast category is not generated here.
+import BlogListPage from "../components/BlogListPage.astro";
+import { categoryPages } from "../lib/listing";
+
+export const prerender = true;
+
+export const getStaticPaths = () => categoryPages(false);
+
+const { filter } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<BlogListPage subTitle={filter!} totalCount={posts.length} filter={filter!} posts={posts} />
