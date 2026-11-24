@@ -38,3 +38,6 @@ __pycache__/
 .ruff_cache/
 # Cloudflare wrangler local secrets
 .dev.vars*
+
+# Claude agent worktrees
+.claude/worktrees/
