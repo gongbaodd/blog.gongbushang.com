@@ -4,6 +4,7 @@ import { hyperdrive } from "@emdash-cms/cloudflare";
 import { defineConfig } from "astro/config";
 import emdash from "emdash/astro";
 import mermaid from "astro-mermaid";
+import { rebuildOnPublish } from "./src/plugins/rebuild-on-publish/index.ts";
 import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
 export default defineConfig({
@@ -21,6 +22,7 @@ export default defineConfig({
 		emdash({
 			database: hyperdrive({ binding: "HYPERDRIVE" }),
 			// Media lives on Cloudinary (D6): no R2 storage; media provider only.
+			plugins: [rebuildOnPublish()],
 			mediaProviders: [cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],

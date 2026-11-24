@@ -52,3 +52,11 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `wrangler.jsonc` | Removed `r2_buckets` (`MEDIA`) | D6; dry-run bindings are now EMDASH_ROOMS, SESSION, HYPERDRIVE, ASSETS only |
 | `.dev.vars.example` | Added `CLOUDINARY_CLOUD_NAME/_API_KEY/_API_SECRET` | Provider reads them from Worker env |
 | `src/lib/cloudinary-media/**`, `vitest.config.ts` | Added | Media provider (list/get/upload/delete/embed), signing, tests (`pnpm exec vitest run` in `apps/web`) |
+
+## S0-6 additions (rebuild on publish, D9)
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | Added `plugins: [rebuildOnPublish()]` | Registers the native plugin |
+| `.dev.vars.example` | Added `GITHUB_DISPATCH_TOKEN`, `GITHUB_DISPATCH_REPO`, `GITHUB_API_URL` | Plugin config (secrets via wrangler secret in deployed envs) |
+| `src/plugins/rebuild-on-publish/**` | Added | `content:afterPublish` -> `repository_dispatch` (`event_type: emdash-publish`) |

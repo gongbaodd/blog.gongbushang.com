@@ -8,3 +8,8 @@ EMDASH_ENCRYPTION_KEY=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
+# rebuild-on-publish plugin (D9). Token = fine-grained PAT, Contents: write on the repo. Unset token => plugin no-ops.
+GITHUB_DISPATCH_TOKEN=
+GITHUB_DISPATCH_REPO=gongbaodd/blog.gongbushang.com
+# Optional override (local testing against a fake GitHub); default https://api.github.com
+GITHUB_API_URL=
