@@ -317,7 +317,7 @@ gantt
 
   section Migrator (Haiku 5.5)
   MIG-0 legacy snapshot       :done, mg0, 2026-12-07, 1d
-  MIG-2 image rehost          :mg1, 2026-12-14, 2d
+  MIG-2 image rehost          :active, mg1, 2026-12-14, 2d
   MIG-1 import 994 posts      :crit, mg2, 2026-12-21, 3d
   MIG-3 gallery + podcast     :mg3, after mg2, 2d
   MIG-4 DOM parity diff       :mg4, 2027-01-25, 2d
