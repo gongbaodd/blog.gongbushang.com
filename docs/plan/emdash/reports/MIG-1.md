@@ -233,3 +233,16 @@ node apps/web/scripts/import/mig1/import.mjs --url <testing> --concurrency 2 --r
 pnpm exec emdash content list posts --limit=100 --status=all -u <testing> --json             # counts (read-only)
 node apps/web/scripts/import/mig1/import.mjs --url <testing> --concurrency 2 --rewrite=none   # run 2, 890 failed
 ```
+
+## 11. Testing import — completed via local admin (Lead, 2026-11-25)
+
+Section 10's run through the deployed Worker failed on CPU (1102, Workers Free 10 ms). Lead re-ran the import through `astro dev` on the owner's Mac pointed at the **testing** DB (`CLOUDFLARE_ENV=testing`, testing pooler URL; DB identity probed before writing).
+
+| | |
+|---|---|
+| Command | `node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4340 --concurrency 4 --rewrite=none` |
+| Result | 995/995 processed — created 814, updated 76, unchanged 105, **failed 0** |
+| Time | 9,214 s (~2.6 h; ~9–10 s/post, latency to ap-southeast-1) |
+| verify.mjs | checked 995, body byte-identical 995, featured_image 290, missing 0, not published 0, mismatch 0, duplicate legacy_id 0 |
+| Cleanup | not run — testing had no starter seed (INF-4) and spike posts never existed there; the listing scan was too slow over the pooler and was stopped |
+| Idempotence re-run | not repeated on testing (proved locally twice; verify covers state) |
