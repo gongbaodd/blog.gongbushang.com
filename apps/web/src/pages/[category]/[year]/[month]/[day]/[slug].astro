@@ -1,0 +1,50 @@
+---
+// Post page at the exact legacy URL: /<category>/<YYYY>/<MM>/<DD>/<slug>/ (D8: legacy_id + category term).
+import BlogPost from "../../../../../layouts/BlogPost.astro";
+import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, type BlogPost as Post } from "../../../../../lib/content";
+import { renderMarkdown } from "../../../../../lib/markdown";
+import { prepareBody } from "../../../../../lib/mdx-lite";
+import { getReadingTime } from "../../../../../utils/reading-time";
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+	const posts = await getAllPosts();
+	return posts.map((post) => ({
+		params: post.params,
+		props: { post, series: seriesNav(post, posts, quickTitle) },
+	}));
+}
+
+interface Props {
+	post: Post;
+	series: ReturnType<typeof seriesNav>;
+}
+const { post, series } = Astro.props;
+
+const prepared = prepareBody(post.body);
+if (prepared.warnings.length) console.warn(`[post ${post.id}] ${prepared.warnings.join("; ")}`);
+const { html, headings } = await renderMarkdown(prepared.body);
+
+const title = postTitle(post, headings);
+const description = await postExcerpt(post.body);
+const { minutes } = getReadingTime(post.body);
+---
+
+<BlogPost
+	id={post.id}
+	entryId={post.entryId}
+	title={title}
+	description={description}
+	date={post.date}
+	category={post.data.category}
+	tags={post.data.tag ?? []}
+	links={postLinks(post)}
+	headings={headings}
+	series={series}
+	cover={post.data.cover}
+	readingMinutes={minutes}
+	adsense={post.data.adsense}
+>
+	<Fragment set:html={html} />
+</BlogPost>

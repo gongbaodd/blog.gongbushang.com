@@ -1,51 +1,116 @@
 ---
-// Layout skeleton for a blog post, ported from packages/layouts/BlogPost.astro.
-// PORT-2 wires the post data (EmDash entry, headings, related posts, reading time,
-// post_read tracking) into the slots below. Nothing here reads content.
+// Post layout, ported from packages/layouts/BlogPost.astro. The page (src/pages/[category]/.../[slug].astro)
+// does the data work (EmDash entry -> markdown -> headings) and passes plain props here.
+// KaTeX styles are only needed on post pages (math rendering).
+import "katex/dist/katex.min.css";
 import Global from "./Global.astro";
 import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
 import AdSenseHead from "../ads/AdSenseHead.astro";
 import AdSenseSlot from "../ads/AdSenseSlot.astro";
+import MantineMain from "../components/MantineMain";
+import { GridWithMenu } from "../components/GridWithMenu";
+import BlogContent, { BlogMenu, type IHeading, type ILink, type IMenuSeries } from "../components/BlogContent";
 import { SITE_TITLE } from "../consts";
 
 interface Props {
+	/** Legacy post id `YYYY/MM/DD/slug` (Footer / view count / analytics key). */
+	id: string;
+	entryId: string;
 	title: string;
-	description?: string | null;
-	image?: string | null;
-	canonical?: string | null;
-	content?: { collection: string; id: string; slug?: string | null };
-	/** Slug passed to <Footer> (legacy: post id). */
-	slug?: string;
-	/** TODO(PORT-2/PORT-7): ad slot id when the post opts in. */
-	adsenseSlotId?: string;
+	description: string;
+	/** `YYYY-MM-DD`. */
+	date: string;
+	category: string;
+	tags: string[];
+	links: ILink[];
+	headings: IHeading[];
+	series?: IMenuSeries;
+	cover?: { url: string; alt: string };
+	readingMinutes: number;
+	adsense: boolean;
 }
 
-const { title, description, image, canonical, content, slug = "post", adsenseSlotId } = Astro.props;
+const { id, entryId, title, description, date, category, tags, links, headings, series, cover, readingMinutes, adsense } =
+	Astro.props;
+
+const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
+// Tag on every post (site review needs to see it); ad units only on opted-in posts. PORT-7 owns the real slot.
 const adsenseEnabled = import.meta.env.PUBLIC_ADSENSE_ENABLED === "true";
+const adsenseTest = import.meta.env.DEV || import.meta.env.PUBLIC_ADSENSE_TEST === "true";
+const adsenseSlotId =
+	adsense && adsenseConsentReady
+		? import.meta.env.PUBLIC_ADSENSE_SLOT_ID?.trim()
+		: adsenseTest
+			? "0000000000"
+			: undefined;
 ---
 
 <Global
 	title={`${SITE_TITLE} | ${title}`}
 	description={description}
-	image={image}
-	canonical={canonical}
-	content={content}
+	image={cover?.url}
+	content={{ collection: "posts", id: entryId }}
 >
 	{(adsenseEnabled || adsenseSlotId) && <AdSenseHead slot="head" />}
 	<!-- Post covers & content images are served from Cloudinary. -->
 	<link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
 	<Header />
-	<!-- TODO(PORT-2): <MantineMain client:load> + <GridWithMenu> with BlogMenu / BlogContent / RelatePosts -->
-	<main>
-		<div data-post-read data-slug={slug}>
-			<h1>{title}</h1>
-			<slot />
-		</div>
-		{adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} />}
-		<slot name="sidebar" />
-	</main>
-	<Footer slug={slug} />
+	<MantineMain client:load>
+		<GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }} client:load>
+			<BlogMenu
+				post={{ title, date, cover }}
+				links={links}
+				headings={headings}
+				series={series}
+				client:load
+				slot="menuNode"
+			/>
+			<section slot="gridContent">
+				<div
+					data-post-read
+					data-slug={id}
+					data-category={category}
+					data-year={id.split("/")[0]}
+					data-reading-time-min={readingMinutes}
+					data-tags={JSON.stringify(tags)}
+				>
+					<BlogContent title={title} links={links} date={date} time={readingMinutes + "min"} client:load>
+						<slot />
+					</BlogContent>
+				</div>
+				{adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} test={adsenseTest} />}
+			</section>
+			<aside slot="sidebarNode" class="relates-sidebar">
+				<!-- TODO(PORT-6): the related-posts island mounts here (legacy: <RelatePosts id={post.id} client:idle />). -->
+				<div id="related-posts" data-post-id={id}></div>
+			</aside>
+		</GridWithMenu>
+		<Footer slug={id} />
+	</MantineMain>
 </Global>
 
-<!-- TODO(PORT-2/PORT-7): port the post_read scroll-depth <script> from the legacy BlogPost.astro. -->
+<!-- TODO(PORT-7): port the post_read scroll-depth <script> (needs track() from the analytics port). -->
+
+<style is:global>
+	.description-image {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1rem;
+		align-items: start;
+	}
+	@media (min-width: 48em) {
+		.description-image {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+</style>
+
+<style>
+	@media (min-width: 75em) {
+		.relates-sidebar {
+			position: sticky;
+			top: 90px;
+		}
+	}
+</style>

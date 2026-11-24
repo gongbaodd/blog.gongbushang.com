@@ -307,7 +307,7 @@ gantt
   CMS-4 types + helpers       :bc6, after bc5, 1d
   CMS-2 cloudinary media      :bc7, 2026-12-14, 3d
   PORT-1 shell                :done, bc8, 2026-12-21, 3d
-  PORT-2 post page            :bc9, after bc8, 3d
+  PORT-2 post page            :active, bc9, after bc8, 3d
   PORT-3 listings + APIs      :bc10, 2027-01-04, 5d
   PORT-4 home + webgl         :bc11, after bc10, 2d
   DATA-1 relocate generated   :bc12, after bc11, 1d

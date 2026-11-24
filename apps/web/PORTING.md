@@ -29,3 +29,16 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `postcss.config.mjs` | root `postcss.config.mjs` | Tailwind v3 + autoprefixer, skipped for `node_modules` CSS (EmDash admin is Tailwind v4) |
 | `public/{favicon.ico,favicon-16x16.png,favicon-32x32.png,apple-touch-icon.png,site.webmanifest,safari-pinned-tab.svg}` | `public/` (same names) | `favicon.svg` and `blog-placeholder-1.jpg` do not exist in legacy `public/` either |
 | `src/analytics/{MixpanelHead,ConsentBanner}.astro`, `src/ads/{AdSenseHead,AdSenseSlot}.astro` | `packages/analytics/*`, `packages/ads/*` | **stubs** (render nothing); PORT-7 replaces them |
+
+## PORT-2 (post page) - copied, originals stay until CUT-2
+
+| New (`apps/web/`) | Legacy original | Notes |
+|---|---|---|
+| `src/pages/[category]/[year]/[month]/[day]/[slug].astro` | `src/pages/[category]/[year]/[month]/[day]/[slug].astro` | `getStaticPaths` from EmDash (`legacy_id` + category term); body rendered with `src/lib/markdown.ts` |
+| `src/layouts/BlogPost.astro` | `packages/layouts/BlogPost.astro` | takes plain props (page does the data work); `post_read` script and related-posts island are TODO (PORT-7 / PORT-6) |
+| `src/components/BlogContent.tsx` (+ `.module.css`) | `packages/content/BlogContent.tsx` | Tabler icons -> lucide; dayjs date -> `legacy_date` string; `BlogMenu` uses a simplified cover card (no `PostCard`, PORT-3) and adds series prev/next; `RelatePosts` not ported (PORT-6) |
+| `src/components/MantineMain.tsx`, `GridWithMenu.tsx` (+ css) | `packages/scaffold/*` | unchanged |
+| `src/utils/reading-time.ts` | `packages/utils/readingTime.ts` | unchanged |
+| `src/lib/content.ts` | `packages/utils/{extract,post}.ts` (title, excerpt, links) | EmDash entry mapping; title = first heading (legacy rule), excerpt via remark + strip-markdown |
+| `src/lib/mdx-lite.ts` | `packages/image/DescriptionImage.tsx` | the 3 `.mdx` posts: `<DescriptionImage>` rewritten to plain HTML at render time |
+| `public/profile.jpg` | `public/profile.jpg` | author avatar |

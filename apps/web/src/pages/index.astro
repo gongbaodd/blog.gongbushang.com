@@ -5,6 +5,7 @@ import Global from "../layouts/Global.astro";
 import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { mapPost } from "../lib/content";
 
 export const prerender = true;
 
@@ -27,7 +28,7 @@ const { entries: posts } = await getEmDashCollection("posts", {
 				<ul>
 					{posts.map((post) => (
 						<li>
-							<a href={`/posts/${post.id}`}>
+							<a href={mapPost(post)?.href ?? "/"}>
 								{post.data.featured_image && (
 									<div>
 										<Image image={post.data.featured_image} />
