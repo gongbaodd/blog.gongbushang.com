@@ -70,3 +70,7 @@ Maintained by **Archivist**. Facts observed during the migration only, each date
 - Gotcha: the repo-root `tsconfig.json` must exclude `apps` and `.claude`, or legacy `astro check` fails with 15 errors and breaks Vercel builds. (FIX-1)
 - Gotcha: EmDash CLI `login` uses OAuth discovery under `/.well-known/*`, which must be in `run_worker_first`. (FIX-1 follow-up)
 - Process: a subagent's Cloudinary upload (`upload.mjs --execute`) was denied by the auto-mode classifier even though the owner approved; Lead doesn't re-run denied actions, so the owner decides. (MIG-2)
+- Verified: `apply.mjs` on testing via the stored `emdash login` token (`emdash whoami` refreshes it): 28 changes, then 0 on re-run. Testing had no starter seed content. (INF-4)
+- Gotcha: `wrangler secret …` inside apps/web needs `-c wrangler.jsonc --env testing`; without `-c` it picks the legacy root `wrangler.json`. (INF-4)
+- Gotcha: `repository_dispatch` only triggers workflows on the **default branch**, so `web-deploy.yml` reacts to EmDash publishes only after it reaches `master`. (INF-4)
+- Gotcha: Cloudinary provider on testing → 401, caused by a wrong `CLOUDINARY_CLOUD_NAME` in `.dev.vars` (not `dmq8ipket`). Waiting on the owner. (INF-4)

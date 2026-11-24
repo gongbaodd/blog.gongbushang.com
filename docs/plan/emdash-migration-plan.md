@@ -198,7 +198,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 ### EPIC E2: CMS model and media
 | ID | Story | Agent | Pts |
 |---|---|---|---|
-| CMS-1 ✅ (local; applied to testing once the admin is claimed) | Model via the remote `emdash schema` CLI, kept as a reproducible script: `posts` (title, legacy_id, legacy_date, status, category, adsense, cover, body `text`, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies with exact slugs (D7) | Builder-Core | 5 |
+| CMS-1 ✅ (local + testing) | Model via the remote `emdash schema` CLI, kept as a reproducible script: `posts` (title, legacy_id, legacy_date, status, category, adsense, cover, body `text`, series + number, city), `podcasts`, `gallery`, `pages`, and taxonomies with exact slugs (D7) | Builder-Core | 5 |
 | CMS-2 | Cloudinary media wired in, per the S0-5 outcome | Builder-Core | 5 |
 | CMS-3 | Passkey admin on testing and production (after INF-3); author role | Builder-Infra | 2 |
 | CMS-4 | `npx emdash types` in the build; typed helpers in `apps/web/src/lib/content.ts` with the same signatures as legacy `packages/utils` | Builder-Core | 2 |
@@ -291,7 +291,7 @@ gantt
   INF-2 supabase projects     :done, bi2, 2026-12-07, 1d
   INF-3 hyperdrive+envs+claim :active, crit, bi3, after bi2, 3d
   CMS-3 passkeys + roles      :bi4, 2026-12-14, 1d
-  INF-4 CI pipeline           :bi5, after bi4, 3d
+  INF-4 CI pipeline           :active, bi5, after bi4, 3d
   INF-6 guards + backups      :bi6, after bi5, 1d
   INF-5 env content sync      :bi7, 2026-12-21, 1d
   CUT-1 cutover               :crit, bi8, 2027-02-15, 2d
