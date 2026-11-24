@@ -42,7 +42,7 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 |---|---|---|
 | `astro.config.mjs` | Added `astro-mermaid` integration | Reuses its client script (loads `mermaid` only when a `pre.mermaid` exists). Its remark plugin is not exported, so `src/lib/markdown.ts` carries a ~10-line copy |
 | `package.json` | Added `@astrojs/markdown-remark`, `remark-attributes`, `remark-math`, `rehype-katex`, `rehype-external-links`, `shiki`, `shiki-plantuml` (`file:../../packages/shiki-plantuml`), `astro-mermaid`, `mermaid`, `katex`, `unist-util-visit` | Markdown pipeline (D5) |
-| `src/pages/spike/**`, `src/lib/{markdown,cloudinary}.ts`, `scripts/schema/add-body-md.sh`, `PORTING.md` | Added | Spikes; `cloudinary.ts` is a copy of `packages/utils/cloudinary.ts` |
+| `src/pages/spike/**`, `src/lib/{markdown,cloudinary}.ts`, `scripts/schema/apply.sh` (was add-body-md.sh), `PORTING.md` | Added | Spikes; `cloudinary.ts` is a copy of `packages/utils/cloudinary.ts` |
 
 ## S0-5 additions (Cloudinary media, D6)
 
