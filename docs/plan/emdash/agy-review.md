@@ -4,7 +4,7 @@ Lead runs these reviews through the `cc-suite:agy` skill (`/cc-suite:agy --model
 
 ```bash
 node ~/.claude/plugins/cache/xiaolai/cc-suite/2.5.0/scripts/agy-runner.mjs \
-  --kind agy --model gemini-4-neon-high --sandbox read-only \
+  --kind agy --model gemini-4-hydrogen-high --sandbox read-only \
   --timeout-ms 600000 --summary "review <story-id>" -- "<prompt below>"
 ```
 
@@ -12,7 +12,7 @@ Which model to use (plan §3.2; S0-7 may change it):
 
 | Job | Model |
 |---|---|
-| PR / story review | `gemini-4-neon-high` |
+| PR / story review | `gemini-4-hydrogen-high` |
 | Plan, security, cutover review | `gemini-4-neon-xhigh` |
 | Bulk sweeps (HTML diffs, URL lists) | `gemini-3.8-flash-medium` |
 | Tie-break against Claude | `gpt-oss-120b-medium` |

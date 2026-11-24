@@ -148,14 +148,16 @@ Agent definitions are created in S0-1 as `.claude/agents/*.md`. Gemini runs thro
 
 Available Gemini models: Gemini 4 **Neon / Carbon / Argon / Hydrogen** (Low–High, Neon and Hydrogen also XHigh), three Orchestrator variants, and Gemini 3.8 Flash (Low/Medium/High). agy also exposes Claude Opus/Sonnet 5.5 and GPT-OSS 120B. We don't use agy's Claude models: the point of this agent is a non-Claude second opinion.
 
-| Job | Model (initial) | Why |
+| Job | Model | Why (S0-7 calibration, 2026-11-24) |
 |---|---|---|
-| Routine PR reviews | `gemini-4-neon-high` (agy default) | Default, high effort |
-| Plan review, security review (QA-4), cutover go/no-go | `gemini-4-neon-xhigh` | Most effort, for the riskiest calls |
-| Long-context sweeps over large text (994-post HTML diffs, URL lists) | `gemini-3.8-flash-medium` | Cheap and fast for bulk reading |
+| Routine PR / story reviews | **`gemini-4-hydrogen-high`** | Fastest (171 s) and caught the static-routing blocker and production config gaps |
+| Plan, security (QA-4), cutover go/no-go | `gemini-4-neon-xhigh` | Did the S0-8 plan review (15 findings). Neon-high alone also caught the legacy-tsconfig blocker |
+| Second opinion on risky stories | `gemini-4-argon-high` | 587 s; unique catch: EmDash's local media tab writes to the Worker filesystem |
+| Long-context sweeps (MIG-4 triage) | `gemini-3.8-flash-medium` | Cheap bulk reading (not calibrated) |
 | Tie-breaker when Claude and Gemini disagree | `gpt-oss-120b-medium` | A third model family |
+| ~~Carbon~~ | `gemini-4-carbon-high` | **Dropped**: timed out at 900 s (its partial output was still correct) |
 
-The agy listing doesn't say how the Neon, Carbon, Argon and Hydrogen families differ. **Story S0-7** runs the same review prompt (a seeded-bug diff from S0-2) through `neon-high`, `carbon-high`, `argon-high` and `hydrogen-high`, compares findings, cost and latency, and updates this table. The Archivist records the result.
+S0-7 method: the same read-only review prompt was run on commit 8a94415 in the live working tree, so models also saw later changes. Raw outputs are in `docs/plan/emdash/reports/S0-7/`. Their findings became story **FIX-1**.
 
 ---
 
@@ -179,7 +181,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | S0-4 ✅ | **Spike:** a `text` body rendered by `createMarkdownProcessor()` with KaTeX, Shiki + PlantUML, Mermaid and attributes; headings returned (D5) | Builder-Core | 3 |
 | S0-5 ✅ | **Spike:** Cloudinary through a media provider or Storage adapter (D6); remove the `MEDIA` and `IMAGES` bindings | Builder-Core | 5 |
 | S0-6 ✅ | **Spike:** an `afterPublish` plugin that sends `repository_dispatch` (D9), tested locally against a dummy endpoint | Builder-Core | 2 |
-| S0-7 | agy model calibration (§3.2) | Reviewer-Gemini, Lead | 1 |
+| S0-7 ✅ | agy model calibration (§3.2) | Reviewer-Gemini, Lead | 1 |
 | S0-8 ✅ | Gemini plan review (`neon-xhigh`); 15 findings, dispositions in §11 | Reviewer-Gemini, Lead | 1 |
 
 ### EPIC E1: Environments and infrastructure
@@ -333,7 +335,7 @@ gantt
 
   section Reviewer-Gemini (agy)
   S0-8 plan review            :done, agy1, 2026-11-24, 1d
-  S0-7 model calibration      :agy2, 2026-12-01, 1d
+  S0-7 model calibration      :done, agy2, 2026-12-01, 1d
   PR reviews S1-S5            :agy3, 2026-12-08, 34d
   QA-4 security (neon-xhigh)  :agy4, 2027-01-27, 1d
   MIG-4 triage (flash)        :agy5, 2027-01-27, 1d
