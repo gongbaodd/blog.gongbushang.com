@@ -183,3 +183,53 @@ node apps/web/scripts/import/mig1/verify.mjs --url http://localhost:4332 --manif
 Testing command (not run): `EMDASH_TOKEN=<token> node apps/web/scripts/import/mig1/import.mjs --url https://<site-url>`. It needs the `--dry-run` check first, and the skip count must be reviewed before any `--force`.
 
 The `_rev` note above is superseded for the importer: it now checks the stamp instead of overwriting blindly.
+
+## 10. Testing import (https://growgen-web-testing.solitary-forest-8d89.workers.dev)
+
+**Status: STOPPED at step 3. Error rate 89% (above the 2% stop threshold).** No re-run, verify or cleanup was done against testing.
+
+Scope as approved by Lead: testing only, no production, no Cloudinary uploads, `--concurrency 2`, `--rewrite=none`. Token passed via `EMDASH_TOKEN` from the CLI store (not printed or written to files).
+
+### 10.1 Steps and results
+
+| Step | Command (flags) | Result | Time (UTC) |
+|---|---|---|---|
+| 1 dry-run | `import.mjs --url <testing> --dry-run` | 995 posts, 622 distinct terms (category 9, city 155, tag 432, series 26). Anomalies match section 6. | <1 s |
+| 2 limit 5 | `--limit 5 --concurrency 2` | created 5, updated 0, unchanged 0, failed 0. Spot check `2015/02/08/haha`: legacy_id and legacy_date correct, body sha256 `eb2529cb…` matches manifest. | 73 s |
+| 3 full run 1 | `--concurrency 2 --rewrite=none` | **Aborted** in the term phase: `POST /taxonomies/tag/terms -> 503`. Terms are created before posts, so no posts were written. | 16:43:51 to 16:58:33 (about 15 min) |
+| 3 full run 2 (after Lead's go-ahead to continue) | `--concurrency 2 --rewrite=none` | Completed the loop, but **890 of 995 failed**. Created 100, unchanged 5, updated 0, skipped-edited 0, failed 890. Terms created: tag 170, series 26. | 18:52:26 to 19:34:32 (2526 s, about 42 min) |
+
+Re-run (step 4), `verify.mjs` (step 4) and `cleanup-leftovers.mjs` (step 5) were **not run**, because the error rate limit was exceeded.
+
+### 10.2 Error rate and error types
+
+- Failure rate: 890 / 995 = **89.4%** (run 2). Run 1 failed at 1 request in the term phase, which aborted the whole run.
+- Every error seen was **HTTP 503**. The log has 883 lines with `503`. No `1102` (Workers CPU or resource limit) and no CPU-exceeded messages appeared in the importer output.
+- Failure shape: `POST /content/posts -> 503` (create refused, nothing written) and `POST /content/posts/<id>/publish -> 503` (created as a draft, not published).
+- The importer does not retry on 503. It logs the failure and carries on, so the run finished with exit 1 and did not stop by itself.
+
+### 10.3 State of testing after run 2 (read-only check)
+
+- Distinct post ids listed: 181. Published: 105 (= 5 from step 2 plus 100 created). Drafts: 76 (create succeeded, publish returned 503).
+- No duplicate post ids. The `legacy_id` check did not return values from the list output, so duplicates by `legacy_id` are **not yet verified**. An earlier, paginated count gave 381, which I could not reconcile, so treat 181 as the best current figure and recheck it.
+- Post-level term counts were not checked.
+
+### 10.4 Next steps (need Lead's decision)
+
+1. The 503s look like Worker or Hyperdrive back-pressure at concurrency 2, not a data problem. Before another run: check testing's Worker logs for the 503 cause (CPU or subrequest limits, Hyperdrive pool) and decide whether to retry 503s with backoff in the importer. This is a change to my script, so I have not made it.
+2. The 76 draft posts need a publish retry. The importer's idempotent re-run should publish them, but it also needs the 503 fix.
+3. Once the error rate is under 2% on a full run, do the re-run (expect 0 changes), `verify.mjs` (expect 995 byte-identical, 290 covers) and cleanup (list first).
+
+Logs: `$TMPDIR/mig1/growgen-web-testing-solitary-forest-8d89-workers-dev-none.log` and the manifest of the same name. Run output: `/private/tmp/claude-501/-Volumes-MacData-github-blog-gongbushang-com/0ef04fa9-7cf7-45ae-8781-f6ec3d2d561b/scratchpad/full-run-2.out`.
+
+Commands run (token from the CLI store via `EMDASH_TOKEN`, not printed):
+
+```bash
+cd apps/web && pnpm exec emdash whoami --url <testing>
+node apps/web/scripts/import/mig1/import.mjs --url <testing> --dry-run
+node apps/web/scripts/import/mig1/import.mjs --url <testing> --limit 5 --concurrency 2
+pnpm exec emdash content get posts 01M876ZXF2M12GZ9QB4W03B46B -u <testing> --json   # spot check
+node apps/web/scripts/import/mig1/import.mjs --url <testing> --concurrency 2 --rewrite=none   # run 1, aborted at term 503
+pnpm exec emdash content list posts --limit=100 --status=all -u <testing> --json             # counts (read-only)
+node apps/web/scripts/import/mig1/import.mjs --url <testing> --concurrency 2 --rewrite=none   # run 2, 890 failed
+```
