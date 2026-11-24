@@ -78,7 +78,7 @@ EMDASH_TOKEN=<token> node apps/web/scripts/import/mig1/verify.mjs --url https://
 ## 5. Decisions taken (for Lead to confirm)
 
 1. **featured_image is gated like the body.** It is set only when the cover's rewrite-map entry is applied (upload succeeded). Under `none` it stays null, and the 78 covers with a map entry are recorded as "map-entry-not-applied".
-2. **Cloudinary-hosted covers are left unset.** The brief says "when the cover has a rewrite-map entry, else unset". The 290 covers already on `res.cloudinary.com/dmq8ipket` have no map entry (the map excludes Cloudinary URLs), so they are unset. See escalation A.
+2. ~~**Cloudinary-hosted covers are left unset.**~~ Superseded by MIG-1b (section 9): the 290 covers already on `dmq8ipket` are set directly.
 3. **Tag labels are lowercase** (what legacy displays via `tags()`). CMS-1 wrote "original case"; this differs, so confirm.
 4. **Body keeps the leading newline** after the closing fence, as Astro's `body` does.
 5. **Publishing**: all 995 are published, including the 4 legacy drafts (MIG-0 decision).
@@ -95,12 +95,12 @@ Counts across all 995 posts (`anomalies (all posts)` in the log).
 6. **Pre-existing rows overwritten (shared local DB).** Six rows already in the local DB had the same `legacy_id` (from earlier test imports, not this run): `2015/03/28/bohai-rim`, `2017/12/20/plantuml`, `2021/02/10/matrix`, `2025/02/21/puzzle-game`, `2025/08/18/blog-cards`, `2025/09/08/mermaid`. Their `body_md` and `legacy_frontmatter_extra` were replaced; `featured_image` was cleared on `bohai-rim` and `puzzle-game`. Local only, but Lead should know these were overwritten.
 7. **.mdx posts: 3.** Imported as-is into `body_md`, PORT-2 decides rendering: `2025/02/21/puzzle-game`, `2025/08/18/blog-cards`, `2025/09/09/tetris-ai`.
 8. **Legacy drafts published: 4.** `2019/02/24/grass-list` (CRLF body preserved), `2026/02/12/munchen`, `2026/02/14/prague`, `2026/02/16/krakow`. Note: legacy shows them publicly today (MIG-0 section 3).
-9. **Starter and spike leftovers in the local DB (not removed).** Category `general`, `updates`; tags `starter`, `example`, `diagram`, `uml`, `math`; and the spike posts `md-spike` and `spike-draft` (no `legacy_id`, so not touched). CMS-1 asked MIG-1 to replace the starter terms; this needs a delete, which is Lead's call.
+9. **Starter and spike leftovers in the local DB (resolved in MIG-1b, section 9).** Category `general`, `updates`; tags `starter`, `example`, `diagram`, `uml`, `math`; and the spike posts `md-spike` and `spike-draft` (no `legacy_id`, so not touched). CMS-1 asked MIG-1 to replace the starter terms; this needs a delete, which is Lead's call.
 10. **Shared-DB term labels.** Terms that already existed (for example `fe`, `life`, `city` rows) are reused with their current labels; the importer does not relabel them.
 
 ## 7. Escalations for Lead (no fix applied)
 
-- **A. Cloudinary covers (290):** unset under the literal rule. Option: set `featured_image` for covers whose URL is already on `dmq8ipket` (no upload needed). Needs a decision.
+- **A. Cloudinary covers (290):** resolved in MIG-1b (set directly, section 9).
 - **B. Map-entry covers (78) and bodies:** need the owner's upload go-ahead. Then run `--rewrite=map` against an `upload-result.json` made from the upload index.
 - **C. Titles from the first heading:** 18 posts show the slug as the title (item 1).
 - **D. Starter/spike leftovers:** delete the starter terms and spike rows locally? (item 9)
@@ -113,3 +113,73 @@ Counts across all 995 posts (`anomalies (all posts)` in the log).
 - Updates to a live entry create a draft revision until published, so every update is followed by a publish.
 - `_rev` is not sent on PUT, so a concurrent edit in the admin would be overwritten by the next run. Fine for a migration; flagged for the later sync design.
 - The dev server was stopped after verification.
+
+## 9. MIG-1b follow-up (branch `emdash/MIG-1b`, local only)
+
+Lead decisions applied: (1) Cloudinary covers set directly, (2) lowercase tag labels kept, (3) overwrite guard, (4) starter and spike cleanup, (5) idempotence, verification and this report.
+
+### 9.1 Cloudinary covers (decision 1)
+
+- Covers already on `res.cloudinary.com/dmq8ipket` are set as `featured_image = {provider:"cloudinary", id:<public_id>, src:<original URL>, alt}`. Local and external covers stay gated behind `--rewrite=map` (unchanged).
+- `public_id` comes from `apps/web/scripts/import/mig1/cloudinary-id.mjs`: drops the host, cloud, `/image/upload/`, transformation segments, the `vNNN` version, the extension and the query. Example: `.../image/upload/v1774700949/P50330-090259_gmzfch.jpg` gives `P50330-090259_gmzfch`.
+- 290 posts set. One cover had a transform (`a_-360/`, post `2024/09/21/week-38-european-parliament-role-play-game`); it is stripped from the id and logged as `cloudinary-cover-transform-stripped`. `src` keeps the full URL.
+
+### 9.2 Tag labels (decision 2)
+
+Lowercase labels kept (legacy display). No change made.
+
+### 9.3 Overwrite guard (decision 3)
+
+- Every write stores `legacy_frontmatter_extra._import.hash`: sha256 over the owned fields (`title`, `legacy_id`, `legacy_date`, `body_md`, `adsense`, `series_number`, `legacy_frontmatter_extra` without `_import`, `featured_image`) and the four taxonomy slug sets. No timestamp, so re-runs give the same stamp.
+- Before a PUT, the importer hashes the stored content the same way. Hash equals stamp → free to update. Hash differs → skipped as `skipped-edited` and reported, unless `--force`.
+- Rows with no stamp (written by the MIG-1 run) are adopted: updated once and stamped (`adopted` count). The guard is only meaningful from this stamp onward; an admin edit made before adoption cannot be detected.
+- Test on local: an admin edit (title changed and published) on `2015/02/08/haha`. Import → `skipped-edited: 1`, title left as edited. `--force` → `forced: 1`, legacy title restored. Next run → `unchanged: 1`.
+- `--force` is not a default; it must be passed explicitly.
+
+### 9.4 Starter and spike cleanup (decision 4)
+
+Script: `apps/web/scripts/import/mig1/cleanup-leftovers.mjs` (lists first; `--execute` deletes). Check: legacy source frontmatter and live term assignments for legacy posts.
+
+| Item | Legacy use | Action |
+|---|---|---|
+| category `general` | 0 posts | deleted (was on `welcome` only) |
+| category `updates` | 0 | deleted |
+| tag `starter` | 0 | deleted (was on `welcome` only) |
+| tag `example` | 0 | deleted (was on `welcome` only) |
+| tag `diagram` | 1 (`2025/09/08/mermaid`) | kept (real legacy tag) |
+| tag `uml` | 1 (`2025/09/08/mermaid`) | kept |
+| tag `math` | 46 posts | kept |
+| post `md-spike` | no legacy_id | deleted (soft, then permanent) |
+| post `spike-draft` | no legacy_id | deleted (soft, then permanent) |
+
+Not deleted (not named by Lead; Lead to decide): `hello`, `welcome` (starter posts; `welcome` lost its `general`, `starter` and `example` assignments), `spike-three` (spike). After cleanup: 998 posts in EmDash = 995 legacy + those 3.
+
+### 9.5 Idempotence and verification (decision 5)
+
+| Run | Mode | Processed | Created | Updated | Unchanged | Skipped-edited | Failed | Time |
+|---|---|---|---|---|---|---|---|---|
+| Adoption run (stamps, 290 covers) | `none` | 995 | 0 | 995 (adopted 995; 290 set `featured_image`) | 0 | 0 | 0 | ~2 min |
+| Re-run 1 | `none` | 995 | 0 | **0** | **995** | 0 | 0 | 34 s |
+| Re-run 2 | `none` | 995 | 0 | **0** | **995** | 0 | 0 | 25 s |
+
+`verify.mjs --manifest <real-run manifest>`: checked 995, body byte-identical 995, featured_image set 290, skipped-edited 0, missing 0, not published 0, body mismatch 0, duplicate legacy_id 0.
+
+Commands run for MIG-1b:
+
+```bash
+git checkout -b emdash/MIG-1b feat/emdash
+pnpm --filter web exec astro dev --port 4332            # local
+node apps/web/scripts/import/mig1/import.mjs --dry-run
+node apps/web/scripts/import/mig1/cleanup-leftovers.mjs --url http://localhost:4332            # list
+node apps/web/scripts/import/mig1/cleanup-leftovers.mjs --url http://localhost:4332 --execute
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4332                       # adoption run
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4332 --match 2015/02/08/haha   # after admin edit: skipped-edited
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4332 --match 2015/02/08/haha --force
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4332                       # re-run 1: 0 changes
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4332                       # re-run 2: 0 changes
+node apps/web/scripts/import/mig1/verify.mjs --url http://localhost:4332 --manifest <manifest>
+```
+
+Testing command (not run): `EMDASH_TOKEN=<token> node apps/web/scripts/import/mig1/import.mjs --url https://<site-url>`. It needs the `--dry-run` check first, and the skip count must be reviewed before any `--force`.
+
+The `_rev` note above is superseded for the importer: it now checks the stamp instead of overwriting blindly.

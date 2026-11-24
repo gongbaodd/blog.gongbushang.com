@@ -30,6 +30,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DOCS, globId, loadSlugger, loadYaml, walk } from "../mig0/lib.mjs";
 import { DELIVERY_BASE } from "../mig2/lib.mjs";
+import { cloudinaryPublicId } from "./cloudinary-id.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const MIG2 = join(HERE, "..", "mig2");
@@ -51,6 +52,7 @@ const URL_BASE = (opt("--url", process.env.EMDASH_URL ?? "http://localhost:4332"
 const LIMIT = opt("--limit") ? Number(opt("--limit")) : Infinity;
 const DRY = flag("--dry-run");
 const MATCH = opt("--match", ""); // substring of legacy_id, for targeted tests
+const FORCE = flag("--force"); // overwrite entries edited in the admin since our last import
 const REWRITE = opt("--rewrite", "none");
 const CONCURRENCY = Math.max(1, Math.min(4, Number(opt("--concurrency", "4"))));
 const SOURCE = opt("--source", DOCS);
@@ -168,6 +170,7 @@ function rewritePairsFor(rel) {
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+
 function rewriteBody(body, pairs) {
   let out = body;
   let count = 0;
@@ -234,7 +237,14 @@ async function loadPosts() {
         coverState = "rewritten";
         featured = { provider: "cloudinary", id: hit.publicId, src: hit.url, alt: data.cover.alt ?? "" };
       } else if (raw.startsWith(DELIVERY_BASE)) {
-        coverState = "cloudinary-no-map-entry";
+        // Already on our Cloudinary cloud: no upload needed, so it is set directly (MIG-1b decision).
+        const publicId = cloudinaryPublicId(raw);
+        if (!publicId) anomalies.push("cloudinary-cover-id-empty");
+        if (/\/[A-Za-z]{1,3}_[^/]*\//.test(new URL(raw).pathname.replace(/^\/[^/]+\/image\/upload\//, "/"))) {
+          anomalies.push("cloudinary-cover-transform-stripped");
+        }
+        coverState = "cloudinary-direct";
+        featured = { provider: "cloudinary", id: publicId, src: raw, alt: data.cover.alt ?? "" };
       } else if (mapped) {
         coverState = "map-entry-not-applied";
       } else {
@@ -394,6 +404,44 @@ function dataDiff(existing, desired) {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Import stamp and overwrite guard (MIG-1b)
+//
+// Every write stores legacy_frontmatter_extra._import.hash = sha256 of the owned fields and the
+// taxonomy sets we wrote. On the next run the stored content is hashed the same way: if it still
+// matches the stamp, nobody edited it since our write and we may update it; if it differs, someone
+// edited it in the admin, so we skip it unless --force is given.
+// ---------------------------------------------------------------------------------------------
+const TAX_NAMES = ["category", "tag", "series", "city"];
+
+function normOwned(d) {
+  const extra = { ...(d.legacy_frontmatter_extra ?? {}) };
+  delete extra._import;
+  const fi = d.featured_image;
+  return {
+    title: d.title ?? null,
+    legacy_id: d.legacy_id ?? null,
+    legacy_date: d.legacy_date ?? null,
+    body_md: d.body_md ?? null,
+    adsense: Boolean(d.adsense),
+    series_number: d.series_number ?? null,
+    legacy_frontmatter_extra: extra,
+    featured_image: fi ? { provider: fi.provider ?? null, id: fi.id ?? null, src: fi.src ?? null, alt: fi.alt ?? "" } : null,
+  };
+}
+
+/** Hash over owned fields + taxonomy slugs, the same way for what we wrote and what is stored. */
+function ownedHash(d, terms) {
+  const tax = Object.fromEntries(TAX_NAMES.map((n) => [n, [...(terms[n] ?? [])].sort()]));
+  return sha256(JSON.stringify(sortKeys({ data: normOwned(d), terms: tax })));
+}
+
+/** The data we write: owned fields plus the stamp (no timestamp, so re-runs produce the same value). */
+function withStamp(data, taxonomies) {
+  const h = ownedHash(data, taxonomies);
+  return { ...data, legacy_frontmatter_extra: { ...data.legacy_frontmatter_extra, _import: { hash: h } } };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------------------------
 async function main() {
@@ -462,7 +510,7 @@ async function main() {
   if (dupes.length) say(`WARN duplicate legacy_id rows in EmDash: ${dupes.length} (first: ${JSON.stringify(dupes[0])})`);
   say(`existing posts in EmDash: ${byLegacy.size}`);
 
-  const stats = { created: 0, updated: 0, unchanged: 0, failed: 0 };
+  const stats = { created: 0, updated: 0, unchanged: 0, failed: 0, skippedEdited: 0, adopted: 0, forced: 0 };
   const manifest = [];
   const failures = [];
   let done = 0;
@@ -471,10 +519,11 @@ async function main() {
     try {
       const existing = byLegacy.get(p.legacyId);
       const taxonomies = p.taxonomies;
+      const writeData = withStamp(p.data, taxonomies);
       if (!existing) {
         const created = await api("POST", "/content/posts", {
           slug: p.contentSlug,
-          data: p.data,
+          data: writeData,
           taxonomies,
         });
         const id = created?.item?.id ?? created?.id;
@@ -486,27 +535,44 @@ async function main() {
         return;
       }
       const id = existing.id;
-      const changed = dataDiff(existing.data ?? {}, p.data);
+      const now = {};
+      for (const name of TAX_NAMES) now[name] = await currentTerms(id, name);
+
+      // Overwrite guard: stored content must still hash to our stamp, else it was edited in the admin.
+      const stamp = existing.data?.legacy_frontmatter_extra?._import?.hash;
+      const storedHash = ownedHash(existing.data ?? {}, now);
+      let forced = false;
+      if (stamp !== undefined && storedHash !== stamp) {
+        if (!FORCE) {
+          stats.skippedEdited++;
+          logLine(`skipped-edited ${p.legacyId} id=${id} (stored content differs from import stamp)`);
+          manifest.push(row(p, "skipped-edited", id, [], "edited in admin since last import"));
+          return;
+        }
+        forced = true;
+        stats.forced++;
+      }
+      const adopted = stamp === undefined;
+
+      const changed = dataDiff(existing.data ?? {}, writeData);
       const slugChanged = existing.slug !== p.contentSlug;
       const notPublished = existing.status !== "published";
-      const termChanges = [];
-      for (const name of ["category", "tag", "series", "city"]) {
-        const now = await currentTerms(id, name);
-        if (!same(now, [...p.taxonomies[name]].sort())) termChanges.push(name);
-      }
+      const termChanges = TAX_NAMES.filter((name) => !same(now[name], [...p.taxonomies[name]].sort()));
       if (!changed.length && !termChanges.length && !slugChanged && !notPublished) {
         stats.unchanged++;
         manifest.push(row(p, "unchanged", id));
         return;
       }
-      const body = { data: p.data, taxonomies };
+      const body = { data: writeData, taxonomies };
       if (slugChanged) body.slug = p.contentSlug;
       await api("PUT", `/content/posts/${id}`, body);
       // An edit to a live entry is a draft revision until published; publish so the live row matches.
       await api("POST", `/content/posts/${id}/publish`, {});
+      if (adopted) stats.adopted++;
       stats.updated++;
-      logLine(`updated ${p.legacyId} id=${id} fields=${changed.join(",") || "-"} terms=${termChanges.join(",") || "-"} slug=${slugChanged} status=${existing.status}`);
-      manifest.push(row(p, "updated", id, changed.concat(termChanges.map((t) => `terms:${t}`))));
+      const why = [adopted ? "adopt-stamp" : "", forced ? "forced" : ""].filter(Boolean).join(",");
+      logLine(`updated ${p.legacyId} id=${id} fields=${changed.join(",") || "-"} terms=${termChanges.join(",") || "-"} slug=${slugChanged} status=${existing.status} ${why}`);
+      manifest.push(row(p, "updated", id, changed.concat(termChanges.map((t) => `terms:${t}`)), why || undefined));
     } catch (e) {
       stats.failed++;
       failures.push({ legacy_id: p.legacyId, error: String(e.message ?? e).slice(0, 300) });

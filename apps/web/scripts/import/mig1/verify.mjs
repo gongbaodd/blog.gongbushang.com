@@ -61,13 +61,17 @@ do {
 
 const problems = { missing: [], notPublished: [], bodyMismatch: [], duplicate: dupes };
 let ok = 0;
+let withFeatured = 0;
+let skippedEdited = 0;
 for (const r of rows) {
   const item = byLegacy.get(r.legacy_id);
   if (!item) {
     problems.missing.push(r.legacy_id);
     continue;
   }
+  if (r.action === "skipped-edited") skippedEdited++;
   if (item.status !== "published") problems.notPublished.push(r.legacy_id);
+  if (item.data?.featured_image) withFeatured++;
   const got = sha(item.data?.body_md ?? "");
   if (got !== r[expectField]) problems.bodyMismatch.push({ legacy_id: r.legacy_id, got });
   else ok++;
@@ -75,6 +79,8 @@ for (const r of rows) {
 const summary = {
   checked: rows.length,
   bodyByteIdentical: ok,
+  featuredImageSet: withFeatured,
+  skippedEditedInAdmin: skippedEdited,
   missing: problems.missing.length,
   notPublished: problems.notPublished.length,
   bodyMismatch: problems.bodyMismatch.length,
