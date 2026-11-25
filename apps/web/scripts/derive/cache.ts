@@ -54,13 +54,16 @@ export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHas
 	);
 }
 
-/** Valid vectors only (hash and model match the current content). */
-export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>, table: EmbeddingTable = "post_embeddings") {
+/**
+ * Valid vectors only (hash and model match the current content). With `acceptOtherModel`, a row whose content_hash
+ * matches is also accepted when another model made it (provider switch that could not finish re-embedding).
+ */
+export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>, table: EmbeddingTable = "post_embeddings", acceptOtherModel = false) {
 	const r = await c.query(`select legacy_id, content_hash, model, embedding::text as v from ${q(table)}`);
 	const out = new Map<string, number[]>();
 	for (const x of r.rows) {
 		const want = valid.get(x.legacy_id);
-		if (want && want.contentHash === x.content_hash && want.model === x.model) out.set(x.legacy_id, fromVector(x.v));
+		if (want && want.contentHash === x.content_hash && (acceptOtherModel || want.model === x.model)) out.set(x.legacy_id, fromVector(x.v));
 	}
 	return out;
 }
