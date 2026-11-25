@@ -102,7 +102,14 @@ export interface DerivedEpisode {
 
 export function buildEpisodes(rows: PodcastRow[]): DerivedEpisode[] {
 	const out: DerivedEpisode[] = [];
+	const seen = new Set<string>();
 	for (const r of rows) {
+		// The slug/id fallback can collide with another episode's legacy_id: keep the first (rows are ordered by key), skip the rest.
+		if (seen.has(r.legacy_id)) {
+			console.warn(`[derive] WARNING: duplicate podcast key "${r.legacy_id}" ("${r.title}"); skipped, the first entry wins`);
+			continue;
+		}
+		seen.add(r.legacy_id);
 		if (r.legacy_missing) console.warn(`[derive] WARNING: podcast episode "${r.title}" has no legacy_id; keyed by its EmDash slug/id "${r.legacy_id}"`);
 		const date = parseDate(r.pub_date);
 		if (!date) {
@@ -136,7 +143,13 @@ export interface DerivedGalleryImage {
 }
 
 export function buildGallery(rows: GalleryRow[]): DerivedGalleryImage[] {
-	return rows.map((r) => {
+	const seen = new Set<string>();
+	const unique = rows.filter((r) => {
+		if (!seen.has(r.legacy_id)) return seen.add(r.legacy_id);
+		console.warn(`[derive] WARNING: duplicate gallery key "${r.legacy_id}" (${r.image_url}); skipped, the first entry wins`);
+		return false;
+	});
+	return unique.map((r) => {
 		if (r.legacy_missing) console.warn(`[derive] WARNING: gallery image ${r.image_url} has no legacy_id; keyed by its EmDash slug/id "${r.legacy_id}"`);
 		// colorSet stays between doc and addedAt (legacy key order); undefined is dropped by JSON.stringify.
 		const entry: DerivedGalleryImage["entry"] = { id: r.legacy_id, file: r.file ?? r.legacy_id, hash: r.hash ?? "", image: r.image_url, doc: r.doc ?? "", colorSet: r.color_set?.bgColor ? r.color_set : undefined };

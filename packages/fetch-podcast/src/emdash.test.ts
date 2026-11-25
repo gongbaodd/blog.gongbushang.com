@@ -64,6 +64,14 @@ describe("fetch-podcast --emdash", () => {
       vi.stubEnv("EMDASH_HEADERS", "CF-Access-Client-Id: x");
       expect(() => createClient({ url: "http://cms.example.com" })).toThrow(/non-https/);
     });
+    it("rejects userinfo URLs that only look local", () => {
+      for (const url of ["http://localhost:80@evil.com", "http://127.0.0.1:x@evil.com/", "http://[::1]:a@evil.com", "https://user:pw@cms.example.com"]) {
+        expect(() => createClient({ url, token: "s" }), url).toThrow();
+      }
+    });
+    it("rejects a hostname that merely starts with localhost", () => {
+      expect(() => createClient({ url: "http://localhost.evil.com", token: "s" })).toThrow(/non-https/);
+    });
     it("allows https, localhost and 127.0.0.1", () => {
       expect(() => createClient({ url: "https://cms.example.com", token: "s" })).not.toThrow();
       expect(() => createClient({ url: "http://localhost:4322", token: "s" })).not.toThrow();

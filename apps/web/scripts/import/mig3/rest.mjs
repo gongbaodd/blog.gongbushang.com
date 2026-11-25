@@ -12,12 +12,20 @@ export function createClient({ url, token, headers: extra } = {}) {
     const i = line.indexOf(":");
     if (i > 0) extraHeaders[line.slice(0, i).trim()] = line.slice(i + 1).trim();
   }
-  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(base);
+  // Parsed, not pattern-matched: `http://localhost:80@evil.com` has hostname evil.com, and userinfo is rejected outright.
+  let parsed;
+  try {
+    parsed = new URL(base);
+  } catch {
+    throw new Error(`invalid EmDash URL ${JSON.stringify(base)}`);
+  }
+  if (parsed.username || parsed.password) throw new Error("EmDash URL must not contain userinfo (user:password@host)");
+  const isLocal = /^https?:$/.test(parsed.protocol) && ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname);
   let cookie;
 
   // Credentials (bearer token, Access service-token headers) only travel over https, or to a local dev server.
   const hasCredentials = Boolean(bearer) || Object.keys(extraHeaders).length > 0;
-  if (hasCredentials && !isLocal && !/^https:\/\//i.test(base)) {
+  if (hasCredentials && !isLocal && parsed.protocol !== "https:") {
     throw new Error(`refusing to send EmDash credentials to non-https URL ${base} (only https, or localhost/127.0.0.1, is allowed)`);
   }
 

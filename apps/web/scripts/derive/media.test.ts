@@ -57,6 +57,13 @@ describe("buildEpisodes", () => {
 		expect(buildEpisodes([ep({ pub_date: null }), ep({ legacy_id: "x", pub_date: "nonsense" })])).toEqual([]);
 		expect(warn).toHaveBeenCalledTimes(2);
 	});
+	it("skips a later episode whose fallback key duplicates an earlier one", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const out = buildEpisodes([ep({ legacy_id: "same" }), ep({ legacy_id: "same", title: "Other", legacy_missing: true })]);
+		expect(out).toHaveLength(1);
+		expect(out[0]!.episode.title).toBe("T");
+		expect(warn.mock.calls.some((c) => String(c[0]).includes("duplicate"))).toBe(true);
+	});
 	it("parseDate reads SQL timestamps as UTC", () => {
 		expect(parseDate("2026-11-25 10:00:00")?.toISOString()).toBe("2026-11-25T10:00:00.000Z");
 		expect(parseDate("")).toBeNull();
