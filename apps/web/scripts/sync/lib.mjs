@@ -297,12 +297,38 @@ export function resolveEnvUrl(envName, dotEnv = {}, processEnv = {}) {
 	if (!looksLikePostgresUrl(url)) {
 		return { ok: false, missing: [], error: `${cfg.urlVar} is not a valid postgres:// URL` };
 	}
+	const paramError = disallowedUrlParams(url);
+	if (paramError) {
+		return { ok: false, missing: [], error: `${cfg.urlVar}: ${paramError}` };
+	}
 	return { ok: true, env: envName, url, varName: cfg.urlVar };
 }
 
 const DIRECT_SUPABASE_HOST_RE = /^db\.[a-z0-9-]+\.supabase\.co$/i;
 const POOLER_SUPABASE_HOST_RE = /\.pooler\.supabase\.com$/i;
-const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/**
+ * libpq lets URL query parameters (`user`, `host`, `hostaddr`, `port`, `dbname`, `service`, `options`,
+ * `password`, ...) override the userinfo/host the guards inspect. Only `sslmode` is allowed, so what the
+ * checks see is exactly what libpq will connect to.
+ */
+const ALLOWED_URL_PARAMS = new Set(["sslmode"]);
+
+/** Returns an error string if the URL has any query parameter outside the allowlist, else undefined. */
+export function disallowedUrlParams(url) {
+	try {
+		const bad = [...new Set([...new URL(url).searchParams.keys()])].filter(
+			(k) => !ALLOWED_URL_PARAMS.has(k.toLowerCase()),
+		);
+		if (bad.length > 0) {
+			return `connection URL has unsupported query parameter(s) ${bad.map((k) => `"${k}"`).join(", ")}; libpq would let them override the user/host/port the safety checks verified. Only ?sslmode= is allowed.`;
+		}
+	} catch {
+		// unparseable URLs are rejected elsewhere
+	}
+	return undefined;
+}
 
 /**
  * Verify that remote Supabase environments use the IPv4 session pooler (`*.pooler.supabase.com:5432`),
@@ -318,6 +344,10 @@ export function validatePoolerUrl(envName, url) {
 		parsed = new URL(url);
 	} catch {
 		return { ok: false, error: `${envName} URL could not be parsed` };
+	}
+	const paramError = disallowedUrlParams(url);
+	if (paramError) {
+		return { ok: false, error: `${envName} ${paramError}` };
 	}
 	const host = parsed.hostname;
 	const port = parsed.port || "5432";

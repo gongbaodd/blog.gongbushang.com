@@ -45,10 +45,7 @@ export default function PodcastDiscover({ episodes }: IPodcastDiscoverProps) {
             withControls
             withIndicators
             emblaOptions={{ dragFree: true, align: "start" }}
-            className={[
-              classes.carousel,
-              isDesktop ? classes.vertical : undefined,
-            ]
+            className={[classes.carousel, isDesktop ? classes.vertical : undefined]
               .filter(Boolean)
               .join(" ")}
           >

@@ -7,11 +7,13 @@ import { POST_COUNT_PER_PAGE } from "../../../lib/listing";
 export const prerender = true;
 
 export function getStaticPaths() {
-	const total = Math.ceil(legacy.podcast.length / POST_COUNT_PER_PAGE);
-	return Array.from({ length: total }, (_, i) => ({
-		params: { page: String(i) },
-		props: { episodes: legacy.podcast.slice(i * POST_COUNT_PER_PAGE, (i + 1) * POST_COUNT_PER_PAGE) },
-	}));
+  const total = Math.ceil(legacy.podcast.length / POST_COUNT_PER_PAGE);
+  return Array.from({ length: total }, (_, i) => ({
+    params: { page: String(i) },
+    props: {
+      episodes: legacy.podcast.slice(i * POST_COUNT_PER_PAGE, (i + 1) * POST_COUNT_PER_PAGE),
+    },
+  }));
 }
 
 export const GET: APIRoute<{ episodes: PodcastEpisode[] }> = ({ props }) => ndjson(props.episodes);

@@ -51,13 +51,7 @@ export default function PodcastEpisodeMenu({
             </Text>
           </Card>
         )}
-        <Button
-          component="a"
-          href="/podcast"
-          radius="lg"
-          variant="default"
-          fullWidth
-        >
+        <Button component="a" href="/podcast" radius="lg" variant="default" fullWidth>
           All episodes
         </Button>
       </Stack>

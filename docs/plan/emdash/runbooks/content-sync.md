@@ -15,7 +15,8 @@ Never copied (D4, D11): users, passkeys, sessions, OAuth and API tokens, `option
 ## Safety gates
 
 - Targets are identified by the project ref parsed from the URL username, not by the label. A URL whose ref differs from the labelled env's `*_REF` is refused.
-- Both refs must be configured whenever a remote env is involved. A URL without a `postgres.<ref>` username is refused.
+- `SUPABASE_PRODUCTION_REF` must be set whenever any remote env is involved (so production can always be recognised); `SUPABASE_TESTING_REF` only when testing is the source or target. A URL without a `postgres.<ref>` username is refused.
+- URL query parameters other than `?sslmode=` are refused: libpq lets `?user=`, `?host=`, `?hostaddr=`, `?port=`, `?dbname=`, `?service=`, `?options=`, `?password=` override what the checks inspected.
 - Any target whose ref equals production's needs `--yes-production`, whatever it was labelled.
 - `local` must be loopback; a remote host labelled local is a hard error. Self-sync (same ref) is refused.
 - Every run asks you to type the target env name unless `--yes` (non-interactive runs without `--yes` are refused).

@@ -29,12 +29,14 @@ export default function BlogPlock({ totalCount, initialPosts, ...param }: IPlock
   const hasMorePosts = posts.length < totalCount;
   // While a page streams in, placeholder cards occupy the next masonry slots.
   const items: (IPost | ISkeletonItem)[] =
-    isLoading && hasMorePosts ? [
+    isLoading && hasMorePosts
+      ? [
           ...posts,
           ...skeletonItems(
             posts.map((p) => ({ bgColor: p.data.bgColor, titleColor: p.data.titleColor })),
           ),
-        ] : posts;
+        ]
+      : posts;
 
   useEffect(() => {
     $key.set(key);

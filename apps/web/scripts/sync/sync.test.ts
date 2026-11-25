@@ -633,3 +633,47 @@ describe("schema drift guard (needs local Supabase with migrations applied)", ()
 		expect(classifyPublicTable("brand_new_table")).toBe("unknown");
 	});
 });
+
+describe("URL query parameters cannot override the verified connection", () => {
+	const refs = { expectedRefs: REFS, yesProduction: false };
+	const prodHostPooler = "aws-1-ap-southeast-1.pooler.supabase.com";
+
+	it.each([
+		["?user= on a testing URL", `${TESTING_POOLER}?user=postgres.${REFS.production}`],
+		["?host= on a local URL", `postgresql://postgres:postgres@127.0.0.1:54322/postgres?host=${prodHostPooler}&user=postgres.${REFS.production}`],
+		["?hostaddr= on a local URL", "postgresql://postgres:postgres@127.0.0.1:54322/postgres?hostaddr=203.0.113.5&user=postgres.x"],
+		["?port=", `${TESTING_POOLER}?port=6543`],
+		["?dbname=", `${TESTING_POOLER}?dbname=other`],
+		["?service=", `${TESTING_POOLER}?service=prod`],
+		["?options=", `${TESTING_POOLER}?options=-c%20search_path%3Dx`],
+		["?password=", `${TESTING_POOLER}?password=LeakedSecret99`],
+		["?sslpassword=", `${TESTING_POOLER}?sslpassword=LeakedSecret99`],
+	])("rejects %s", (_label, url) => {
+		const isLocal = url.includes("127.0.0.1");
+		const res = validateSyncPlan({
+			...refs,
+			source: isLocal ? "local" : "testing",
+			target: isLocal ? "testing" : "local",
+			sourceUrl: isLocal ? url : url,
+			targetUrl: isLocal ? TESTING_POOLER : LOCAL_DB_URL,
+		});
+		expect(res.ok).toBe(false);
+		expect(res.error).toMatch(/query parameter/);
+		expect(resolveEnvUrl(isLocal ? "local" : "testing", {}, { [isLocal ? "SUPABASE_LOCAL_DB_URL" : "SUPABASE_TESTING_POOLER_URL"]: url }).ok).toBe(false);
+	});
+
+	it("allows ?sslmode=require", () => {
+		const res = validateSyncPlan({
+			...refs,
+			source: "testing",
+			target: "local",
+			sourceUrl: `${TESTING_POOLER}?sslmode=require`,
+			targetUrl: LOCAL_DB_URL,
+		});
+		expect(res.ok).toBe(true);
+	});
+
+	it("accepts bracketed IPv6 loopback as local", () => {
+		expect(validatePoolerUrl("local", "postgresql://postgres:postgres@[::1]:54322/postgres").ok).toBe(true);
+	});
+});

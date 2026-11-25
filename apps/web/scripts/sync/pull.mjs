@@ -248,6 +248,16 @@ const srcCreds = splitUrlCredentials(srcResolved.url);
 const dstCreds = splitUrlCredentials(dstResolved.url);
 const childEnv = (extra) => ({ ...process.env, ...extra });
 
+// Pre-create the dump with mode 0600 so pg_dump (which truncates/writes in place) never exposes it.
+writeFileSync(rawDumpFile, "", { mode: 0o600 });
+chmodSync(rawDumpFile, 0o600);
+for (const sig of ["SIGINT", "SIGTERM"]) {
+	process.on(sig, () => {
+		rmSync(workDir, { recursive: true, force: true });
+		process.exit(130);
+	});
+}
+
 let exitCode = 0;
 try {
 	console.log(`\n[sync] Dumping content from ${opts.source} (${dbHost(srcResolved.url)})...`);
@@ -263,7 +273,6 @@ try {
 	if (dumpRes.status !== 0) {
 		fail(`${liveDump.bin} exited with code ${dumpRes.status}:\n${safe(dumpRes.stderr || dumpRes.stdout)}`);
 	}
-	if (opts.dumpFile) chmodSync(rawDumpFile, 0o600);
 
 	const rawSql = readFileSync(rawDumpFile, "utf8");
 	const wrappedSql = buildRestoreSql({

@@ -11,6 +11,7 @@ import AdSenseSlot from "../ads/AdSenseSlot.astro";
 import MantineMain from "../components/MantineMain";
 import { GridWithMenu } from "../components/GridWithMenu";
 import BlogContent, { BlogMenu, RelatePosts, type IHeading, type ILink, type IMenuSeries } from "../components/BlogContent";
+import type { TClientPost } from "../lib/listing-core";
 import { SITE_TITLE } from "../consts";
 
 interface Props {
@@ -26,12 +27,14 @@ interface Props {
 	links: ILink[];
 	headings: IHeading[];
 	series?: IMenuSeries;
+	/** Client post (the same shape the listings use) for the sidebar cover card. */
+	clientPost: TClientPost;
 	cover?: { url: string; alt: string };
 	readingMinutes: number;
 	adsense: boolean;
 }
 
-const { id, entryId, title, description, date, category, tags, links, headings, series, cover, readingMinutes, adsense } =
+const { id, entryId, title, description, date, category, tags, links, headings, series, clientPost, cover, readingMinutes, adsense } =
 	Astro.props;
 
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
@@ -57,9 +60,9 @@ const adsenseSlotId =
 	<link rel="preconnect" href="https://res.cloudinary.com" slot="head" />
 	<Header />
 	<MantineMain client:load>
-		<GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }} client:load>
+		<GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }}>
 			<BlogMenu
-				post={{ title, date, cover }}
+				post={clientPost}
 				links={links}
 				headings={headings}
 				series={series}
@@ -75,7 +78,7 @@ const adsenseSlotId =
 					data-reading-time-min={readingMinutes}
 					data-tags={JSON.stringify(tags)}
 				>
-					<BlogContent title={title} links={links} date={date} time={readingMinutes + "min"} client:load>
+					<BlogContent title={title} links={links} date={date} time={readingMinutes + "min"}>
 						<slot />
 					</BlogContent>
 				</div>

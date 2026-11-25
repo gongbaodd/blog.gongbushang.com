@@ -36,11 +36,7 @@ export function isSkeletonItem(item: object): item is ISkeletonItem {
 }
 
 /** Card-shaped ASCII placeholder; sits in a masonry slot at the same width as a real card. */
-export function CardSkeleton({
-  seed,
-  bgColor,
-  titleColor,
-}: { seed: number } & ISkeletonColors) {
+export function CardSkeleton({ seed, bgColor, titleColor }: { seed: number } & ISkeletonColors) {
   return (
     <Stack
       gap="xs"

@@ -1,11 +1,16 @@
 // Opens sample routes in headless Chromium and fails on hydration errors.
 // Usage: node scripts/hydration-check.mjs [baseUrl]   (run `pnpm dev` first for full messages)
+// HYD_ROUTES_FILE=<file>  one route per line (blank lines and # comments ignored); apps/web uses tests/hydration-routes.txt.
+// E2E_CHROME_CHANNEL=chrome  use the installed Chrome when Playwright's bundled Chromium is missing.
+import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:4321";
-const routes = ["/", "/all", "/year/2025", "/lab", "/tag/react", "/podcast"];
+const routes = process.env.HYD_ROUTES_FILE
+  ? readFileSync(process.env.HYD_ROUTES_FILE, "utf8").split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"))
+  : ["/", "/all", "/year/2025", "/lab", "/tag/react", "/podcast"];
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.E2E_CHROME_CHANNEL ? { channel: process.env.E2E_CHROME_CHANNEL } : {});
 let failed = false;
 for (const route of routes) {
   const page = await browser.newPage();

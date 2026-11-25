@@ -5,4 +5,5 @@ import { worldMapData } from "../../../lib/listing";
 
 export const prerender = true;
 
-export const GET: APIRoute = async () => new Response(JSON.stringify({ data: await worldMapData() }));
+export const GET: APIRoute = async () =>
+  new Response(JSON.stringify({ data: await worldMapData() }));

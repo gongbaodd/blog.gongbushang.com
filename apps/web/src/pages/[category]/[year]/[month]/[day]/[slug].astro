@@ -2,6 +2,7 @@
 // Post page at the exact legacy URL: /<category>/<YYYY>/<MM>/<DD>/<slug>/ (D8: legacy_id + category term).
 import BlogPost from "../../../../../layouts/BlogPost.astro";
 import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, type BlogPost as Post } from "../../../../../lib/content";
+import { getPostEntries, toClient } from "../../../../../lib/listing";
 import { renderMarkdown } from "../../../../../lib/markdown";
 import { prepareBody } from "../../../../../lib/mdx-lite";
 import { getReadingTime } from "../../../../../utils/reading-time";
@@ -26,6 +27,11 @@ const prepared = prepareBody(post.body);
 if (prepared.warnings.length) console.warn(`[post ${post.id}] ${prepared.warnings.join("; ")}`);
 const { html, headings } = await renderMarkdown(prepared.body);
 
+// Sidebar cover card: the same client post the listings and /api/cards use (legacy mapServerPostToClient).
+const entry = (await getPostEntries()).find((e) => e.id === post.id);
+if (!entry) throw new Error(`[post ${post.id}] no listing entry`);
+const clientPost = await toClient(entry);
+
 const title = postTitle(post, headings);
 const description = await postExcerpt(post.body);
 const { minutes } = getReadingTime(post.body);
@@ -42,6 +48,7 @@ const { minutes } = getReadingTime(post.body);
 	links={postLinks(post)}
 	headings={headings}
 	series={series}
+	clientPost={clientPost}
 	cover={post.data.cover}
 	readingMinutes={minutes}
 	adsense={post.data.adsense}
