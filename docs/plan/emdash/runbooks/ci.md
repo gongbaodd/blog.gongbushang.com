@@ -4,7 +4,7 @@ Three workflows under `.github/workflows/`. Legacy `e2e.yml` and `sync-content.y
 
 | Workflow | Triggers | Environment | What it does |
 |---|---|---|---|
-| `web-ci.yml` | PR to `feat/emdash` or `master` touching `apps/web/**`, `supabase/**`, lockfile, `packages/shiki-plantuml`, `web-*.yml`; manual | `production` (for `DATABASE_POOLER_URL` only) | vitest, `astro check`, read-only `emdash migrate --from-config --check`, build with `DERIVE_READONLY=1`, empty-build guard, URL parity, size guard (`wrangler deploy --dry-run`). **No deploy step.** Fork PRs are skipped (no secrets). |
+| `web-ci.yml` | PR to `feat/emdash` or `master` touching `apps/web/**`, `supabase/**`, lockfile, `packages/shiki-plantuml`, `web-*.yml`; manual | `ci-readonly` (`DATABASE_POOLER_URL` only) | vitest, `astro check`, read-only `emdash migrate --from-config --check`, build with `DERIVE_READONLY=1`, empty-build guard, URL parity, size guard (`wrangler deploy --dry-run`). **No deploy step.** Fork PRs are skipped (no secrets). |
 | `web-deploy.yml` | `repository_dispatch` `emdash-publish`, nightly 02:17 UTC, manual (`apply_migrations`) | `production` (only target; a dispatch or input naming anything else, such as a stale `testing`, fails the `target` job) | optional migration apply, full (writing) build, guards, deploy |
 | `web-guards.yml` | daily 03:41 UTC (production backup), daily 06:11 UTC (Cloudinary usage), manual | `production` (backup) | `pg_dump -Fc --schema=public` of production piped through `age`, uploaded as artifact `production-db-backup`, retention 14 days. The nightly connection also keeps the single Free Supabase project from pausing (there is no separate keep-alive job since INF-10). |
 
@@ -13,7 +13,7 @@ There is no throwaway `testing` database any more, so `web-ci` builds against pr
 1. opens the derive Postgres session with `default_transaction_read_only = on`, so any stray write fails loudly;
 2. turns every cache write (`saveHints`, `upsert*`, `prune*`, `saveUmapState`) into a no-op;
 3. forces cache hits only (`DERIVE_EMBED=skip`, `DERIVE_SKIP_COLORS=1`) and removes the Workers AI and geocoding credentials from the process environment.
-A new post therefore builds without a UMAP point, cover colour or geocode in a PR; the page set (and so URL parity and the size guard) is unaffected. `emdash migrate --check` is read-only by design. `DATABASE_POOLER_URL` is exposed only to the `migrate --check` and `Build` steps, and fork PRs are skipped, so they never see it.
+In read-only mode a cached vector for the same legacy id is accepted even when the post was edited since (stale hash), so edited posts keep their UMAP point and `/api/cards`/`/api/relates` pages. Posts with no cached vector at all (brand-new posts, or a cold cache) cannot be placed: derive lists them in `apps/web/.derive/readonly-missing.txt` and warns, and the parity step passes it as `--allow-missing`, so only those posts' card and relates pages may be missing. Cover colours, traces and geocodes simply stay absent in a PR. `emdash migrate --check` is read-only by design. `DATABASE_POOLER_URL` is exposed only to the `migrate --check` and `Build` steps, and fork PRs are skipped, so they never see it.
 Residual risk: EmDash's own prerender connection is not forced into a read-only session (startup options through the Supabase pooler are not relied on; see the local check in reports/INF-10.md), and a same-repo PR can change the workflow itself. The proper hardening is a Postgres role with only `SELECT` (SEC-11) used for `DATABASE_POOLER_URL` in `web-ci`; until then this is mitigated, not enforced, for the EmDash side.
 
 Guards in the build jobs:
@@ -25,7 +25,7 @@ Environment secrets (Settings, Environments). There is one environment, `product
 
 | Name | `production` | Used by |
 |---|---|---|
-| `DATABASE_POOLER_URL` (session pooler, IPv4, port 5432; project `ckpozotzgubrjbjstvjg`, host `aws-0-ap-southeast-1.pooler.supabase.com`) | must point at the promoted project | web-ci (migrate check, read-only build), web-deploy (migrate check/apply, build prerender), web-guards (backup) |
+| `DATABASE_POOLER_URL` (also in `ci-readonly`; session pooler, IPv4, port 5432; project `ckpozotzgubrjbjstvjg`, host `aws-0-ap-southeast-1.pooler.supabase.com`) | must point at the promoted project | web-ci (migrate check, read-only build), web-deploy (migrate check/apply, build prerender), web-guards (backup) |
 | `CLOUDFLARE_API_TOKEN` | exists | web-deploy (`wrangler deploy`) only; web-ci never uses it |
 | `CF_AI_TOKEN` (Workers-AI-only scope, never the deploy token) + `CF_ACCOUNT_ID` | not yet wired (PORT-8b) | build step running `derive` (embeddings) in web-deploy only; see data.md |
 | `BACKUP_AGE_RECIPIENT` (age public key `age1...`) | **missing, must be created** | web-guards backup |
@@ -54,7 +54,8 @@ Separate from CI: the CMS publish hook (`GITHUB_DISPATCH_TOKEN`, a fine-grained 
 1. `age-keygen -o ~/growgen-backup.agekey` on an offline machine; store the private key in a password manager; `gh secret set BACKUP_AGE_RECIPIENT --env production` with the `age1...` line (public).
 2. Optionally add required reviewers to the `production` environment. Note this also blocks the nightly production rebuild and backup until approved; if you want those unattended, leave the environment without reviewers and rely on manual dispatch for risky changes.
 3. The Cloudflare token needs Workers Scripts edit on the account (and, for the custom-domain route in `wrangler.jsonc`, Workers Routes / DNS edit on the `growgen.xyz` zone). The Hyperdrive and KV ids are baked into `wrangler.jsonc` (the promoted former testing resources).
-4. Set the repository/environment variable `PUBLIC_SITE_LIVE` only at CUT-1.
+4. Create the GitHub environment `ci-readonly` (no reviewers, no branch restriction) with one secret, `DATABASE_POOLER_URL`: ideally a session-pooler URL of a SELECT-only Postgres role (SEC-11; it needs `BYPASSRLS` or read policies, because RLS is on and without it derive sees an empty cache; until it exists, the production URL). It must not hold the Cloudflare token.
+5. Set the repository/environment variable `PUBLIC_SITE_LIVE` only at CUT-1.
 
 ## Restore
 ```

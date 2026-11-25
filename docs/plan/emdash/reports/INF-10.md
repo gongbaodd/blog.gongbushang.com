@@ -24,6 +24,14 @@ Branch `emdash/INF-10` (from `feat/emdash` c4306909). Code, config, tests and do
 7. **Conflict risk.** `emdash/SEC-hardening-198` was not touched. Expect conflicts in `wrangler.jsonc` (`workers_dev`, which I also set) and `apps/admin` (`safety.mjs`, tests); take either side for `workers_dev: false`.
 8. **Other references.** Grepped `apps/web/scripts`, `apps/admin`, workflows, `package.json`, runbooks, rules. The `data.md` MIG-3 section now says production and requires owner confirmation and a check of whether MIG-3 is already applied on `ckpozotzgubrjbjstvjg`. The derived migration SQL comment mentioning testing is left alone (migrations are immutable).
 
+## Review fixes (after 785c3018)
+- Read-only `loadEmbeddings` accepts the cached vector for the same legacy id when the hash differs (model rule unchanged); tested in `scripts/derive/readonly.test.ts`. Edited posts keep their UMAP point and card/relates pages.
+- Posts with no cached vector or UMAP point (brand-new posts, cold cache) still cannot be placed. Derive (read-only) writes them to `apps/web/.derive/readonly-missing.txt` (gitignored) and warns with a list; `web-ci.yml` runs `parity --allow-missing .derive/readonly-missing.txt`, so only those posts' `/api/cards` and `/api/relates` pages may be missing. Anything else missing still fails.
+- `web-ci.yml` uses environment `ci-readonly` (only `DATABASE_POOLER_URL`, so reviewers or branch rules on `production` cannot stall PRs and the deploy token is out of reach). Owner step 7 below.
+- `CLOUDFLARE_ACCOUNT_ID` is also removed in read-only mode; `dispatch.ts` comment fixed; stale INF-3/INF-7/PORT-7 sections in `TEMPLATE_DIFF.md` marked superseded.
+
+- Re-verified locally with a SELECT-only, read-only role: derive shows 996 vectors cached, UMAP reused (1146 points), no tolerated-missing posts, parity passes except the 18 resume PDFs (my build used `SKIP_PDFS=1`; CI generates them). Finding: the cache tables have RLS enabled (SEC-01), so a SELECT-only CI role needs `BYPASSRLS` (or read policies on `public` and `derived`), otherwise derive silently sees an empty cache.
+
 ## Checks
 - `pnpm --filter web exec vitest run`: 34 files pass; 2 route-parity tests fail only against my locally built, read-only dist (stale local embedding cache, see above). With no dist they are skipped, as in CI before the build.
 - Web build (read-only, SELECT-only role) ok. `wrangler deploy --dry-run -c dist/server/wrangler.json`: worker 19.64 MiB uncompressed (limit 64), 4090 static assets (limit 20,000); bindings show the promoted Hyperdrive and KV, `PUBLIC_SITE_LIVE "false"`; routes, `workers_dev:false` in the built config.
@@ -39,4 +47,5 @@ Branch `emdash/INF-10` (from `feat/emdash` c4306909). Code, config, tests and do
 4. Confirm `growgen.xyz` DNS/zone and the custom-domain move, then in order: (a) set `growgen-web` secrets `EMDASH_ENCRYPTION_KEY`, `EMDASH_SITE_URL=https://next.growgen.xyz`, optional `GITHUB_DISPATCH_TOKEN`; (b) detach `next.growgen.xyz` from `growgen-web-testing`; (c) deploy `growgen-web` right away (short outage between b and c); (d) verify 200, `x-robots-tag: noindex`, robots `Disallow: /`, `/_emdash/admin` 404, no analytics/ads, `wrangler tail` CPU; (e) only then delete `growgen-web-testing`. Rollback: re-attach the domain to `growgen-web-testing`.
 5. Delete the GitHub `testing` environment and the Supabase project `epewqznhtgjirbfeqfrj`; optionally rename `ckpozotzgubrjbjstvjg` to `growgen-production` in the Dashboard.
 6. After merge, watch the first PR CI run (parity with the real cache) and the first nightly backup (keep-alive).
-7. At CUT-1 only: set `PUBLIC_SITE_LIVE=true` and re-run `web-deploy`.
+7. Create GitHub environment `ci-readonly` (no reviewers or branch restriction) with only the secret `DATABASE_POOLER_URL`, ideally a SELECT-only role (SEC-11); until then the production URL.
+8. At CUT-1 only: set `PUBLIC_SITE_LIVE=true` and re-run `web-deploy`.

@@ -59,13 +59,17 @@ export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHas
 /**
  * Valid vectors only (hash and model match the current content). With `acceptOtherModel`, a row whose content_hash
  * matches is also accepted when another model made it (provider switch that could not finish re-embedding).
+ * With DERIVE_READONLY=1 (INF-10) a row for the same legacy id is also accepted when the content hash differs (the post was
+ * edited since): the vector is stale but good enough to place the post, and nothing is written. Without it that post would get no
+ * UMAP point and so no /api/cards page, and URL parity would fail on every CMS edit. The model rule above still applies.
  */
 export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>, table: EmbeddingTable = "post_embeddings", acceptOtherModel = false) {
 	const r = await c.query(`select legacy_id, content_hash, model, embedding::text as v from ${q(table)}`);
 	const out = new Map<string, number[]>();
 	for (const x of r.rows) {
 		const want = valid.get(x.legacy_id);
-		if (want && want.contentHash === x.content_hash && (acceptOtherModel || want.model === x.model)) out.set(x.legacy_id, fromVector(x.v));
+		const modelOk = acceptOtherModel || (want && want.model === x.model);
+		if (want && modelOk && (want.contentHash === x.content_hash || READONLY)) out.set(x.legacy_id, fromVector(x.v));
 	}
 	return out;
 }

@@ -34,7 +34,7 @@ export interface BuildDispatchOptions {
 
 /**
  * Validate and normalize the GitHub API base URL (SEC-13).
- * In testing/production, only `https://api.github.com` (with optional trailing slashes and no
+ * In production, only `https://api.github.com` (with optional trailing slashes and no
  * path, credentials, query, or hash) is allowed unless `allowCustomApiUrl` is explicitly set.
  */
 export function resolveGitHubApiBase(

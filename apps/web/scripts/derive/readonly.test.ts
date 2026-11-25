@@ -42,4 +42,15 @@ describe("DERIVE_READONLY=1", () => {
 		await c.upsertColor(db as never, "u", { bgColor: "#fff", titleColor: "#000" });
 		expect(db.query).toHaveBeenCalledTimes(1);
 	});
+
+	it("accepts a cached vector whose content hash is stale only in read-only mode (same model)", async () => {
+		const row = { legacy_id: "a", content_hash: "old", model: "m", v: "[0.5,0.25]" };
+		const want = new Map([["a", { contentHash: "new", model: "m" }], ["b", { contentHash: "x", model: "m" }]]);
+		const ro = await load(true);
+		const got = await ro.loadEmbeddings({ query: vi.fn(async () => ({ rows: [row, { ...row, legacy_id: "b", model: "other" }] })) } as never, want);
+		expect([...got.keys()]).toEqual(["a"]); // other model still refused
+		const rw = await load(false);
+		const got2 = await rw.loadEmbeddings({ query: vi.fn(async () => ({ rows: [row] })) } as never, want);
+		expect(got2.size).toBe(0);
+	});
 });

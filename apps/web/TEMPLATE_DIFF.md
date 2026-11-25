@@ -63,6 +63,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 
 ## INF-3 (testing env)
 
+> Partly superseded by INF-10 (environments are now local + production; the `testing` env, `SITE_ENV`-based noindex and `PUBLIC_SITE_ENV` described below no longer exist). See the INF-10 section at the end.
+
 | File | Change | Why |
 |---|---|---|
 | `wrangler.jsonc` | name `growgen-web`; `env.testing` (own Hyperdrive/KV/DO/cron, `workers_dev`), `vars.SITE_ENV`, cron `*/5` (prod) / `*/15` (testing) | D3/D11/§10 |
@@ -121,6 +123,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 
 ## INF-7 (local admin, Worker lockdown; D12)
 
+> Partly superseded by INF-10 (environments are now local + production; the `testing` env, `SITE_ENV`-based noindex and `PUBLIC_SITE_ENV` described below no longer exist). See the INF-10 section at the end.
+
 | File | Change | Why |
 |---|---|---|
 | `wrangler.jsonc` | `assets.run_worker_first: false` (the `/_emdash/*` and `/.well-known/*` rules removed); `env.admin-local`, `env.admin-testing`, `env.admin-production` (dev-only blocks, placeholder bindings) | Admin no longer served by the Worker. wrangler reads `.dev.vars.<CLOUDFLARE_ENV>` instead of `.dev.vars`, so the admin envs make env values win over `.dev.vars` |
@@ -131,6 +135,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `src/middleware.ts` | Unchanged (the setup gate is now unreachable on the Worker, kept harmless) | D11 |
 
 ## PORT-7 (analytics, ads, RSS, sitemap)
+
+> Partly superseded by INF-10 (environments are now local + production; the `testing` env, `SITE_ENV`-based noindex and `PUBLIC_SITE_ENV` described below no longer exist). See the INF-10 section at the end.
 
 | File | Change | Why |
 |---|---|---|

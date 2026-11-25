@@ -2,7 +2,7 @@
 # Environments are local and production (INF-10), so PR builds read the production database. They must never WRITE to it:
 #   - DERIVE_READONLY=1 makes `derive` read-only (read-only DB session, no cache writes, no embeddings, colours, traces or geocoding,
 #     no AI or geocoding credentials used), see apps/web/scripts/derive/index.ts and docs/plan/emdash/runbooks/ci.md.
-#   - DATABASE_POOLER_URL is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
+#   - DATABASE_POOLER_URL comes from the separate `ci-readonly` environment and is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
 #   - `emdash migrate --check` is read-only; migrations are applied only by web-deploy.yml (manual, apply_migrations).
 # Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
 # Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
@@ -48,8 +48,10 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Holds DATABASE_POOLER_URL (production session pooler). Add required reviewers there if PR builds should need approval.
-    environment: production
+    # Dedicated environment holding ONLY DATABASE_POOLER_URL, ideally the SEC-11 SELECT-only role. Not `production`: that environment
+    # may get branch restrictions or required reviewers (it gates real deploys), which would stall every PR run, and it holds the
+    # Cloudflare deploy token that a PR build must never see. Owner step: docs/plan/emdash/runbooks/ci.md.
+    environment: ci-readonly
     steps:
       - uses: actions/checkout@v4
         with:
@@ -104,7 +106,9 @@ jobs:
         # Deliberately WITHOUT --fail-on-extra: the production DB is mutable (new tags, years, series, cities add pages),
         # so extras would fail unrelated PRs. Run `pnpm --filter web parity --fail-on-extra --allow-extra
         # tests/parity-allow-extra.txt` locally and at cutover.
-        run: pnpm --filter web parity
+        # In read-only mode derive lists posts that have no cached vector or UMAP point (brand-new posts, cold cache) in
+        # .derive/readonly-missing.txt and warns; only their /api/cards and /api/relates pages are tolerated as missing.
+        run: pnpm --filter web parity --allow-missing .derive/readonly-missing.txt
 
       - name: Free-tier size guard (Worker 60 MiB, 18k assets)
         working-directory: apps/web
