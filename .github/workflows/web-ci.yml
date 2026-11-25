@@ -44,9 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: testing
-    env:
-      # Session pooler (IPv4). Used by `emdash migrate --from-config` and by the build's prerender (Hyperdrive local connection string).
-      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,9 +66,15 @@ jobs:
 
       - name: Migrations are up to date (read-only)
         working-directory: apps/web
+        env:
+          # Session pooler (IPv4). Step-scoped so install/test/typecheck steps never receive DB credentials.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: pnpm exec emdash migrate --from-config --check
 
       - name: Build
+        env:
+          # Session pooler (IPv4). Used by the build's prerender (Hyperdrive local connection string).
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: |
           set -o pipefail
           pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
@@ -92,6 +95,7 @@ jobs:
       - name: Free-tier size guard (Worker 60 MiB, 18k assets)
         working-directory: apps/web
         run: |
+          set -o pipefail
           pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json 2>&1 | tee "$RUNNER_TEMP/dry.log"
           bytes=$(find "$RUNNER_TEMP/wrangler-dry" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.wasm' \) -print0 | xargs -0 cat | wc -c)
           assets=$(find dist/client -type f | wc -l)
