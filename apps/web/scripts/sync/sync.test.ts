@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain .mjs helper
 import {
@@ -6,7 +7,15 @@ import {
 	EXCLUDED_ENV_STATE_TABLES,
 	EXCLUDED_RUNTIME_TABLES,
 	EXCLUDED_TABLES,
+	BASE_EXCLUDED_TABLES,
+	COMMENT_TABLES,
+	EXCLUDED_OPERATIONAL_TABLES,
 	LOCAL_DB_URL,
+	classifyPublicTable,
+	getExcludedTables,
+	parseProjectRef,
+	resolveExpectedRefs,
+	splitUrlCredentials,
 	buildPgDumpArgs,
 	buildPsqlRestoreArgs,
 	buildRestoreSql,
@@ -28,6 +37,7 @@ const TESTING_POOLER =
 	"postgresql://postgres.ckpozotzgubrjbjstvjg:TestP%40ssw0rd!@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres";
 const PROD_POOLER =
 	"postgresql://postgres.epewqznhtgjirbfeqfrj:ProdSuperSecret99@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres";
+const REFS = { testing: "ckpozotzgubrjbjstvjg", production: "epewqznhtgjirbfeqfrj" };
 const DIRECT_IPV6_URL =
 	"postgresql://postgres:DirectPass123@db.ckpozotzgubrjbjstvjg.supabase.co:5432/postgres";
 const TX_POOLER_URL =
@@ -125,8 +135,6 @@ describe("excluded table list (EmDash 1.6.0 schema audit)", () => {
 			"_emdash_widget_areas",
 			"_emdash_widgets",
 			"_emdash_redirects",
-			"_emdash_comments",
-			"_emdash_comment_reactions",
 		];
 		for (const table of syncedContentTables) {
 			expect(isExcludedTable(table)).toBe(false);
@@ -215,6 +223,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 	it("rejects source === target", () => {
 		for (const env of ["local", "testing", "production"]) {
 			const res = validateSyncPlan({
+				expectedRefs: REFS,
 				source: env,
 				target: env,
 				yesProduction: true,
@@ -228,6 +237,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 
 	it("rejects targeting production without --yes-production, and allows with it", () => {
 		const blocked = validateSyncPlan({
+				expectedRefs: REFS,
 			source: "testing",
 			target: "production",
 			yesProduction: false,
@@ -238,6 +248,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 		expect(blocked.error).toMatch(/--yes-production/);
 
 		const allowed = validateSyncPlan({
+				expectedRefs: REFS,
 			source: "testing",
 			target: "production",
 			yesProduction: true,
@@ -250,6 +261,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 
 	it("allows pulling FROM production into local without --yes-production", () => {
 		const res = validateSyncPlan({
+				expectedRefs: REFS,
 			source: "production",
 			target: "local",
 			yesProduction: false,
@@ -266,6 +278,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 		expect(check.error).toMatch(/pooler\.supabase\.com:5432/);
 
 		const plan = validateSyncPlan({
+				expectedRefs: REFS,
 			source: "testing",
 			target: "local",
 			sourceUrl: DIRECT_IPV6_URL,
@@ -290,6 +303,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 
 	it("rejects different env names that accidentally point to the same DB endpoint", () => {
 		const res = validateSyncPlan({
+				expectedRefs: REFS,
 			source: "testing",
 			target: "production",
 			yesProduction: true,
@@ -297,7 +311,7 @@ describe("safety guards (validatePoolerUrl & validateSyncPlan)", () => {
 			targetUrl: TESTING_POOLER,
 		});
 		expect(res.ok).toBe(false);
-		expect(res.error).toMatch(/same database endpoint/i);
+		expect(res.error).toMatch(/labelled "production"/);
 	});
 });
 
@@ -413,6 +427,8 @@ describe("parseCliArgs", () => {
 				dryRun: false,
 				includeDerived: false,
 				yesProduction: false,
+				includeComments: false,
+				yes: false,
 				dumpFile: undefined,
 				tool: "auto",
 				help: false,
@@ -427,6 +443,8 @@ describe("parseCliArgs", () => {
 			"production",
 			"--dry-run",
 			"--include-derived",
+			"--include-comments",
+			"--yes",
 			"--yes-production",
 			"--dump-file",
 			"/tmp/out.sql",
@@ -440,6 +458,8 @@ describe("parseCliArgs", () => {
 				dryRun: true,
 				includeDerived: true,
 				yesProduction: true,
+				includeComments: true,
+				yes: true,
 				dumpFile: "/tmp/out.sql",
 				tool: "pg_dump",
 				help: false,
@@ -452,5 +472,164 @@ describe("parseCliArgs", () => {
 		expect(parseCliArgs(["testing", "--bogus"]).ok).toBe(false);
 		expect(parseCliArgs(["testing", "--to"]).ok).toBe(false);
 		expect(parseCliArgs(["testing", "--tool", "mysql"]).ok).toBe(false);
+	});
+});
+
+const PROD_AS_TESTING =
+	"postgresql://postgres.epewqznhtgjirbfeqfrj:ProdSuperSecret99@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres";
+const REMOTE_AS_LOCAL =
+	"postgresql://postgres.epewqznhtgjirbfeqfrj:ProdSuperSecret99@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres";
+const UNKNOWN_PROJECT =
+	"postgresql://postgres.zzzzzzzzzzzzzzzzzzzz:Other12345@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres";
+
+describe("production gate cannot be bypassed by mislabelling (project ref check)", () => {
+	const base = { yesProduction: false, expectedRefs: REFS };
+
+	it("parses the project ref from the pooler username", () => {
+		expect(parseProjectRef(TESTING_POOLER)).toBe(REFS.testing);
+		expect(parseProjectRef(PROD_POOLER)).toBe(REFS.production);
+		expect(parseProjectRef(LOCAL_DB_URL)).toBeUndefined();
+		expect(parseProjectRef(DIRECT_IPV6_URL)).toBeUndefined();
+		expect(parseProjectRef("not a url")).toBeUndefined();
+	});
+
+	it("rejects a production URL labelled testing (ref mismatch)", () => {
+		const res = validateSyncPlan({ ...base, source: "local", target: "testing", sourceUrl: LOCAL_DB_URL, targetUrl: PROD_AS_TESTING });
+		expect(res.ok).toBe(false);
+		expect(res.error).toMatch(/labelled "testing"/);
+		expect(res.error).toMatch(/SUPABASE_TESTING_REF/);
+	});
+
+	it("rejects a remote URL labelled local (non-loopback is a hard error)", () => {
+		const res = validateSyncPlan({ ...base, source: "testing", target: "local", sourceUrl: TESTING_POOLER, targetUrl: REMOTE_AS_LOCAL });
+		expect(res.ok).toBe(false);
+		expect(res.error).toMatch(/non-loopback/);
+		expect(validatePoolerUrl("local", REMOTE_AS_LOCAL).ok).toBe(false);
+	});
+
+	it("requires --yes-production for any target whose ref is production's, whatever the label", () => {
+		// Label says testing, ref says production, and the testing ref was (mis)configured as production's.
+		const misconfigured = { testing: REFS.production, production: REFS.production };
+		const res = validateSyncPlan({
+			source: "local",
+			target: "testing",
+			yesProduction: false,
+			sourceUrl: LOCAL_DB_URL,
+			targetUrl: PROD_AS_TESTING,
+			expectedRefs: misconfigured,
+		});
+		expect(res.ok).toBe(false);
+		expect(res.error).toMatch(/--yes-production/);
+		const allowed = validateSyncPlan({
+			source: "local",
+			target: "testing",
+			yesProduction: true,
+			sourceUrl: LOCAL_DB_URL,
+			targetUrl: PROD_AS_TESTING,
+			expectedRefs: misconfigured,
+		});
+		expect(allowed.ok).toBe(true);
+		expect(allowed.targetIsProduction).toBe(true);
+	});
+
+	it("fails closed when refs are unset or the URL carries no ref", () => {
+		expect(
+			validateSyncPlan({ ...base, expectedRefs: {}, source: "testing", target: "local", sourceUrl: TESTING_POOLER, targetUrl: LOCAL_DB_URL }).error,
+		).toMatch(/SUPABASE_PRODUCTION_REF/);
+		expect(
+			validateSyncPlan({ ...base, expectedRefs: { production: REFS.production }, source: "testing", target: "local", sourceUrl: TESTING_POOLER, targetUrl: LOCAL_DB_URL }).error,
+		).toMatch(/SUPABASE_TESTING_REF/);
+		const noRef = "postgresql://postgres:pw@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres";
+		expect(
+			validateSyncPlan({ ...base, source: "testing", target: "local", sourceUrl: noRef, targetUrl: LOCAL_DB_URL }).error,
+		).toMatch(/postgres\.<project-ref>/);
+		expect(
+			validateSyncPlan({ ...base, source: "testing", target: "local", sourceUrl: UNKNOWN_PROJECT, targetUrl: LOCAL_DB_URL }).ok,
+		).toBe(false);
+	});
+
+	it("detects self-sync by project ref even when the host differs", () => {
+		const otherHost = TESTING_POOLER.replace("aws-0-ap-southeast-1", "aws-1-ap-southeast-1");
+		const res = validateSyncPlan({
+			source: "testing",
+			target: "production",
+			yesProduction: true,
+			expectedRefs: { testing: REFS.testing, production: REFS.testing },
+			sourceUrl: TESTING_POOLER,
+			targetUrl: otherHost,
+		});
+		expect(res.ok).toBe(false);
+		expect(res.error).toMatch(/same Supabase project/i);
+	});
+
+	it("resolveExpectedRefs reads *_REF from process env then .env", () => {
+		expect(resolveExpectedRefs({ SUPABASE_TESTING_REF: "AbC" }, { SUPABASE_PRODUCTION_REF: "def" })).toEqual({
+			testing: "abc",
+			production: "def",
+		});
+	});
+});
+
+describe("credentials never travel in argv", () => {
+	it("splitUrlCredentials strips the password into PGPASSWORD", () => {
+		const { url, env } = splitUrlCredentials(TESTING_POOLER);
+		expect(url).not.toContain("TestP");
+		expect(url).toContain(`postgres.${REFS.testing}@`);
+		expect(env).toEqual({ PGPASSWORD: "TestP@ssw0rd!" });
+		expect(splitUrlCredentials("postgresql://postgres@127.0.0.1:54322/postgres").env).toEqual({});
+	});
+});
+
+describe("comments and operational tables", () => {
+	it("excludes comments by default and syncs them only on opt-in", () => {
+		for (const t of COMMENT_TABLES) {
+			expect(getExcludedTables()).toContain(t);
+			expect(getExcludedTables({ includeComments: true })).not.toContain(t);
+			expect(BASE_EXCLUDED_TABLES).not.toContain(t);
+		}
+		expect(EXCLUDED_TABLES).toEqual(getExcludedTables());
+		expect(parseCliArgs(["testing", "--include-comments"]).opts.includeComments).toBe(true);
+	});
+
+	it("excludes media usage index and redirect artifacts", () => {
+		for (const t of ["_emdash_media_usage_work", "_emdash_redirect_state", "_emdash_redirect_artifacts"]) {
+			expect(EXCLUDED_OPERATIONAL_TABLES).toContain(t);
+			expect(EXCLUDED_TABLES).toContain(t);
+		}
+	});
+});
+
+function localPublicTables(): string[] | undefined {
+	const sql = "select tablename from pg_tables where schemaname='public' order by 1";
+	const attempts: [string, string[]][] = [
+		["psql", [LOCAL_DB_URL, "-Atc", sql]],
+		["docker", ["exec", "supabase_db_blog.gongbushang.com", "psql", "-U", "postgres", "-Atc", sql]],
+	];
+	for (const [bin, args] of attempts) {
+		try {
+			const out = execFileSync(bin, args, { encoding: "utf8", timeout: 10_000, stdio: ["ignore", "pipe", "ignore"] });
+			const names = out.split("\n").map((l) => l.trim()).filter(Boolean);
+			if (names.length > 0) return names;
+		} catch {
+			// try next
+		}
+	}
+	return undefined;
+}
+
+describe("schema drift guard (needs local Supabase with migrations applied)", () => {
+	const tables = localPublicTables();
+	it.skipIf(!tables)("every local public table is excluded or a known content table", () => {
+		const unknown = tables!.filter((t) => classifyPublicTable(t) === "unknown");
+		expect(
+			unknown,
+			`New public table(s) ${unknown.join(", ")}: add to an EXCLUDED_* list or KNOWN_CONTENT_TABLES in scripts/sync/lib.mjs`,
+		).toEqual([]);
+	});
+	it("classifies by rule", () => {
+		expect(classifyPublicTable("users")).toBe("excluded");
+		expect(classifyPublicTable("ec_posts")).toBe("content");
+		expect(classifyPublicTable("media")).toBe("content");
+		expect(classifyPublicTable("brand_new_table")).toBe("unknown");
 	});
 });

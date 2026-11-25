@@ -13,6 +13,7 @@ export const ENVS = Object.freeze({
 	local: Object.freeze({
 		name: "local",
 		urlVar: "SUPABASE_LOCAL_DB_URL",
+		refVar: undefined,
 		defaultUrl: LOCAL_DB_URL,
 		isRemote: false,
 		requiresProductionFlag: false,
@@ -20,6 +21,7 @@ export const ENVS = Object.freeze({
 	testing: Object.freeze({
 		name: "testing",
 		urlVar: "SUPABASE_TESTING_POOLER_URL",
+		refVar: "SUPABASE_TESTING_REF",
 		defaultUrl: undefined,
 		isRemote: true,
 		requiresProductionFlag: false,
@@ -27,6 +29,7 @@ export const ENVS = Object.freeze({
 	production: Object.freeze({
 		name: "production",
 		urlVar: "SUPABASE_PRODUCTION_POOLER_URL",
+		refVar: "SUPABASE_PRODUCTION_REF",
 		defaultUrl: undefined,
 		isRemote: true,
 		requiresProductionFlag: true,
@@ -93,14 +96,93 @@ export const EXCLUDED_RUNTIME_TABLES = Object.freeze([
 	"_emdash_transfer_approvals", // 084_site_transfer
 ]);
 
-/** Complete ordered list of `public.*` tables excluded from content sync. */
-export const EXCLUDED_TABLES = Object.freeze([
+/**
+ * Operational indexes and artifacts that EmDash rebuilds per environment (media usage index and its
+ * work/fence/reconciliation bookkeeping, redirect generation state). Copying them between environments
+ * would desynchronise them from the target's own media and redirect state.
+ */
+export const EXCLUDED_OPERATIONAL_TABLES = Object.freeze([
+	"_emdash_media_usage",
+	"_emdash_media_usage_activation",
+	"_emdash_media_usage_cleanup",
+	"_emdash_media_usage_cleanup_fence",
+	"_emdash_media_usage_collection_deletions",
+	"_emdash_media_usage_generation_writes",
+	"_emdash_media_usage_index_status",
+	"_emdash_media_usage_reconciliations",
+	"_emdash_media_usage_sources",
+	"_emdash_media_usage_work",
+	"_emdash_redirect_state",
+	"_emdash_redirect_artifacts",
+	"_emdash_redirect_generation_artifacts",
+]);
+
+/**
+ * Visitor comments carry PII (author name, email, IP, user agent). Excluded by default; opt in with
+ * `--include-comments`. Reactions reference comments, so they travel together.
+ */
+export const COMMENT_TABLES = Object.freeze(["_emdash_comments", "_emdash_comment_reactions"]);
+
+/** Always-excluded `public.*` tables (comments are handled separately, see `getExcludedTables`). */
+export const BASE_EXCLUDED_TABLES = Object.freeze([
 	...EXCLUDED_AUTH_TABLES,
 	...EXCLUDED_ENV_STATE_TABLES,
 	...EXCLUDED_RUNTIME_TABLES,
+	...EXCLUDED_OPERATIONAL_TABLES,
 ]);
 
+/** Default complete list of `public.*` tables excluded from content sync (comments excluded). */
+export const EXCLUDED_TABLES = Object.freeze([...BASE_EXCLUDED_TABLES, ...COMMENT_TABLES]);
+
+/** Excluded list for a run: comments are synced only when `includeComments` is true. */
+export function getExcludedTables({ includeComments = false } = {}) {
+	return includeComments ? BASE_EXCLUDED_TABLES : EXCLUDED_TABLES;
+}
+
+/**
+ * Tables that ARE synced as content (besides any `ec_<collection>` content table). A `public` table that
+ * is neither excluded nor listed here fails the schema-drift test, forcing a conscious decision when
+ * EmDash adds a table. Note `ec_posts.author_id` (and similar owner columns) reference `users`, which is
+ * never synced, so those ids dangle in the target; they are not enforced (replica role) and harmless
+ * because EmDash resolves bylines through `_emdash_bylines`.
+ */
+export const KNOWN_CONTENT_TABLES = Object.freeze([
+	"_emdash_block_type_versions",
+	"_emdash_block_types",
+	"_emdash_byline_field_group_values",
+	"_emdash_byline_field_values",
+	"_emdash_byline_fields",
+	"_emdash_bylines",
+	"_emdash_collections",
+	"_emdash_content_bylines",
+	"_emdash_content_references",
+	"_emdash_fields",
+	"_emdash_menu_items",
+	"_emdash_menus",
+	"_emdash_redirects",
+	"_emdash_relations",
+	"_emdash_sections",
+	"_emdash_seo",
+	"_emdash_taxonomy_def_groups",
+	"_emdash_taxonomy_defs",
+	"_emdash_widget_areas",
+	"_emdash_widgets",
+	"content_taxonomies",
+	"media",
+	"media_folders",
+	"revisions",
+	"taxonomies",
+]);
+
+const KNOWN_CONTENT_SET = new Set(KNOWN_CONTENT_TABLES);
 const EXCLUDED_TABLE_SET = new Set(EXCLUDED_TABLES);
+
+/** Classify a bare `public` table name: "excluded", "content" or "unknown" (needs a human decision). */
+export function classifyPublicTable(name) {
+	if (EXCLUDED_TABLE_SET.has(name)) return "excluded";
+	if (KNOWN_CONTENT_SET.has(name) || /^ec_[a-z0-9_]+$/.test(name)) return "content";
+	return "unknown";
+}
 
 /** Build-time derived cache tables in schema `derived` (supabase/migrations/20261125000000_derived_schema.sql). */
 export const DERIVED_TABLES = Object.freeze([
@@ -109,6 +191,8 @@ export const DERIVED_TABLES = Object.freeze([
 	"geocodes",
 	"post_hints",
 	"umap_state",
+	"gallery_traces",
+	"podcast_embeddings",
 ]);
 
 const SAFE_IDENT_RE = /^[a-z_][a-z0-9_]*$/;
@@ -241,7 +325,12 @@ export function validatePoolerUrl(envName, url) {
 
 	if (!cfg.isRemote) {
 		if (!LOCAL_HOSTS.has(host)) {
-			warnings.push(`local env points to non-loopback host ${host}:${port}; verify this is intentional`);
+			return {
+				ok: false,
+				error:
+					`"local" points to non-loopback host ${host}:${port}. "local" must be 127.0.0.1/localhost; ` +
+					`a remote database cannot be labelled local (it would bypass the production gate).`,
+			};
 		}
 		return { ok: true, host, port, warnings };
 	}
@@ -273,7 +362,7 @@ export function validatePoolerUrl(envName, url) {
 	return { ok: true, host, port, warnings };
 }
 
-/** Normalize a postgres URL (protocol + host + port + pathname) to detect accidental self-sync. */
+/** Normalize a postgres URL (protocol + host + port + pathname) to detect accidental self-sync of local DBs. */
 function canonicalDbEndpoint(url) {
 	try {
 		const u = new URL(url);
@@ -284,9 +373,46 @@ function canonicalDbEndpoint(url) {
 }
 
 /**
- * Run all safety checks before dumping or restoring.
+ * Supabase project ref from a pooler URL username (`postgres.<ref>`). Returns undefined for anything else
+ * (plain `postgres` user, unparseable URL), which callers must treat as "cannot verify".
  */
-export function validateSyncPlan({ source, target, yesProduction = false, sourceUrl, targetUrl }) {
+export function parseProjectRef(url) {
+	try {
+		const user = decodeURIComponent(new URL(url).username);
+		const m = /^postgres\.([a-z0-9]{10,40})$/i.exec(user);
+		return m ? m[1].toLowerCase() : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Expected project refs per env from `.env` / process.env (names only: SUPABASE_{TESTING,PRODUCTION}_REF). */
+export function resolveExpectedRefs(dotEnv = {}, processEnv = {}) {
+	const out = {};
+	for (const cfg of Object.values(ENVS)) {
+		if (!cfg.refVar) continue;
+		const v = (processEnv[cfg.refVar] || dotEnv[cfg.refVar] || "").trim().toLowerCase();
+		if (v) out[cfg.name] = v;
+	}
+	return out;
+}
+
+/**
+ * Run all safety checks before dumping or restoring.
+ *
+ * Remote targets are identified by Supabase project ref (parsed from the pooler username), never by the
+ * env label alone: the ref must equal the ref configured for the labelled env, and ANY target whose ref is
+ * production's requires `--yes-production` even if it was labelled `testing`.
+ * `expectedRefs` = { testing?: string, production?: string } (see `resolveExpectedRefs`).
+ */
+export function validateSyncPlan({
+	source,
+	target,
+	yesProduction = false,
+	sourceUrl,
+	targetUrl,
+	expectedRefs = {},
+}) {
 	if (!ENVS[source]) {
 		return { ok: false, error: `unknown source env "${source}" (expected local, testing or production)` };
 	}
@@ -299,7 +425,65 @@ export function validateSyncPlan({ source, target, yesProduction = false, source
 			error: `source and target environments are identical ("${source}"); refusing to overwrite an environment with itself`,
 		};
 	}
-	if (ENVS[target].requiresProductionFlag && !yesProduction) {
+
+	const srcCheck = validatePoolerUrl(source, sourceUrl);
+	if (!srcCheck.ok) return { ok: false, error: srcCheck.error };
+	const dstCheck = validatePoolerUrl(target, targetUrl);
+	if (!dstCheck.ok) return { ok: false, error: dstCheck.error };
+
+	const sides = [
+		{ role: "source", env: source, url: sourceUrl },
+		{ role: "target", env: target, url: targetUrl },
+	];
+	const refs = {};
+	const anyRemote = sides.some((s) => ENVS[s.env].isRemote);
+	if (anyRemote && !expectedRefs.production) {
+		return {
+			ok: false,
+			error: `${ENVS.production.refVar} is not set; it is required whenever a remote environment is involved so a mislabelled URL cannot reach production`,
+		};
+	}
+	for (const side of sides) {
+		const cfg = ENVS[side.env];
+		if (!cfg.isRemote) continue;
+		const expected = expectedRefs[side.env];
+		if (!expected) {
+			return { ok: false, error: `${cfg.refVar} is not set; cannot verify the ${side.role} URL belongs to ${side.env}` };
+		}
+		const actual = parseProjectRef(side.url);
+		if (!actual) {
+			return {
+				ok: false,
+				error: `${side.role} (${side.env}) URL username is not "postgres.<project-ref>"; cannot verify which Supabase project it targets`,
+			};
+		}
+		if (actual !== expected) {
+			return {
+				ok: false,
+				error:
+					`${side.role} is labelled "${side.env}" but its URL points at project ref ${actual}, ` +
+					`not the ${cfg.refVar} ref ${expected}. Refusing: fix ${cfg.urlVar}.`,
+			};
+		}
+		refs[side.role] = actual;
+	}
+
+	if (refs.source && refs.target && refs.source === refs.target) {
+		return {
+			ok: false,
+			error: `source (${source}) and target (${target}) are the same Supabase project (ref ${refs.source}); refusing self-sync`,
+		};
+	}
+	if (!refs.source && !refs.target && canonicalDbEndpoint(sourceUrl) === canonicalDbEndpoint(targetUrl)) {
+		return {
+			ok: false,
+			error: `source (${source}) and target (${target}) resolve to the same database endpoint (${dbHost(sourceUrl)}); refusing self-sync`,
+		};
+	}
+
+	const targetIsProduction =
+		ENVS[target].requiresProductionFlag || (refs.target && refs.target === expectedRefs.production);
+	if (targetIsProduction && !yesProduction) {
 		return {
 			ok: false,
 			error:
@@ -308,20 +492,22 @@ export function validateSyncPlan({ source, target, yesProduction = false, source
 		};
 	}
 
-	const srcCheck = validatePoolerUrl(source, sourceUrl);
-	if (!srcCheck.ok) return { ok: false, error: srcCheck.error };
+	return { ok: true, targetIsProduction: Boolean(targetIsProduction), warnings: [...srcCheck.warnings, ...dstCheck.warnings] };
+}
 
-	const dstCheck = validatePoolerUrl(target, targetUrl);
-	if (!dstCheck.ok) return { ok: false, error: dstCheck.error };
-
-	if (canonicalDbEndpoint(sourceUrl) === canonicalDbEndpoint(targetUrl)) {
-		return {
-			ok: false,
-			error: `source (${source}) and target (${target}) resolve to the same database endpoint (${dbHost(sourceUrl)}); refusing self-sync`,
-		};
+/**
+ * Split a postgres URL into a password-free URL (safe for argv / `ps`) and the child-process env carrying
+ * the password as `PGPASSWORD` (honoured by pg_dump, psql and the Supabase CLI).
+ */
+export function splitUrlCredentials(url) {
+	try {
+		const u = new URL(url);
+		const password = decodeURIComponent(u.password);
+		u.password = "";
+		return { url: u.toString(), env: password ? { PGPASSWORD: password } : {} };
+	} catch {
+		return { url, env: {} };
 	}
-
-	return { ok: true, warnings: [...srcCheck.warnings, ...dstCheck.warnings] };
 }
 
 /**
@@ -375,7 +561,7 @@ export function buildSupabaseDumpArgs({
 	if (excludeList.length > 0) {
 		args.push("--exclude", excludeList.join(","));
 	}
-	if (source !== "local" || sourceUrl !== LOCAL_DB_URL) {
+	if (source !== "local" || splitUrlCredentials(sourceUrl).url !== splitUrlCredentials(LOCAL_DB_URL).url) {
 		args.push(`--remote=${sourceUrl}`);
 	}
 	if (outputFile) {
@@ -463,7 +649,7 @@ const VALID_TOOLS = new Set(["auto", "pg_dump", "supabase"]);
 /**
  * Parse CLI arguments for `apps/web/scripts/sync/pull.mjs`.
  * Usage:
- *   pull.mjs <source> [--to <target>] [--dry-run] [--include-derived] [--yes-production] [--dump-file <path>] [--tool <auto|pg_dump|supabase>]
+ *   pull.mjs <source> [--to <target>] [--dry-run] [--include-derived] [--include-comments] [--yes] [--yes-production] [--dump-file <path>] [--tool <auto|pg_dump|supabase>]
  */
 export function parseCliArgs(argv) {
 	const opts = {
@@ -472,6 +658,8 @@ export function parseCliArgs(argv) {
 		dryRun: false,
 		includeDerived: false,
 		yesProduction: false,
+		includeComments: false,
+		yes: false,
 		dumpFile: undefined,
 		tool: "auto",
 		help: false,
@@ -489,6 +677,14 @@ export function parseCliArgs(argv) {
 		}
 		if (arg === "--include-derived") {
 			opts.includeDerived = true;
+			continue;
+		}
+		if (arg === "--include-comments") {
+			opts.includeComments = true;
+			continue;
+		}
+		if (arg === "--yes") {
+			opts.yes = true;
 			continue;
 		}
 		if (arg === "--yes-production") {
