@@ -246,3 +246,73 @@ Section 10's run through the deployed Worker failed on CPU (1102, Workers Free 1
 | verify.mjs | checked 995, body byte-identical 995, featured_image 290, missing 0, not published 0, mismatch 0, duplicate legacy_id 0 |
 | Cleanup | not run — testing had no starter seed (INF-4) and spike posts never existed there; the listing scan was too slow over the pooler and was stopped |
 | Idempotence re-run | not repeated on testing (proved locally twice; verify covers state) |
+
+## 12. MIG-1c: tag label case (branch `emdash/MIG-1c`, local only)
+
+Problem (PORT-3 "tag case"): MIG-1 stored tag term labels lowercase. Legacy keeps each post's frontmatter casing in `data.tag` (card JSON, NDJSON, relates); only links, badges and tag pages are lowercased (`packages/utils/extract.ts` `tags()`, `badges.ts` `generateTagMap`). Slugs stay lowercase and are unchanged.
+
+### 12.1 Label rule (implemented in `mig1/import.mjs`, `tagLabelMap()`)
+
+- Each tag slug gets one label: the frontmatter casing used by the most posts for that slug. Ties go to the casing seen first in `legacy_id` order (code-point compare). Computed over all 995 posts, so `--limit` and `--match` runs agree with a full run.
+- 432 slugs; 472 distinct raw spellings. 149 slugs get a label other than the slug.
+- Decision for Lead (E2): the story suggested "first-seen". I chose most-frequent because first-seen gives a label used by one post in six slugs. Six slugs differ between the two rules: `3d` (mode `3D` x5, first `3d`), `wsl2` (mode `wsl2` x5, first `WSL2`), `tailwind` (mode `Tailwind` x2, first `tailwind`), `wearos` (mode `wearos` x3, first `wearOS`), `mac` (mode `mac` x2, first `Mac`), `ml` (mode `ML` x2, first `ml`). Switching is a one-line change in `tagLabelMap()`.
+- Legacy has no label rule of its own (it never shows a stored label), so this is the importer's choice, not a copy of legacy.
+
+### 12.2 Importer changes
+
+- New term creation uses the label from `tagLabelMap()`.
+- Existing tag terms whose label differs get `PUT /taxonomies/tag/terms/<slug>` with `{label}` (slug untouched). Counted as `terms-relabeled`. Other taxonomies (category, series, city) are not relabeled; a mismatch there is logged as `label-mismatch-not-changed` (none found).
+- Post hash unchanged: the overwrite-guard hash uses taxonomy slugs, not labels. So relabeling causes **0 post updates** (995 unchanged, confirmed below).
+- `--dry-run` now prints tag label stats. No other flags changed.
+
+### 12.3 Local run (dev server on port 4333, DB confirmed local: `2025/09/09/tetris-ai` present, 998 posts incl. 3 non-legacy)
+
+| Run | Processed | Created | Updated | Unchanged | Failed | terms-relabeled | Time |
+|---|---|---|---|---|---|---|---|
+| Run 1 (`--url http://localhost:4333`) | 995 | 0 | **0** | 995 | 0 | **147** | 44 s |
+| Re-run (idempotence) | 995 | 0 | 0 | 995 | 0 | **0** | 35 s |
+
+- Run 1 relabeled 147 terms, while 149 slugs have a non-lowercase label. The 2-term gap is unreconciled: those two terms presumably already held the target label (not checked).
+- `verify.mjs --manifest <run-1 manifest>`: checked 995, body byte-identical 995, featured_image set 290, missing 0, not published 0, body mismatch 0, duplicate legacy_id 0.
+- Dev server on 4333 stopped (`astro dev stop`).
+
+### 12.4 Rebuild and parity (`scripts/dev/parity-api.mjs`, PORT-3)
+
+- `LEGACY_GENERATED_DIR=<legacy>/src/content/generated CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://postgres:postgres@127.0.0.1:54322/postgres pnpm --filter web build`: exit 0, no `runtime init failed`, 1m 18s for the server build.
+- **The tag-case diff is still there.** Cause is outside my lane: `apps/web/src/lib/content.ts` line 61 maps `terms.tag` to `t.slug`, so the new labels never reach `data.tag`. Example: `cards/2015/08/23/pebblejs-pebble.json` has `"tag":["pebble"]` in the new build, legacy `"tag":["Pebble"]`. The fix is PORT-3 code, not the importer.
+- Diffs remaining after the rebuild (files differing, from `parity-api.mjs`):
+  - `data.tag[]`: all listings (`all/*.ndjson` 588, `tag/<x>` 1296, `year/*` 294, `series/*` 200, `world/*` 75, `relates/*` 2283, `cards/<id>` 284, `cards/latest.json` 1, `peak.json` 22). This is the tag-case issue.
+  - `data.cover.url`: 50 (`all`), 192 (`relates`), 25 (`cards`), others. Local `./x.png` vs legacy `/_astro/...`; MIG-2.
+  - `data.layout`: 12 (`all`), 119 (`relates`), 6 (`cards`), 11 (`tag`), 6 (`year`), 1 (`series`). Word-count bucket; unchanged from PORT-3.
+  - `data.bgColor` / `titleColor`: 2 (`all`), 4 (`relates`), 1 (`year`), 1 (`peak`). Color sets; not checked here.
+  - `heatmap/all.json`: per-day values (unchanged from PORT-3 item 4).
+  - `tag/all.json`: `c#` href `/tag/c%23` vs legacy `/tag/c#` (intended, PORT-3 item 5), and a count-1 tie order (`pixi.js`/`daisyui`, unchanged). Labels in `tag/all.json` are already lowercase slugs in both builds.
+  - `year/covers.json`: 2015/2016/2023 cover order (unchanged from PORT-3 item 6).
+  - `cards/history.json`: build-day dependent (unchanged).
+  - Byte-identical or matching: `posts/all.json`, `posts/umap.json`, `category/all.json`, `series/all.json`, `world/map.json`, `gallery/trace/*.svg` (75), `podcast/*.ndjson` (10).
+
+### 12.5 Escalations for Lead
+
+- **E2 (label rule):** most-frequent casing (chosen) or first-seen (story suggestion). Six examples in 12.1.
+- **E3 (port reads slugs):** PORT-3 owner must change `apps/web/src/lib/content.ts` line 61 to use `t.label` for `data.tag`, and for slugs with several casings, read the per-post casing from the legacy record `tags` (already used by `reorderLike`) so the parity diff disappears. Not done here (lane).
+- **E4 (not checked):** the 2-term gap in 12.3, and whether tie-breaks should follow legacy build (glob path) order instead of `legacy_id` code-point order. Only the six slugs in 12.1 were compared.
+
+### 12.6 Commands run
+
+```bash
+git switch -c emdash/MIG-1c feat/emdash                 # worktree branch for MIG-1c
+pnpm install --frozen-lockfile
+cp <main checkout>/apps/web/.env apps/web/.env          # EMDASH_ENCRYPTION_KEY only (git-ignored)
+node apps/web/scripts/import/mig1/import.mjs --dry-run
+pnpm exec astro dev stop                                  # nothing running
+pnpm exec astro dev --port 4333                           # local (shared Supabase 127.0.0.1:54322)
+node <scratchpad>/dbcheck.mjs http://localhost:4333 2025/09/09/tetris-ai   # read-only: found, 998 posts
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4333     # run 1: terms-relabeled 147
+node apps/web/scripts/import/mig1/import.mjs --url http://localhost:4333     # re-run: terms-relabeled 0, 0 changes
+node apps/web/scripts/import/mig1/verify.mjs --url http://localhost:4333 --manifest <run-1 manifest>
+pnpm exec astro dev stop
+LEGACY_GENERATED_DIR=<legacy>/src/content/generated CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://postgres:postgres@127.0.0.1:54322/postgres pnpm --filter web build
+node apps/web/scripts/dev/parity-api.mjs <legacy>/dist apps/web/dist/client --examples
+```
+
+Testing command (not run; Lead runs it through the local admin, per section 11): `node apps/web/scripts/import/mig1/import.mjs --url <testing-local-admin> --dry-run`, then the real run with `--concurrency 4 --rewrite=none`. Expect `terms-relabeled` ≈ the count of tag terms whose label is not lowercase on that DB, and 0 post updates.

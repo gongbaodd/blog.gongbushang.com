@@ -267,6 +267,7 @@ async function loadPosts() {
 
     posts.push({
       rel,
+      rawTags: (data.tag ?? []).map((t) => String(t)),
       isMdx: /\.mdx$/i.test(rel),
       legacyId,
       contentSlug: legacyId.replace(/\//g, "-"),
@@ -444,8 +445,44 @@ function withStamp(data, taxonomies) {
 // ---------------------------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------------------------
+/**
+ * Display label per tag slug (MIG-1c). Legacy keeps each post's frontmatter casing in `data.tag` (JSON
+ * cards and NDJSON) and lowercases it only for links, badges and tag pages. EmDash stores one label per
+ * term, so the label is the casing most posts use for that slug. Ties go to the casing seen first in
+ * legacy_id order (code-point compare, not locale). The slug stays lowercase and never changes.
+ * Computed over all posts so that --limit and --match runs agree with a full run.
+ */
+export function tagLabelMap(posts) {
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  const counts = new Map(); // slug -> Map(raw casing -> count), insertion order = first seen
+  for (const p of [...posts].sort((a, b) => cmp(a.legacyId, b.legacyId))) {
+    for (const raw of new Set(p.rawTags)) {
+      const slug = raw.toLocaleLowerCase();
+      if (!counts.has(slug)) counts.set(slug, new Map());
+      const byRaw = counts.get(slug);
+      byRaw.set(raw, (byRaw.get(raw) ?? 0) + 1);
+    }
+  }
+  const labels = new Map();
+  for (const [slug, byRaw] of counts) {
+    let best;
+    let bestCount = 0;
+    for (const [raw, n] of byRaw) {
+      if (n > bestCount) {
+        best = raw;
+        bestCount = n;
+      }
+    }
+    labels.set(slug, best);
+  }
+  return labels;
+}
+
 async function main() {
   const yamlPosts = await loadPosts();
+  // MIG-1c: one label per tag term (see tagLabelMap). Posts keep their slugs; only labels change.
+  const tagLabels = tagLabelMap(yamlPosts);
+  for (const p of yamlPosts) p.terms.tag = p.terms.tag.map((t) => ({ slug: t.slug, label: tagLabels.get(t.slug) ?? t.label }));
   const matched = MATCH ? yamlPosts.filter((p) => p.legacyId.includes(MATCH)) : yamlPosts;
   const posts = matched.slice(0, LIMIT === Infinity ? undefined : LIMIT);
 
@@ -473,6 +510,9 @@ async function main() {
 
   if (DRY) {
     say(`dry-run: ${posts.length} posts, ${termCount} distinct terms (${[...termPlan].map(([n, m]) => `${n}:${m.size}`).join(", ")})`);
+    const casedTags = [...tagLabels].filter(([slug, label]) => label !== slug).length;
+    const multiCase = [...new Map(yamlPosts.flatMap((p) => p.rawTags).map((r) => [r, r.toLocaleLowerCase()]))].length;
+    say(`tag labels (all posts): ${tagLabels.size} slugs, ${casedTags} with a non-lowercase label; ${multiCase} distinct raw spellings`);
     say(`anomalies (all posts): ${JSON.stringify(anomalyCounts)}`);
     for (const key of Object.keys(anomalyCounts)) {
       const ex = yamlPosts.filter((p) => p.anomalies.some((a) => a.startsWith(key))).slice(0, 3).map((p) => p.legacyId);
@@ -492,18 +532,38 @@ async function main() {
   const termCreated = { category: 0, tag: 0, series: 0, city: 0 };
   const termExisting = {};
   const termIndex = {};
+  // MIG-1c: only tag labels are reconciled on existing terms (slug never changes). Other taxonomies
+  // keep their labels as before; a mismatch there is logged, not changed.
+  const RELABEL = new Set(["tag"]);
+  let termRelabeled = 0;
+  const termMismatch = {};
   for (const [name, wanted] of termPlan) {
     termIndex[name] = await listTerms(name);
     termExisting[name] = termIndex[name].size;
     for (const [slug, label] of wanted) {
-      if (termIndex[name].has(slug)) continue;
+      const have = termIndex[name].get(slug);
+      if (have) {
+        if (have.label === label) continue;
+        if (!RELABEL.has(name)) {
+          termMismatch[name] = (termMismatch[name] ?? 0) + 1;
+          logLine(`term label differs (not changed) ${name} ${JSON.stringify(slug)} stored=${JSON.stringify(have.label)} wanted=${JSON.stringify(label)}`);
+          continue;
+        }
+        await api("PUT", `/taxonomies/${name}/terms/${encodeURIComponent(slug)}`, { label });
+        termIndex[name].set(slug, { ...have, label });
+        termRelabeled++;
+        logLine(`term relabeled ${name} ${JSON.stringify(slug)} ${JSON.stringify(have.label)} -> ${JSON.stringify(label)}`);
+        continue;
+      }
       await api("POST", `/taxonomies/${name}/terms`, { slug, label });
       termIndex[name].set(slug, { slug, label });
       termCreated[name] = (termCreated[name] ?? 0) + 1;
       logLine(`term created ${name} ${JSON.stringify(slug)} label=${JSON.stringify(label)}`);
     }
   }
-  say(`terms: created ${JSON.stringify(termCreated)} (already present before run: ${JSON.stringify(termExisting)})`);
+  say(
+    `terms: created ${JSON.stringify(termCreated)} terms-relabeled ${termRelabeled} label-mismatch-not-changed ${JSON.stringify(termMismatch)} (already present before run: ${JSON.stringify(termExisting)})`,
+  );
 
   // 2. Posts.
   const { byLegacy, dupes } = await listExistingPosts();
@@ -602,6 +662,7 @@ async function main() {
     processed: posts.length,
     ...stats,
     termsCreated: termCreated,
+    "terms-relabeled": termRelabeled,
     seconds: Math.round((Date.now() - t0) / 1000),
     manifest: MANIFEST,
     log: LOG_FILE,
