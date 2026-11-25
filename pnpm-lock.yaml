@@ -252,6 +252,9 @@ importers:
       '@types/chroma-js':
         specifier: ^3.1.1
         version: 3.1.2
+      '@types/node':
+        specifier: 25.9.1
+        version: 25.9.1
       autoprefixer:
         specifier: ^10.4.21
         version: 10.5.0(postcss@8.5.15)
@@ -16076,7 +16079,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
       form-data: 4.0.6
 
   '@types/node@16.9.1': {}
@@ -16103,7 +16106,7 @@ snapshots:
 
   '@types/potrace@2.1.5':
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
       jimp: 0.16.1
     transitivePeerDependencies:
       - debug
@@ -16130,7 +16133,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
 
   '@types/stats.js@0.17.4': {}
 
@@ -16163,11 +16166,11 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
 
   '@types/xml2js@0.4.14':
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -16918,7 +16921,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
 
   buffer@5.7.1:
     dependencies:
@@ -18333,7 +18336,7 @@ snapshots:
 
   happy-dom@20.14.5:
     dependencies:
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -20738,7 +20741,7 @@ snapshots:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
       '@types/long': 4.0.2
-      '@types/node': 25.9.1
+      '@types/node': 24.12.4
       long: 4.0.0
 
   protocol-buffers-schema@3.6.1: {}
