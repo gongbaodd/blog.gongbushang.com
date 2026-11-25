@@ -1,14 +1,17 @@
 ---
-// Placeholder for the maplibre world map (PORT-6). Keeps the legacy wrapper and the data endpoint contract:
-// the island will fetch /api/world/map.json and show `cityCount` cities.
+// Legacy `src/components/WorldMap.astro`; the city count is passed in by the page (legacy computed it here).
+import GLMap from "@/src/map/GLMap";
+
 interface Props {
 	cityCount: number;
 }
 const { cityCount } = Astro.props;
 ---
 
-<!-- TODO(PORT-6): <GLMap cityCount={cityCount} client:idle /> from packages/map -->
-<div class="cv-deferred" id="world-map" data-city-count={cityCount}></div>
+<!-- Below the fold: skip layout/paint until near the viewport -->
+<div class="cv-deferred">
+	<GLMap cityCount={cityCount} client:idle />
+</div>
 
 <style>
 	.cv-deferred {

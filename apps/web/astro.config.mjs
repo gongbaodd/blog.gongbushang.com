@@ -6,6 +6,7 @@ import { defineConfig } from "astro/config";
 import emdash from "emdash/astro";
 import { localMedia } from "emdash/media";
 import mermaid from "astro-mermaid";
+import glsl from "vite-plugin-glsl";
 import { rebuildOnPublish } from "./src/plugins/rebuild-on-publish/index.ts";
 import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
@@ -36,9 +37,28 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+		// .vert/.frag/.glsl imports of the particle hero (legacy parity).
+		plugins: [glsl()],
 		resolve: {
-			// Legacy import style `@/src/...` (see PORTING.md): `@` = apps/web root.
-			alias: { "@": fileURLToPath(new URL("./", import.meta.url)) },
+			alias: {
+				// Legacy import style `@/src/...` (see PORTING.md): `@` = apps/web root.
+				"@": fileURLToPath(new URL("./", import.meta.url)),
+				// webgl-components skill: nothing here uses onnxruntime-node, but a transitive import must never
+				// pull the native module into a bundle (legacy aliases it to an empty module).
+				"onnxruntime-node": fileURLToPath(new URL("./src/empty-module.js", import.meta.url)),
+			},
+		},
+		optimizeDeps: {
+			include: ["react-plock"], // prebundle it (client dev)
+			// webgl-components skill: Rapier WASM must not be pre-bundled (no Rapier island on the home page yet).
+			exclude: ["onnxruntime-node", "@dimforge/rapier3d-compat", "@react-three/rapier"],
+		},
+		build: {
+			rollupOptions: {
+				// Keep side effects (incl. Rapier WASM init) while still allowing unused-export elimination
+				// (legacy comment: `treeshake: false` shipped whole icon libraries).
+				treeshake: { moduleSideEffects: "no-external" },
+			},
 		},
 		ssr: {
 			// react-plock (PORT-3 masonry) ships CJS-ish ESM; legacy forced it into the SSR bundle too.

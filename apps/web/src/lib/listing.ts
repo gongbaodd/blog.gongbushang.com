@@ -260,8 +260,8 @@ export async function historyCards(limit: number, now = new Date()): Promise<TCl
 	return posts;
 }
 
-async function galleryPost(now: Date): Promise<TClientPost | undefined> {
-	const pubDates = new Map(legacy.podcast.map((e) => [e.id, e.pubDate]));
+/** Gallery entry whose doc date is closest to `now` by day of year (legacy `findNearestGalleryEntry`). */
+function nearestGalleryEntry(now: Date, pubDates: Map<string, string>) {
 	const ref = localParts(now);
 	let best: (typeof legacy.gallery)[number] | undefined;
 	let bestDist = Infinity;
@@ -276,6 +276,24 @@ async function galleryPost(now: Date): Promise<TClientPost | undefined> {
 			best = entry;
 		}
 	}
+	return best;
+}
+
+/** Home hero image: the gallery entry nearest today, with its trace SVG url when one was generated. */
+export function homeGalleryImage(now = new Date()) {
+	const best = nearestGalleryEntry(now, new Map(legacy.podcast.map((e) => [e.id, e.pubDate])));
+	if (!best) return undefined;
+	const base = `${best.id.replaceAll("/", "-")}.svg`;
+	return {
+		url: optimizeCloudinaryUrl(best.image),
+		traceUrl: legacy.traceFiles.includes(base) ? `/api/gallery/trace/${base}` : undefined,
+		colorSet: best.colorSet,
+	};
+}
+
+async function galleryPost(now: Date): Promise<TClientPost | undefined> {
+	const pubDates = new Map(legacy.podcast.map((e) => [e.id, e.pubDate]));
+	const best = nearestGalleryEntry(now, pubDates);
 	if (!best) return undefined;
 	const docDate = galleryDocDate(best.doc, pubDates);
 	if (docDate && Math.trunc((now.getTime() - docDate.getTime()) / DAY) <= 7) return undefined;
@@ -341,6 +359,12 @@ export async function worldMapData(): Promise<IMapData[]> {
 		}
 	}
 	return data;
+}
+
+/** Home tag cloud (legacy `getBadges`): categories, tags and series ordered by post count. */
+export async function getBadges() {
+	const [categories, tags, series] = await Promise.all([getCategories(), getTags(), getSeries()]);
+	return [...categories, ...tags, ...series].toSorted((a, b) => b.count - a.count);
 }
 
 export { INITIAL_SSR_POSTS, POST_COUNT_PER_PAGE };

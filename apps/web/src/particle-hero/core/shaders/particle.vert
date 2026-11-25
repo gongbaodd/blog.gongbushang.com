@@ -1,0 +1,71 @@
+precision highp float;
+
+attribute float pindex;
+attribute vec3 position;
+attribute vec3 offset;
+attribute vec2 uv;
+attribute float angle;
+attribute vec3 aColor;
+attribute float aVisible;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+uniform float uTime;
+uniform float uRandom;
+uniform float uDepth;
+uniform float uSize;
+uniform float uSizeScale;
+uniform float uDataMode;
+uniform vec2 uTextureSize;
+uniform sampler2D uTexture;
+uniform sampler2D uTouch;
+
+varying vec2 vPUv;
+varying vec2 vUv;
+varying vec3 vColor;
+
+#include "./includes/noise.glsl"
+
+float random(float n) {
+  return fract(sin(n) * 43758.5453123);
+}
+
+void main() {
+  if (aVisible < 0.5) {
+    gl_Position = vec4(0.0);
+    return;
+  }
+
+  vUv = uv;
+  vColor = aColor;
+
+  vec2 puv = offset.xy / uTextureSize;
+  vPUv = puv;
+
+  vec4 colA = texture2D(uTexture, puv);
+  float grey = colA.r * 0.21 + colA.g * 0.71 + colA.b * 0.07;
+  if (uDataMode > 0.5) {
+    grey = 1.0;
+  }
+
+  vec3 displaced = offset;
+  displaced.xy += vec2(random(pindex) - 0.5, random(offset.x + pindex) - 0.5) * uRandom;
+  float rndz = (random(pindex) + snoise_1_2(vec2(pindex * 0.1, uTime * 0.1)));
+  displaced.z += rndz * (random(pindex) * 2.0 * uDepth);
+  displaced.xy -= uTextureSize * 0.5;
+
+  float t = texture2D(uTouch, puv).r;
+  displaced.z += t * 20.0 * rndz;
+  displaced.x += cos(angle) * t * 20.0 * rndz;
+  displaced.y += sin(angle) * t * 20.0 * rndz;
+
+  float psize = (snoise_1_2(vec2(uTime, pindex) * 0.5) + 1.2);
+  psize *= max(grey, 0.2);
+  psize *= uSize;
+  psize *= uSizeScale;
+
+  vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+  mvPosition.xyz += position * psize;
+  gl_Position = projectionMatrix * mvPosition;
+}

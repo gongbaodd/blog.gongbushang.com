@@ -14,7 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = resolve(root, process.env.LEGACY_GENERATED_DIR || "../../src/content/generated");
 const RELATES_LIMIT = 8; // POST_COUNT_PER_PAGE / 2
 
-const out = { source: null, posts: {}, podcast: [], gallery: [], umapPosts: 0 };
+const out = { source: null, posts: {}, podcast: [], gallery: [], traceFiles: [], umapPosts: 0 };
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
 const apiDir = resolve(root, "public/api");
@@ -107,7 +107,7 @@ if (existsSync(resolve(dir, "gallery.json"))) out.gallery = readJson(resolve(dir
 if (existsSync(resolve(dir, "gallery"))) {
 	const dest = resolve(apiDir, "gallery/trace");
 	mkdirSync(dest, { recursive: true });
-	for (const f of readdirSync(resolve(dir, "gallery")).filter((f) => f.endsWith(".svg"))) copyFileSync(resolve(dir, "gallery", f), resolve(dest, f));
+	for (const f of readdirSync(resolve(dir, "gallery")).filter((f) => f.endsWith(".svg"))) { copyFileSync(resolve(dir, "gallery", f), resolve(dest, f)); out.traceFiles.push(f); }
 }
 
 const target = resolve(root, "src/generated/legacy-data.json");

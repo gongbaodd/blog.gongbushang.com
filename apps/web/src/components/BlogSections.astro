@@ -1,0 +1,26 @@
+---
+import GridHalf from "@/src/components/GridHalf";
+import { HistoryCarousel, LatestCarousel } from "@/src/carousel/BlogCarousel";
+import { INITIAL_SSR_POSTS, getCounts, historyCards, latestCards } from "@/src/lib/listing";
+
+const [latest, history, counts] = await Promise.all([
+	latestCards(INITIAL_SSR_POSTS),
+	historyCards(INITIAL_SSR_POSTS),
+	getCounts(),
+]);
+---
+
+<!-- Below the fold: defer hydration and skip layout/paint until near the viewport -->
+<div class="cv-deferred">
+	<GridHalf>
+		<LatestCarousel slot="left" initialPosts={latest} totalCount={counts.all ?? 0} client:visible />
+		<HistoryCarousel slot="right" initialPosts={history} client:visible />
+	</GridHalf>
+</div>
+
+<style>
+	.cv-deferred {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 600px;
+	}
+</style>
