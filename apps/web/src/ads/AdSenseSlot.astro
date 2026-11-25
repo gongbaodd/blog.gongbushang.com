@@ -1,6 +1,6 @@
 ---
-// Ported from packages/ads/AdSenseSlot.astro. Renders only on a production build (or `astro dev`).
-import { isProductionBuild } from "../analytics/env";
+// Ported from packages/ads/AdSenseSlot.astro. Renders only on a live build (PUBLIC_SITE_LIVE=true) (or `astro dev`).
+import { isLiveBuild } from "../analytics/env";
 
 interface Props {
 	slotId?: string;
@@ -8,7 +8,7 @@ interface Props {
 }
 
 const { slotId = "", test = false } = Astro.props;
-const enabled = isProductionBuild() || import.meta.env.DEV;
+const enabled = isLiveBuild() || import.meta.env.DEV;
 // Test output (placeholder, data-adtest) is never emitted unless explicitly requested.
 const isTest = enabled && test && (import.meta.env.DEV || import.meta.env.PUBLIC_ADSENSE_TEST === "true");
 ---

@@ -1,9 +1,8 @@
 # EmDash Node Admin — Docker Compose (D12, INF-9)
 #
-# Supports local (Supabase on host), testing, and production databases via .env files:
+# Supports local (Supabase on host) and production databases via .env files (INF-10: no testing environment):
 #   cp .env.example .env
 #   docker compose up --build -d
-#   docker compose --env-file .env.testing up -d
 #   docker compose --env-file .env.production up -d
 
 services:
@@ -12,7 +11,7 @@ services:
       context: ../..
       dockerfile: apps/admin/Dockerfile
     image: growgen-emdash-admin:latest
-    # "no" by default so a production admin is only ever started deliberately; set ADMIN_RESTART=unless-stopped for local/testing.
+    # "no" by default so a production admin is only ever started deliberately; set ADMIN_RESTART=unless-stopped for local.
     restart: "${ADMIN_RESTART:-no}"
     ports:
       - "${BIND_HOST:-127.0.0.1}:${PORT:-4322}:4322"
@@ -28,10 +27,9 @@ services:
       CF_ACCESS_TEAM_DOMAIN: "${CF_ACCESS_TEAM_DOMAIN:-}"
       CF_ACCESS_AUD: "${CF_ACCESS_AUD:-}"
       SUPABASE_PRODUCTION_REF: "${SUPABASE_PRODUCTION_REF:-}"
-      SUPABASE_TESTING_REF: "${SUPABASE_TESTING_REF:-}"
       ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "${ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL:-}"
       DATABASE_CA_CERT: "${DATABASE_CA_CERT:-}"
-      DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in apps/admin/.env (local, testing, or production pooler URL)}"
+      DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in apps/admin/.env (local, or the production pooler URL)}"
       EMDASH_ENCRYPTION_KEY: "${EMDASH_ENCRYPTION_KEY:-}"
       EMDASH_SITE_URL: "${EMDASH_SITE_URL:-http://localhost:4322}"
       EMDASH_ALLOWED_ORIGINS: "${EMDASH_ALLOWED_ORIGINS:-}"

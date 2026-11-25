@@ -96,7 +96,8 @@ export function evaluateStartup(env) {
 	const host = (env.HOST ?? "").trim();
 	const result = { errors, siteEnv, effectiveProduction: false, requireAccess: false, host, target: "" };
 
-	if (!["local", "testing", "production"].includes(siteEnv)) errors.push(`SITE_ENV must be local, testing or production (got "${siteEnv}")`);
+	if (siteEnv === "testing") errors.push("SITE_ENV=testing was retired by INF-10 (environments are local and production); use SITE_ENV=production for the remote database");
+	else if (!["local", "production"].includes(siteEnv)) errors.push(`SITE_ENV must be local or production (got "${siteEnv}")`);
 	if (!url) {
 		errors.push("DATABASE_URL is not set");
 		return result;
@@ -127,7 +128,6 @@ export function evaluateStartup(env) {
 
 	const ref = parseProjectRef(url);
 	const prodRef = env.SUPABASE_PRODUCTION_REF?.trim().toLowerCase() || undefined;
-	const testingRef = env.SUPABASE_TESTING_REF?.trim().toLowerCase() || undefined;
 	const refIsProduction = Boolean(ref && prodRef && ref === prodRef);
 
 	if (siteEnv !== "local" && loopbackDb) errors.push(`SITE_ENV=${siteEnv} but DATABASE_URL points at a loopback/local host (${u.hostname})`);
@@ -137,18 +137,14 @@ export function evaluateStartup(env) {
 		);
 	}
 	if (!loopbackDb) {
-		// Fail closed like INF-5: a remote target can only be classified by project ref, so the production ref must be known.
+		// Fail closed like INF-5: there is exactly one remote project (production), so ANY remote database must match
+		// SUPABASE_PRODUCTION_REF, whatever SITE_ENV says (INF-10).
 		if (!ref) errors.push('DATABASE_URL user is not "postgres.<project-ref>"; cannot verify which Supabase project it targets');
-		if (!prodRef) errors.push("a remote database requires SUPABASE_PRODUCTION_REF (to tell production from the rest)");
-		if (siteEnv === "production" && prodRef && ref && ref !== prodRef) errors.push("DATABASE_URL project ref does not match SUPABASE_PRODUCTION_REF");
-		if (siteEnv === "testing") {
-			if (!testingRef) errors.push("SITE_ENV=testing requires SUPABASE_TESTING_REF");
-			else if (ref && ref !== testingRef) errors.push("DATABASE_URL project ref does not match SUPABASE_TESTING_REF");
-			if (refIsProduction) errors.push("SITE_ENV=testing but DATABASE_URL targets the production project");
-		}
+		if (!prodRef) errors.push("a remote database requires SUPABASE_PRODUCTION_REF (the only remote project is production)");
+		if (prodRef && ref && ref !== prodRef) errors.push("DATABASE_URL project ref does not match SUPABASE_PRODUCTION_REF");
 	}
 
-	// A production project (by ref) always counts as production, whatever SITE_ENV says.
+	// A remote database (production by ref) always counts as production, whatever SITE_ENV says.
 	result.effectiveProduction = siteEnv === "production" || refIsProduction;
 	if (result.effectiveProduction) {
 		if (env.ADMIN_CONFIRM_PRODUCTION !== "yes") {

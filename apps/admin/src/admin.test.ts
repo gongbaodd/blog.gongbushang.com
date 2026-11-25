@@ -87,7 +87,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("returns 400 on malformed percent-encoded pathname", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: "top-secret", SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: "top-secret", SITE_ENV: "local" }),
 			isDev: false,
 		});
 		const { context } = createMockContext("http://localhost:4322/_emdash/admin/setup");
@@ -102,7 +102,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("fails closed (404) on setup paths when SETUP_TOKEN is unset or empty", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: undefined, SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: undefined, SITE_ENV: "local" }),
 			isDev: false,
 		});
 		const next = vi.fn(async () => new Response("setup page"));
@@ -124,7 +124,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("sets httpOnly cookie and redirects to clean URL when ?setup_token matches", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "local" }),
 			isDev: false,
 		});
 		const next = vi.fn(async () => new Response("setup page"));
@@ -153,7 +153,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("marks the setup cookie Secure on every non-localhost origin", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "local" }),
 			isDev: false,
 		});
 		for (const origin of ["https://admin.growgen.xyz", "https://localhost:4322", "http://admin.example.test"]) {
@@ -165,7 +165,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("rejects wrong ?setup_token or wrong cookie with 404", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "local" }),
 			isDev: false,
 		});
 		const next = vi.fn(async () => new Response("setup page"));
@@ -183,7 +183,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("allows setup request when growgen_setup_gate cookie matches SETUP_TOKEN", async () => {
 		const mw = createAdminMiddleware({
-			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "testing" }),
+			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "local" }),
 			isDev: false,
 		});
 		const next = vi.fn(async () => new Response("setup ok", { status: 200 }));
@@ -211,8 +211,8 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 	});
 
-	it("sets X-Robots-Tag: noindex, nofollow for local, testing, and unset SITE_ENV, and omits it for production", async () => {
-		for (const siteEnv of [undefined, "", "local", "testing"]) {
+	it("sets X-Robots-Tag: noindex, nofollow for local, unknown and unset SITE_ENV, and omits it for production", async () => {
+		for (const siteEnv of [undefined, "", "local", "staging"]) {
 			const mw = createAdminMiddleware({
 				getEnv: () => ({ SITE_ENV: siteEnv }),
 				isDev: false,
@@ -233,7 +233,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 	it("default exported onRequest reads process.env.SETUP_TOKEN and process.env.SITE_ENV", async () => {
 		delete process.env.SETUP_TOKEN;
-		process.env.SITE_ENV = "testing";
+		process.env.SITE_ENV = "local";
 
 		const blocked = createMockContext("http://localhost:4322/_emdash/admin/setup");
 		const resBlocked = await runMw(onRequest, blocked.context, async () => new Response("setup"));
@@ -251,7 +251,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 describe("/healthz endpoint and outer middleware", () => {
 	it("returns 200 JSON from GET and buildHealthzResponse", async () => {
-		const res = buildHealthzResponse({ SITE_ENV: "testing" } as unknown as NodeJS.ProcessEnv);
+		const res = buildHealthzResponse({ SITE_ENV: "local" } as unknown as NodeJS.ProcessEnv);
 		expect(res.status).toBe(200);
 		expect(res.headers.get("Content-Type")).toContain("application/json");
 		expect(res.headers.get("Cache-Control")).toBe("no-store");
@@ -260,7 +260,7 @@ describe("/healthz endpoint and outer middleware", () => {
 			ok: true,
 			status: "ok",
 			service: "emdash-admin",
-			environment: "testing",
+			environment: "local",
 		});
 
 		const routeRes = await getHealthz({} as never);
@@ -357,20 +357,20 @@ describe("rebuild-on-publish Node env wrapper", () => {
 		expect(desc.entrypoint).toContain("rebuild-on-publish.ts");
 	});
 
-	it("reads dispatch env from Node process.env and dispatches on testing/production publish", async () => {
+	it("reads dispatch env from Node process.env and dispatches on production publish", async () => {
 		const env = {
 			GITHUB_DISPATCH_TOKEN: "ghp_test_token",
 			GITHUB_DISPATCH_REPO: "gongbaodd/blog.gongbushang.com",
 			GITHUB_API_URL: "https://api.github.com/",
-			SITE_ENV: "testing",
+			SITE_ENV: "production",
 		} as unknown as NodeJS.ProcessEnv;
 
-		// GITHUB_API_URL is honoured only for SITE_ENV=local; testing/production always use the default api.github.com.
+		// GITHUB_API_URL is honoured only for SITE_ENV=local; production always use the default api.github.com.
 		expect(readNodeDispatchEnv(env)).toEqual({
 			GITHUB_DISPATCH_TOKEN: "ghp_test_token",
 			GITHUB_DISPATCH_REPO: "gongbaodd/blog.gongbushang.com",
 			GITHUB_API_URL: undefined,
-			SITE_ENV: "testing",
+			SITE_ENV: "production",
 		});
 		expect(
 			readNodeDispatchEnv({ ...env, GITHUB_API_URL: "http://fake-github.test", SITE_ENV: "local" } as unknown as NodeJS.ProcessEnv)
@@ -395,7 +395,7 @@ describe("rebuild-on-publish Node env wrapper", () => {
 		expect(JSON.parse(init.body as string)).toEqual({
 			event_type: "emdash-publish",
 			client_payload: {
-				environment: "testing",
+				environment: "production",
 				collection: "posts",
 				id: "post-1",
 				slug: "hello-world",
@@ -404,7 +404,7 @@ describe("rebuild-on-publish Node env wrapper", () => {
 		expect(log.info).toHaveBeenCalledWith(expect.stringContaining("dispatched for posts/hello-world"));
 	});
 
-	it("skips dispatch when SITE_ENV is local or unset", async () => {
+	it("skips dispatch when SITE_ENV is local, unset or the retired testing", async () => {
 		const fetchMock = vi.fn();
 		const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 

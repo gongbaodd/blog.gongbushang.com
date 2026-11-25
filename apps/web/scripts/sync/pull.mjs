@@ -6,7 +6,7 @@
 //   node apps/web/scripts/sync/pull.mjs <source> [--to <target>] [--dry-run] [--include-derived] [--include-comments] [--yes] [--yes-production] [--dump-file <path>] [--tool <auto|pg_dump|supabase>]
 //
 // Run through `pnpm content:pull <source> [options]` (root) or `pnpm --filter web content:pull ...`.
-// Default --to is `local`, so `pull.mjs testing` syncs testing -> local.
+// Default --to is `local`, so `pull.mjs production` syncs production -> local (the main use case).
 import { spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -45,10 +45,10 @@ const USAGE = `Usage:
   node apps/web/scripts/sync/pull.mjs <source> [options]
 
 Arguments:
-  <source>              Source environment: local | testing | production
+  <source>              Source environment: local | production
 
 Options:
-  --to <target>         Target environment: local | testing | production (default: local)
+  --to <target>         Target environment: local | production (default: local)
   --dry-run             Print redacted plan, excluded tables, and exact commands without mutating any DB
   --include-derived     Also sync the "${DERIVED_SCHEMA}" cache schema (excluded by default)
   --include-comments    Also sync visitor comments and reactions (PII; excluded by default)

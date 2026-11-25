@@ -24,12 +24,12 @@ pnpm --filter web derive:seed -- --write
 pnpm --filter web derive:seed:media -- --write   # MIG-3: podcast vectors + gallery traces (needs the MIG-3 import first)
 pnpm --filter web derive                # what `build` runs first
 ```
-Database: the one the build reads (`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`, else `apps/web/.dev.vars`, else `wrangler.jsonc` localConnectionString; `DERIVE_DATABASE_URL` overrides). EmDash content is read with plain SQL in a `READ ONLY` transaction; only the `derived` schema is written.
+Database: the one the build reads (`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`, else `apps/web/.dev.vars`, else `wrangler.jsonc` localConnectionString; `DERIVE_DATABASE_URL` overrides). EmDash content is read with plain SQL in a `READ ONLY` transaction; only the `derived` schema is written, and not at all with `DERIVE_READONLY=1` (PR CI against production, INF-10: read-only session, no cache writes, no embeddings, colours, traces or geocoding).
 
 ## Podcast and gallery in EmDash (MIG-3)
 Collections `podcasts` (150 episodes, slug = legacy_id = episode id, e.g. `--e2iv0jd`) and `gallery` (75 images, slug = legacy id with `/` -> `-`) hold the content; `derive` reads them with the same read-only SQL as posts and nothing under `apps/web` reads `src/content` any more (only the one-off importer and seed scripts, and `DERIVE_PARITY_LEGACY=1`). Gallery images are all Cloudinary URLs already; podcast covers/audio are Spotify/anchor CDN URLs: nothing is uploaded. The podcast show (channel) metadata is a constant in `src/lib/podcast.ts`. Colour sets imported from legacy live in the `color_set` field; derive fills it only for entries without one.
 ```
-pnpm admin:local                                                    # or admin:testing (needs the repo-root .env)
+pnpm admin:local                                                    # or admin:production -- --yes-production (needs the repo-root .env)
 node apps/web/scripts/import/mig3/import.mjs --url http://127.0.0.1:4322 [--only podcast|gallery] [--dry-run] [--update]
 ```
 Idempotent upsert on `legacy_id`; a re-run reports `unchanged`; entries that differ from the legacy files are only reported (`differs`) unless `--update` (never clobbers admin edits). Stops (exit 3) and lists images if any gallery image is not on res.cloudinary.com. Needs the content submodule (`git submodule update --init src/content`) as the source.
@@ -42,28 +42,29 @@ New gallery images are added in the EmDash admin (collection Gallery: title, leg
 Legacy posts keep being authored on `master`, which bumps the `src/content` submodule. `content:catchup` compares the submodule commit pinned by `HEAD` with the one pinned by `--ref` (default `origin/master`, run `git fetch` first), lists added / modified / renamed / deleted posts (`_docs/**/*.md(x)` only) and imports the first three with the MIG-1 importer (one run per post, `--match <legacy_id>`, source = `git archive` of the target commit in a temp dir, so the submodule need not be moved). Deleted posts are only reported, never removed from EmDash.
 ```
 pnpm --filter web content:catchup -- --dry-run                       # plan only, no admin, no writes (the default)
-pnpm admin:local                                                     # in another shell, or admin:testing
+pnpm admin:local                                                     # in another shell, or admin:production -- --yes-production
 pnpm --filter web content:catchup -- --write --url http://127.0.0.1:4322 [--force] [--bump]
 ```
 - Image guard: if any added/modified post (cover, `![](..)`, `<img>`) uses an image outside `res.cloudinary.com` (relative and local images included) the tool lists them and exits 3 without writing; rehost them first (MIG-2).
 - `--bump` checks the submodule out at the target commit and stages the pointer (no commit); do it once the import succeeded so the next catch-up starts from there. Run it from the main checkout.
 - Importer semantics apply: upsert on `legacy_id`, re-runs report `unchanged`, entries edited in the admin since the last import are skipped unless `--force`.
-- After importing, the next build derives embeddings, relates and UMAP for the new posts (see Normal workflow). Testing / production: same command against that environment's admin, only when Lead says so.
+- After importing, the next build derives embeddings, relates and UMAP for the new posts (see Normal workflow). Production: same command against `admin:production`, only when Lead says so.
 - Tests: `pnpm --filter web exec vitest run scripts/import/mig6`.
 
-## Apply to testing / production (Lead decides, never from an agent)
+## Apply to production (Lead decides and the OWNER must confirm first, never from an agent)
+INF-10 removed the `testing` environment: the project that used to be `testing` (`ckpozotzgubrjbjstvjg`) is production now, so every "apply MIG-3 to testing" step below writes to **production**. Before running anything, check whether MIG-3 is already there: `select to_regclass('derived.podcast_embeddings'), to_regclass('derived.gallery_traces')` and the row counts of `ec_podcasts` (150) and `ec_gallery` (75). If the tables or rows are missing, the PR CI build (read-only derive) and the deploy build both fail with the fix in their message, so this must be applied (with the owner's go-ahead) before the first deploy.
 ```
 set -a; . ./.env; set +a
-export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_TESTING_POOLER_URL"
+export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_PRODUCTION_POOLER_URL"
 pnpm --filter web derive:migrate           # applies every supabase/migrations/*_derived_*.sql (PORT-8 + MIG-3 tables)
-# 1. content: needs an admin running against that DB (pnpm admin:testing) and the MIG-1 import done
+# 1. content: needs an admin running against that DB (pnpm admin:production -- --yes-production) and the MIG-1 import done
 node apps/web/scripts/import/mig3/import.mjs --url http://127.0.0.1:4322        # 150 episodes + 75 gallery images
 # 2. cache seeds from the legacy data (content submodule present)
 pnpm --filter web derive:seed -- --write
 pnpm --filter web derive:seed:media -- --write
 ```
-Production: same with `SUPABASE_PRODUCTION_POOLER_URL` and `pnpm admin:production -- --yes-production`. Run the seeds once per environment, after the imports; without them the first build re-embeds 150 episodes and re-traces 75 images (needs LM Studio and network). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
-Use the session pooler (IPv4, port 5432). The migrations are `supabase/migrations/20261125000000_derived_schema.sql` and `20261125010000_derived_podcast_gallery.sql` (`supabase db push` also works). Supabase Free supports pgvector (`create extension vector with schema extensions`); not verified against the cloud projects yet (no writes there from PORT-8). The 1024-d vectors for 995 posts take about 6 MB (1.2 % of the 500 MB limit). Each environment has its own cache; seed each once. Seeding is only valid when the DB holds the migrated legacy posts (it skips any post whose derived embedding text differs from the legacy one).
+Run the seeds once, on production,, after the imports; without them the first build re-embeds 150 episodes and re-traces 75 images (needs LM Studio and network). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
+Use the session pooler (IPv4, port 5432). The migrations are `supabase/migrations/20261125000000_derived_schema.sql` and `20261125010000_derived_podcast_gallery.sql` (`supabase db push` also works). Supabase Free supports pgvector (`create extension vector with schema extensions`); verified on the cloud project. The 1024-d vectors for 995 posts take about 6 MB (1.2 % of the 500 MB limit). Local and production each have their own cache; seed each once. Seeding is only valid when the DB holds the migrated legacy posts (it skips any post whose derived embedding text differs from the legacy one).
 
 ## Normal workflow
 - **Edit or add a post** (EmDash admin, local or remote DB): the next build re-embeds only that post (needs LM Studio with `text-embedding-qwen3-embedding-0.6b`, `pnpm embedding:sync`), then recomputes relates for all posts and, because the corpus hash changed, the whole UMAP layout (about 2 s, Rust binary, `pnpm umap:build` once). UMAP is not incremental: any embedding change moves every point.

@@ -9,7 +9,7 @@ Every agent on the migration reads this file first. The plan and story backlog l
 4. **Secrets.** Never print, commit or paste secrets. Read them from the repo-root `.env`, `apps/web/.dev.vars`, wrangler secrets or GitHub environment secrets, and refer to them only by variable name.
 5. **No outward-facing actions without Lead.** Creating cloud projects, DNS, custom domains, production deploys and deleting remote resources all go through Lead, who asks the owner.
 6. **Stay in your lane.** Edit only the paths your agent definition owns. Hand anything else to Lead.
-7. **Environments** are `local` (Supabase via `supabase start`), `testing`, and `production`. Never call production "public".
+7. **Environments** are `local` (Supabase via `supabase start`) and `production` (INF-10 retired `testing`; the former testing resources were promoted). Never call production "public": `next.growgen.xyz` runs on the production Worker and stays noindex until the owner sets `PUBLIC_SITE_LIVE=true` at CUT-1. PR CI reads the production database read-only (`DERIVE_READONLY=1`) and never writes to it.
 
 ## Story workflow
 1. Lead assigns `<story-id>` (Linear issue `GON-*` in project `P-GON-6`). Work on branch `emdash/<story-id>`, cut from `feat/emdash`, in a git worktree if another builder is active.

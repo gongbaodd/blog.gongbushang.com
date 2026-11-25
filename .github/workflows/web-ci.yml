@@ -1,4 +1,9 @@
-# EmDash site (apps/web) CI: verify and deploy to the `testing` environment (INF-4).
+# EmDash site (apps/web) CI: verify only, never deploy (INF-4, INF-10). Deploys are web-deploy.yml.
+# Environments are local and production (INF-10), so PR builds read the production database. They must never WRITE to it:
+#   - DERIVE_READONLY=1 makes `derive` read-only (read-only DB session, no cache writes, no embeddings, colours, traces or geocoding,
+#     no AI or geocoding credentials used), see apps/web/scripts/derive/index.ts and docs/plan/emdash/runbooks/ci.md.
+#   - DATABASE_POOLER_URL is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
+#   - `emdash migrate --check` is read-only; migrations are applied only by web-deploy.yml (manual, apply_migrations).
 # Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
 # Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
 name: web-ci
@@ -17,8 +22,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # One build/deploy to testing at a time; a newer push supersedes an older one.
-  group: web-testing-${{ github.ref }}
+  # One verification per ref at a time; a newer push supersedes an older one.
+  group: web-ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -30,8 +35,8 @@ defaults:
 
 env:
   CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
-  CLOUDFLARE_ENV: testing
-  SITE_ENV: testing
+  # PR builds never write to the production DB and never spend Workers AI quota (INF-10). Keep this at job level.
+  DERIVE_READONLY: "1"
   PUBLIC_BUILD_SHA: ${{ github.sha }}
   # Empty-build guard thresholds (repository variables, optional). Raise WEB_MIN_POSTS to ~990 once MIG-1 is imported.
   WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
@@ -43,7 +48,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: testing
+    # Holds DATABASE_POOLER_URL (production session pooler). Add required reviewers there if PR builds should need approval.
+    environment: production
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,13 +73,14 @@ jobs:
       - name: Migrations are up to date (read-only)
         working-directory: apps/web
         env:
-          # Session pooler (IPv4). Step-scoped so install/test/typecheck steps never receive DB credentials.
+          # Production session pooler (IPv4). Step-scoped so install/test/typecheck steps never receive DB credentials.
           CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: pnpm exec emdash migrate --from-config --check
 
       - name: Build
         env:
-          # Session pooler (IPv4). Used by the build's prerender (Hyperdrive local connection string).
+          # Production session pooler (IPv4). Used by the build's prerender (Hyperdrive local connection string).
+          # READ-ONLY use: DERIVE_READONLY=1 (job env) makes derive read-only; EmDash's prerender only reads.
           CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: |
           set -o pipefail
@@ -94,7 +101,7 @@ jobs:
 
       - name: URL parity (every legacy URL is built)
         # Exact comparison of dist/client against apps/web/tests/legacy-route-groups.json + legacy-urls.txt.
-        # Deliberately WITHOUT --fail-on-extra: the testing DB is mutable (new tags, years, series, cities add pages),
+        # Deliberately WITHOUT --fail-on-extra: the production DB is mutable (new tags, years, series, cities add pages),
         # so extras would fail unrelated PRs. Run `pnpm --filter web parity --fail-on-extra --allow-extra
         # tests/parity-allow-extra.txt` locally and at cutover.
         run: pnpm --filter web parity
@@ -105,9 +112,3 @@ jobs:
           set -o pipefail
           pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json 2>&1 | tee "$RUNNER_TEMP/dry.log"
           node scripts/guards/worker-budget.mjs --worker-dir "$RUNNER_TEMP/wrangler-dry" --assets-dir dist/client --max-mib 60 --max-assets 18000
-
-      - name: Deploy to testing
-        working-directory: apps/web
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: pnpm exec wrangler deploy -c dist/server/wrangler.json

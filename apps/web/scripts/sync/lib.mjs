@@ -18,14 +18,6 @@ export const ENVS = Object.freeze({
 		isRemote: false,
 		requiresProductionFlag: false,
 	}),
-	testing: Object.freeze({
-		name: "testing",
-		urlVar: "SUPABASE_TESTING_POOLER_URL",
-		refVar: "SUPABASE_TESTING_REF",
-		defaultUrl: undefined,
-		isRemote: true,
-		requiresProductionFlag: false,
-	}),
 	production: Object.freeze({
 		name: "production",
 		urlVar: "SUPABASE_PRODUCTION_POOLER_URL",
@@ -287,7 +279,7 @@ export function resolveEnvUrl(envName, dotEnv = {}, processEnv = {}) {
 		return {
 			ok: false,
 			missing: [],
-			error: `unknown env "${envName}" (expected local, testing or production)`,
+			error: `unknown env "${envName}" (expected local or production)`,
 		};
 	}
 	const url = processEnv[cfg.urlVar] || dotEnv[cfg.urlVar] || cfg.defaultUrl;
@@ -416,7 +408,7 @@ export function parseProjectRef(url) {
 	}
 }
 
-/** Expected project refs per env from `.env` / process.env (names only: SUPABASE_{TESTING,PRODUCTION}_REF). */
+/** Expected project refs per env from `.env` / process.env (names only: SUPABASE_PRODUCTION_REF). */
 export function resolveExpectedRefs(dotEnv = {}, processEnv = {}) {
 	const out = {};
 	for (const cfg of Object.values(ENVS)) {
@@ -432,8 +424,8 @@ export function resolveExpectedRefs(dotEnv = {}, processEnv = {}) {
  *
  * Remote targets are identified by Supabase project ref (parsed from the pooler username), never by the
  * env label alone: the ref must equal the ref configured for the labelled env, and ANY target whose ref is
- * production's requires `--yes-production` even if it was labelled `testing`.
- * `expectedRefs` = { testing?: string, production?: string } (see `resolveExpectedRefs`).
+ * production's requires `--yes-production`.
+ * `expectedRefs` = { production?: string } (see `resolveExpectedRefs`).
  */
 export function validateSyncPlan({
 	source,
@@ -444,10 +436,10 @@ export function validateSyncPlan({
 	expectedRefs = {},
 }) {
 	if (!ENVS[source]) {
-		return { ok: false, error: `unknown source env "${source}" (expected local, testing or production)` };
+		return { ok: false, error: `unknown source env "${source}" (expected local or production)` };
 	}
 	if (!ENVS[target]) {
-		return { ok: false, error: `unknown target env "${target}" (expected local, testing or production)` };
+		return { ok: false, error: `unknown target env "${target}" (expected local or production)` };
 	}
 	if (source === target) {
 		return {
@@ -724,7 +716,7 @@ export function parseCliArgs(argv) {
 		if (arg === "--to") {
 			const val = argv[++i];
 			if (!val || val.startsWith("-")) {
-				return { ok: false, error: "--to requires an environment name (local, testing or production)" };
+				return { ok: false, error: "--to requires an environment name (local or production)" };
 			}
 			opts.target = val;
 			continue;
@@ -776,7 +768,7 @@ export function parseCliArgs(argv) {
 	}
 
 	if (!opts.help && !opts.source) {
-		return { ok: false, error: "missing <source> environment (expected local, testing or production)" };
+		return { ok: false, error: "missing <source> environment (expected local or production)" };
 	}
 
 	return { ok: true, opts };

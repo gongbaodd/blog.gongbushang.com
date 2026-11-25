@@ -1,6 +1,6 @@
 # Copy to apps/web/.dev.vars (gitignored). No real secrets here.
 # `pnpm admin:<env>` never edits this file: it only reads it and writes a generated .dev.vars.admin-<env> (docs/plan/emdash/runbooks/admin.md).
-# For testing/production the DB URL, key and SITE_ENV come from the repo-root .env; GITHUB_DISPATCH_* and CLOUDINARY_* may live here or in .env (.env wins).
+# For production the DB URL, key and SITE_ENV come from the repo-root .env (environments are local and production, INF-10); GITHUB_DISPATCH_* and CLOUDINARY_* may live here or in .env (.env wins).
 # Local Hyperdrive target for `astro dev` / `wrangler dev` / `emdash migrate --from-config`
 # (same value as hyperdrive.localConnectionString in wrangler.jsonc; Supabase local default).
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -17,9 +17,11 @@ GITHUB_DISPATCH_REPO=gongbaodd/blog.gongbushang.com
 GITHUB_API_URL=
 # Worker secret gating the first-admin setup wizard (src/middleware.ts). Unset => setup closed in deployed envs.
 SETUP_TOKEN=
-# "production" = indexable; anything else = noindex + disallow-all robots.txt (wrangler vars.SITE_ENV)
+# local | production. Only picks the rebuild-on-publish target and the admin gates (wrangler vars.SITE_ENV); it does NOT control indexing.
 SITE_ENV=local
-# Build-time (not Worker secrets): analytics/ads run only when SITE_ENV=production at build time
+# Indexing/analytics/ads switch (fail closed): only the exact value "true" lifts noindex + disallow-all robots.txt. Leave unset locally.
+PUBLIC_SITE_LIVE=
+# Build-time (not Worker secrets): analytics/ads run only when PUBLIC_SITE_LIVE=true at build time
 PUBLIC_MIXPANEL_TOKEN=
 PUBLIC_MIXPANEL_API_HOST=
 PUBLIC_ADSENSE_ENABLED=

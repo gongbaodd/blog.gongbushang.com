@@ -4,18 +4,19 @@ export interface DispatchEnv {
   GITHUB_DISPATCH_TOKEN?: string;
   GITHUB_DISPATCH_REPO?: string; // "owner/repo"
   GITHUB_API_URL?: string; // default https://api.github.com
-  SITE_ENV?: string; // wrangler var: testing | production (anything else: no dispatch)
+  SITE_ENV?: string; // wrangler var: production (anything else, incl. local/unset: no dispatch)
 }
 
-export type DeployEnvironment = "testing" | "production";
+export type DeployEnvironment = "production";
 
 /**
- * Only an exact "testing" or "production" is dispatched. Anything else (unset, "local", typos) returns null and no rebuild is
- * triggered: a dev/admin session must never rebuild a real environment, and guessing "testing" would hide a misconfigured Worker.
+ * Only an exact "production" is dispatched (INF-10: the environments are local and production). Anything else (unset, "local",
+ * the retired "testing", typos) returns null and no rebuild is triggered: a dev/admin session must never rebuild the real
+ * environment, and guessing "production" would hide a misconfigured Worker.
  */
 export function resolveEnvironment(siteEnv: string | undefined): DeployEnvironment | null {
   const v = siteEnv?.trim();
-  return v === "testing" || v === "production" ? v : null;
+  return v === "production" ? v : null;
 }
 
 export interface PublishInfo {
@@ -58,7 +59,7 @@ export function resolveGitHubApiBase(
   return DEFAULT_GITHUB_API_URL;
 }
 
-/** Returns null when the token, repo, GITHUB_API_URL or SITE_ENV (testing|production) is not valid. */
+/** Returns null when the token, repo, GITHUB_API_URL or SITE_ENV (production) is not valid. */
 export function buildDispatchRequest(
   env: DispatchEnv,
   info: PublishInfo,
@@ -112,7 +113,7 @@ export async function dispatchOnPublish(
       return;
     }
     log.info(
-      "rebuild-on-publish: GITHUB_DISPATCH_TOKEN, GITHUB_DISPATCH_REPO or SITE_ENV (testing|production) not set, skipping",
+      "rebuild-on-publish: GITHUB_DISPATCH_TOKEN, GITHUB_DISPATCH_REPO or SITE_ENV (production) not set, skipping",
     );
     return;
   }

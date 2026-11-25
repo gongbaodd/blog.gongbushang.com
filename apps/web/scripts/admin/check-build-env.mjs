@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// Guard for local `deploy:testing:build` (INF-7). A build with CLOUDFLARE_ENV=testing prerenders from the DB named by
+// Guard for the local `deploy:production:build` (INF-7, INF-10). The build prerenders from the DB named by
 // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE, but the Astro Cloudflare adapter lets `.dev.vars` override that
-// variable. Wrangler reads `.dev.vars.testing` INSTEAD of `.dev.vars` when it exists, so require it (or a `.dev.vars` that
-// does not set the Hyperdrive variable). CI has neither file and is unaffected.
-//   node scripts/admin/check-build-env.mjs testing
+// variable. There is no `env.production` block any more (the top level IS production), so wrangler reads `.dev.vars` for this
+// build: refuse to build while it sets the Hyperdrive variable, otherwise a "production" build could silently prerender from
+// the local database. CI has no `.dev.vars` and is unaffected.
+//   node scripts/admin/check-build-env.mjs production
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,15 +15,15 @@ const env = process.argv[2];
 const web = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const read = (f) => (existsSync(resolve(web, f)) ? parseEnv(readFileSync(resolve(web, f), "utf8")) : null);
 
-if (!env) {
-	console.error("usage: check-build-env.mjs <env>");
+if (env !== "production") {
+	console.error("usage: check-build-env.mjs production   (the only remote build target since INF-10)");
 	process.exit(2);
 }
-if (!read(`.dev.vars.${env}`) && read(".dev.vars")?.[KEY]) {
+if (read(".dev.vars")?.[KEY]) {
 	console.error(
-		`[build-env] apps/web/.dev.vars sets ${KEY}, which would override the ${env} database during the build.\n` +
-			`            Create apps/web/.dev.vars.${env} (wrangler then ignores .dev.vars) containing ${KEY}=<${env} pooler url> and EMDASH_ENCRYPTION_KEY=<${env} key>.`,
+		`[build-env] apps/web/.dev.vars sets ${KEY}, which would override the production database during the build.\n` +
+			`            Move it away for the build (mv apps/web/.dev.vars apps/web/.dev.vars.off) or delete that line, then run the build again.`,
 	);
 	process.exit(1);
 }
-console.log(`[build-env] ok: no .dev.vars override of ${KEY} for ${env}`);
+console.log(`[build-env] ok: no .dev.vars override of ${KEY}`);

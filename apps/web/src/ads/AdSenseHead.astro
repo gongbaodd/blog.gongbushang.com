@@ -1,9 +1,9 @@
 ---
-// Ported from packages/ads/AdSenseHead.astro. Renders only on a production build (or `astro dev`):
-// testing/local deployments never load ad scripts (PORT-7, same SITE_ENV switch as noindex).
-import { isProductionBuild } from "../analytics/env";
+// Ported from packages/ads/AdSenseHead.astro. Renders only on a live build (PUBLIC_SITE_LIVE=true) (or `astro dev`):
+// every non-live build never loads ad scripts (PORT-7, same PUBLIC_SITE_LIVE switch as noindex).
+import { isLiveBuild } from "../analytics/env";
 
-const enabled = isProductionBuild() || import.meta.env.DEV;
+const enabled = isLiveBuild() || import.meta.env.DEV;
 ---
 
 {

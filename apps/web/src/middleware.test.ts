@@ -76,7 +76,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
 
   it("blocks encoded dot-segment, backslash, and multi-encoded bypass attempts on setup paths", async () => {
     const mw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: "top-secret", SITE_ENV: "testing" }),
+      getEnv: () => ({ SETUP_TOKEN: "top-secret", PUBLIC_SITE_LIVE: "false" }),
       isDev: false,
     });
     const next = vi.fn(async () => new Response("setup page"));
@@ -101,7 +101,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
 
   it("returns 400 on malformed percent-encoding or >3 encoding passes", async () => {
     const mw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: "top-secret", SITE_ENV: "testing" }),
+      getEnv: () => ({ SETUP_TOKEN: "top-secret", PUBLIC_SITE_LIVE: "false" }),
       isDev: false,
     });
     const next = vi.fn(async () => new Response("ok"));
@@ -122,7 +122,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
     expect(expectedDerived).not.toBe(secret);
 
     const mw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: secret, SITE_ENV: "testing" }),
+      getEnv: () => ({ SETUP_TOKEN: secret, PUBLIC_SITE_LIVE: "false" }),
       isDev: false,
     });
     const next = vi.fn(async () => new Response("setup ok"));
@@ -155,7 +155,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
   it("allows non-secure cookie only on loopback HTTP (localhost / 127.0.0.1)", async () => {
     const secret = "local-token";
     const mw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: secret, SITE_ENV: "local" }),
+      getEnv: () => ({ SETUP_TOKEN: secret, PUBLIC_SITE_LIVE: undefined }),
       isDev: false,
     });
     const next = vi.fn(async () => new Response("setup ok"));
@@ -182,7 +182,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
     const secret = "my-setup-secret";
     const derived = await deriveSetupGateToken(secret);
     const mw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: secret, SITE_ENV: "testing" }),
+      getEnv: () => ({ SETUP_TOKEN: secret, PUBLIC_SITE_LIVE: "false" }),
       isDev: false,
     });
     const next = vi.fn(async () => new Response("setup ok", { status: 200 }));
@@ -205,9 +205,9 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  it("bypasses setup gate in DEV mode and sets X-Robots-Tag only when SITE_ENV !== production", async () => {
+  it("bypasses setup gate in DEV mode and sets X-Robots-Tag unless PUBLIC_SITE_LIVE is exactly the string true", async () => {
     const devMw = createWebMiddleware({
-      getEnv: () => ({ SETUP_TOKEN: undefined, SITE_ENV: "local" }),
+      getEnv: () => ({ SETUP_TOKEN: undefined, PUBLIC_SITE_LIVE: undefined }),
       isDev: true,
     });
     const devCtx = createMockContext("http://localhost:4322/_emdash/admin/setup");
@@ -216,12 +216,19 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
     expect(devRes.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 
     const prodMw = createWebMiddleware({
-      getEnv: () => ({ SITE_ENV: "production" }),
+      getEnv: () => ({ PUBLIC_SITE_LIVE: "true" }),
       isDev: false,
     });
     const prodCtx = createMockContext("https://growgen.xyz/");
     const prodRes = await runMw(prodMw, prodCtx.context, async () => new Response("home"));
     expect(prodRes.status).toBe(200);
     expect(prodRes.headers.get("X-Robots-Tag")).toBeNull();
+
+    for (const live of ["TRUE", "ture", "production", ""]) {
+      const mw = createWebMiddleware({ getEnv: () => ({ PUBLIC_SITE_LIVE: live }), isDev: false });
+      const ctx = createMockContext("https://next.growgen.xyz/");
+      const res = await runMw(mw, ctx.context, async () => new Response("home"));
+      expect(res.headers.get("X-Robots-Tag"), live).toBe("noindex, nofollow");
+    }
   });
 });

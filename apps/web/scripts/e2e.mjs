@@ -11,8 +11,8 @@
 // local Supabase stack), E2E_PDFS=1 (also generate the resume PDFs; skipped by default).
 //
 // The site is a fully prerendered static build, so `dist/client` is served by a tiny static server
-// (directory indexes, 404.html) instead of the Worker. SITE_ENV=production is set because analytics only
-// runs on a production build (src/analytics/env.ts); PUBLIC_MIXPANEL_TOKEN stays empty unless --analytics-on.
+// (directory indexes, 404.html) instead of the Worker. PUBLIC_SITE_LIVE=true is set because analytics only
+// runs on a live build (src/analytics/env.ts, INF-10); PUBLIC_MIXPANEL_TOKEN stays empty unless --analytics-on.
 import { spawn } from "node:child_process";
 import { createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -105,7 +105,7 @@ const base = `http://127.0.0.1:${port}`;
 if (!flag("--skip-build")) {
 	const env = {
 		...process.env,
-		SITE_ENV: "production",
+		PUBLIC_SITE_LIVE: "true",
 		ASTRO_OUT_DIR: outDirName,
 		PUBLIC_MIXPANEL_TOKEN: analyticsOn ? "e2e-test-token" : "",
 		PUBLIC_MIXPANEL_API_HOST: analyticsOn ? `${base}/__mp` : "",

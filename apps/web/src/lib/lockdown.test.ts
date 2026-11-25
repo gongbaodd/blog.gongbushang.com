@@ -84,7 +84,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
     const workerFetch = createWorkerFetch({ isDev: false, fallbackFetch });
     const env: StaticWorkerEnv = {
       ASSETS: { fetch: assetsFetch },
-      SITE_ENV: "production",
+      PUBLIC_SITE_LIVE: "true",
     };
 
     // Random non-asset 404 serves /404.html from ASSETS with 404 status and no-store
@@ -120,7 +120,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
     expect(fallbackFetch).not.toHaveBeenCalled();
   });
 
-  it("sets X-Robots-Tag: noindex, nofollow on non-production and unset SITE_ENV", async () => {
+  it("sets X-Robots-Tag: noindex, nofollow unless PUBLIC_SITE_LIVE is exactly the string true", async () => {
     const assetsFetch = vi.fn(
       async () =>
         new Response("<h1>404</h1>", {
@@ -129,8 +129,8 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
         }),
     );
 
-    for (const siteEnv of ["testing", "soak", "", undefined]) {
-      const env: StaticWorkerEnv = { ASSETS: { fetch: assetsFetch }, SITE_ENV: siteEnv };
+    for (const live of ["false", "TRUE", "ture", "production", "", undefined]) {
+      const env: StaticWorkerEnv = { ASSETS: { fetch: assetsFetch }, PUBLIC_SITE_LIVE: live };
 
       const lockedRes = await handleStaticOnlyFetch(
         new Request("https://next.growgen.xyz/_emdash/admin"),
@@ -159,7 +159,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
           headers: { "content-type": "text/html; charset=utf-8" },
         }),
     );
-    const env: StaticWorkerEnv = { ASSETS: { fetch: assetsFetch }, SITE_ENV: "production" };
+    const env: StaticWorkerEnv = { ASSETS: { fetch: assetsFetch }, PUBLIC_SITE_LIVE: "true" };
 
     const postRes = await handleStaticOnlyFetch(
       new Request("https://growgen.xyz/missing", { method: "POST", body: "x=1" }),
@@ -181,7 +181,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
   it("falls back to bare 404 when ASSETS has no /404.html, is missing, or throws", async () => {
     const missingAssetEnv: StaticWorkerEnv = {
       ASSETS: { fetch: vi.fn(async () => new Response("nope", { status: 404 })) },
-      SITE_ENV: "testing",
+      PUBLIC_SITE_LIVE: "false",
     };
     const res1 = await handleStaticOnlyFetch(
       new Request("https://growgen.xyz/missing"),
@@ -198,7 +198,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
           throw new Error("assets unavailable");
         }),
       },
-      SITE_ENV: "production",
+      PUBLIC_SITE_LIVE: "true",
     };
     const res2 = await handleStaticOnlyFetch(
       new Request("https://growgen.xyz/missing"),
@@ -217,7 +217,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
     const workerFetch = createWorkerFetch({ isDev: false, fallbackFetch });
     const badReq = { url: "not a valid url", method: "GET" } as unknown as Request;
 
-    const res = await workerFetch(badReq, { SITE_ENV: "testing" }, {});
+    const res = await workerFetch(badReq, { PUBLIC_SITE_LIVE: "false" }, {});
     expect(res.status).toBe(404);
     expect(res.headers.get("cache-control")).toBe("no-store");
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
@@ -227,7 +227,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
   it("delegates to fallback handler.fetch in DEV mode so local pnpm admin:* keeps working", async () => {
     const fallbackFetch = vi.fn(async () => new Response("dev emdash", { status: 200 }));
     const workerFetch = createWorkerFetch({ isDev: true, fallbackFetch });
-    const env: StaticWorkerEnv = { SITE_ENV: "local" };
+    const env: StaticWorkerEnv = { PUBLIC_SITE_LIVE: undefined };
 
     const res = await workerFetch(new Request("http://localhost:4322/_emdash/admin"), env, {});
     expect(res.status).toBe(200);

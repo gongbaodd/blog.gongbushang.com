@@ -88,7 +88,7 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `src/pages/404.astro` | Prerendered, uses `Global` + Header/Footer | `dist/client/404.html` must exist |
 | `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. PORT-7: `robots.txt` reads `import.meta.env.PUBLIC_SITE_ENV` (process.env is empty in the prerender workerd, so production built disallow-all) and points to `/sitemap-index.xml`; `sitemap.xml` is an alias of the index |
 | `scripts/check-static-routes.mjs`, `package.json` `build` | Added guard; `build` = guard + `astro build` + `post-build.mjs` | Fail the build if any `src/pages` route is not prerendered |
-| `scripts/post-build.mjs` | `_headers` append is idempotent | Root `deploy:testing:build` runs it a second time |
+| `scripts/post-build.mjs` | `_headers` append is idempotent | Root `deploy:production:build` (INF-10) ran it a second time before it was folded into `build` |
 | `package.json` | `deploy` = `pnpm build && wrangler deploy -c dist/server/wrangler.json`; added `types` script; devDependency `@types/node` | Legacy root `wrangler.json` hijack; tsconfig `types: ["node"]` needs it |
 | `astro.config.mjs` | `localMedia({ enabled: false })` first in `mediaProviders` | Built-in "Library" provider is on by default; Cloudinary is now the only one |
 | `wrangler.jsonc` | top-level `kv_namespaces` SESSION (placeholder id); `assets.binding: "ASSETS"` | Declare production bindings; typed `ASSETS` |
@@ -142,3 +142,16 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `package.json`: new deps `@mantine/spotlight`, `minisearch`, `excerpt` (search), `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot` (shadcn Bento on `/cv/`). All client-side; the Worker bundle is unchanged (everything is prerendered).
 - `src/types/excerpt.d.ts`: ambient types for the untyped `excerpt` package.
 - `src/components/BaseHead.astro`: imports `@mantine/spotlight/styles.css` (Search island).
+
+## INF-10 (environments: local + production)
+
+Supersedes the `testing` rows of INF-3, INF-7 and PORT-7 above (the old rows are kept as history).
+
+| File | Change | Why |
+|---|---|---|
+| `wrangler.jsonc` | `env.testing` and `env.admin-testing` removed; top level carries the promoted Hyperdrive `319cee5e...` and KV `SESSION` `55d3e3f7...`; `workers_dev: false`, `preview_urls: false` (SEC-12); `routes` custom domain `next.growgen.xyz` (config only); `vars.PUBLIC_SITE_LIVE: "false"` | Two environments only; the former testing resources are production |
+| `astro.config.mjs` | `vite.define` `PUBLIC_SITE_ENV` (from `SITE_ENV ?? CLOUDFLARE_ENV ?? "testing"`) replaced by `PUBLIC_SITE_LIVE` (exactly `true`, else `false`) | Indexing, analytics and ads no longer depend on SITE_ENV; unset or a typo fails closed |
+| `scripts/post-build.mjs`, `src/pages/robots.txt.ts`, `src/analytics/env.ts` (`isLiveBuild`), `src/ads/*`, `src/middleware.ts`, `src/lib/lockdown.ts` | Gate on `isSiteLive(PUBLIC_SITE_LIVE)` (`src/lib/site-live.ts`) instead of `SITE_ENV === "production"` | Same fail-closed flag everywhere |
+| `src/plugins/rebuild-on-publish/dispatch.ts` | Only `SITE_ENV=production` dispatches | `testing` was retired |
+| `scripts/derive/{db,cache,index}.ts` | `DERIVE_READONLY=1`: read-only session, cache writes are no-ops, cache hits only | PR CI builds against the production DB and must not write |
+| `scripts/e2e.mjs` | Builds with `PUBLIC_SITE_LIVE=true` instead of `SITE_ENV=production` | Analytics-on e2e needs a live build |

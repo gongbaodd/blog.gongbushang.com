@@ -22,11 +22,19 @@
 //      DERIVE_SKIP_COLORS=1   do not extract cover colours (cache hits only)
 //      DERIVE_PARITY_LEGACY=1 only posts the legacy metadata knows (the 3 .mdx posts were never indexed); for parity comparisons
 //      DERIVE_SCHEMA          cache schema name (default derived)
+//      DERIVE_READONLY=1      read-only run (pull-request CI against production, INF-10): no writes at all (read-only DB session, cache writes
+//                             are no-ops), cache hits only (DERIVE_EMBED=skip, DERIVE_SKIP_COLORS=1) and no AI/geocoding credentials used
 //      ALLOW_EMPTY_DATA=1     build without posts, podcast episodes and gallery images
 //      GOOGLE_API_KEY         geocode city strings that are not cached yet
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Extras } from "./outputs.ts";
+if (process.env.DERIVE_READONLY === "1") {
+	process.env.DERIVE_EMBED = "skip";
+	process.env.DERIVE_SKIP_COLORS = "1";
+	for (const k of ["GOOGLE_API_KEY", "CF_AI_TOKEN", "CLOUDFLARE_AI_API_TOKEN", "CF_ACCOUNT_ID"]) delete process.env[k];
+	console.log("[derive] DERIVE_READONLY=1: no writes, cache hits only (no embeddings, colours, traces, geocoding)");
+}
 process.env.TZ ||= "Europe/Tallinn"; // the legacy snapshot's build TZ: post dates are local midnights (PORT-3)
 
 const { webRoot } = await import("./db.ts");

@@ -1,6 +1,6 @@
 // Apply the (idempotent) derived-cache schema to the database the build uses.
 //   pnpm --filter web derive:migrate
-// Local: the Hyperdrive local connection string. testing/production: the session-pooler URL
+// Local: the Hyperdrive local connection string. production: the session-pooler URL
 // (CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=... or DERIVE_DATABASE_URL=...), see runbooks/data.md.
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
