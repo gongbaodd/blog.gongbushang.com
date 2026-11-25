@@ -1,8 +1,9 @@
 # Publish pipeline for the EmDash site (INF-4): rebuild static pages from the CMS and deploy.
 # Triggers: CMS publish (repository_dispatch `emdash-publish`), nightly rebuild, manual.
-# Scheduled and dispatch events always use the default branch's workflow; production is only
-# deployed manually, by the nightly schedule, or by a dispatch whose client_payload.environment is `production`
+# Scheduled and dispatch events always use the default branch's workflow. The only target is `production` (INF-10: environments
+# are local and production): manually, by the nightly schedule, or by a dispatch whose client_payload.environment is `production`
 # (sent by the rebuild-on-publish plugin from the Worker's SITE_ENV), always through the `production` GitHub environment.
+# Indexing, analytics and ads stay OFF until the `PUBLIC_SITE_LIVE` environment variable is exactly `true` (set at CUT-1).
 name: web-deploy
 
 on:
@@ -14,10 +15,10 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Target environment"
+        description: "Target environment (production is the only remote environment)"
         type: choice
-        options: [testing, production]
-        default: testing
+        options: [production]
+        default: production
       apply_migrations:
         description: "Apply pending EmDash migrations before building (needs the target fingerprint check to pass)"
         type: boolean
@@ -33,7 +34,7 @@ defaults:
 jobs:
   # Resolves and validates the target environment. Needs no secrets and no environment.
   # manual -> inputs.environment; nightly -> production; repository_dispatch -> client_payload.environment.
-  # The payload only reaches a script through env: and is matched against literals; anything else becomes testing.
+  # The payload only reaches a script through env: and is matched against literals; anything else is refused (never guessed).
   target:
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -50,11 +51,11 @@ jobs:
             workflow_dispatch) want="$INPUT_ENV" ;;
             schedule) want=production ;;
             repository_dispatch) want="$PAYLOAD_ENV" ;;
-            *) want=testing ;;
+            *) want="" ;;
           esac
           case "$want" in
-            testing|production) env_name="$want" ;;
-            *) echo "::warning::unrecognised environment, falling back to testing"; env_name=testing ;;
+            production) env_name="$want" ;;
+            *) echo "::error::unrecognised environment '$want' (only production exists since INF-10; a stale testing dispatch lands here)"; exit 1 ;;
           esac
           echo "environment=$env_name" >> "$GITHUB_OUTPUT"
           echo "target environment: $env_name"
@@ -63,36 +64,28 @@ jobs:
     needs: target
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Target resolution (allowlist, default testing): see the `target` job. Production uses the `production` environment
+    # Target resolution (allowlist, no fallback): see the `target` job. This job uses the `production` environment
     # (add required reviewers there for manual approval; that also gates the nightly and CMS-triggered production rebuilds).
     environment: ${{ needs.target.outputs.environment }}
     concurrency:
       group: web-deploy-${{ needs.target.outputs.environment }}
       cancel-in-progress: false
     env:
-      TARGET: ${{ needs.target.outputs.environment }}
       CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
       PUBLIC_BUILD_SHA: ${{ github.sha }}
       WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
       WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
       # Public build-time values (baked into the static HTML): environment *variables*, not secrets. They only take effect
-      # when SITE_ENV=production; define them on the `production` environment only so testing builds never carry analytics or ads.
+      # when PUBLIC_SITE_LIVE=true (fail closed, exact value). Leave PUBLIC_SITE_LIVE unset/false until CUT-1: next.growgen.xyz
+      # then stays noindex with disallow-all robots.txt and no analytics/ads, whatever the other variables hold.
+      PUBLIC_SITE_LIVE: ${{ vars.PUBLIC_SITE_LIVE }}
+      SITE_ENV: production
       PUBLIC_MIXPANEL_TOKEN: ${{ vars.PUBLIC_MIXPANEL_TOKEN }}
       PUBLIC_MIXPANEL_API_HOST: ${{ vars.PUBLIC_MIXPANEL_API_HOST }}
       PUBLIC_ADSENSE_ENABLED: ${{ vars.PUBLIC_ADSENSE_ENABLED }}
       PUBLIC_ADSENSE_CONSENT_READY: ${{ vars.PUBLIC_ADSENSE_CONSENT_READY }}
       PUBLIC_ADSENSE_SLOT_ID: ${{ vars.PUBLIC_ADSENSE_SLOT_ID }}
     steps:
-      - name: Select environment
-        run: |
-          # production: top-level wrangler config has no `env`, so CLOUDFLARE_ENV stays unset.
-          if [ "$TARGET" = production ]; then
-            echo "SITE_ENV=production" >> "$GITHUB_ENV"
-          else
-            echo "SITE_ENV=testing" >> "$GITHUB_ENV"
-            echo "CLOUDFLARE_ENV=testing" >> "$GITHUB_ENV"
-          fi
-
       - uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -154,4 +147,9 @@ jobs:
         working-directory: apps/web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: pnpm exec wrangler deploy -c dist/server/wrangler.json
+        run: |
+          # One switch: the PUBLIC_SITE_LIVE environment variable also sets the Worker var (X-Robots-Tag on dynamic and 404
+          # responses). Only the exact value "true" goes live; anything else deploys "false" (the wrangler.jsonc default).
+          live=false
+          [ "$PUBLIC_SITE_LIVE" = "true" ] && live=true
+          pnpm exec wrangler deploy -c dist/server/wrangler.json --var "PUBLIC_SITE_LIVE:$live"

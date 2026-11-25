@@ -37,7 +37,7 @@ describe("analytics", () => {
       },
     });
     vi.stubGlobal("document", { documentElement: { dataset: {} } });
-    vi.stubEnv("PUBLIC_SITE_ENV", "production");
+    vi.stubEnv("PUBLIC_SITE_LIVE", "true");
     // Behave like Mixpanel: opt_in/out flip the persisted flag that has_opted_in_tracking reads.
     mpOptedIn = false;
     mp.has_opted_in_tracking.mockImplementation(() => mpOptedIn);
@@ -67,13 +67,34 @@ describe("analytics", () => {
     expect(mp.init).not.toHaveBeenCalled();
   });
 
-  it("is a silent no-op on non-production builds even with a token", async () => {
+  it("is a silent no-op on non-live builds even with a token", async () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
-    vi.stubEnv("PUBLIC_SITE_ENV", "testing");
+    vi.stubEnv("PUBLIC_SITE_LIVE", "false");
     const a = await load();
     await a.initAnalytics();
     a.optIn();
     expect(a.getConsent()).toBe("unset");
+    expect(mp.init).not.toHaveBeenCalled();
+  });
+
+  it.each([["TRUE", "TRUE"], ["typo", "ture"], ["empty", ""]])(
+    "stays off for PUBLIC_SITE_LIVE %s (fail closed)",
+    async (_name, value) => {
+      vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+      vi.stubEnv("PUBLIC_SITE_LIVE", value);
+      const a = await load();
+      await a.initAnalytics();
+      a.optIn();
+      expect(mp.init).not.toHaveBeenCalled();
+    },
+  );
+
+  it("stays off when PUBLIC_SITE_LIVE is unset (fail closed)", async () => {
+    vi.unstubAllEnvs();
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    await a.initAnalytics();
+    a.optIn();
     expect(mp.init).not.toHaveBeenCalled();
   });
 

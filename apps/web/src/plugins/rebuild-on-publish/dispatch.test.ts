@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildDispatchRequest, dispatchOnPublish } from "./dispatch";
 
-const env = { GITHUB_DISPATCH_TOKEN: "tok", GITHUB_DISPATCH_REPO: "o/r", SITE_ENV: "testing" };
+const env = { GITHUB_DISPATCH_TOKEN: "tok", GITHUB_DISPATCH_REPO: "o/r", SITE_ENV: "production" };
 const info = { collection: "posts", id: "01X", slug: "hello" };
 const log = () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() });
 
@@ -13,20 +13,16 @@ describe("buildDispatchRequest", () => {
     expect((r.init.headers as Record<string, string>).Authorization).toBe("Bearer tok");
     expect(JSON.parse(r.init.body as string)).toEqual({
       event_type: "emdash-publish",
-      client_payload: { environment: "testing", collection: "posts", id: "01X", slug: "hello" },
+      client_payload: { environment: "production", collection: "posts", id: "01X", slug: "hello" },
     });
   });
-  it("sends the production environment for SITE_ENV=production", () => {
-    const r = buildDispatchRequest({ ...env, SITE_ENV: "production" }, info)!;
-    expect(JSON.parse(r.init.body as string).client_payload.environment).toBe("production");
-  });
-  it("does not dispatch for unset, local or unknown SITE_ENV", () => {
-    for (const v of [undefined, "", "local", "prod", "Production", "testing; rm"]) {
+  it("does not dispatch for unset, local, the retired testing or unknown SITE_ENV", () => {
+    for (const v of [undefined, "", "local", "testing", "prod", "Production", "production; rm"]) {
       expect(buildDispatchRequest({ ...env, SITE_ENV: v }, info)).toBeNull();
     }
   });
   it("allows https://api.github.com (with optional trailing slash) and rejects arbitrary GITHUB_API_URL", () => {
-    for (const siteEnv of ["testing", "production"]) {
+    for (const siteEnv of ["production"]) {
       expect(
         buildDispatchRequest(
           { ...env, SITE_ENV: siteEnv, GITHUB_API_URL: "https://api.github.com/" },

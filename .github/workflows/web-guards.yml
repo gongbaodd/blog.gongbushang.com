@@ -1,12 +1,12 @@
-# Free-tier guards (INF-6): Supabase keep-alive for testing, nightly encrypted backup of production,
-# and Cloudinary credit usage monitoring.
+# Free-tier guards (INF-6): nightly encrypted backup of production and Cloudinary credit usage monitoring.
+# INF-10: there is one remote Supabase project (production). The nightly backup connects to it every night, which is what keeps a
+# Free project from pausing after 7 idle days, so there is no separate keep-alive job any more.
 # The repo is public, so dumps are age-encrypted with a PUBLIC recipient key before upload; the private key stays offline.
 name: web-guards
 
 on:
   schedule:
     - cron: "41 3 * * *" # backup (also keeps production active)
-    - cron: "23 5 * * *" # keep-alive for testing
     - cron: "11 6 * * *" # Cloudinary credit usage check
   workflow_dispatch:
 
@@ -18,18 +18,6 @@ defaults:
     shell: bash
 
 jobs:
-  keepalive-testing:
-    # Free projects pause after 7 idle days. Production is also kept alive by the nightly backup and web-deploy.
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '23 5 * * *'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    environment: testing
-    steps:
-      - name: select 1 via session pooler
-        env:
-          DATABASE_POOLER_URL: ${{ secrets.DATABASE_POOLER_URL }}
-        run: psql "$DATABASE_POOLER_URL" -v ON_ERROR_STOP=1 -tAc 'select 1'
-
   backup-production:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 3 * * *'
     runs-on: ubuntu-latest

@@ -14,8 +14,9 @@ import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 // Public origin: env-driven (EMDASH_SITE_URL / SITE_URL), default production domain.
 const site = process.env.EMDASH_SITE_URL || process.env.SITE_URL || "https://growgen.xyz";
 
-// Env switch (D11): only SITE_ENV=production is indexable and runs analytics/ads. Fails closed.
-const siteEnv = process.env.SITE_ENV ?? process.env.CLOUDFLARE_ENV ?? "testing";
+// Live switch (D11, INF-10): only PUBLIC_SITE_LIVE=true (exact) is indexable and runs analytics/ads. Anything else, including
+// unset and typos, fails closed. Independent of SITE_ENV, which only picks the rebuild-on-publish target and the admin gates.
+const siteLive = process.env.PUBLIC_SITE_LIVE === "true" ? "true" : "false";
 
 // Build output dir (default dist). scripts/e2e.mjs sets ASTRO_OUT_DIR=dist-e2e so a fake-token production build never lands in dist/.
 const outDir = process.env.ASTRO_OUT_DIR || "./dist";
@@ -56,7 +57,7 @@ export default defineConfig({
 	vite: {
 		define: {
 			// analytics/ads gate (src/analytics/env.ts)
-			"import.meta.env.PUBLIC_SITE_ENV": JSON.stringify(siteEnv),
+			"import.meta.env.PUBLIC_SITE_LIVE": JSON.stringify(siteLive),
 			"import.meta.env.PUBLIC_BUILD_SHA": JSON.stringify((process.env.GITHUB_SHA ?? "").slice(0, 7)),
 		},
 		// .vert/.frag/.glsl imports of the particle hero (legacy parity).

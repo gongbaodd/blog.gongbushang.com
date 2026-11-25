@@ -44,7 +44,7 @@ describe("Cloudflare Access", () => {
 		expect(accessMode({ SITE_ENV: "local", HOST: "0.0.0.0", ADMIN_REQUIRE_ACCESS: "1" })).toBe("misconfigured");
 		expect(accessMode({ SITE_ENV: "production", HOST: "0.0.0.0", CF_ACCESS_AUD: "a" })).toBe("misconfigured");
 		expect(accessMode({ SITE_ENV: "production", HOST: "0.0.0.0", ...env })).toBe("enforce");
-		expect(accessMode({ SITE_ENV: "testing", ...env })).toBe("enforce");
+		expect(accessMode({ SITE_ENV: "local", ...env })).toBe("enforce");
 	});
 
 	it("accepts a valid token and rejects wrong audience, issuer, expiry, missing exp, garbage and missing", async () => {
@@ -93,9 +93,8 @@ describe("runtime database config", () => {
 	});
 
 	const REF = "abcdefghij1234567890";
-	const TREF = "tttttttttt1234567890";
-	const poolerUrl = (qs = "") => `postgresql://postgres.${TREF}:p@aws-0-eu.pooler.supabase.com:5432/postgres${qs}`;
-	const testingEnv = { SITE_ENV: "testing", SUPABASE_PRODUCTION_REF: REF, SUPABASE_TESTING_REF: TREF, HOST: "0.0.0.0" };
+	const poolerUrl = (qs = "") => `postgresql://postgres.${REF}:p@aws-0-eu.pooler.supabase.com:5432/postgres${qs}`;
+	const testingEnv = { SITE_ENV: "production", SUPABASE_PRODUCTION_REF: REF, ADMIN_CONFIRM_PRODUCTION: "yes", HOST: "0.0.0.0" };
 
 	it("uses TLS for the Supabase pooler and none for loopback, with a small pool", () => {
 		const pooler = runtimeDialectConfig({ ...testingEnv, DATABASE_URL: poolerUrl() } as never);
@@ -121,8 +120,10 @@ describe("runtime database config", () => {
 	});
 
 	it("runtime refuses what start.mjs refuses (no refs configured, wrong ref)", () => {
-		expect(() => runtimeDialectConfig({ SITE_ENV: "testing", HOST: "0.0.0.0", DATABASE_URL: poolerUrl() } as never)).toThrow(/SUPABASE_PRODUCTION_REF/);
-		expect(() => runtimeDialectConfig({ ...testingEnv, SUPABASE_TESTING_REF: "other00000123456789", DATABASE_URL: poolerUrl() } as never)).toThrow(/SUPABASE_TESTING_REF/);
+		expect(() => runtimeDialectConfig({ SITE_ENV: "production", HOST: "0.0.0.0", ADMIN_CONFIRM_PRODUCTION: "yes", DATABASE_URL: poolerUrl() } as never)).toThrow(/SUPABASE_PRODUCTION_REF/);
+		expect(() => runtimeDialectConfig({ ...testingEnv, SUPABASE_PRODUCTION_REF: "other00000123456789", DATABASE_URL: poolerUrl() } as never)).toThrow(/does not match SUPABASE_PRODUCTION_REF/);
+		// the retired testing label is refused outright (INF-10)
+		expect(() => runtimeDialectConfig({ ...testingEnv, SITE_ENV: "testing", DATABASE_URL: poolerUrl() } as never)).toThrow(/retired/);
 	});
 
 	it("DATABASE_CA_CERT: blank is an error, unreadable file is a clear error, literal \\n PEM is rejected, empty means unset", () => {
@@ -139,10 +140,12 @@ describe("runtime database config", () => {
 		const ctx = (p: string) => ({ url: new URL(`https://a.test${p}`), request: new Request(`https://a.test${p}`) }) as never;
 		const prodUrl = `postgresql://postgres.${REF}:p@aws-0-eu.pooler.supabase.com:5432/postgres`;
 		const mk = (e: Record<string, string>) => createOuterMiddleware({ getEnv: () => e });
-		// testing label + prod URL, refs unset: unsafe
+		// the retired testing label with a remote URL: unsafe
 		expect((await mk({ SITE_ENV: "testing", HOST: "0.0.0.0", DATABASE_URL: prodUrl })(ctx("/_emdash/admin"), next))!.status).toBe(503);
-		// prod ref under a testing label with refs set: mismatch with TESTING_REF -> unsafe
-		expect((await mk({ ...testingEnv, DATABASE_URL: prodUrl, ADMIN_CONFIRM_PRODUCTION: "yes" })(ctx("/_emdash/admin"), next))!.status).toBe(503);
+		// remote URL, production ref not configured: unsafe
+		expect((await mk({ SITE_ENV: "production", HOST: "0.0.0.0", DATABASE_URL: prodUrl, ADMIN_CONFIRM_PRODUCTION: "yes" })(ctx("/_emdash/admin"), next))!.status).toBe(503);
+		// remote URL whose ref is not SUPABASE_PRODUCTION_REF: unsafe
+		expect((await mk({ ...testingEnv, SUPABASE_PRODUCTION_REF: "other00000123456789", DATABASE_URL: prodUrl })(ctx("/_emdash/admin"), next))!.status).toBe(503);
 		// production by ref, confirmed, but Access not configured: 503 from the Access gate
 		const prodNoAccess = mk({ SITE_ENV: "production", SUPABASE_PRODUCTION_REF: REF, HOST: "0.0.0.0", ADMIN_CONFIRM_PRODUCTION: "yes", DATABASE_URL: prodUrl });
 		expect((await prodNoAccess(ctx("/_emdash/admin"), next))!.status).toBe(503);
@@ -162,7 +165,7 @@ describe("startup safety gate (INF-5 project-ref rules)", () => {
 	const OTHER = "zzzzzzzzzz1234567890";
 	const pooler = (ref: string, qs = "") => `postgresql://postgres.${ref}:pw@aws-0-eu.pooler.supabase.com:5432/postgres${qs}`;
 	const local = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-	const base = { SUPABASE_PRODUCTION_REF: REF, SUPABASE_TESTING_REF: OTHER };
+	const base = { SUPABASE_PRODUCTION_REF: REF };
 
 	it("matches INF-5's helpers", () => {
 		for (const u of [pooler(REF), local, pooler(REF, "?options=x"), "nonsense"]) {
@@ -193,10 +196,13 @@ describe("startup safety gate (INF-5 project-ref rules)", () => {
 		const e = (env: Record<string, string>) => evaluateStartup({ ...base, HOST: "0.0.0.0", ADMIN_CONFIRM_PRODUCTION: "yes", ...env }).errors.join(" | ");
 		expect(e({ DATABASE_URL: pooler(REF), SITE_ENV: "local" })).toMatch(/remote host/);
 		expect(e({ DATABASE_URL: pooler(OTHER), SITE_ENV: "production" })).toMatch(/does not match SUPABASE_PRODUCTION_REF/);
-		expect(e({ DATABASE_URL: pooler(REF), SITE_ENV: "testing" })).toMatch(/targets the production project/);
+		expect(e({ DATABASE_URL: pooler(REF), SITE_ENV: "testing" })).toMatch(/retired by INF-10/);
+		expect(e({ DATABASE_URL: pooler(REF), SITE_ENV: "staging" })).toMatch(/SITE_ENV must be local or production/);
+		// any remote database must be THE production project, even under the local override
+		expect(e({ DATABASE_URL: pooler(OTHER), SITE_ENV: "local", ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "yes" })).toMatch(/does not match SUPABASE_PRODUCTION_REF/);
 		expect(e({ DATABASE_URL: local, SITE_ENV: "production" })).toMatch(/loopback/);
 		expect(e({ DATABASE_URL: pooler(REF, "?user=postgres&host=evil"), SITE_ENV: "production" })).toMatch(/unsupported query/);
-		expect(e({ DATABASE_URL: "postgresql://postgres:pw@aws-0-eu.pooler.supabase.com:5432/postgres", SITE_ENV: "testing" })).toMatch(/cannot verify/);
+		expect(e({ DATABASE_URL: "postgresql://postgres:pw@aws-0-eu.pooler.supabase.com:5432/postgres", SITE_ENV: "production" })).toMatch(/cannot verify/);
 		expect(evaluateStartup({ SITE_ENV: "production", DATABASE_URL: pooler(REF), HOST: "0.0.0.0", ADMIN_CONFIRM_PRODUCTION: "yes" }).errors.join()).toMatch(/SUPABASE_PRODUCTION_REF/);
 	});
 });

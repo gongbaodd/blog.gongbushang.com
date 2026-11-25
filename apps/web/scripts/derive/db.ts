@@ -14,6 +14,14 @@ export const SCHEMA = (() => {
 	return s;
 })();
 
+/**
+ * DERIVE_READONLY=1 (INF-10): derive reads only. Used by pull-request CI, which builds against the production database and must
+ * never write to it or spend Workers AI quota. Three layers: (1) the Postgres session is read-only, so any stray write fails
+ * loudly; (2) every cache write below becomes a no-op; (3) index.ts forces cache-hits-only (no embeddings, colours, traces or
+ * geocoding) and drops every AI/geocoding credential from the process environment.
+ */
+export const READONLY = process.env.DERIVE_READONLY === "1";
+
 const ENV_KEY = "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE";
 
 function fromDevVars(): string | undefined {
@@ -50,6 +58,7 @@ export async function connect(url = resolveConnectionString()): Promise<pg.Clien
 	await client.connect();
 	// Supabase defaults to 15 significant digits; geocodes must round-trip exactly.
 	await client.query("set extra_float_digits = 3");
+	if (READONLY) await client.query("set default_transaction_read_only = on");
 	return client;
 }
 

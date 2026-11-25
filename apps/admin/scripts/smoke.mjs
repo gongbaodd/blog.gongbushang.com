@@ -6,7 +6,7 @@
 //   4. Cloudflare Access enforce mode: no JWT -> 403 on /_emdash/admin, /_emdash/api/manifest, /_emdash/api/auth/me (before EmDash
 //      runs: no redirects/401s); /healthz stays 200. Misconfigured Access -> 503 everywhere except /healthz.
 //   5. startup refusals: no DATABASE_URL, production without ADMIN_CONFIRM_PRODUCTION, SITE_ENV=local with a remote database
-// Usage: pnpm --filter admin build && pnpm --filter admin smoke   (needs `pnpm db:start`). Never touches testing/production.
+// Usage: pnpm --filter admin build && pnpm --filter admin smoke   (needs `pnpm db:start`). Never touches a remote database.
 import { spawn, spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import net from "node:net";
@@ -107,26 +107,26 @@ const mislabeled = run({ SITE_ENV: "local", ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "y
 check("production ref under SITE_ENV=local still needs confirmation", mislabeled.status !== 0 && /ADMIN_CONFIRM_PRODUCTION/.test(mislabeled.stderr));
 const remoteLocal = run({ SITE_ENV: "local", DATABASE_URL: prodUrl });
 check("SITE_ENV=local with a remote database is refused", remoteLocal.status !== 0 && /remote host/.test(remoteLocal.stderr));
-const badParam = run({ SITE_ENV: "testing", DATABASE_URL: `${prodUrl}?host=evil.example.com` });
+const badParam = run({ SITE_ENV: "production", DATABASE_URL: `${prodUrl}?host=evil.example.com` });
 check("unknown URL query params are refused", badParam.status !== 0 && /unsupported query/.test(badParam.stderr));
 
 const bad = (label, r, re) => check(label, r.status !== 0 && re.test(r.stderr), r.stderr.split("\n")[1] ?? "");
-const T = "tttttttttt1234567890";
-const testingUrl = `postgresql://postgres.${T}:pw@aws-0-eu.pooler.supabase.com:5432/postgres`;
-const refs = { SUPABASE_PRODUCTION_REF: REF, SUPABASE_TESTING_REF: T };
-bad("remote sslmode=disable is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: `${testingUrl}?sslmode=disable` }), /sslmode/);
-bad("remote sslmode=no-verify is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: `${testingUrl}?sslmode=no-verify` }), /sslmode/);
-bad("testing + production-ref URL + no refs is refused", run({ SITE_ENV: "testing", DATABASE_URL: prodUrl }), /SUPABASE_PRODUCTION_REF/);
-bad("blank DATABASE_CA_CERT is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: testingUrl, DATABASE_CA_CERT: "  " }), /blank/);
-bad("unreadable DATABASE_CA_CERT file is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: testingUrl, DATABASE_CA_CERT: "/nonexistent/ca.pem" }), /could not be read/);
+const refs = { SUPABASE_PRODUCTION_REF: REF, ADMIN_CONFIRM_PRODUCTION: "yes" };
+bad("remote sslmode=disable is refused", run({ SITE_ENV: "production", ...refs, DATABASE_URL: `${prodUrl}?sslmode=disable` }), /sslmode/);
+bad("remote sslmode=no-verify is refused", run({ SITE_ENV: "production", ...refs, DATABASE_URL: `${prodUrl}?sslmode=no-verify` }), /sslmode/);
+bad("production + remote URL + no ref configured is refused", run({ SITE_ENV: "production", DATABASE_URL: prodUrl }), /SUPABASE_PRODUCTION_REF/);
+bad("a remote URL with another project's ref is refused", run({ SITE_ENV: "production", ...refs, SUPABASE_PRODUCTION_REF: "zzzzzzzzzz1234567890", DATABASE_URL: prodUrl }), /does not match SUPABASE_PRODUCTION_REF/);
+bad("SITE_ENV=testing is refused (retired by INF-10)", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: prodUrl }), /retired/);
+bad("blank DATABASE_CA_CERT is refused", run({ SITE_ENV: "production", ...refs, DATABASE_URL: prodUrl, DATABASE_CA_CERT: "  " }), /blank/);
+bad("unreadable DATABASE_CA_CERT file is refused", run({ SITE_ENV: "production", ...refs, DATABASE_URL: prodUrl, DATABASE_CA_CERT: "/nonexistent/ca.pem" }), /could not be read/);
 
 // dist/server/entry.mjs run directly (no launcher): the runtime rules still apply (pool is lazy, so no DB is contacted).
-const direct = await boot({ SITE_ENV: "testing", DATABASE_URL: prodUrl, HOST: "127.0.0.1" }, "dist/server/entry.mjs");
+const direct = await boot({ SITE_ENV: "testing", DATABASE_URL: prodUrl, HOST: "127.0.0.1" }, "dist/server/entry.mjs"); // retired label, no refs: unsafe
 check("direct entry.mjs boots", !direct.failed, direct.log().slice(-200));
 if (!direct.failed) {
 	for (const p of GATED) {
 		const r = await fetch(`${direct.base}${p}`, { redirect: "manual" });
-		check(`direct entry.mjs, prod-ref URL under testing label: ${p} -> 503`, r.status === 503, `HTTP ${r.status}`);
+		check(`direct entry.mjs, remote URL under the retired testing label: ${p} -> 503`, r.status === 503, `HTTP ${r.status}`);
 	}
 }
 direct.child.kill();

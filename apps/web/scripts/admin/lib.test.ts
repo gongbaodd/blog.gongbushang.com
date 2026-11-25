@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { buildDevVars, GENERATED_HEADER, redact, resolveEnv, serializeDevVars } from "./lib.mjs";
 
 const dotEnv = {
-	SUPABASE_TESTING_POOLER_URL: "postgresql://u:pw@aws-0.pooler.supabase.com:5432/postgres",
-	EMDASH_TESTING_ENCRYPTION_KEY: "emdash_enc_v1_TESTKEYTESTKEYTESTKEY",
+	SUPABASE_PRODUCTION_POOLER_URL: "postgresql://u:pw@aws-0.pooler.supabase.com:5432/postgres",
+	EMDASH_PRODUCTION_ENCRYPTION_KEY: "emdash_enc_v1_TESTKEYTESTKEYTESTKEY",
 	GITHUB_DISPATCH_TOKEN: "ghp_envfiletoken",
 };
 const devVars = {
@@ -17,12 +17,17 @@ const devVars = {
 };
 
 describe("resolveEnv", () => {
-	it("testing uses the pooler url and testing key", () => {
+	it("production uses the pooler url and production key", () => {
+		const r = resolveEnv("production", dotEnv, devVars);
+		expect(r).toMatchObject({ ok: true, url: dotEnv.SUPABASE_PRODUCTION_POOLER_URL, key: dotEnv.EMDASH_PRODUCTION_ENCRYPTION_KEY });
+	});
+	it("testing was retired by INF-10 and is refused", () => {
 		const r = resolveEnv("testing", dotEnv, devVars);
-		expect(r).toMatchObject({ ok: true, url: dotEnv.SUPABASE_TESTING_POOLER_URL, key: dotEnv.EMDASH_TESTING_ENCRYPTION_KEY });
+		expect(r.ok).toBe(false);
+		expect(r.error).toMatch(/unknown env "testing"/);
 	});
 	it("production fails naming the missing variables and never invents a key", () => {
-		const r = resolveEnv("production", dotEnv, devVars);
+		const r = resolveEnv("production", {}, devVars);
 		expect(r.ok).toBe(false);
 		expect(r.missing).toEqual(["SUPABASE_PRODUCTION_POOLER_URL", "EMDASH_PRODUCTION_ENCRYPTION_KEY"]);
 	});
@@ -39,18 +44,18 @@ describe("resolveEnv", () => {
 
 describe("buildDevVars", () => {
 	it("forces the env's DB and SITE_ENV, ignoring the .dev.vars DB entry", () => {
-		const v = buildDevVars("testing", resolveEnv("testing", dotEnv, devVars), dotEnv, devVars);
-		expect(v.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE).toBe(dotEnv.SUPABASE_TESTING_POOLER_URL);
-		expect(v.SITE_ENV).toBe("testing");
-		expect(v.EMDASH_ENCRYPTION_KEY).toBe(dotEnv.EMDASH_TESTING_ENCRYPTION_KEY);
+		const v = buildDevVars("production", resolveEnv("production", dotEnv, devVars), dotEnv, devVars);
+		expect(v.CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE).toBe(dotEnv.SUPABASE_PRODUCTION_POOLER_URL);
+		expect(v.SITE_ENV).toBe("production");
+		expect(v.EMDASH_ENCRYPTION_KEY).toBe(dotEnv.EMDASH_PRODUCTION_ENCRYPTION_KEY);
 	});
 	it("takes the dispatch token from .env over .dev.vars, repo from .dev.vars", () => {
-		const v = buildDevVars("testing", resolveEnv("testing", dotEnv, devVars), dotEnv, devVars);
+		const v = buildDevVars("production", resolveEnv("production", dotEnv, devVars), dotEnv, devVars);
 		expect(v.GITHUB_DISPATCH_TOKEN).toBe("ghp_envfiletoken");
 		expect(v.GITHUB_DISPATCH_REPO).toBe("o/r");
 	});
-	it("honours a fake GITHUB_API_URL only for local, so testing/production dispatch to real GitHub", () => {
-		const t = buildDevVars("testing", resolveEnv("testing", dotEnv, devVars), dotEnv, devVars);
+	it("honours a fake GITHUB_API_URL only for local, so production dispatches to real GitHub", () => {
+		const t = buildDevVars("production", resolveEnv("production", dotEnv, devVars), dotEnv, devVars);
 		const l = buildDevVars("local", resolveEnv("local", {}, devVars), {}, devVars);
 		expect(t.GITHUB_API_URL).toBeUndefined();
 		expect(l.GITHUB_API_URL).toBe("http://127.0.0.1:9999");

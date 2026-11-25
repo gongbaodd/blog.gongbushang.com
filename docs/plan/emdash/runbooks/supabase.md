@@ -3,12 +3,12 @@
 | Env | Project | Ref | Region | Pooler host (session, :5432) |
 |---|---|---|---|---|
 | local | `supabase start` | n/a | n/a | `127.0.0.1:54322` |
-| testing | growgen-testing | `ckpozotzgubrjbjstvjg` | ap-southeast-1 | `aws-0-ap-southeast-1.pooler.supabase.com` |
-| production | growgen-production | `epewqznhtgjirbfeqfrj` | ap-southeast-1 | `aws-1-ap-southeast-1.pooler.supabase.com` |
+| production | growgen-testing, promoted by INF-10 (rename the display name to `growgen-production` in the Dashboard if wanted; the ref does not change) | `ckpozotzgubrjbjstvjg` | ap-southeast-1 | `aws-0-ap-southeast-1.pooler.supabase.com` |
+| ~~old production~~ | growgen-production (`epewqznhtgjirbfeqfrj`, `aws-1-ap-southeast-1`), unused, **to be deleted by the owner (GON-199)** to free a Free slot | | | |
 
 Org `giwrismyariookakffxk`. The paused project `map` (eu-west-1) must stay paused: the Free plan allows 2 active projects.
 
-Note the hosts differ (`aws-0` vs `aws-1`) per project. Never guess; get the host from the CLI.
+The two projects had different pooler hosts (`aws-0` vs `aws-1`). Never guess; get the host from the CLI.
 
 ## Get the session-pooler URL
 ```
@@ -16,27 +16,27 @@ supabase link --project-ref <ref>      # writes supabase/.temp/pooler-url (no us
 ```
 URL = `postgresql://postgres.<ref>:<URL-encoded password>@<host>:5432/postgres`. Use the session pooler (port 5432), never the transaction pooler (6543). The direct host `db.<ref>.supabase.co` is IPv6-only on Free, so CI, the CLI and backups must use the pooler.
 
-Local secrets in repo-root `.env` (gitignored): `SUPABASE_{TESTING,PRODUCTION}_DB_PASSWORD`, `_REF`, `_POOLER_URL`. GitHub environment secret `DATABASE_POOLER_URL` exists in the `testing` and `production` environments.
+Local secrets in repo-root `.env` (gitignored): `SUPABASE_PRODUCTION_DB_PASSWORD`, `SUPABASE_PRODUCTION_REF` (`ckpozotzgubrjbjstvjg`), `SUPABASE_PRODUCTION_POOLER_URL`; the old `SUPABASE_TESTING_*` entries are removed (GON-199). GitHub environment secret `DATABASE_POOLER_URL` lives in the `production` environment only.
 
 ## Connect
-Use node `pg` with `ssl: { rejectUnauthorized: false }` (no psql installed) and run `select version()`. Both projects: PostgreSQL 17.12.
+Use node `pg` with `ssl: { rejectUnauthorized: false }` (no psql installed) and run `select version()`. PostgreSQL 17.12.
 
 ## Migrate
 ```
 set -a; . ./.env; set +a; cd apps/web
-export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_TESTING_POOLER_URL"
+export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_PRODUCTION_POOLER_URL"
 pnpm exec emdash migrate --from-config --status        # prints "Target fingerprint"
 pnpm exec emdash migrate --from-config --expected-target-fingerprint <fingerprint>
 ```
-The apply is non-interactive only with `--expected-target-fingerprint`. Check that the printed host matches the intended project first. It takes about 2 minutes against the cloud. Testing was migrated on 2026-11-24 (98 migrations, 73 public tables, all owned by `postgres`, which EmDash requires). Production is migrated by CI in INF-4. After any `emdash migrate` run, re-run the `SEC-01` RLS lockdown migration below so any newly created `public.*` tables have RLS enabled.
+The apply is non-interactive only with `--expected-target-fingerprint`. Check that the printed host matches the intended project first. It takes about 2 minutes against the cloud. The project now called production (formerly testing) was migrated on 2026-11-24 (98 migrations, 73 public tables, all owned by `postgres`, which EmDash requires). Later migrations are applied by `web-deploy` with `apply_migrations`, or by hand as above. After any `emdash migrate` run, re-run the `SEC-01` RLS lockdown migration below so any newly created `public.*` tables have RLS enabled.
 
 ## Security: PostgREST Data API & RLS lockdown (`SEC-01`)
 
 Neither `apps/web` nor `apps/admin` uses Supabase PostgREST (both connect directly to Postgres as the `postgres` owner role). Because Supabase enables the Data API on `public` by default and project refs are public, every environment must enforce two independent layers of protection:
 
-### 1. Disable Data API on cloud Dashboards (`growgen-testing` & `growgen-production`)
+### 1. Disable Data API on the cloud Dashboard (project `ckpozotzgubrjbjstvjg`)
 
-Perform once on **both** `growgen-testing` (`ckpozotzgubrjbjstvjg`) and `growgen-production` (`epewqznhtgjirbfeqfrj`):
+Perform once on the one remote project (`ckpozotzgubrjbjstvjg`):
 
 1. Open the Supabase Dashboard -> **Project Settings** -> **Data API**.
 2. Toggle **Enable Data API** **off**.
@@ -57,7 +57,7 @@ set -a; . ./.env; set +a; cd apps/web
 node --input-type=module -e '
   import { readFileSync } from "node:fs";
   import pg from "pg";
-  const url = process.env.SUPABASE_TESTING_POOLER_URL;
+  const url = process.env.SUPABASE_PRODUCTION_POOLER_URL;
   const local = /(localhost|127\.0\.0\.1)/.test(url);
   const client = new pg.Client({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false } });
   await client.connect();
@@ -72,14 +72,14 @@ node --input-type=module -e '
 Or with `psql` (when installed):
 ```sh
 set -a; . ./.env; set +a
-psql "$SUPABASE_TESTING_POOLER_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261125020000_lockdown_public_rls.sql
+psql "$SUPABASE_PRODUCTION_POOLER_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261125020000_lockdown_public_rls.sql
 ```
 
 You can also run it once via `supabase db push` on a linked project, or paste the file into the Supabase Dashboard **SQL Editor** when re-applying after a future `emdash migrate`.
 
 ### 3. Verify lockdown state
 
-Both queries below should return **0 rows** on `local`, `testing`, and `production`:
+Both queries below should return **0 rows** on `local` and `production`:
 ```sql
 -- Tables in public/derived missing RLS
 select schemaname, tablename

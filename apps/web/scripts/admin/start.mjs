@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Local EmDash admin against local / testing / production (D12, INF-7).
-//   node scripts/admin/start.mjs <local|testing|production> [--port 4322] [--yes-production] [--check]
+// Local EmDash admin against local / production (D12, INF-7).
+//   node scripts/admin/start.mjs <local|production> [--port 4322] [--yes-production] [--check]
 //   node scripts/admin/start.mjs stop
-// Wired as `pnpm admin:local`, `pnpm admin:testing`, `pnpm admin:production -- --yes-production`, `pnpm admin:stop`.
+// Wired as `pnpm admin:local`, `pnpm admin:production -- --yes-production`, `pnpm admin:stop`.
 //
 // Why a generated dev-vars file: the Astro Cloudflare adapter copies `.dev.vars` values into process.env, and wrangler then
 // prefers that over the real environment, so an exported CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE loses to a
@@ -71,7 +71,7 @@ if (envName === "stop") {
 	process.exit(0);
 }
 
-if (!envName || !ENVS[envName]) die("usage: start.mjs <local|testing|production> [--port N] [--yes-production] [--check] | stop", 2);
+if (!envName || !ENVS[envName]) die("usage: start.mjs <local|production> [--port N] [--yes-production] [--check] | stop", 2);
 if (!Number.isInteger(port) || port < 1024) die("invalid --port");
 if (envName === "production" && !flag("yes-production")) {
 	die(

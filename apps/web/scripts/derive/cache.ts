@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import type pg from "pg";
 import { computeUmapInputHash, type UmapCorpusEntry } from "../../../../packages/metadata-embedding/src/apply-umap.ts";
 import { computeUmapParamsHash } from "../../../../packages/metadata-embedding/src/umap-params.ts";
-import { fromVector, q, toVector } from "./db.ts";
+import { READONLY, fromVector, q, toVector } from "./db.ts";
 import type { Hint } from "./posts.ts";
 
 export type Xy = [number, number];
@@ -29,6 +29,7 @@ export async function loadHints(c: pg.Client): Promise<Map<string, Hint>> {
 }
 
 export async function saveHints(c: pg.Client, rows: { legacyId: string; tags: string[]; cities: string[]; cover?: { url: string; alt: string } }[], overwrite = false) {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	for (const r of rows) {
 		await c.query(
 			`insert into ${q("post_hints")} (legacy_id, tag_order, city_order, cover) values ($1, $2, $3, $4::jsonb)
@@ -47,6 +48,7 @@ export async function embeddingIndex(c: pg.Client, table: EmbeddingTable = "post
 }
 
 export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHash: string, model: string, v: number[], table: EmbeddingTable = "post_embeddings") {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	await c.query(
 		`insert into ${q(table)} (legacy_id, content_hash, model, embedding) values ($1, $2, $3, $4::extensions.vector)
 		 on conflict (legacy_id) do update set content_hash = excluded.content_hash, model = excluded.model, embedding = excluded.embedding, updated_at = now()`,
@@ -57,13 +59,17 @@ export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHas
 /**
  * Valid vectors only (hash and model match the current content). With `acceptOtherModel`, a row whose content_hash
  * matches is also accepted when another model made it (provider switch that could not finish re-embedding).
+ * With DERIVE_READONLY=1 (INF-10) a row for the same legacy id is also accepted when the content hash differs (the post was
+ * edited since): the vector is stale but good enough to place the post, and nothing is written. Without it that post would get no
+ * UMAP point and so no /api/cards page, and URL parity would fail on every CMS edit. The model rule above still applies.
  */
 export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>, table: EmbeddingTable = "post_embeddings", acceptOtherModel = false) {
 	const r = await c.query(`select legacy_id, content_hash, model, embedding::text as v from ${q(table)}`);
 	const out = new Map<string, number[]>();
 	for (const x of r.rows) {
 		const want = valid.get(x.legacy_id);
-		if (want && want.contentHash === x.content_hash && (acceptOtherModel || want.model === x.model)) out.set(x.legacy_id, fromVector(x.v));
+		const modelOk = acceptOtherModel || (want && want.model === x.model);
+		if (want && modelOk && (want.contentHash === x.content_hash || READONLY)) out.set(x.legacy_id, fromVector(x.v));
 	}
 	return out;
 }
@@ -73,6 +79,7 @@ export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentH
  * wrong database or a failed import, and pruning then would wipe a cache that costs hours of embedding to rebuild.
  */
 export async function pruneEmbeddings(c: pg.Client, keep: string[], table: EmbeddingTable = "post_embeddings") {
+	if (READONLY) return 0; // DERIVE_READONLY=1: never write
 	if (keep.length === 0) {
 		console.warn(`[derive] WARNING: not pruning ${table}: the read returned 0 items`);
 		return 0;
@@ -94,6 +101,7 @@ export async function loadTraces(c: pg.Client): Promise<Map<string, TraceRow>> {
 }
 
 export async function upsertTrace(c: pg.Client, url: string, t: TraceRow) {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	await c.query(
 		`insert into ${q("gallery_traces")} (image_url, svg, bg_color, title_color) values ($1, $2, $3, $4)
 		 on conflict (image_url) do update set svg = excluded.svg, bg_color = excluded.bg_color, title_color = excluded.title_color, updated_at = now()`,
@@ -109,6 +117,7 @@ export const PLACEHOLDER_MARK = 'data-placeholder="1"';
  * image left the keep set. A real trace stays even when its image URL changed or its entry was deleted. An empty keep set never prunes.
  */
 export async function pruneTraces(c: pg.Client, keepUrls: string[]) {
+	if (READONLY) return 0; // DERIVE_READONLY=1: never write
 	if (keepUrls.length === 0) {
 		console.warn("[derive] WARNING: not pruning gallery_traces: the read returned 0 items");
 		return 0;
@@ -123,6 +132,7 @@ export async function loadColors(c: pg.Client): Promise<Map<string, ColorSet>> {
 }
 
 export async function upsertColor(c: pg.Client, url: string, cs: ColorSet) {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	await c.query(
 		`insert into ${q("cover_colors")} (cover_url, bg_color, title_color) values ($1, $2, $3)
 		 on conflict (cover_url) do update set bg_color = excluded.bg_color, title_color = excluded.title_color, updated_at = now()`,
@@ -131,6 +141,7 @@ export async function upsertColor(c: pg.Client, url: string, cs: ColorSet) {
 }
 
 export async function pruneColors(c: pg.Client, keepUrls: string[]) {
+	if (READONLY) return 0; // DERIVE_READONLY=1: never write
 	return (await c.query(`delete from ${q("cover_colors")} where cover_url <> all($1::text[])`, [keepUrls])).rowCount ?? 0;
 }
 
@@ -141,6 +152,7 @@ export async function loadGeocodes(c: pg.Client): Promise<Map<string, Location>>
 }
 
 export async function upsertGeocode(c: pg.Client, city: string, l: Location) {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	await c.query(
 		`insert into ${q("geocodes")} (city, latitude, longitude) values ($1, $2, $3)
 		 on conflict (city) do update set latitude = excluded.latitude, longitude = excluded.longitude, updated_at = now()`,
@@ -156,6 +168,7 @@ export async function loadUmapState(c: pg.Client): Promise<UmapState | undefined
 }
 
 export async function saveUmapState(c: pg.Client, s: UmapState) {
+	if (READONLY) return; // DERIVE_READONLY=1: never write
 	await c.query(
 		`insert into ${q("umap_state")} (id, input_hash, params_hash, count, coordinates) values ('blog', $1, $2, $3, $4::jsonb)
 		 on conflict (id) do update set input_hash = excluded.input_hash, params_hash = excluded.params_hash, count = excluded.count,

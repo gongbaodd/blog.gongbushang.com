@@ -4,11 +4,13 @@
  * The admin runs locally (`pnpm admin:<env>`) or in its own container (`apps/admin`), so a deployed
  * Cloudflare Worker serves static pages only and must never fall through to EmDash's runtime
  * `handler.fetch`. `assets.not_found_handling` does NOT keep asset misses away from the Worker
- * (verified on testing with `wrangler tail`), so `src/worker.ts` delegates every production `fetch`
+ * (verified on a deployed Worker with `wrangler tail`), so `src/worker.ts` delegates every production `fetch`
  * to `handleStaticOnlyFetch` here.
  *
  * Pure and dependency-free so it can be unit tested in Node without Cloudflare/Astro virtual modules.
  */
+
+import { isSiteLive } from "./site-live";
 
 const MAX_DECODE_PASSES = 3;
 const ENCODED_HEX_RE = /%[0-9a-f]{2}/i;
@@ -65,7 +67,8 @@ export interface AssetsFetcher {
 
 export interface StaticWorkerEnv {
   ASSETS?: AssetsFetcher;
-  SITE_ENV?: string;
+  /** Wrangler var; only the exact value "true" lifts noindex (INF-10). */
+  PUBLIC_SITE_LIVE?: string;
 }
 
 export type WorkerFetchHandler<E = StaticWorkerEnv, C = unknown> = (
@@ -74,20 +77,20 @@ export type WorkerFetchHandler<E = StaticWorkerEnv, C = unknown> = (
   ctx: C,
 ) => Response | Promise<Response>;
 
-function buildNotFoundHeaders(siteEnv: string | undefined, contentType?: string | null): Headers {
+function buildNotFoundHeaders(siteLive: string | undefined, contentType?: string | null): Headers {
   const headers = new Headers();
   if (contentType) headers.set("content-type", contentType);
   headers.set("cache-control", "no-store");
-  if (siteEnv !== "production") {
+  if (!isSiteLive(siteLive)) {
     headers.set("X-Robots-Tag", "noindex, nofollow");
   }
   return headers;
 }
 
-function bareNotFound(method: string, siteEnv: string | undefined): Response {
+function bareNotFound(method: string, siteLive: string | undefined): Response {
   return new Response(method === "HEAD" ? null : "Not found", {
     status: 404,
-    headers: buildNotFoundHeaders(siteEnv),
+    headers: buildNotFoundHeaders(siteLive),
   });
 }
 
@@ -95,7 +98,7 @@ function bareNotFound(method: string, siteEnv: string | undefined): Response {
  * Fail-closed static-only handler for deployed Workers (`!import.meta.env.DEV`).
  *
  * - Locked or malformed paths return a bare 404 (`cache-control: no-store`, plus `X-Robots-Tag`
- *   on non-production envs) without touching `ASSETS` or EmDash.
+ *   on non-live sites) without touching `ASSETS` or EmDash.
  * - Every other non-asset request tries to serve `/404.html` from `env.ASSETS` with HTTP 404
  *   (falling back to bare 404 if `/404.html` is unavailable) and NEVER invokes EmDash's runtime.
  */
@@ -103,18 +106,18 @@ export async function handleStaticOnlyFetch(
   request: Request,
   env?: StaticWorkerEnv,
 ): Promise<Response> {
-  const siteEnv = env?.SITE_ENV;
+  const siteLive = env?.PUBLIC_SITE_LIVE;
   const method = request.method.toUpperCase();
 
   let url: URL;
   try {
     url = new URL(request.url);
   } catch {
-    return bareNotFound(method, siteEnv);
+    return bareNotFound(method, siteLive);
   }
 
   if (isLockedPath(url.pathname)) {
-    return bareNotFound(method, siteEnv);
+    return bareNotFound(method, siteLive);
   }
 
   if (env?.ASSETS) {
@@ -125,7 +128,7 @@ export async function handleStaticOnlyFetch(
       if (assetRes.ok) {
         return new Response(method === "HEAD" ? null : assetRes.body, {
           status: 404,
-          headers: buildNotFoundHeaders(siteEnv, assetRes.headers.get("content-type")),
+          headers: buildNotFoundHeaders(siteLive, assetRes.headers.get("content-type")),
         });
       }
       await assetRes.body?.cancel().catch(() => {});
@@ -134,7 +137,7 @@ export async function handleStaticOnlyFetch(
     }
   }
 
-  return bareNotFound(method, siteEnv);
+  return bareNotFound(method, siteLive);
 }
 
 /**

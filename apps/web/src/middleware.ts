@@ -11,13 +11,15 @@
 import { env } from "cloudflare:workers";
 import { defineMiddleware } from "astro:middleware";
 import { normalizePath } from "./lib/lockdown";
+import { isSiteLive } from "./lib/site-live";
 
 export const SETUP_GATE_COOKIE = "growgen_setup_gate";
 const GATED = [/^\/_emdash\/admin\/setup(\/|$)/, /^\/_emdash\/api\/setup(\/|$)/];
 
 export interface WebMiddlewareEnv {
   SETUP_TOKEN?: string;
-  SITE_ENV?: string;
+  /** Wrangler var; only the exact value "true" lifts noindex (INF-10). */
+  PUBLIC_SITE_LIVE?: string;
 }
 
 export interface WebMiddlewareOptions {
@@ -62,13 +64,13 @@ export function shouldUseSecureCookie(url: URL): boolean {
   return url.protocol === "https:" || !isLoopback;
 }
 
-/** Non-production envs: noindex on dynamic (SSR) responses too. Static assets get it from dist/client/_headers. */
+/** Non-live sites (PUBLIC_SITE_LIVE != "true"): noindex on dynamic (SSR) responses too. Static assets get it from dist/client/_headers. */
 async function withRobots(
   next: () => Promise<Response>,
-  siteEnv: string | undefined,
+  siteLive: string | undefined,
 ): Promise<Response> {
   const res = await next();
-  if (siteEnv !== "production") {
+  if (!isSiteLive(siteLive)) {
     try {
       res.headers.set("X-Robots-Tag", "noindex, nofollow");
     } catch {
@@ -89,8 +91,8 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
     if (pathname === null) return new Response("Bad request", { status: 400 });
 
     const runtimeEnv = getEnv();
-    if (!GATED.some((re) => re.test(pathname))) return withRobots(next, runtimeEnv.SITE_ENV);
-    if (isDev) return withRobots(next, runtimeEnv.SITE_ENV);
+    if (!GATED.some((re) => re.test(pathname))) return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
+    if (isDev) return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
 
     const secret = runtimeEnv.SETUP_TOKEN;
     if (!secret) return new Response("Not found", { status: 404 });
@@ -111,7 +113,7 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
       const headers = new Headers(redirectRes.headers);
       headers.set("Cache-Control", "no-store");
       headers.set("Referrer-Policy", "no-referrer");
-      if (runtimeEnv.SITE_ENV !== "production") {
+      if (!isSiteLive(runtimeEnv.PUBLIC_SITE_LIVE)) {
         headers.set("X-Robots-Tag", "noindex, nofollow");
       }
       return new Response(redirectRes.body, {
@@ -123,7 +125,7 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
 
     const expectedCookie = await deriveSetupGateToken(secret);
     if (await matches(context.cookies.get(SETUP_GATE_COOKIE)?.value, expectedCookie)) {
-      return withRobots(next, runtimeEnv.SITE_ENV);
+      return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
     }
     return new Response("Not found", { status: 404 });
   });

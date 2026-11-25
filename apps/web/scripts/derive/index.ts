@@ -22,11 +22,19 @@
 //      DERIVE_SKIP_COLORS=1   do not extract cover colours (cache hits only)
 //      DERIVE_PARITY_LEGACY=1 only posts the legacy metadata knows (the 3 .mdx posts were never indexed); for parity comparisons
 //      DERIVE_SCHEMA          cache schema name (default derived)
+//      DERIVE_READONLY=1      read-only run (pull-request CI against production, INF-10): no writes at all (read-only DB session, cache writes
+//                             are no-ops), cache hits only (DERIVE_EMBED=skip, DERIVE_SKIP_COLORS=1) and no AI/geocoding credentials used
 //      ALLOW_EMPTY_DATA=1     build without posts, podcast episodes and gallery images
 //      GOOGLE_API_KEY         geocode city strings that are not cached yet
-import { readFileSync, readdirSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Extras } from "./outputs.ts";
+if (process.env.DERIVE_READONLY === "1") {
+	process.env.DERIVE_EMBED = "skip";
+	process.env.DERIVE_SKIP_COLORS = "1";
+	for (const k of ["GOOGLE_API_KEY", "CF_AI_TOKEN", "CLOUDFLARE_AI_API_TOKEN", "CF_ACCOUNT_ID", "CLOUDFLARE_ACCOUNT_ID"]) delete process.env[k];
+	console.log("[derive] DERIVE_READONLY=1: no writes, cache hits only (no embeddings, colours, traces, geocoding)");
+}
 process.env.TZ ||= "Europe/Tallinn"; // the legacy snapshot's build TZ: post dates are local midnights (PORT-3)
 
 const { webRoot } = await import("./db.ts");
@@ -99,6 +107,15 @@ try {
 	];
 	const um = await resolveUmap(client, corpus);
 	console.log(`[derive] umap: ${um.status}, ${um.count} points (${lap(t)})`);
+	if (process.env.DERIVE_READONLY === "1") {
+		// Read-only runs cannot compute vectors or UMAP points for posts the cache has never seen (brand-new posts), so they get no
+		// /api/cards or /api/relates page. List them for `parity --allow-missing` (web-ci.yml) and warn; everything else must still match.
+		const ids = [...posts.map((p) => p.legacyId), ...episodes.map((e) => e.legacyId)].filter((id) => !emb.vectors.has(id) && !pemb.vectors.has(id) || !um.coordinates[id]);
+		const lines = ids.flatMap((id) => [`/api/cards/${id}.json`, `/api/relates/${id}.json`]);
+		mkdirSync(resolve(webRoot, ".derive"), { recursive: true });
+		writeFileSync(resolve(webRoot, ".derive/readonly-missing.txt"), `# written by derive (DERIVE_READONLY=1): posts without a cached vector or UMAP point\n${lines.join("\n")}\n`);
+		if (ids.length) console.warn(`[derive] WARNING (read-only): ${ids.length} post(s)/episode(s) have no cached vector or UMAP point; their /api/cards and /api/relates pages are not built and parity tolerates that: ${ids.slice(0, 10).join(", ")}${ids.length > 10 ? ", ..." : ""}`);
+	}
 
 	t = Date.now();
 	const epCoverUrls = episodes.flatMap((e) => (e.episode.colorSet || !e.episode.image || !/^https?:\/\//.test(e.episode.image) ? [] : [e.episode.image]));

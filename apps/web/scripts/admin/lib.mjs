@@ -15,13 +15,6 @@ export const ENVS = {
 		keyOptional: true,
 		allowFakeGithub: true,
 	},
-	testing: {
-		cloudflareEnv: "admin-testing",
-		siteEnv: "testing",
-		urlVar: "SUPABASE_TESTING_POOLER_URL",
-		keyVars: ["EMDASH_TESTING_ENCRYPTION_KEY"],
-		allowFakeGithub: false,
-	},
 	production: {
 		cloudflareEnv: "admin-production",
 		siteEnv: "production",
@@ -64,7 +57,7 @@ export function looksLikePostgresUrl(url) {
  */
 export function resolveEnv(envName, dotEnv, devVars) {
 	const cfg = ENVS[envName];
-	if (!cfg) return { ok: false, missing: [], error: `unknown env "${envName}" (expected local, testing or production)` };
+	if (!cfg) return { ok: false, missing: [], error: `unknown env "${envName}" (expected local or production; testing was retired by INF-10)` };
 	const missing = [];
 	let url = dotEnv[cfg.urlVar] || cfg.defaultUrl;
 	if (!url) missing.push(cfg.urlVar);
@@ -95,7 +88,7 @@ export function buildDevVars(envName, { url, key }, dotEnv, devVars) {
 		const v = dotEnv[name] || devVars[name];
 		if (v) out[name] = v;
 	}
-	// A fake/local GitHub API (used to test dispatch) is only honoured locally: testing/production must hit real GitHub.
+	// A fake/local GitHub API (used to test dispatch) is only honoured locally: production must hit real GitHub.
 	if (cfg.allowFakeGithub) {
 		const v = dotEnv.GITHUB_API_URL || devVars.GITHUB_API_URL;
 		if (v) out.GITHUB_API_URL = v;
