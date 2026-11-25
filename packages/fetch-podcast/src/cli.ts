@@ -30,6 +30,8 @@ export interface CliOptions {
   rssUrl?: string;
   output?: string;
   episodeDir?: string;
+  emdash?: string;
+  dryRun?: boolean;
 }
 
 export function parseCliArgs(argv: string[]): CliOptions {
@@ -43,6 +45,11 @@ export function parseCliArgs(argv: string[]): CliOptions {
     } else if (arg === "--output" && next) {
       options.output = next;
       i++;
+    } else if (arg === "--emdash" && next) {
+      options.emdash = next;
+      i++;
+    } else if (arg === "--dry-run") {
+      options.dryRun = true;
     } else if (arg === "--episode-dir" && next) {
       options.episodeDir = next;
       i++;
@@ -58,6 +65,7 @@ export async function resolveFetchOptions(cli: CliOptions = {}) {
     outputFile: path.resolve(repoRoot, cli.output ?? PODCAST_JSON),
     episodeDir: path.resolve(repoRoot, cli.episodeDir ?? PODCAST_COVER_DIR),
     baseDir: repoRoot,
+    ...(cli.emdash ? { emdash: { url: cli.emdash, dryRun: cli.dryRun } } : {}),
   };
 }
 

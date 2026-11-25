@@ -32,4 +32,6 @@ export interface FetchPodcastOptions {
   outputFile: string;
   episodeDir: string;
   baseDir: string;
+  /** MIG-3: upsert new episodes into this EmDash (admin URL) instead of writing JSON. */
+  emdash?: { url: string; token?: string; dryRun?: boolean };
 }

@@ -1,6 +1,6 @@
-// Gallery data access (hero gallery image + trace SVG URLs). Reads the legacy snapshot written by
-// scripts/derive/index.ts; trace SVGs are static copies under public/api/gallery/trace/.
-// TODO MIG-3: gallery moves into EmDash; only this module changes.
+// Gallery data access (hero gallery image + trace SVG URLs). Images live in the EmDash `gallery` collection (MIG-3);
+// scripts/derive/index.ts reads them (plus the cached trace SVGs, derived.gallery_traces) into
+// src/generated/legacy-data.json and writes the traces as static files under public/api/gallery/trace/.
 import { legacy, type GalleryEntry } from "./legacy-data";
 import { optimizeCloudinaryUrl } from "./cloudinary";
 
