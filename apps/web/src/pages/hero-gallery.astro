@@ -6,7 +6,7 @@ import Footer from "../footer/Footer.astro";
 import MantineMain from "../components/MantineMain";
 import ParticleHero from "../particle-hero/ParticleHero.astro";
 import { SITE_TITLE } from "../consts";
-import { getGalleryEntry, getGalleryTraceUrl } from "../lib/gallery";
+import { getGalleryEntry, toHeroGalleryImage } from "../lib/gallery";
 
 /** Change this to test a different gallery image (see the gallery snapshot in src/generated/legacy-data.json). */
 const GALLERY_IMAGE_ID = "08/26/jinghong";
@@ -14,9 +14,7 @@ const GALLERY_IMAGE_ID = "08/26/jinghong";
 export const prerender = true;
 
 const entry = getGalleryEntry(GALLERY_IMAGE_ID);
-const galleryImage = entry
-	? { url: entry.image, traceUrl: getGalleryTraceUrl(entry.id), colorSet: entry.colorSet }
-	: undefined;
+const galleryImage = entry ? toHeroGalleryImage(entry) : undefined;
 ---
 
 <Global title={`${SITE_TITLE} · Hero gallery test`} description="ParticleHero gallery image test page" noindex>

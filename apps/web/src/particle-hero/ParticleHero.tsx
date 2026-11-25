@@ -67,6 +67,8 @@ export interface IGalleryImage {
   url: string;
   /** URL of the traced SVG placeholder served by /api/gallery/trace/[file].svg */
   traceUrl?: string;
+  /** Blurred Cloudinary rendition, used instead of `traceUrl` when the trace is only a placeholder rect. */
+  lqipUrl?: string;
   colorSet?: {
     bgColor: string;
     titleColor: string;
@@ -173,11 +175,13 @@ export default function ParticleHero({
   );
 
   const placeholderStyle = useMemo((): CSSProperties | undefined => {
-    if (!galleryImage?.traceUrl && !galleryImage?.colorSet?.bgColor) return undefined;
+    if (!galleryImage) return undefined;
+    const bg = galleryImage.traceUrl ?? galleryImage.lqipUrl;
+    if (!bg && !galleryImage.colorSet?.bgColor) return undefined;
 
     return {
       backgroundColor: galleryImage.colorSet?.bgColor,
-      backgroundImage: galleryImage.traceUrl ? `url(${galleryImage.traceUrl})` : undefined,
+      backgroundImage: bg ? `url(${bg})` : undefined,
       backgroundSize: "cover",
       backgroundPosition: "center",
     };

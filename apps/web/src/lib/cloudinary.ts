@@ -110,3 +110,16 @@ export function rehypeCloudinary() {
     visitElements(tree);
   };
 }
+
+/**
+ * Tiny blurred rendition of a Cloudinary image, used as a low-quality placeholder (LQIP). Prepended before any existing
+ * transform so the 48 px width wins. Non-Cloudinary input returns undefined.
+ */
+export function blurredCloudinaryUrl(url: string): string | undefined {
+  if (typeof url !== "string") return undefined;
+  const match = url.match(CLOUDINARY_UPLOAD_RE);
+  if (!match) return undefined;
+  const [, prefix, pathPart = "", suffix = ""] = match;
+  if (pathPart === "") return undefined;
+  return `${prefix}w_48,e_blur:1000,q_auto:low,f_auto/${pathPart}${suffix}`;
+}

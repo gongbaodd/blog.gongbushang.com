@@ -1,6 +1,6 @@
 # Derived data runbook (PORT-8, D10/D13)
 
-> **Planned update (`PORT-8b`, 2026-11-25):** Embeddings will move from local LM Studio / Python `uv` to **Cloudflare Workers AI `@cf/qwen/qwen3-embedding-0.6b`** (REST API, free daily Neurons, one-time chunked backfill so CI embeds new posts automatically); cover colours stay a Node build step (legacy `getColorSet` in derive — the `apps/colorize` Worker was dropped 2026-11-25 because Cloudinary downscaling cannot reproduce legacy colours); and **SVG traces** (`potrace`, Sobel, Python `depth-estimation`) will be removed (`ParticleHero` falls back to `colorSet.bgColor` / Cloudinary blurred LQIP).
+> **Planned update (`PORT-8b`, 2026-11-25):** Embeddings will move from local LM Studio / Python `uv` to **Cloudflare Workers AI `@cf/qwen/qwen3-embedding-0.6b`** (REST API, free daily Neurons, one-time chunked backfill so CI embeds new posts automatically); cover colours stay a Node build step (legacy `getColorSet` in derive — the `apps/colorize` Worker was dropped 2026-11-25 because Cloudinary downscaling cannot reproduce legacy colours); and **SVG tracing** (`potrace`, Sobel, Python `depth-estimation`) was removed in part 3 (existing traces frozen in `gallery_traces`, placeholders for new images; `ParticleHero` falls back to `colorSet.bgColor` / Cloudinary blurred LQIP for placeholders).
 
 Everything the site shows that is not stored in EmDash but can be computed from it is derived **at build time** by `apps/web/scripts/derive/` (first step of `pnpm --filter web build`). Nothing generated is committed. The deployed Worker only serves static files.
 
@@ -11,7 +11,7 @@ Everything the site shows that is not stored in EmDash but can be computed from 
 | UMAP layout | all embeddings (posts + podcast episodes) | `umap_state` (input hash, params hash, coordinates); reused while the corpus is unchanged |
 | podcast embeddings (1024-d) | episode title + summary (`title|podcast|summary`) | `podcast_embeddings` (same validity rule as posts) |
 | podcast "More to discover" (4 per episode) | podcast embeddings | not cached |
-| gallery trace SVG + colour set | Cloudinary image URL | `gallery_traces`, key = URL (only new URLs are traced) |
+| gallery trace SVG + colour set | Cloudinary image URL | `gallery_traces`, key = URL. **Frozen since PORT-8b part 3**: the 75 existing traces are served from this cache and nothing is traced any more; an image with no cached row gets a placeholder SVG (solid rect in its `bgColor`, else grey) and its colours are extracted (colours only) |
 | cover colours | featured image URL (posts); episode cover URL when the CMS entry has no `color_set` | `cover_colors`, key = URL |
 | city locations | city label, Google Geocoding | `geocodes`, key = label (needs `GOOGLE_API_KEY` for new cities) |
 | tag/city order, legacy-only covers | seeded once | `post_hints` |
@@ -36,7 +36,7 @@ Idempotent upsert on `legacy_id`; a re-run reports `unchanged`; entries that dif
 
 New episodes: `pnpm fetch:podcast -- --emdash http://127.0.0.1:4322 [--dry-run]` creates RSS episodes missing in EmDash (published, by `legacy_id`) and writes no JSON, embeddings or UMAP; the next build derives them. Without `--emdash` the legacy JSON path is unchanged. Auth for a remote admin: `EMDASH_TOKEN` or `EMDASH_HEADERS`.
 
-New gallery images are added in the EmDash admin (collection Gallery: title, legacy id, image URL, doc, ...). The trace and colours are produced by the next build (cold 75 images: 13 s, 4 parallel; later builds hit the cache).
+New gallery images are added in the EmDash admin (collection Gallery: title, legacy id, image URL, doc, ...). The next build gives it a colour set (legacy `getColorSet` palette, colours only) and a placeholder SVG at `/api/gallery/trace/<name>.svg` (a flat rect in `bgColor`; no potrace, Sobel or depth estimation runs). The hero then uses `bgColor` plus a blurred Cloudinary rendition instead of the trace. Existing traces stay frozen in `gallery_traces`; never delete those rows (they cannot be regenerated here).
 
 ## Catch-up (MIG-6)
 Legacy posts keep being authored on `master`, which bumps the `src/content` submodule. `content:catchup` compares the submodule commit pinned by `HEAD` with the one pinned by `--ref` (default `origin/master`, run `git fetch` first), lists added / modified / renamed / deleted posts (`_docs/**/*.md(x)` only) and imports the first three with the MIG-1 importer (one run per post, `--match <legacy_id>`, source = `git archive` of the target commit in a temp dir, so the submodule need not be moved). Deleted posts are only reported, never removed from EmDash.
@@ -62,7 +62,7 @@ node apps/web/scripts/import/mig3/import.mjs --url http://127.0.0.1:4322        
 pnpm --filter web derive:seed -- --write
 pnpm --filter web derive:seed:media -- --write
 ```
-Production: same with `SUPABASE_PRODUCTION_POOLER_URL` and `pnpm admin:production -- --yes-production`. Run the seeds once per environment, after the imports; without them the first build re-embeds 150 episodes and re-traces 75 images (needs LM Studio and network). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
+Production: same with `SUPABASE_PRODUCTION_POOLER_URL` and `pnpm admin:production -- --yes-production`. Run the seeds once per environment, after the imports; without them the first build re-embeds 150 episodes and finds 75 images without a trace (the placeholders are not the legacy traces; seed `gallery_traces` from the local DB first; needs LM Studio and network for the embeddings). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
 Use the session pooler (IPv4, port 5432). The migrations are `supabase/migrations/20261125000000_derived_schema.sql` and `20261125010000_derived_podcast_gallery.sql` (`supabase db push` also works). Supabase Free supports pgvector (`create extension vector with schema extensions`); not verified against the cloud projects yet (no writes there from PORT-8). The 1024-d vectors for 995 posts take about 6 MB (1.2 % of the 500 MB limit). Each environment has its own cache; seed each once. Seeding is only valid when the DB holds the migrated legacy posts (it skips any post whose derived embedding text differs from the legacy one).
 
 ## Normal workflow

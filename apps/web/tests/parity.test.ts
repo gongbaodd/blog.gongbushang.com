@@ -74,6 +74,11 @@ describe("real legacy snapshots (legacy-route-groups.json & legacy-urls.txt)", (
 		expect(sum).toBe(4945);
 	});
 
+	test("the 75 legacy gallery trace SVG URLs stay required (placeholders serve new images, URLs never change)", () => {
+		const traces = loadLegacyUrls(LEGACY_URLS_PATH).filter((u) => /^\/api\/gallery\/trace\/[^/]+\.svg$/.test(u));
+		expect(traces).toHaveLength(75);
+	});
+
 	test("group paths match legacy-urls.txt 1:1 with zero normalized collisions", () => {
 		const data = loadGroups(LEGACY_GROUPS_PATH);
 		const groupUrls = Object.values(data.groups).flatMap((g) => g.paths);
@@ -301,7 +306,7 @@ describe("runParityCheck", () => {
 		});
 
 		const allowFile = join(root, "allow.txt");
-		writeFileSync(allowFile, "# trace svgs dropped in PORT-8b\n/api/gallery/trace/*.svg\n");
+		writeFileSync(allowFile, "# fixture only: the real build allows nothing, trace SVGs (cached or placeholder) must exist\n/api/gallery/trace/*.svg\n");
 
 		const report = runParityCheck({
 			dir: distDir,
@@ -377,7 +382,7 @@ describe("check-parity.mjs CLI", () => {
 		const distDir = join(root, "dist/client");
 		writeFiles(distDir, { "fe/2025/01/01/hello/index.html": "ok" });
 
-		// Missing trace SVG -> exit 1
+		// Missing SVG -> exit 1
 		const failRes = spawnSync(
 			process.execPath,
 			[CLI_PATH, "--dir", distDir, "--groups-file", groupsFile, "--urls-file", urlsFile, "--all", "--json"],

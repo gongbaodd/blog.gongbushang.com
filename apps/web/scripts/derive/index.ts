@@ -5,7 +5,7 @@
 //                                           cover colours (derived.cover_colors), geocodes (derived.geocodes)
 //                                       ->  src/generated/*.json + public/api/posts/*.json (same shapes as before)
 //   EmDash podcasts (read-only) -> episode embeddings (derived.podcast_embeddings), nearest episodes, UMAP corpus
-//   EmDash gallery  (read-only) -> trace SVG + colours (derived.gallery_traces) -> public/api/gallery/trace/*.svg
+//   EmDash gallery  (read-only) -> frozen trace cache + colours (derived.gallery_traces; placeholder SVG when uncached) -> public/api/gallery/trace/*.svg
 // Nothing is read from the legacy content submodule (MIG-3), except with DERIVE_PARITY_LEGACY=1 (parity checks only).
 // Nothing generated is committed. Runs locally or in GitHub Actions: uses Cloudflare Workers AI when configured,
 // falls back to local LM Studio if running, or cache hits only (new posts without embeddings are left out of
@@ -110,8 +110,13 @@ try {
 	t = Date.now();
 	const tr = await resolveTraces(client, galleryImages, process.env.DERIVE_SKIP_COLORS !== "1", 4, await readGalleryUrls(client));
 	extras.gallery = galleryImages.map((g) => g.entry);
-	for (const g of galleryImages) if (tr.svgByUrl.has(g.entry.image)) extras.traces.set(g.traceFile, tr.svgByUrl.get(g.entry.image)!);
-	console.log(`[derive] gallery: ${galleryImages.length} images, traces: ${tr.reused} cached, ${tr.traced} traced, ${tr.failed.length} failed (${lap(t)})`);
+	extras.placeholderTraces = new Set();
+	for (const g of galleryImages) {
+		if (!tr.svgByUrl.has(g.entry.image)) continue;
+		extras.traces.set(g.traceFile, tr.svgByUrl.get(g.entry.image)!);
+		if (tr.placeholderUrls.has(g.entry.image)) extras.placeholderTraces.add(g.traceFile);
+	}
+	console.log(`[derive] gallery: ${galleryImages.length} images, traces: ${tr.reused} cached, ${tr.placeholders} placeholders, 0 traced, ${tr.failed.length} colour failures (${lap(t)})`);
 
 	t = Date.now();
 	const result = assemble({ posts, vectors: emb.vectors, coordinates: um.coordinates, colors: colors.colors, geocodes: geo.byCity, extras, source: `derive:${describeTarget(url)}` });
