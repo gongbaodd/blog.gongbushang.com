@@ -33,6 +33,7 @@ import App from "./core/App.js";
 import LegendCategoryChips from "./components/LegendCategoryChips";
 import LegendYearSlider from "./components/LegendYearSlider";
 import { usePostFilter } from "./usePostFilter";
+import { galleryPlaceholderStyle } from "./placeholder-style";
 import {
   getCategoryColor,
   getFilterOptions,
@@ -174,18 +175,7 @@ export default function ParticleHero({
     [cardStack, cardCache],
   );
 
-  const placeholderStyle = useMemo((): CSSProperties | undefined => {
-    if (!galleryImage) return undefined;
-    const bg = galleryImage.traceUrl ?? galleryImage.lqipUrl;
-    if (!bg && !galleryImage.colorSet?.bgColor) return undefined;
-
-    return {
-      backgroundColor: galleryImage.colorSet?.bgColor,
-      backgroundImage: bg ? `url(${bg})` : undefined,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }, [galleryImage]);
+  const placeholderStyle = useMemo(() => galleryPlaceholderStyle(galleryImage), [galleryImage]);
 
   const showPlaceholder = Boolean(placeholderStyle) && (loading || webglFailed);
 

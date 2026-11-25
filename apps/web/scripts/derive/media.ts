@@ -9,7 +9,7 @@ import { createHash } from "node:crypto";
 import type pg from "pg";
 import { buildPodcastEmbeddingText } from "../../../../packages/metadata-embedding/src/embedding.ts";
 import { getPaletteColorSet } from "../../../../packages/image-metadata/src/get-palette.ts";
-import { loadTraces, pruneTraces, upsertTrace, type ColorSet, type TraceRow } from "./cache.ts";
+import { loadTraces, PLACEHOLDER_MARK, pruneTraces, type ColorSet, type TraceRow } from "./cache.ts";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -169,11 +169,10 @@ export interface TraceResult {
 }
 
 const NEUTRAL_GREY = "#808080";
-const PLACEHOLDER_MARK = 'data-placeholder="1"';
 
 /** Tiny deterministic stand-in for a trace: one solid rect in the image's `bgColor` (neutral grey when unknown or not a hex colour). */
 export function placeholderSvg(bgColor?: string | null): string {
-	const fill = bgColor && /^#[0-9a-f]{3,8}$/i.test(bgColor) ? bgColor.toLowerCase() : NEUTRAL_GREY;
+	const fill = bgColor && /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(bgColor) ? bgColor.toLowerCase() : NEUTRAL_GREY;
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9" preserveAspectRatio="none" ${PLACEHOLDER_MARK}><rect width="16" height="9" fill="${fill}"/></svg>`;
 }
 
@@ -182,13 +181,14 @@ export const isPlaceholderSvg = (svg: string): boolean => svg.includes(PLACEHOLD
 /**
  * Trace SVG for every gallery image from the FROZEN cache (derived.gallery_traces, key = image URL). Nothing is traced any
  * more: an image with no cached trace gets a placeholder SVG at the same URL (`/api/gallery/trace/<name>.svg` never changes).
- * Its colour set is the CMS one, else the legacy palette extraction (colours only, no trace); that placeholder row is cached.
+ * Its colour set is the CMS one, else the legacy palette extraction (colours only, no trace). Placeholders are not cached.
  */
 export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[], extract = true, concurrency = 4, keepUrls?: string[]): Promise<TraceResult> {
 	const t0 = Date.now();
 	const cache = await loadTraces(c);
 	const urls = [...new Set(gallery.map((g) => g.entry.image))];
-	const todo = urls.filter((u) => !cache.has(u));
+	// A cached placeholder row (older build) counts as uncached: placeholders are never stored now, so their colour cannot go stale.
+	const todo = urls.filter((u) => !cache.has(u) || isPlaceholderSvg(cache.get(u)!.svg));
 	const cmsColors = new Map(gallery.flatMap((g) => (g.entry.colorSet ? [[g.entry.image, g.entry.colorSet] as const] : [])));
 	const failed: string[] = [];
 	const queue = [...todo];
@@ -205,14 +205,10 @@ export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[]
 					console.warn(`[derive] WARNING: gallery colours failed for ${u}: ${(err as Error).message}`);
 				}
 			}
-			if (!colorSet) {
-				cache.set(u, { svg: placeholderSvg(), colorSet: { bgColor: "", titleColor: "" } }); // not stored: retried next build
-				continue;
-			}
-			const row: TraceRow = { svg: placeholderSvg(colorSet.bgColor), colorSet };
-			await upsertTrace(c, u, row);
+			// Never stored in gallery_traces: it would go stale and could shadow the real trace that `derive:seed:media` restores.
+			const row: TraceRow = { svg: placeholderSvg(colorSet?.bgColor), colorSet: colorSet ?? { bgColor: "", titleColor: "" } };
 			cache.set(u, row);
-			console.log(`[derive] gallery placeholder ${u}`);
+			if (colorSet) console.log(`[derive] gallery placeholder ${u}`);
 		}
 	};
 	await Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker));

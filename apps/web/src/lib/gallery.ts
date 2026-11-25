@@ -24,12 +24,17 @@ export const isPlaceholderTrace = (id: string): boolean =>
  * Hero gallery image props. A real trace is the placeholder background; for a placeholder trace the hero falls back to
  * `colorSet.bgColor` plus a blurred Cloudinary rendition (the trace URL itself keeps resolving).
  */
-export function toHeroGalleryImage(entry: GalleryEntry) {
-  const placeholder = isPlaceholderTrace(entry.id);
+export function buildHeroGalleryImage(
+  entry: GalleryEntry,
+  opts: { url?: string; hasTrace: boolean; placeholder: boolean },
+) {
   return {
-    url: entry.image,
-    traceUrl: placeholder ? undefined : getGalleryTraceUrl(entry.id),
-    lqipUrl: placeholder ? blurredCloudinaryUrl(entry.image) : undefined,
+    url: opts.url ?? entry.image,
+    traceUrl: opts.hasTrace && !opts.placeholder ? getGalleryTraceUrl(entry.id) : undefined,
+    lqipUrl: opts.placeholder ? blurredCloudinaryUrl(entry.image) : undefined,
     colorSet: entry.colorSet,
   };
 }
+
+export const toHeroGalleryImage = (entry: GalleryEntry) =>
+  buildHeroGalleryImage(entry, { hasTrace: true, placeholder: isPlaceholderTrace(entry.id) });

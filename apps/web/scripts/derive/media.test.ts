@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { pruneEmbeddings, pruneTraces } from "./cache.ts";
+import { PLACEHOLDER_MARK, pruneEmbeddings, pruneTraces } from "./cache.ts";
 import { buildEpisodes, isPlaceholderSvg, parseDate, placeholderSvg, resolveTraces, type DerivedGalleryImage, type PodcastRow } from "./media.ts";
 
 const palette = vi.hoisted(() => vi.fn());
@@ -34,6 +34,16 @@ describe("prune guards", () => {
 		expect(await pruneTraces(c, [])).toBe(0);
 		expect(query).not.toHaveBeenCalled();
 		expect(warn).toHaveBeenCalledTimes(3);
+	});
+	it("pruneTraces deletes only placeholder rows, never real traces", async () => {
+		const { query, c } = client();
+		await pruneTraces(c, ["https://img/kept.jpg"]);
+		const [sql, params] = query.mock.calls[0] as unknown as [string, unknown[]];
+		expect(sql).toMatch(/delete from .*gallery_traces/);
+		expect(sql).toMatch(/position\(\$2 in svg\) > 0/);
+		expect(params).toEqual([["https://img/kept.jpg"], PLACEHOLDER_MARK]);
+		expect(isPlaceholderSvg(placeholderSvg())).toBe(true); // the mark the delete filters on is the placeholder's
+		expect(placeholderSvg()).toContain(String(params[1]));
 	});
 	it("still prunes against a non-empty keep set", async () => {
 		const { query, c } = client();
@@ -90,6 +100,8 @@ describe("gallery traces (frozen cache, PORT-8b part 3)", () => {
 		expect(placeholderSvg("#aabbcc")).toContain('fill="#aabbcc"');
 		expect(placeholderSvg("")).toContain('fill="#808080"');
 		expect(placeholderSvg("red; x")).toContain('fill="#808080"'); // never injects markup
+		for (const bad of ["#12345", "#1234567", "#123456789", "#12"]) expect(placeholderSvg(bad)).toContain('fill="#808080"');
+		for (const ok of ["#123", "#1234", "#123456", "#12345678"]) expect(placeholderSvg(ok)).toContain(`fill="${ok}"`);
 		expect(placeholderSvg("#123").length).toBeLessThan(250);
 		expect(isPlaceholderSvg(placeholderSvg())).toBe(true);
 		expect(isPlaceholderSvg(REAL)).toBe(false);
@@ -108,7 +120,7 @@ describe("gallery traces (frozen cache, PORT-8b part 3)", () => {
 		expect(query.mock.calls.some(([sql]) => /insert/i.test(String(sql)))).toBe(false);
 	});
 
-	it("an uncached image gets a placeholder in its extracted bgColor, which is cached for the next build", async () => {
+	it("an uncached image gets a placeholder in its extracted bgColor, and the placeholder is never stored", async () => {
 		vi.spyOn(console, "log").mockImplementation(() => {});
 		palette.mockReset().mockResolvedValue({ bgColor: "#334455", titleColor: "t" });
 		const { query, c } = client([]);
@@ -118,7 +130,16 @@ describe("gallery traces (frozen cache, PORT-8b part 3)", () => {
 		expect([...r.placeholderUrls]).toEqual(["https://img/new.jpg"]);
 		expect(r.placeholders).toBe(1);
 		expect(g[0]!.entry.colorSet).toEqual({ bgColor: "#334455", titleColor: "t" });
-		expect(query.mock.calls.filter(([sql]) => /insert/i.test(String(sql)))).toHaveLength(1);
+		expect(query.mock.calls.some(([sql]) => /insert|update/i.test(String(sql)))).toBe(false);
+	});
+
+	it("a placeholder row cached by an older build is refreshed from the current colours, not served stale", async () => {
+		vi.spyOn(console, "log").mockImplementation(() => {});
+		palette.mockReset().mockResolvedValue({ bgColor: "#aa0000", titleColor: "t" });
+		const { c } = client([{ image_url: "https://img/old.jpg", svg: placeholderSvg("#112233"), bg_color: "#112233", title_color: "t" }]);
+		const r = await resolveTraces(c, [img("05/06/old", "https://img/old.jpg")]);
+		expect(r.svgByUrl.get("https://img/old.jpg")).toBe(placeholderSvg("#aa0000"));
+		expect(r.reused).toBe(0);
 	});
 
 	it("uses the CMS colour set without extraction, and grey when colours are skipped or fail", async () => {

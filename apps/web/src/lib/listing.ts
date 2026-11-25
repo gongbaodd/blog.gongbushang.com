@@ -4,7 +4,8 @@
 // EmDash by scripts/derive, PORT-8 / MIG-3); nothing reads the legacy content submodule.
 import { getAllPosts, postExcerpt, type BlogPost } from "./content";
 import { legacy, postRecord, type PodcastEpisode } from "./legacy-data";
-import { blurredCloudinaryUrl, optimizeCloudinaryUrl } from "./cloudinary";
+import { optimizeCloudinaryUrl } from "./cloudinary";
+import { buildHeroGalleryImage, isPlaceholderTrace } from "./gallery";
 import { smartypants } from "./smartypants";
 import { INITIAL_SSR_POSTS, POST_COUNT_PER_PAGE } from "../consts-list";
 import {
@@ -315,15 +316,11 @@ function nearestGalleryEntry(now: Date, pubDates: Map<string, string>) {
 export function homeGalleryImage(now = new Date()) {
   const best = nearestGalleryEntry(now, new Map(legacy.podcast.map((e) => [e.id, e.pubDate])));
   if (!best) return undefined;
-  const base = `${best.id.replaceAll("/", "-")}.svg`;
-  const placeholder = (legacy.placeholderTraceFiles ?? []).includes(base);
-  return {
+  return buildHeroGalleryImage(best, {
     url: optimizeCloudinaryUrl(best.image),
-    // A placeholder trace is only a flat rect: use bgColor plus a blurred rendition instead.
-    traceUrl: legacy.traceFiles.includes(base) && !placeholder ? `/api/gallery/trace/${base}` : undefined,
-    lqipUrl: placeholder ? blurredCloudinaryUrl(best.image) : undefined,
-    colorSet: best.colorSet,
-  };
+    hasTrace: legacy.traceFiles.includes(`${best.id.replaceAll("/", "-")}.svg`),
+    placeholder: isPlaceholderTrace(best.id), // a placeholder trace is a flat rect: bgColor + blurred rendition instead
+  });
 }
 
 async function galleryPost(now: Date): Promise<TClientPost | undefined> {

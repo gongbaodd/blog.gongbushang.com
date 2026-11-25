@@ -101,12 +101,19 @@ export async function upsertTrace(c: pg.Client, url: string, t: TraceRow) {
 	);
 }
 
+/** Marker of a placeholder SVG (see media.ts `placeholderSvg`); real traces never contain it. */
+export const PLACEHOLDER_MARK = 'data-placeholder="1"';
+
+/**
+ * Real traces are irreplaceable (nothing traces any more), so only PLACEHOLDER rows are ever pruned, and only when their
+ * image left the keep set. A real trace stays even when its image URL changed or its entry was deleted. An empty keep set never prunes.
+ */
 export async function pruneTraces(c: pg.Client, keepUrls: string[]) {
 	if (keepUrls.length === 0) {
 		console.warn("[derive] WARNING: not pruning gallery_traces: the read returned 0 items");
 		return 0;
 	}
-	return (await c.query(`delete from ${q("gallery_traces")} where image_url <> all($1::text[])`, [keepUrls])).rowCount ?? 0;
+	return (await c.query(`delete from ${q("gallery_traces")} where image_url <> all($1::text[]) and position($2 in svg) > 0`, [keepUrls, PLACEHOLDER_MARK])).rowCount ?? 0;
 }
 
 // ---- cover colours ----
