@@ -310,9 +310,9 @@ gantt
   PORT-1 shell                :done, bc8, 2026-12-21, 3d
   PORT-2 post page            :done, bc9, after bc8, 3d
   PORT-3 listings + APIs      :done, bc10, 2027-01-04, 5d
-  PORT-4 home + webgl         :bc11, after bc10, 2d
+  PORT-4 home + webgl         :done, bc11, after bc10, 2d
   DATA-1 relocate generated   :bc12, after bc11, 1d
-  PORT-5 podcast/gallery/cv   :bc13, 2027-01-18, 1d
+  PORT-5 podcast/gallery/cv   :done, bc13, 2027-01-18, 1d
   PORT-6 search/map/umap      :bc14, after bc13, 2d
   PORT-7 analytics/ads/rss    :bc15, after bc14, 1d
   PORT-8 pipelines            :bc16, after bc15, 1d
