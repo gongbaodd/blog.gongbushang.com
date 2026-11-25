@@ -274,10 +274,10 @@ describe("worker-budget", () => {
 		expect(bundle.byExtension).toEqual({ ".js": 1024, ".mjs": 2048, ".wasm": 512 });
 
 		const assets = countStaticAssets(assetsDir);
-		// wrangler counts directories too: 3 files + 4 dirs (2026, 11, 25, hello)
+		// files only (wrangler skips directories); 4 dirs are reported for information
+		expect(assets.count).toBe(3);
 		expect(assets.files).toBe(3);
 		expect(assets.dirs).toBe(4);
-		expect(assets.count).toBe(7);
 	});
 
 	it("passes at exact budget boundaries and fails when either limit is exceeded", () => {

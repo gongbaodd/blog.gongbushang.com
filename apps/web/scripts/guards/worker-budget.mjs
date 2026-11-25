@@ -68,8 +68,8 @@ export function measureWorkerBundle(workerDir) {
 }
 
 /**
- * Count static asset entries recursively inside assetsDir. Directories are counted too, because
- * wrangler's 20,000 limit counts them as well (the guard must never be looser than wrangler).
+ * Count static asset files recursively inside assetsDir. Like wrangler's asset manifest (and Cloudflare's
+ * 20,000 limit) this counts regular files only: directories and symlinks are skipped. `dirs` is informational.
  */
 export function countStaticAssets(assetsDir) {
 	assertDirectory(assetsDir, "assets");
@@ -86,7 +86,7 @@ export function countStaticAssets(assetsDir) {
 	);
 	return {
 		dir: assetsDir,
-		count: files + dirs,
+		count: files,
 		files,
 		dirs,
 	};

@@ -12,7 +12,7 @@ Guard scripts: [`apps/web/scripts/guards/`](../../../../apps/web/scripts/guards/
 | `backup-production` | Daily `03:41 UTC` + `workflow_dispatch` | `production` (`DATABASE_POOLER_URL`) | `pg_dump --format=custom` of `public` (and `derived` if present) piped through `age` encryption, uploaded as artifact `production-db-backup` (14-day retention). Also keeps production Supabase active. |
 | `keepalive-testing` | Daily `05:23 UTC` + `workflow_dispatch` | `testing` (`DATABASE_POOLER_URL`) | Runs `select 1` via the IPv4 session pooler to prevent the 7-day Free-plan pause. |
 | `cloudinary-usage` | Daily `06:11 UTC` + `workflow_dispatch` | Cloudinary Admin API | Checks `credits.usage / credits.limit` (warn >= 75%, fail >= 90%), writes summary to `$GITHUB_STEP_SUMMARY`. |
-| `worker-budget.mjs` | CI step in `web-ci.yml` and `web-deploy.yml` (also runnable locally) | `wrangler` dry-run + `dist/client` | Checks uncompressed `.js`/`.mjs`/`.wasm` <= 60 MiB (limit 64 MiB) and static assets <= 18,000 (limit 20,000). Assets are counted as files plus directories, like wrangler does. |
+| `worker-budget.mjs` | CI step in `web-ci.yml` and `web-deploy.yml` (also runnable locally) | `wrangler` dry-run + `dist/client` | Checks uncompressed `.js`/`.mjs`/`.wasm` <= 60 MiB (limit 64 MiB) and static assets <= 18,000 (limit 20,000). Assets are counted as regular files only (directories and symlinks are skipped), as wrangler and Cloudflare do. |
 
 ## 0. Scheduled workflows are disabled after 60 days of inactivity
 
