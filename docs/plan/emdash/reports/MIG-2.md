@@ -115,3 +115,11 @@ This is a storage-only estimate. Delivery bandwidth and transformations also use
 - Lead decisions on anomalies 1 to 3 and 7.
 - Retry the 15 network errors, 6 rate-limited wikimedia URLs, and the TLS case from another network.
 - Run `upload.mjs --execute` only after approval. Then verify delivery URLs and update the rewrite map if any are missing.
+
+## Phase 2: upload (2026-11-25)
+
+The owner ran `upload.mjs --execute` locally. The upload completed: **934/934** were uploaded to `growgen/legacy/`, with 0 failed and 0 missing sources.
+- 867 had been uploaded by an earlier, untracked run. Seven samples spread across that range return 200 via `f_auto,q_auto`. The owner then ran `--limit 5` (5 uploaded), and the final run uploaded the remaining 62.
+- The first full attempt left 62 failures, all from Cloudinary's **Admin API rate limit (420)** on the per-image `cld admin resource` existence check. Fix: when that check returns 420, upload directly; `overwrite=false` keeps the upload idempotent.
+- Cloudinary usage: 4.43 → **5.46 credits (21.8 %)**; resources 2,149 → 3,021.
+- `upload-result.json` (public_id → status) is committed; the MIG-1 importer applies `rewrite-map.json` only to these entries (`--rewrite=map`).
