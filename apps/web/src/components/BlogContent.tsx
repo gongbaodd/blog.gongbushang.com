@@ -5,6 +5,7 @@ import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import { useStore } from "@nanostores/react";
 import { useMediaQuery } from "@mantine/hooks";
 import { Carousel } from "../carousel/BlogCarousel";
+import { PostCard, type IPost } from "../card/PostCard";
 import { $isLoading, $relates, request } from "@/src/stores/relates";
 import { trackRelatedClick } from "./related-tracking";
 import classes from "./BlogContent.module.css";
@@ -87,20 +88,14 @@ export interface IMenuSeries {
 	next?: { title: string; href: string };
 }
 
-export interface IMenuPost {
-	title: string;
-	date: string;
-	cover?: { url: string; alt: string };
-}
-
-/** Left column: cover card, series nav, headings (TOC), tags. Simplified PostCard (PORT-3 ports the full card). */
+/** Left column: the real PostCard (cover card, as legacy), series nav, headings (TOC), tags. */
 export function BlogMenu({
 	headings,
 	links,
 	post,
 	series,
 }: {
-	post: IMenuPost;
+	post: IPost;
 	headings: IHeading[];
 	links: ILink[];
 	series?: IMenuSeries;
@@ -108,26 +103,7 @@ export function BlogMenu({
 	return (
 		<CustomMantineProvider>
 			<Stack gap="xl" maw={300} mx={{ base: "auto", lg: 0 }} style={{ position: "sticky", top: 100 }}>
-				<Card shadow="md" radius="lg" p={0}>
-					{post.cover && (
-						<Card.Section>
-							<img
-								src={post.cover.url}
-								alt={post.cover.alt}
-								style={{ display: "block", width: "100%", height: 160, objectFit: "cover" }}
-							/>
-						</Card.Section>
-					)}
-					<Stack gap="xs" p="lg">
-						<Title order={4}>{post.title}</Title>
-						<Group gap={4}>
-							<Calendar size={14} />
-							<Text size="sm" c="dimmed">
-								{post.date}
-							</Text>
-						</Group>
-					</Stack>
-				</Card>
+				<PostCard post={post} hideExcerpt fill />
 
 				{series && (
 					<Card shadow="md" radius="lg" p="lg" data-series-nav>

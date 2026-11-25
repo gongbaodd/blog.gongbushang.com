@@ -24,7 +24,7 @@ Feature: Static routes
 
   Scenario: About introduces the author
     Given I open "/about"
-    Then I see the heading "Hi, I’m Gong 👋"
+    Then I see the heading "About this site"
     And I do not see the not-found page
 
   Scenario: Sitemap lists every category and year
