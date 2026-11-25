@@ -4,6 +4,7 @@ import { parseStringPromise } from "xml2js";
 import { getColorSet } from "image-metadata";
 import { applyBlogUmapCorpus } from "metadata-embedding";
 import { isEmbeddingServerRunning } from "post-embedding";
+import { upsertEpisodesIntoEmdash } from "./emdash.ts";
 import { syncEpisodeEmbeddings } from "./sync-embeddings.ts";
 import type { ChannelData, Episode, FetchPodcastOptions, PodcastData } from "./types.ts";
 
@@ -166,7 +167,7 @@ async function episodeNeedsEmbedding(episodeDir: string): Promise<boolean> {
 }
 
 export async function fetchAndProcessPodcast(options: FetchPodcastOptions): Promise<void> {
-  await fs.mkdir(options.episodeDir, { recursive: true });
+  if (!options.emdash) await fs.mkdir(options.episodeDir, { recursive: true });
 
   const rssUrl = options.rssUrl ?? DEFAULT_RSS_URL;
   const channel = await fetchRssFeed(rssUrl);
@@ -185,6 +186,14 @@ export async function fetchAndProcessPodcast(options: FetchPodcastOptions): Prom
     parseEpisode(item, idx),
   );
   console.log(`📻 Found ${rssEpisodes.length} episodes in RSS`);
+
+  if (options.emdash) {
+    // EmDash mode: no JSON, no local embeddings/UMAP. The web build (apps/web/scripts/derive) derives colours,
+    // embeddings, related episodes and the UMAP layout from the CMS.
+    const r = await upsertEpisodesIntoEmdash(rssEpisodes, options.emdash);
+    console.log(`✨ EmDash ${options.emdash.url}: ${r.created.length} new episode(s), ${r.existing} already present`);
+    return;
+  }
 
   const existing = await loadExistingPodcast(options.outputFile, options.episodeDir);
   const existingIds = existing ? new Set(existing.episodes.map((ep) => ep.id)) : new Set<string>();

@@ -68,6 +68,7 @@ export const toVector = (v: number[]) => `[${v.join(",")}]`;
 export const fromVector = (s: string): number[] => JSON.parse(s).map(Math.fround);
 
 export async function schemaReady(client: pg.Client): Promise<boolean> {
-	const r = await client.query("select to_regclass($1) as t", [`${SCHEMA}.post_embeddings`]);
-	return r.rows[0].t !== null;
+	// the PORT-8 tables and the MIG-3 ones (20261125010000_derived_podcast_gallery.sql)
+	const r = await client.query("select to_regclass($1) as a, to_regclass($2) as b, to_regclass($3) as c", [`${SCHEMA}.post_embeddings`, `${SCHEMA}.podcast_embeddings`, `${SCHEMA}.gallery_traces`]);
+	return r.rows[0].a !== null && r.rows[0].b !== null && r.rows[0].c !== null;
 }

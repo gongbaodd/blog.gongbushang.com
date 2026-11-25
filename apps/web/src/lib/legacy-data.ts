@@ -1,7 +1,7 @@
-// Typed access to the compact legacy generated data written by scripts/derive/index.ts
-// (cover colors, UMAP, nearest-neighbour relates, podcast episodes, gallery).
-// Missing file (no legacy submodule at build time) -> empty data; APIs degrade instead of failing.
-// TODO DATA-1: replace with EmDash-backed data and delete this module.
+// Typed access to the compact data written by scripts/derive/index.ts from EmDash + the derived cache
+// (cover colors, UMAP, nearest-neighbour relates, podcast episodes, gallery). Nothing here reads the legacy content
+// submodule since MIG-3. The name is historical (the shapes are the legacy ones, which keeps the APIs byte-identical).
+// Missing file (derive did not run) -> empty data; APIs degrade instead of failing.
 
 export interface ColorSet {
 	bgColor: string;
@@ -58,15 +58,14 @@ export interface LegacyData {
 	posts: Record<string, LegacyPostRecord>;
 	/** Newest first. */
 	podcast: PodcastEpisode[];
-	podcastChannel: PodcastChannel | null;
 	/** Episode id -> ids of the 4 nearest episodes ("More to discover"). */
 	podcastRelated: Record<string, string[]>;
 	gallery: GalleryEntry[];
-	/** Basenames of the traced gallery SVGs copied to public/api/gallery/trace. */
+	/** Basenames of the traced gallery SVGs written to public/api/gallery/trace. */
 	traceFiles: string[];
 }
 
-const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], podcastChannel: null, podcastRelated: {}, gallery: [], traceFiles: [] };
+const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], podcastRelated: {}, gallery: [], traceFiles: [] };
 
 const mods = import.meta.glob("../generated/legacy-data.json", { eager: true, import: "default" });
 

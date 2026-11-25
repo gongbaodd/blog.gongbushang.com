@@ -54,7 +54,7 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/card/*`, `src/masonry/*`, `src/menu/BlogListMenu.tsx`, `src/folder/*`, `src/bits/Folder.tsx` | `packages/{card,masonry,menu,folder}`, `src/bits/Components/Folder` | tabler icons -> lucide; `track("tag_clicked", location "list-menu")` restored (PORT-7) |
 | `src/stores/{links,podcast,yearCovers,heatmap}.ts` | `src/stores/*`, `packages/heat/store/heatmap.ts` | import paths only |
 | `src/components/{BlogListPage,YearFolders,WorldMap}.astro` | `src/components/*` | `WorldMap` is a placeholder (TODO PORT-6); `/year/` search banner TODO (search story) |
-| `scripts/derive/index.ts`, `src/lib/legacy-data.ts` | `src/content/generated/**` | **TODO DATA-1 / PORT-6 / PORT-8**: covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order. Reads `LEGACY_GENERATED_DIR` (default `../../src/content/generated`); missing dir = empty data. Output `src/generated/`, `public/api/` is git-ignored |
+| `scripts/derive/index.ts`, `src/lib/legacy-data.ts` | `src/content/generated/**` | Done (PORT-8, MIG-3): covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order, all derived from EmDash + the `derived` cache; nothing reads `src/content` (the `legacy-data` name is historical). Output `src/generated/`, `public/api/` is git-ignored |
 
 ## PORT-8 (build-time derived data) - reuses legacy pipeline code by relative import, nothing copied
 
@@ -78,14 +78,14 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 
 | New (`apps/web/`) | Legacy original | Notes |
 |---|---|---|
-| `src/pages/podcast.astro`, `podcast/[id].astro` | same names under `src/pages` | data via `src/lib/podcast.ts` (legacy snapshot; **TODO MIG-3** swap to EmDash). `related` ("More to discover") precomputed by `scripts/derive/index.ts` with the legacy `findNearest` |
+| `src/pages/podcast.astro`, `podcast/[id].astro` | same names under `src/pages` | data via `src/lib/podcast.ts` (EmDash `podcasts` through derive, MIG-3). `related` ("More to discover") precomputed by `scripts/derive/index.ts` with the legacy `findNearest` |
 | `src/components/Podcast{Sidebar,EpisodeMenu,EpisodeContent,Discover}.tsx` | `src/components/` (same names) | tabler -> lucide; `track("podcast_listen_clicked")` restored (PORT-7) |
 | `src/carousel/BlogCarousel.module.css` | `packages/carousel/BlogCarousel.module.css` | unchanged (PORT-4 will add the carousel component beside it) |
 | `src/pages/resume.astro`, `resume/[role]/[lang].astro`, `src/resume/*` | `src/pages/resume*`, `packages/resume/{Resume.astro,MantineResume.*,data.ts,styles/paper.css}` | unchanged except imports. Not ported: `packages/resume/components/*` and `fragments/resume.mdx` (unused by the pages) |
 | `scripts/generate-pdfs.mjs` | `packages/resume/generate-pdfs.mjs` | serves `apps/web/dist/client`; browser = `CHROME_PATH`, else `@sparticuz/chromium` (linux), else local Chrome (macOS); `SKIP_PDFS=1` skips |
 | `src/pages/{about,contact,privacy,gemini,lab}.astro`, `src/follow/Follow.astro` | same names | `lab` = `portfolio` tag list. `privacy`: consent buttons wired to `src/analytics` (PORT-7); inert unless token + production build |
 | `src/pages/cv.astro`, `hero-gallery.astro` | same names | **placeholders**: `Bento` and `ParticleHero` belong to PORT-4. URLs and noindex are kept; hero-gallery renders the gallery image + trace statically. **TODO PORT-4** |
-| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads the legacy snapshot; **TODO MIG-3** |
+| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads EmDash `gallery` through derive (MIG-3) |
 | `public/*` (see TEMPLATE_DIFF) | `public/*` | duplicates |
 
 Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6).
@@ -102,7 +102,7 @@ Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6).
 
 | `src/pages/{about,contact,privacy,gemini,lab}.astro`, `src/follow/Follow.astro` | same names | `lab` = `portfolio` tag list. `privacy`: consent script **TODO PORT-7** (analytics forced off until `packages/analytics` is ported) |
 | `src/pages/cv.astro`, `hero-gallery.astro` | same names | **placeholders (replaced in PORT-6)**: `Bento` and `ParticleHero` belong to PORT-4. URLs and noindex are kept; hero-gallery renders the gallery image + trace statically. **TODO PORT-4** |
-| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads the legacy snapshot; **TODO MIG-3** |
+| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads EmDash `gallery` through derive (MIG-3) |
 | `public/*` (see TEMPLATE_DIFF) | `public/*` | duplicates |
 
 Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6), `/rss.xml`, `/sitemap-0.xml`, `/sitemap-index.xml` (PORT-7).
@@ -120,3 +120,9 @@ Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6), `/rss.xml`, `/sitemap-0.
 | `src/pages/hero-gallery.astro` | `src/pages/hero-gallery.astro` | now mounts the real `ParticleHero` |
 | View count | `src/components/ViewCount.tsx`, `src/stores/pv.ts` (PORT-1) | unchanged: still `https://pv.growgen.xyz/pv` |
 | `public/llm/` (28 MB, copied in PORT-5) | `public/llm/` | **not used by search** (search is minisearch over `/api/posts/all.json`). Only legacy `src/stores/gemini.ts` (`/gemini/`) reads it, and `apps/web/src/pages/gemini.astro` is static text, so nothing in apps/web uses it today; PORT-9 / the owner can decide to drop it (28 MB, 6 static files) |
+
+## MIG-3 (podcast + gallery in EmDash)
+
+- `scripts/import/mig3/{import,rest}.mjs`: new, read the content submodule once (importer). `rest.mjs` duplicates the REST helper of `mig1/import.mjs` and `schema/apply.mjs` (scripts, not a package).
+- `packages/fetch-podcast/src/emdash.ts` (`--emdash`): self-contained REST client; legacy JSON path untouched. CUT-2 keeps the package.
+- `scripts/derive/{embed,cache,enrich}.ts` were generalised (table parameter, extra cover URLs); `media.ts` is new. `packages/prepare-gallery` is no longer used by the new site (traces come from `derive`, which reuses `packages/image-metadata`); PORT-8b part 3 removes the traces.
