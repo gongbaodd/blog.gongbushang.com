@@ -3,6 +3,7 @@
 > Status: **v3, approved and in progress** (Sprint 0). Integration branch: `feat/emdash` · Updated 2026-11-24 · Orchestrator: Claude Opus 5.5
 >
 > v3 changes: the S0-2 scaffold results, the Scout notes (S0-3…S0-6) and the Gemini plan review (S0-8, 15 findings; dispositions in §11) are folded in. Key shifts: free-tier limits corrected (Workers 64 MiB; Supabase IPv4 only via the pooler), Markdown rendered with `createMarkdownProcessor()`, R2 dropped, security and passkey handling (D11), data relocation (DATA-1), and the sprints resequenced.
+| D12 | **Admin runs locally** (owner, 2026-11-25). The deployed Worker's admin exceeded the Workers Free 10 ms CPU (5–15 ms per authenticated request; 1102 on term lists). The admin runs via `astro dev` on the owner's Mac against the testing/production DB (`pnpm admin:testing` / `admin:production`). The Worker serves static pages only and `/_emdash/*` is locked down there. Publish still sends the GitHub rebuild dispatch. |
 >
 > v2 changes after owner feedback: we build a **fresh EmDash site** (`npm create emdash`) as one workspace package, `apps/web`. It goes live on a **new domain** first and moves to growgen.xyz once stable. **All three environments use Supabase**, local included. The agy (Gemini) models are confirmed from `agy models`.
 
