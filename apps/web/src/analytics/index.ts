@@ -80,9 +80,7 @@ function superProperties(): Dict {
   const props: Dict = {
     site_section: siteSection(window.location.pathname),
     color_scheme:
-      document.documentElement.dataset.mantineColorScheme === "light"
-        ? "light"
-        : "dark",
+      document.documentElement.dataset.mantineColorScheme === "light" ? "light" : "dark",
   };
   const sha = String(import.meta.env.PUBLIC_BUILD_SHA ?? "");
   if (sha) props.build_sha = sha;
@@ -156,10 +154,7 @@ export function initAnalytics(): Promise<void> {
 }
 
 /** Track a typed custom event. No-op without a token, on the server, or without consent. */
-export function track<N extends AnalyticsEventName>(
-  name: N,
-  props: AnalyticsEventMap[N],
-): void {
+export function track<N extends AnalyticsEventName>(name: N, props: AnalyticsEventMap[N]): void {
   if (!isEnabled()) return;
   const clean = sanitize(props);
   enqueue((mp) => {

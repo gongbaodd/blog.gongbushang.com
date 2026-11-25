@@ -79,10 +79,9 @@ export default function PodcastPlock({ totalCount, initialEpisodes }: IPodcastPl
   const hasMore = episodes.length < totalCount;
   // While a page streams in, placeholder cards occupy the next masonry slots.
   const items: (IPodcastEpisode | ISkeletonItem)[] =
-    isLoading && hasMore ? [
-          ...episodes,
-          ...skeletonItems(episodes.map((e) => ({ ...e.colorSet }))),
-        ] : episodes;
+    isLoading && hasMore
+      ? [...episodes, ...skeletonItems(episodes.map((e) => ({ ...e.colorSet })))]
+      : episodes;
 
   useEffect(() => {
     if (episodes.length < totalCount) streamPodcastEpisodes();

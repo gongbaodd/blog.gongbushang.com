@@ -11,37 +11,40 @@ import { postPath } from "../lib/legacy-url";
 export const prerender = true;
 
 interface FeedItem {
-	title: string;
-	href: string;
-	date: string;
-	description: string;
+  title: string;
+  href: string;
+  date: string;
+  description: string;
 }
 
-const snapshot = import.meta.glob<FeedItem[]>("../generated/rss-items.json", { eager: true, import: "default" });
+const snapshot = import.meta.glob<FeedItem[]>("../generated/rss-items.json", {
+  eager: true,
+  import: "default",
+});
 
 async function items(): Promise<FeedItem[]> {
-	const snap = Object.values(snapshot)[0];
-	if (snap?.length) return snap;
-	const entries = await getPostEntries();
-	return entries
-		.toSorted((a, b) => b.date.getTime() - a.date.getTime())
-		.map((e) => ({
-			title: e.title,
-			href: postPath(e.id, e.data.category),
-			date: e.date.toISOString(),
-			description: (e.body ?? "").substring(0, 200) + "...",
-		}));
+  const snap = Object.values(snapshot)[0];
+  if (snap?.length) return snap;
+  const entries = await getPostEntries();
+  return entries
+    .toSorted((a, b) => b.date.getTime() - a.date.getTime())
+    .map((e) => ({
+      title: e.title,
+      href: postPath(e.id, e.data.category),
+      date: e.date.toISOString(),
+      description: (e.body ?? "").substring(0, 200) + "...",
+    }));
 }
 
 export const GET: APIRoute = async (context) =>
-	rss({
-		title: SITE_TITLE,
-		description: SITE_DESCRIPTION,
-		site: context.site!,
-		items: (await items()).map((post) => ({
-			title: post.title,
-			pubDate: new Date(post.date),
-			description: post.description,
-			link: post.href,
-		})),
-	});
+  rss({
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    site: context.site!,
+    items: (await items()).map((post) => ({
+      title: post.title,
+      pubDate: new Date(post.date),
+      description: post.description,
+      link: post.href,
+    })),
+  });
