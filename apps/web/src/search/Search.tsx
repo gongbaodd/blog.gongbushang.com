@@ -21,8 +21,7 @@ import type { SearchResult } from "minisearch";
 import { Spotlight, spotlight } from "@mantine/spotlight";
 import LetterGlitch from "@/src/bits/Backgrounds/LetterGlitch/LetterGlitch";
 import { $index, $posts, loadPostsToIndex, search } from "@/src/stores/search";
-// TODO PORT-7: restore track() (search_opened, search_result_clicked, search_performed) with packages/analytics.
-const track = (_name: string, _props?: Record<string, unknown>) => {};
+import { trackSearchOpened, trackSearchPerformed, trackSearchResultClicked } from "./tracking";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 
 export default function Search() {
@@ -30,7 +29,7 @@ export default function Search() {
   const postsToIndex = useStore($index);
   const isLoading = postsToIndex.isLoading;
   const loadPosts = useCallback(async (source: "button" | "hotkey" = "button") => {
-    track("search_opened", { source });
+    trackSearchOpened(source);
     openSearch();
     await loadPostsToIndex();
     spotlight.open();
@@ -85,11 +84,7 @@ function SpotlightModal({ onSpotlightClose }: { onSpotlightClose: () => void }) 
       key={post.id}
       px={0}
       onClick={() => {
-        track("search_result_clicked", {
-          rank: i + 1,
-          slug: String(post.id),
-          ...(query.trim() ? { query: query.trim() } : {}),
-        });
+        trackSearchResultClicked(i + 1, post.id, query);
         location.href = `/${post.category.label}/${post.id}`;
       }}
       closeSpotlightOnTrigger
@@ -130,15 +125,7 @@ function SpotlightModal({ onSpotlightClose }: { onSpotlightClose: () => void }) 
 
   const handleSearch = useDebouncedCallback((query: string) => {
     search(query);
-    const q = query.trim();
-    if (q.length >= 2 && q !== lastTracked.current) {
-      lastTracked.current = q;
-      track("search_performed", {
-        query: q,
-        query_length: q.length,
-        result_count: $posts.get().length,
-      });
-    }
+    lastTracked.current = trackSearchPerformed(query, lastTracked.current, $posts.get().length);
   }, 200);
 
   const setQuery = (query: string) => {
@@ -170,7 +157,7 @@ export function SearchBanner() {
   const postsToIndex = useStore($index);
   const isLoading = postsToIndex.isLoading;
   const loadPosts = useCallback(async () => {
-    track("search_opened", { source: "button" });
+    trackSearchOpened("button");
     await loadPostsToIndex();
     spotlight.open();
   }, []);
