@@ -2,6 +2,7 @@
 import { fileURLToPath } from "node:url";
 import type { MediaProviderDescriptor } from "emdash/media";
 import type { CloudinaryMediaConfig } from "./provider";
+import type { CloudinaryResourceType } from "./sign";
 
 export function cloudinaryMedia(
   config: CloudinaryMediaConfig = {},
@@ -14,3 +15,5 @@ export function cloudinaryMedia(
     config,
   };
 }
+
+export type { CloudinaryMediaConfig, CloudinaryResourceType };

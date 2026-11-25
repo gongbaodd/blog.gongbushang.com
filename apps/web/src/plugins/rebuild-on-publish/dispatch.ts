@@ -26,17 +26,51 @@ export interface PublishInfo {
 
 export const DEFAULT_GITHUB_API_URL = "https://api.github.com";
 
-/** Returns null when the token, repo or a valid SITE_ENV (testing|production) is not configured. */
+export interface BuildDispatchOptions {
+  /** Test-only opt-in to allow a custom GITHUB_API_URL (e.g. a local mock server). */
+  allowCustomApiUrl?: boolean;
+}
+
+/**
+ * Validate and normalize the GitHub API base URL (SEC-13).
+ * In testing/production, only `https://api.github.com` (with optional trailing slashes and no
+ * path, credentials, query, or hash) is allowed unless `allowCustomApiUrl` is explicitly set.
+ */
+export function resolveGitHubApiBase(
+  rawUrl: string | undefined,
+  options?: BuildDispatchOptions,
+): string | null {
+  const trimmed = rawUrl?.trim();
+  if (!trimmed) return DEFAULT_GITHUB_API_URL;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) return null;
+  if (options?.allowCustomApiUrl) {
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return trimmed.replace(/\/+$/, "");
+  }
+  if (parsed.origin !== DEFAULT_GITHUB_API_URL) return null;
+  if (parsed.pathname.replace(/\/+$/, "") !== "") return null;
+  return DEFAULT_GITHUB_API_URL;
+}
+
+/** Returns null when the token, repo, GITHUB_API_URL or SITE_ENV (testing|production) is not valid. */
 export function buildDispatchRequest(
   env: DispatchEnv,
   info: PublishInfo,
+  options?: BuildDispatchOptions,
 ): { url: string; init: RequestInit } | null {
   const token = env.GITHUB_DISPATCH_TOKEN;
   const repo = env.GITHUB_DISPATCH_REPO;
   if (!token || !repo || !/^[\w-][\w.-]*\/[\w-][\w.-]*$/.test(repo)) return null;
   const environment = resolveEnvironment(env.SITE_ENV);
   if (!environment) return null;
-  const base = (env.GITHUB_API_URL || DEFAULT_GITHUB_API_URL).replace(/\/+$/, "");
+  const base = resolveGitHubApiBase(env.GITHUB_API_URL, options);
+  if (!base) return null;
   return {
     url: `${base}/repos/${repo}/dispatches`,
     init: {
@@ -71,6 +105,12 @@ export async function dispatchOnPublish(
 ): Promise<void> {
   const req = buildDispatchRequest(env, info);
   if (!req) {
+    if (env.GITHUB_API_URL?.trim() && !resolveGitHubApiBase(env.GITHUB_API_URL)) {
+      log.warn(
+        "rebuild-on-publish: disallowed GITHUB_API_URL (must be https://api.github.com), skipping",
+      );
+      return;
+    }
     log.info(
       "rebuild-on-publish: GITHUB_DISPATCH_TOKEN, GITHUB_DISPATCH_REPO or SITE_ENV (testing|production) not set, skipping",
     );
