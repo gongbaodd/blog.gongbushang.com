@@ -89,6 +89,10 @@ jobs:
           if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
           if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
 
+      - name: URL parity (every legacy URL is built, nothing unexpected is added)
+        # Exact comparison of dist/client against apps/web/tests/legacy-route-groups.json + legacy-urls.txt.
+        run: pnpm --filter web parity --fail-on-extra --allow-extra tests/parity-allow-extra.txt
+
       - name: Free-tier size guard (Worker 60 MiB, 18k assets)
         working-directory: apps/web
         run: |
