@@ -12,6 +12,8 @@
     "derive": "tsx scripts/derive/index.ts",
     "derive:migrate": "tsx scripts/derive/migrate.ts",
     "derive:seed": "tsx scripts/derive/seed-from-legacy.ts",
+    "derive:seed:media": "tsx scripts/derive/seed-media.ts",
+    "import:media": "node scripts/import/mig3/import.mjs",
     "build": "tsx scripts/derive/index.ts && node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs && node scripts/generate-pdfs.mjs",
     "resume:pdfs": "node scripts/generate-pdfs.mjs",
     "preview": "astro preview",
