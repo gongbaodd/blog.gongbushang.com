@@ -5,30 +5,31 @@
  * a real credential: it is `PLACEHOLDER_DATABASE_URL` and the real `DATABASE_URL` is read from the environment when the server
  * creates its pool. A missing `DATABASE_URL` at runtime throws (fail closed) instead of falling back to the build-time value.
  */
+import { sslOptionsFor as sslOptionsForUnchecked } from "../scripts/safety.mjs";
+
 export const PLACEHOLDER_DATABASE_URL = "postgresql://placeholder:placeholder@placeholder.invalid:5432/placeholder";
 
 /** Pool size: the admin is one user, and Supabase Free session-pooler slots are scarce (shared with CI and CLI). */
 export const POOL_MAX = 3;
 
-/** Loopback (local Supabase) = no TLS. Anything else (Supabase session pooler) = TLS, as in start.mjs and scripts/derive/db.ts. */
-export function sslFor(url: string): false | { rejectUnauthorized: false } {
-	let host = "";
-	try {
-		host = new URL(url).hostname;
-	} catch {
-		return { rejectUnauthorized: false };
-	}
-	return /^(localhost|127\.0\.0\.1|\[?::1\]?|host\.docker\.internal)$/.test(host) ? false : { rejectUnauthorized: false };
+export type SslOptions = false | { rejectUnauthorized: boolean; ca?: string };
+
+/**
+ * Loopback (local Supabase) = no TLS. Anything else (Supabase session pooler) = TLS: verified (verify-full) when
+ * DATABASE_CA_CERT is set (PEM text or a file path; production should set it), unverified otherwise, as in start.mjs.
+ */
+export function sslFor(url: string, env: NodeJS.ProcessEnv = process.env): SslOptions {
+	return sslOptionsForUnchecked(url, env) as SslOptions;
 }
 
 export interface RuntimeDialectConfig {
 	connectionString: string;
-	ssl: false | { rejectUnauthorized: false };
+	ssl: SslOptions;
 	pool: { max: number };
 }
 
 export function runtimeDialectConfig(env: NodeJS.ProcessEnv = process.env): RuntimeDialectConfig {
 	const url = env.DATABASE_URL?.trim();
 	if (!url) throw new Error("DATABASE_URL is not set: refusing to start without an explicit database (no build-time fallback).");
-	return { connectionString: url, ssl: sslFor(url), pool: { max: POOL_MAX } };
+	return { connectionString: url, ssl: sslFor(url, env), pool: { max: POOL_MAX } };
 }

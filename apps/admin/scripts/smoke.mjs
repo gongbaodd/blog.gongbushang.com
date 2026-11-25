@@ -3,7 +3,9 @@
 //   1. dist/ does not contain DATABASE_URL (no credential baked at build time)
 //   2. /healthz answers 200
 //   3. a gated path (/_emdash/admin/setup, no SETUP_TOKEN) answers 404
-//   4. production without Cloudflare Access config refuses requests (503), and without ADMIN_CONFIRM_PRODUCTION refuses to start
+//   4. Cloudflare Access enforce mode: no JWT -> 403 on /_emdash/admin, /_emdash/api/manifest, /_emdash/api/auth/me (before EmDash
+//      runs: no redirects/401s); /healthz stays 200. Misconfigured Access -> 503 everywhere except /healthz.
+//   5. startup refusals: no DATABASE_URL, production without ADMIN_CONFIRM_PRODUCTION, SITE_ENV=local with a remote database
 // Usage: pnpm --filter admin build && pnpm --filter admin smoke   (needs `pnpm db:start`). Never touches testing/production.
 import { spawn, spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -75,10 +77,36 @@ if (!local.failed) {
 }
 local.child.kill();
 
+const GATED = ["/_emdash/admin", "/_emdash/api/manifest", "/_emdash/api/auth/me"];
+const probe = async (label, extraEnv, expected) => {
+	const srv = await boot({ DATABASE_URL: LOCAL, SITE_ENV: "local", ...extraEnv });
+	check(`${label}: boots`, !srv.failed, srv.log().slice(-200));
+	if (!srv.failed) {
+		for (const p of GATED) {
+			const r = await fetch(`${srv.base}${p}`, { redirect: "manual" });
+			check(`${label}: ${p} -> ${expected}`, r.status === expected, `HTTP ${r.status}`);
+		}
+		const h = await fetch(`${srv.base}/healthz`);
+		check(`${label}: /healthz stays 200`, h.status === 200);
+	}
+	srv.child.kill();
+};
+await probe("access enforce, no JWT", { CF_ACCESS_TEAM_DOMAIN: "smoke-team", CF_ACCESS_AUD: "smoke-aud" }, 403);
+await probe("access misconfigured", { CF_ACCESS_TEAM_DOMAIN: "evil.example.com", CF_ACCESS_AUD: "smoke-aud" }, 503);
+
 const noDb = spawnSync("node", ["scripts/start.mjs"], { cwd: root, env: { PATH: process.env.PATH, SITE_ENV: "local" }, encoding: "utf8" });
 check("refuses to start without DATABASE_URL", noDb.status !== 0 && /DATABASE_URL is not set/.test(noDb.stderr));
 
-const noConfirm = spawnSync("node", ["scripts/start.mjs"], { cwd: root, env: { PATH: process.env.PATH, SITE_ENV: "production", DATABASE_URL: "postgresql://u:p@db.example.invalid:5432/postgres" }, encoding: "utf8" });
+const REF = "abcdefghij1234567890";
+const prodUrl = `postgresql://postgres.${REF}:pw@aws-0-eu.pooler.supabase.com:5432/postgres`;
+const run = (env) => spawnSync("node", ["scripts/start.mjs"], { cwd: root, env: { PATH: process.env.PATH, ...env }, encoding: "utf8" });
+const noConfirm = run({ SITE_ENV: "production", DATABASE_URL: prodUrl, SUPABASE_PRODUCTION_REF: REF, HOST: "0.0.0.0" });
 check("production refuses without ADMIN_CONFIRM_PRODUCTION=yes", noConfirm.status !== 0 && /ADMIN_CONFIRM_PRODUCTION/.test(noConfirm.stderr));
+const mislabeled = run({ SITE_ENV: "local", ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "yes", DATABASE_URL: prodUrl, SUPABASE_PRODUCTION_REF: REF });
+check("production ref under SITE_ENV=local still needs confirmation", mislabeled.status !== 0 && /ADMIN_CONFIRM_PRODUCTION/.test(mislabeled.stderr));
+const remoteLocal = run({ SITE_ENV: "local", DATABASE_URL: prodUrl });
+check("SITE_ENV=local with a remote database is refused", remoteLocal.status !== 0 && /remote host/.test(remoteLocal.stderr));
+const badParam = run({ SITE_ENV: "testing", DATABASE_URL: `${prodUrl}?host=evil.example.com` });
+check("unknown URL query params are refused", badParam.status !== 0 && /unsupported query/.test(badParam.stderr));
 
 process.exit(failures.length ? 1 : 0);

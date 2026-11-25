@@ -39,7 +39,8 @@ export default defineConfig({
 			database: postgres({ connectionString: PLACEHOLDER_DATABASE_URL }),
 			objectCache: memoryCache({ defaultTtl: 600 }),
 			fonts: false,
-			middleware: { outer: "./src/pages/healthz.ts" },
+			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
+			middleware: { outer: "./src/outer.ts" },
 			plugins: [rebuildOnPublish()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),

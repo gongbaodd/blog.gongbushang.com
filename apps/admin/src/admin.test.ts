@@ -11,7 +11,8 @@ import {
 	normalize,
 	onRequest,
 } from "./middleware.ts";
-import { buildHealthzResponse, GET as getHealthz, onRequest as healthzOuterMiddleware } from "./pages/healthz.ts";
+import { onRequest as healthzOuterMiddleware } from "./outer.ts";
+import { buildHealthzResponse, GET as getHealthz } from "./pages/healthz.ts";
 import {
 	createPlugin,
 	dispatchFromNodeEnv,

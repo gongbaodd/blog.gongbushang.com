@@ -1,23 +1,22 @@
 /**
- * Cloudflare Access check, first-admin setup gate & noindex middleware for the Node admin app (D11, D12).
+ * First-admin setup gate & noindex middleware for the Node admin app (D11, D12).
  *
- * 1. Cloudflare Access (see access.ts): when CF_ACCESS_AUD is set, every request except /healthz must carry a valid
- *    `Cf-Access-Jwt-Assertion`. In production (SITE_ENV=production, server not bound to loopback) Access is mandatory and a
- *    missing/half-configured setup refuses all traffic (fail closed).
- * 2. EmDash has no built-in lock on the setup wizard: on a fresh DB the first visitor to
- *    /_emdash/admin/setup who completes passkey registration becomes admin. This gate returns 404 for the
- *    setup page and setup API unless the visitor presents `process.env.SETUP_TOKEN`, first as
- *    `?setup_token=...` (which sets an httpOnly cookie, then redirects to the clean URL) and afterwards via
- *    that cookie. No SETUP_TOKEN configured => setup is closed (fail closed), except in `astro dev`.
+ * The Cloudflare Access check lives in outer.ts (EmDash `middleware.outer`), which runs before EmDash itself.
+ *
+ * EmDash has no built-in lock on the setup wizard: on a fresh DB the first visitor to
+ * /_emdash/admin/setup who completes passkey registration becomes admin. This gate returns 404 for the
+ * setup page and setup API unless the visitor presents `process.env.SETUP_TOKEN`, first as
+ * `?setup_token=...` (which sets an httpOnly cookie, then redirects to the clean URL) and afterwards via
+ * that cookie. No SETUP_TOKEN configured => setup is closed (fail closed), except in `astro dev`.
  */
 import { defineMiddleware } from "astro:middleware";
 import { normalizePath } from "../../web/src/lib/lockdown.ts";
-import { ACCESS_HEADER, accessMode, isLoopbackHost, verifyAccessJwt, type AccessEnv } from "./access.ts";
+import { isLoopbackHost } from "./access.ts";
 
 export const SETUP_GATE_COOKIE = "growgen_setup_gate";
 const GATED = [/^\/_emdash\/admin\/setup(\/|$)/, /^\/_emdash\/api\/setup(\/|$)/];
 
-export interface AdminMiddlewareEnv extends AccessEnv {
+export interface AdminMiddlewareEnv {
 	SETUP_TOKEN?: string;
 	SITE_ENV?: string;
 }
@@ -25,8 +24,6 @@ export interface AdminMiddlewareEnv extends AccessEnv {
 export interface AdminMiddlewareOptions {
 	getEnv?: () => AdminMiddlewareEnv;
 	isDev?: boolean;
-	/** Test seam for the Cloudflare Access JWKS. */
-	verifyAccess?: typeof verifyAccessJwt;
 }
 
 async function digest(value: string): Promise<Uint8Array> {
@@ -64,22 +61,11 @@ const defaultIsDev = Boolean(
 export function createAdminMiddleware(options: AdminMiddlewareOptions = {}) {
 	const getEnv = options.getEnv ?? (() => process.env as AdminMiddlewareEnv);
 	const isDev = options.isDev ?? defaultIsDev;
-	const verifyAccess = options.verifyAccess ?? verifyAccessJwt;
 
 	return defineMiddleware(async (context, next) => {
 		const env = getEnv();
 		const pathname = normalize(context.url.pathname);
 		if (pathname === null) return new Response("Bad request", { status: 400 });
-
-		// /healthz is answered earlier by EmDash's outer middleware (container healthchecks carry no JWT); exempt it here too.
-		if (pathname !== "/healthz") {
-			const mode = accessMode(env);
-			if (mode === "misconfigured") return new Response("Access misconfigured", { status: 503 });
-			if (mode === "enforce") {
-				const ok = await verifyAccess(context.request.headers.get(ACCESS_HEADER), env);
-				if (!ok) return new Response("Forbidden", { status: 403 });
-			}
-		}
 
 		if (!GATED.some((re) => re.test(pathname))) return withRobots(next, env.SITE_ENV);
 		if (isDev) return withRobots(next, env.SITE_ENV);

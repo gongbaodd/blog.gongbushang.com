@@ -39,6 +39,7 @@ ENV NODE_ENV=production \
 COPY --from=builder --chown=node:node /out/node_modules ./node_modules
 COPY --from=builder --chown=node:node /out/package.json ./package.json
 COPY --from=builder --chown=node:node /workspace/apps/admin/scripts/start.mjs ./scripts/start.mjs
+COPY --from=builder --chown=node:node /workspace/apps/admin/scripts/safety.mjs ./scripts/safety.mjs
 COPY --from=builder --chown=node:node /workspace/apps/admin/dist ./dist
 
 RUN mkdir -p /app/.astro/sessions /app/.emdash/uploads && chown -R node:node /app

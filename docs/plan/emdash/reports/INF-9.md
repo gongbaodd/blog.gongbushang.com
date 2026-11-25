@@ -20,6 +20,14 @@ Tests: `apps/admin/src/access.test.ts` (new: Access modes and JWT accept/reject 
 
 Lockfile: `pnpm install --lockfile-only` gives a minimal diff (`@astrojs/node` 10.1.4 -> 11.1.14, `jose` added to admin, `@astrojs/internal-helpers` 0.10.0/`picomatch@4.0.4` dropped, one `yaml 2.9.0 -> 2.9.1` bump). A full `pnpm install --no-frozen-lockfile` flipped `jiti` across many entries, so that result was discarded in favour of the lockfile-only one.
 
+## Review fixes, round 2 (branch `fix/INF-9`)
+
+1. **Access gate moved to `middleware.outer`** (`src/outer.ts`, wired in `astro.config.mjs`), so it runs before EmDash's `order: "pre"` middleware. Unauthenticated requests get 403 (misconfigured: 503) with no runtime init, DB lookup or session work; `/healthz` is matched on the raw path only. `smoke.mjs` now probes enforce mode (no JWT -> 403 on `/_emdash/admin`, `/_emdash/api/manifest`, `/_emdash/api/auth/me`) and misconfigured mode (503) on the real built server.
+2. **Project-ref gate** (`scripts/safety.mjs`, mirrors INF-5 `parseProjectRef` / `disallowedUrlParams`, parity-tested): a URL whose `postgres.<ref>` equals `SUPABASE_PRODUCTION_REF` always needs `ADMIN_CONFIRM_PRODUCTION=yes` and Access, regardless of `SITE_ENV`; `SITE_ENV=local` with a remote DB is refused unless `ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL=yes`; query params other than `sslmode` are refused; production needs `SUPABASE_PRODUCTION_REF` to match.
+3. **Effective listen host:** `start.mjs` pins `HOST` (default 127.0.0.1) before loading the adapter and exports `ADMIN_REQUIRE_ACCESS=1` for production targets; an unset `HOST` is no longer loopback in `access.ts`. The sidecar caveat is in the runbook.
+4. `jwtVerify` has `requiredClaims: ["exp"]`; `CF_ACCESS_TEAM_DOMAIN` must be `<team>` or `*.cloudflareaccess.com`.
+5. Optional `DATABASE_CA_CERT` gives verify-full TLS (documented; production should set it).
+
 ## Re-merge of feat/emdash
 
 `feat/emdash` advanced while these fixes were made (SEC-02, SEC-13, SEC-14, INF-6, and the original CMS-2 had already landed there). Re-merged: the only conflict was the root `.dockerignore` (SEC-02 added one too); the resolved file is the union of both (SEC-02's secret/dump rules plus `.github`, `.agents`, `.venv`, `target`, `supabase`, `public`, `.wrangler`, etc.). SEC-13 already restricts `GITHUB_API_URL` to `https://api.github.com` inside `dispatch.ts`, so the admin wrapper's local-only gating is belt and braces. `admin.test.ts` auto-merged: feat/emdash already expects 3 Cloudinary list calls (one per resource type), so the old line 328 expectation needed no further change.
