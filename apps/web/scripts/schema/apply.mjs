@@ -61,7 +61,7 @@ const COLLECTIONS = [
       str("title", "Title", { required: true, searchable: true }),
       str("legacy_id", "Legacy episode ID", { unique: true, indexed: true }),
       { slug: "link", label: "Spotify link", type: "url" },
-      { slug: "pub_date", label: "Published", type: "datetime", indexed: true },
+      { slug: "pub_date", label: "Published", type: "datetime", indexed: true, required: true }, // fresh envs only: apply never alters existing fields
       text("description", "Description (HTML)", { searchable: true }),
       text("summary", "Summary", { searchable: true }),
       str("duration", "Duration (HH:MM:SS)"),

@@ -19,3 +19,4 @@ data.db-*
 # PORT-3: generated from legacy data by scripts/derive/index.ts (TODO DATA-1)
 src/generated/
 public/api/
+dist-e2e
