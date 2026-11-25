@@ -20,6 +20,10 @@ Tests: `apps/admin/src/access.test.ts` (new: Access modes and JWT accept/reject 
 
 Lockfile: `pnpm install --lockfile-only` gives a minimal diff (`@astrojs/node` 10.1.4 -> 11.1.14, `jose` added to admin, `@astrojs/internal-helpers` 0.10.0/`picomatch@4.0.4` dropped, one `yaml 2.9.0 -> 2.9.1` bump). A full `pnpm install --no-frozen-lockfile` flipped `jiti` across many entries, so that result was discarded in favour of the lockfile-only one.
 
+## Re-merge of feat/emdash
+
+`feat/emdash` advanced while these fixes were made (SEC-02, SEC-13, SEC-14, INF-6, and the original CMS-2 had already landed there). Re-merged: the only conflict was the root `.dockerignore` (SEC-02 added one too); the resolved file is the union of both (SEC-02's secret/dump rules plus `.github`, `.agents`, `.venv`, `target`, `supabase`, `public`, `.wrangler`, etc.). SEC-13 already restricts `GITHUB_API_URL` to `https://api.github.com` inside `dispatch.ts`, so the admin wrapper's local-only gating is belt and braces. `admin.test.ts` auto-merged: feat/emdash already expects 3 Cloudinary list calls (one per resource type), so the old line 328 expectation needed no further change.
+
 ## Verification (INF-9 + feat/emdash merged)
 
 - `apps/admin`: build ok, `astro check` 0 errors, 25 tests pass, `pnpm smoke` all ok.
