@@ -15,6 +15,12 @@ export function createClient({ url, token, headers: extra } = {}) {
   const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(base);
   let cookie;
 
+  // Credentials (bearer token, Access service-token headers) only travel over https, or to a local dev server.
+  const hasCredentials = Boolean(bearer) || Object.keys(extraHeaders).length > 0;
+  if (hasCredentials && !isLocal && !/^https:\/\//i.test(base)) {
+    throw new Error(`refusing to send EmDash credentials to non-https URL ${base} (only https, or localhost/127.0.0.1, is allowed)`);
+  }
+
   async function api(method, path, body) {
     const headers = { ...extraHeaders, "content-type": "application/json", "x-emdash-request": "1" };
     if (bearer) headers.authorization = `Bearer ${bearer}`;

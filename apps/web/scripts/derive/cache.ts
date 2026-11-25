@@ -65,7 +65,15 @@ export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentH
 	return out;
 }
 
+/**
+ * Delete cache rows whose key is not in `keep`. An empty `keep` never prunes: a read that returned 0 items means a
+ * wrong database or a failed import, and pruning then would wipe a cache that costs hours of embedding to rebuild.
+ */
 export async function pruneEmbeddings(c: pg.Client, keep: string[], table: EmbeddingTable = "post_embeddings") {
+	if (keep.length === 0) {
+		console.warn(`[derive] WARNING: not pruning ${table}: the read returned 0 items`);
+		return 0;
+	}
 	const r = await c.query(`delete from ${q(table)} where legacy_id <> all($1::text[])`, [keep]);
 	if (table === "post_embeddings") await c.query(`delete from ${q("post_hints")} where legacy_id <> all($1::text[])`, [keep]);
 	return r.rowCount ?? 0;
@@ -91,6 +99,10 @@ export async function upsertTrace(c: pg.Client, url: string, t: TraceRow) {
 }
 
 export async function pruneTraces(c: pg.Client, keepUrls: string[]) {
+	if (keepUrls.length === 0) {
+		console.warn("[derive] WARNING: not pruning gallery_traces: the read returned 0 items");
+		return 0;
+	}
 	return (await c.query(`delete from ${q("gallery_traces")} where image_url <> all($1::text[])`, [keepUrls])).rowCount ?? 0;
 }
 

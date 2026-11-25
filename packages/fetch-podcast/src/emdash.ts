@@ -3,9 +3,12 @@
 // derives them (apps/web/scripts/derive). Only episodes missing from EmDash (by legacy_id = episode id) are created;
 // existing entries are never touched, so edits made in the admin survive. The legacy JSON path is unchanged.
 //
-// Auth (same as `emdash` CLI / apps/web/scripts/import/mig3/rest.mjs): EMDASH_TOKEN bearer, EMDASH_HEADERS
+// Transport: apps/web/scripts/import/mig3/rest.mjs (shared with the MIG-3 importers, not a copy). It refuses to send
+// credentials to a non-https URL unless the host is localhost/127.0.0.1. Auth: EMDASH_TOKEN bearer, EMDASH_HEADERS
 // ("Name: Value" lines, Cloudflare Access service tokens), or the localhost dev bypass (`pnpm admin:local`).
-import type { Episode } from "./types.ts";
+import { PODCAST_CHANNEL } from "../../../apps/web/src/lib/podcast-channel.ts";
+import { createClient, type EmdashClient } from "../../../apps/web/scripts/import/mig3/rest.mjs";
+import type { ChannelData, Episode } from "./types.ts";
 
 export interface EmdashOptions {
   url: string;
@@ -16,16 +19,37 @@ export interface EmdashOptions {
 export interface EmdashResult {
   created: string[];
   existing: number;
+  /** Episodes not written because the RSS pubDate did not parse. */
+  skipped: string[];
 }
 
-/** Episode -> `podcasts` fields (schema: apps/web/scripts/schema/apply.mjs). */
+/** ISO form of the RSS pubDate, or undefined when it does not parse (the episode is then skipped, never written with null). */
+export function pubDateIso(ep: Pick<Episode, "pubDate">): string | undefined {
+  const d = new Date(ep.pubDate);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+/** Warnings for RSS channel fields that differ from apps/web/src/lib/podcast-channel.ts (the site's constant). */
+export function channelDrift(channel: Pick<ChannelData, "title" | "description" | "image">): string[] {
+  const out: string[] = [];
+  for (const k of ["title", "description", "image"] as const) {
+    if (channel[k] !== PODCAST_CHANNEL[k]) {
+      out.push(
+        `RSS channel ${k} differs from apps/web/src/lib/podcast-channel.ts: ${JSON.stringify(channel[k])} (site constant: ${JSON.stringify(PODCAST_CHANNEL[k])})`,
+      );
+    }
+  }
+  return out;
+}
+
+/** Episode -> `podcasts` fields (schema: apps/web/scripts/schema/apply.mjs). `pub_date` is only set when it parses. */
 export function episodeToFields(ep: Episode): Record<string, unknown> {
-  const pub = new Date(ep.pubDate);
+  const pub = pubDateIso(ep);
   return {
     title: ep.title,
     legacy_id: ep.id,
     link: ep.link || null,
-    pub_date: Number.isNaN(pub.getTime()) ? null : pub.toISOString(),
+    ...(pub ? { pub_date: pub } : {}),
     description: ep.description ?? "",
     summary: ep.summary ?? "",
     duration: ep.duration ?? "",
@@ -35,54 +59,31 @@ export function episodeToFields(ep: Episode): Record<string, unknown> {
   };
 }
 
-export async function upsertEpisodesIntoEmdash(episodes: Episode[], options: EmdashOptions): Promise<EmdashResult> {
-  const base = options.url.replace(/\/$/, "");
-  const token = options.token ?? process.env.EMDASH_TOKEN;
-  const extra: Record<string, string> = {};
-  for (const line of (process.env.EMDASH_HEADERS ?? "").split("\n")) {
-    const i = line.indexOf(":");
-    if (i > 0) extra[line.slice(0, i).trim()] = line.slice(i + 1).trim();
-  }
-  const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(base);
-  let cookie: string | undefined;
-
-  async function api(method: string, path: string, body?: unknown): Promise<any> {
-    const headers: Record<string, string> = { ...extra, "content-type": "application/json", "x-emdash-request": "1" };
-    if (token) headers.authorization = `Bearer ${token}`;
-    else if (isLocal) {
-      if (!cookie) {
-        const r = await fetch(`${base}/_emdash/api/auth/dev-bypass`, { redirect: "manual" });
-        cookie = (r.headers.get("set-cookie") ?? "").split(";")[0];
-        await r.text().catch(() => {});
-      }
-      if (cookie) headers.cookie = cookie;
-    }
-    const res = await fetch(`${base}/_emdash/api${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-    const json: any = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${json?.error?.code ?? ""} ${json?.error?.message ?? ""}`.trim());
-    return json?.data ?? json;
-  }
-
-  const known = new Set<string>();
-  let cursor: string | undefined;
-  do {
-    const q = new URLSearchParams({ limit: "100" });
-    if (cursor) q.set("cursor", cursor);
-    const page = await api("GET", `/content/podcasts?${q}`);
-    for (const item of page.items ?? []) if (item.data?.legacy_id) known.add(item.data.legacy_id);
-    cursor = page.nextCursor ?? page.next_cursor ?? undefined;
-  } while (cursor);
+export async function upsertEpisodesIntoEmdash(
+  episodes: Episode[],
+  options: EmdashOptions,
+  deps: { client?: EmdashClient } = {},
+): Promise<EmdashResult> {
+  const client = deps.client ?? createClient({ url: options.url, token: options.token });
+  // Every entry (drafts included) keyed by legacy_id: an episode that exists in any status is never re-created.
+  const { byLegacy } = await client.listByLegacyId("podcasts");
 
   const created: string[] = [];
+  const skipped: string[] = [];
   for (const ep of episodes) {
-    if (known.has(ep.id)) continue;
+    if (byLegacy.has(ep.id)) continue;
+    if (pubDateIso(ep) === undefined) {
+      console.warn(`WARNING: skipping episode "${ep.title}" (${ep.id}): RSS pubDate ${JSON.stringify(ep.pubDate)} does not parse`);
+      skipped.push(ep.id);
+      continue;
+    }
     if (!options.dryRun) {
-      const r = await api("POST", "/content/podcasts", { slug: ep.id, data: episodeToFields(ep) });
+      const r = await client.api("POST", "/content/podcasts", { slug: ep.id, data: episodeToFields(ep) });
       const id = r?.item?.id ?? r?.id;
-      await api("POST", `/content/podcasts/${id}/publish`, {}); // REST create leaves a draft
+      await client.api("POST", `/content/podcasts/${id}/publish`, {}); // REST create leaves a draft
     }
     created.push(ep.id);
     console.log(`${options.dryRun ? "would create" : "created"} podcast episode in EmDash: ${ep.title}`);
   }
-  return { created, existing: episodes.length - created.length };
+  return { created, existing: episodes.length - created.length - skipped.length, skipped };
 }
