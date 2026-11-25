@@ -38,6 +38,19 @@ New episodes: `pnpm fetch:podcast -- --emdash http://127.0.0.1:4322 [--dry-run]`
 
 New gallery images are added in the EmDash admin (collection Gallery: title, legacy id, image URL, doc, ...). The trace and colours are produced by the next build (cold 75 images: 13 s, 4 parallel; later builds hit the cache).
 
+## Catch-up (MIG-6)
+Legacy posts keep being authored on `master`, which bumps the `src/content` submodule. `content:catchup` compares the submodule commit pinned by `HEAD` with the one pinned by `--ref` (default `origin/master`, run `git fetch` first), lists added / modified / renamed / deleted posts (`_docs/**/*.md(x)` only) and imports the first three with the MIG-1 importer (one run per post, `--match <legacy_id>`, source = `git archive` of the target commit in a temp dir, so the submodule need not be moved). Deleted posts are only reported, never removed from EmDash.
+```
+pnpm --filter web content:catchup -- --dry-run                       # plan only, no admin, no writes (the default)
+pnpm admin:local                                                     # in another shell, or admin:testing
+pnpm --filter web content:catchup -- --write --url http://127.0.0.1:4322 [--force] [--bump]
+```
+- Image guard: if any added/modified post (cover, `![](..)`, `<img>`) uses an image outside `res.cloudinary.com` (relative and local images included) the tool lists them and exits 3 without writing; rehost them first (MIG-2).
+- `--bump` checks the submodule out at the target commit and stages the pointer (no commit); do it once the import succeeded so the next catch-up starts from there. Run it from the main checkout.
+- Importer semantics apply: upsert on `legacy_id`, re-runs report `unchanged`, entries edited in the admin since the last import are skipped unless `--force`.
+- After importing, the next build derives embeddings, relates and UMAP for the new posts (see Normal workflow). Testing / production: same command against that environment's admin, only when Lead says so.
+- Tests: `pnpm --filter web exec vitest run scripts/import/mig6`.
+
 ## Apply to testing / production (Lead decides, never from an agent)
 ```
 set -a; . ./.env; set +a

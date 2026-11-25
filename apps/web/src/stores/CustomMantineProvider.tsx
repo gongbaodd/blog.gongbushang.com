@@ -28,5 +28,9 @@ export default function CustomMantineProvider({
     );
   }
 
-  return <MantineProvider withGlobalClasses={false} defaultColorScheme={theme ?? "auto"}>{children}</MantineProvider>;
+  return (
+    <MantineProvider withGlobalClasses={false} defaultColorScheme={theme ?? "auto"}>
+      {children}
+    </MantineProvider>
+  );
 }

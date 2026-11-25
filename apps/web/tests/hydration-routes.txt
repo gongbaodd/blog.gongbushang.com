@@ -1,0 +1,31 @@
+# Routes opened by `pnpm --filter web check:hydration`: at least one per route group of the site
+# (see legacy-route-groups.json). Every public page group must hydrate without React errors.
+/
+# post pages (markdown, code, math/mermaid, series, podcast-free)
+/fe/2025/09/08/mermaid/
+/fe/2025/09/09/tetris-ai/
+/book/2025/08/19/starving-the-elephants/
+# listings
+/all/
+/fe/
+/year/
+/year/2025/
+/tag/react/
+/tags/
+/series/2024-plan/
+/world/
+/world/beijing-china/
+/podcast/
+/podcast/--e2iv0jd/
+# standalone pages
+/about/
+/lab/
+/cv/
+/resume/
+/resume/full-stack/en/
+/hero-gallery/
+/umap/
+/contact/
+/privacy/
+/sitemap/
+/404.html

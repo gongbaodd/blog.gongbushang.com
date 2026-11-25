@@ -1,0 +1,54 @@
+# EmDash Node Admin — Docker Compose (D12, INF-9)
+#
+# Supports local (Supabase on host), testing, and production databases via .env files:
+#   cp .env.example .env
+#   docker compose up --build -d
+#   docker compose --env-file .env.testing up -d
+#   docker compose --env-file .env.production up -d
+
+services:
+  admin:
+    build:
+      context: ../..
+      dockerfile: apps/admin/Dockerfile
+    image: growgen-emdash-admin:latest
+    restart: unless-stopped
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${PORT:-4322}:4322"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      NODE_ENV: production
+      HOST: "0.0.0.0"
+      PORT: "4322"
+      SITE_ENV: "${SITE_ENV:-local}"
+      DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in apps/admin/.env (local, testing, or production pooler URL)}"
+      EMDASH_ENCRYPTION_KEY: "${EMDASH_ENCRYPTION_KEY:-}"
+      EMDASH_SITE_URL: "${EMDASH_SITE_URL:-http://localhost:4322}"
+      EMDASH_ALLOWED_ORIGINS: "${EMDASH_ALLOWED_ORIGINS:-}"
+      SETUP_TOKEN: "${SETUP_TOKEN:-}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-fs-lite}"
+      SESSION_DIR: "/app/apps/admin/.astro/sessions"
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME:-}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY:-}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET:-}"
+      GITHUB_DISPATCH_TOKEN: "${GITHUB_DISPATCH_TOKEN:-}"
+      GITHUB_DISPATCH_REPO: "${GITHUB_DISPATCH_REPO:-gongbaodd/blog.gongbushang.com}"
+      GITHUB_API_URL: "${GITHUB_API_URL:-https://api.github.com}"
+    volumes:
+      - admin_sessions:/app/apps/admin/.astro/sessions
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4322/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  admin_sessions:

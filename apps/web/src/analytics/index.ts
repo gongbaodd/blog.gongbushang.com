@@ -80,9 +80,7 @@ function superProperties(): Dict {
   const props: Dict = {
     site_section: siteSection(window.location.pathname),
     color_scheme:
-      document.documentElement.dataset.mantineColorScheme === "light"
-        ? "light"
-        : "dark",
+      document.documentElement.dataset.mantineColorScheme === "light" ? "light" : "dark",
   };
   const sha = String(import.meta.env.PUBLIC_BUILD_SHA ?? "");
   if (sha) props.build_sha = sha;
@@ -110,7 +108,8 @@ export function initAnalytics(): Promise<void> {
       const mp = (mod.default ?? mod) as unknown as Mixpanel;
       const config: Partial<Config> = {
         api_host: import.meta.env.PUBLIC_MIXPANEL_API_HOST || DEFAULT_API_HOST,
-        track_pageview: true,
+        // Fired by hand below, after the stored consent has been applied to Mixpanel (see there).
+        track_pageview: false,
         persistence: "localStorage",
         ip: false,
         ignore_dnt: false,
@@ -120,11 +119,22 @@ export function initAnalytics(): Promise<void> {
         debug: import.meta.env.PUBLIC_MIXPANEL_DEBUG === "true",
       };
       mp.init(getToken(), config);
-      // Keep Mixpanel's flag in sync with our stored choice (e.g. if its
-      // storage was cleared while ours survived).
+      // Make Mixpanel's own opt-in flag follow OUR stored choice before anything is sent. Mixpanel
+      // persists its flag across page loads and `opt_out_tracking_by_default` only applies when it
+      // is not already opted in, so a flag left over from an earlier "Allow" would keep sending after
+      // a "No thanks" whose opt_out call never ran (the visitor left the page before this module
+      // loaded). That is why it is checked on every load, not only when the flag is missing.
       const stored = readStoredConsent();
-      if (stored === "granted" && !mp.has_opted_in_tracking()) mp.opt_in_tracking();
+      const mpOptedIn = mp.has_opted_in_tracking();
+      if (stored === "granted") {
+        if (!mpOptedIn) mp.opt_in_tracking();
+      } else if (mpOptedIn) {
+        mp.opt_out_tracking({ delete_user: false });
+      }
       mp.register(superProperties());
+      // The page view `track_pageview: true` used to give: only a returning, already-opted-in
+      // visitor (a first "Allow" records it in optIn()).
+      if (stored === "granted" && mpOptedIn) mp.track_pageview();
       mixpanelRef = mp;
       const tasks = queue;
       queue = [];
@@ -144,10 +154,7 @@ export function initAnalytics(): Promise<void> {
 }
 
 /** Track a typed custom event. No-op without a token, on the server, or without consent. */
-export function track<N extends AnalyticsEventName>(
-  name: N,
-  props: AnalyticsEventMap[N],
-): void {
+export function track<N extends AnalyticsEventName>(name: N, props: AnalyticsEventMap[N]): void {
   if (!isEnabled()) return;
   const clean = sanitize(props);
   enqueue((mp) => {

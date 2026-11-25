@@ -380,7 +380,11 @@ export default function ParticleHero({
                     <Box
                       aria-hidden
                       className={classes.canvasSkeleton}
-                      style={{ "--ascii-skeleton": "var(--mantine-primary-color-filled)" } as CSSProperties}
+                      style={
+                        {
+                          "--ascii-skeleton": "var(--mantine-primary-color-filled)",
+                        } as CSSProperties
+                      }
                     >
                       <ScaledAsciiSkeleton rows={40} />
                     </Box>
@@ -417,7 +421,13 @@ export default function ParticleHero({
                   <AsciiReveal
                     loading={loading}
                     revealOnMount={false}
-                    style={{ position: "relative", zIndex: 1, flex: 1, width: "100%", height: "100%" }}
+                    style={{
+                      position: "relative",
+                      zIndex: 1,
+                      flex: 1,
+                      width: "100%",
+                      height: "100%",
+                    }}
                   >
                     <ReactErrorBoundary label="ParticleHero failed to render">
                       <Flex
