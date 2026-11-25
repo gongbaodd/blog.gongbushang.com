@@ -14,6 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = resolve(root, process.env.LEGACY_GENERATED_DIR || "../../src/content/generated");
 const RELATES_LIMIT = 8; // POST_COUNT_PER_PAGE / 2
 
+const rssItems = []; // /rss.xml items (PORT-7), same source and shape as the legacy getAllClientPostsForSearch()
 const out = { source: null, posts: {}, podcast: [], podcastChannel: null, podcastRelated: {}, gallery: [], traceFiles: [], umapPosts: 0 };
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
@@ -80,6 +81,7 @@ if (existsSync(resolve(dir, "metadata"))) {
 		.map((e) => ({ id: e.id, href: e.href, title: e.title, date: new Date(e.date), content: e.content, category: e.category, tags: e.tags, series: e.series, city: e.city }))
 		.sort((a, b) => b.date.getTime() - a.date.getTime());
 	writeFileSync(resolve(apiDir, "posts/all.json"), JSON.stringify({ posts: search }));
+	for (const p of search) rssItems.push({ title: p.title, href: p.href, date: p.date.toISOString(), description: (p.content.substring(0, 200) + "...").toWellFormed() }); // substring can cut a surrogate pair; the legacy file encoded that as U+FFFD, and the bundler's JSON parser rejects a lone \\uD83D escape
 	out.umapPosts = meta.filter((e) => e.umap2D).length;
 	out._meta = meta.filter((e) => e.umap2D).map(({ id, href, title, date, category, umap2D }) => ({ id, href, title, date, category, umap2D }));
 }
@@ -121,6 +123,7 @@ if (existsSync(resolve(dir, "gallery"))) {
 const target = resolve(root, "src/generated/legacy-data.json");
 mkdirSync(dirname(target), { recursive: true });
 writeFileSync(target, JSON.stringify(out));
+writeFileSync(resolve(dirname(target), "rss-items.json"), JSON.stringify(rssItems));
 console.log(
 	out.source
 		? `[legacy-data] ${Object.keys(out.posts).length} post records, ${out.podcast.length} podcast episodes, ${out.gallery.length} gallery images from ${dir}`

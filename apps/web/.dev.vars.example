@@ -17,3 +17,9 @@ GITHUB_API_URL=
 SETUP_TOKEN=
 # "production" = indexable; anything else = noindex + disallow-all robots.txt (wrangler vars.SITE_ENV)
 SITE_ENV=local
+# Build-time (not Worker secrets): analytics/ads run only when SITE_ENV=production at build time
+PUBLIC_MIXPANEL_TOKEN=
+PUBLIC_MIXPANEL_API_HOST=
+PUBLIC_ADSENSE_ENABLED=
+PUBLIC_ADSENSE_CONSENT_READY=
+PUBLIC_ADSENSE_SLOT_ID=

@@ -86,7 +86,7 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 |---|---|---|
 | `src/pages/{posts/index,posts/[slug],[slug],category/[slug],tag/[slug]}.astro` | Deleted | Starter SSR pages; with `not_found_handling: "404-page"` and `run_worker_first: ["/_emdash/*"]` they would 404 in production. Replaced by PORT-2/3 prerendered routes |
 | `src/pages/404.astro` | Prerendered, uses `Global` + Header/Footer | `dist/client/404.html` must exist |
-| `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. Sitemap is a stub (TODO PORT-7) |
+| `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. PORT-7: `robots.txt` reads `import.meta.env.PUBLIC_SITE_ENV` (process.env is empty in the prerender workerd, so production built disallow-all) and points to `/sitemap-index.xml`; `sitemap.xml` is an alias of the index |
 | `scripts/check-static-routes.mjs`, `package.json` `build` | Added guard; `build` = guard + `astro build` + `post-build.mjs` | Fail the build if any `src/pages` route is not prerendered |
 | `scripts/post-build.mjs` | `_headers` append is idempotent | Root `deploy:testing:build` runs it a second time |
 | `package.json` | `deploy` = `pnpm build && wrangler deploy -c dist/server/wrangler.json`; added `types` script; devDependency `@types/node` | Legacy root `wrangler.json` hijack; tsconfig `types: ["node"]` needs it |
@@ -118,3 +118,11 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `package.json`: `build` ends with `node scripts/generate-pdfs.mjs` (resume PDFs into `dist/client/resume/pdfs/`); new script `resume:pdfs`; new deps `@sparticuz/chromium`, `puppeteer-core` (build-time only, never bundled into the Worker).
 - `public/`: legacy static assets copied (`CNAME`, `ads.txt`, `browserconfig.xml`, android-chrome/mstile/icon PNGs, `fonts/`, `llm/` 28 MB for the search story, `assets/bits/...`, `2025/08/18/record.gif`, `resume/pdfs/.gitkeep`). Legacy `robots.txt` is not copied: `src/pages/robots.txt.ts` owns it.
 - `scripts/legacy-data.mjs`: also snapshots the podcast channel and per-episode "More to discover" ids.
+
+## PORT-7 (analytics, ads, RSS, sitemap)
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | `@astrojs/sitemap` integration (legacy filter + `sitemap.xml`); `vite.define` `PUBLIC_SITE_ENV` (from `SITE_ENV ?? CLOUDFLARE_ENV ?? "testing"`) and `PUBLIC_BUILD_SHA` (`GITHUB_SHA`) | One env switch for noindex, analytics and ads; sitemap-index/-0 |
+| `package.json` | Added `mixpanel-browser`, `@astrojs/rss`, `@astrojs/sitemap` | Same ranges as root |
+| `scripts/legacy-data.mjs` | also writes `src/generated/rss-items.json` | RSS parity |

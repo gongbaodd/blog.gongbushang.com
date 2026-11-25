@@ -3,6 +3,7 @@ import react from "@astrojs/react";
 import { hyperdrive } from "@emdash-cms/cloudflare";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "astro/config";
+import sitemap from "@astrojs/sitemap";
 import emdash from "emdash/astro";
 import { localMedia } from "emdash/media";
 import mermaid from "astro-mermaid";
@@ -12,6 +13,9 @@ import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
 // Public origin: env-driven (EMDASH_SITE_URL / SITE_URL), default production domain.
 const site = process.env.EMDASH_SITE_URL || process.env.SITE_URL || "https://growgen.xyz";
+
+// Env switch (D11): only SITE_ENV=production is indexable and runs analytics/ads. Fails closed.
+const siteEnv = process.env.SITE_ENV ?? process.env.CLOUDFLARE_ENV ?? "testing";
 
 export default defineConfig({
 	site,
@@ -26,6 +30,15 @@ export default defineConfig({
 	},
 	integrations: [
 		react(),
+		// Same exclusions as the legacy site; /sitemap.xml is our prerendered alias of the index.
+		sitemap({
+			filter: (page) =>
+				!/\/(cv|gemini|umap|hero|hero-gallery|privacy|sitemap\.xml)\/?$/.test(page) &&
+				!/\/hero\//.test(page) &&
+				!/\/tag\//.test(page) &&
+				!/\/world\//.test(page) &&
+				!/\/series\//.test(page),
+		}),
 		// client script only: renders <pre class="mermaid"> (our remark plugin is in src/lib/markdown.ts)
 		mermaid({ theme: "default", autoTheme: true }),
 		emdash({
@@ -37,6 +50,11 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+		define: {
+			// analytics/ads gate (src/analytics/env.ts)
+			"import.meta.env.PUBLIC_SITE_ENV": JSON.stringify(siteEnv),
+			"import.meta.env.PUBLIC_BUILD_SHA": JSON.stringify((process.env.GITHUB_SHA ?? "").slice(0, 7)),
+		},
 		// .vert/.frag/.glsl imports of the particle hero (legacy parity).
 		plugins: [glsl()],
 		resolve: {
