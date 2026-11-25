@@ -12,7 +12,22 @@ Guard scripts: [`apps/web/scripts/guards/`](../../../../apps/web/scripts/guards/
 | `backup-production` | Daily `03:41 UTC` + `workflow_dispatch` | `production` (`DATABASE_POOLER_URL`) | `pg_dump --format=custom` of `public` (and `derived` if present) piped through `age` encryption, uploaded as artifact `production-db-backup` (14-day retention). Also keeps production Supabase active. |
 | `keepalive-testing` | Daily `05:23 UTC` + `workflow_dispatch` | `testing` (`DATABASE_POOLER_URL`) | Runs `select 1` via the IPv4 session pooler to prevent the 7-day Free-plan pause. |
 | `cloudinary-usage` | Daily `06:11 UTC` + `workflow_dispatch` | Cloudinary Admin API | Checks `credits.usage / credits.limit` (warn >= 75%, fail >= 90%), writes summary to `$GITHUB_STEP_SUMMARY`. |
-| `worker-budget.mjs` | Local / CI helper | `wrangler` dry-run + `dist/client` | Checks uncompressed `.js`/`.mjs`/`.wasm` <= 60 MiB (limit 64 MiB) and static assets <= 18,000 (limit 20,000). |
+| `worker-budget.mjs` | CI step in `web-ci.yml` and `web-deploy.yml` (also runnable locally) | `wrangler` dry-run + `dist/client` | Checks uncompressed `.js`/`.mjs`/`.wasm` <= 60 MiB (limit 64 MiB) and static assets <= 18,000 (limit 20,000). Assets are counted as files plus directories, like wrangler does. |
+
+## 0. Scheduled workflows are disabled after 60 days of inactivity
+
+GitHub automatically disables `schedule:` workflows in a repository with no activity (commits, pushes, issues, PRs) for 60 days. Then the backup and the testing keep-alive silently stop, and Supabase Free pauses idle projects after 7 days. Mitigation (free, no extra service):
+
+- Any push to the repo counts as activity, and this blog normally receives pushes well inside 60 days. GitHub also emails the repo owner before it disables a workflow; do not filter those emails.
+- Monthly check (calendar reminder), which also proves the backup is fresh:
+
+  ```bash
+  gh workflow list --all | grep web-guards          # must say "active", not "disabled_inactivity"
+  gh run list --workflow=web-guards.yml --limit 5   # latest scheduled run must be < 2 days old
+  gh workflow enable web-guards.yml                 # re-enable if it was disabled
+  ```
+
+- If a long quiet period is expected, push a trivial commit before the 60 days elapse.
 
 ## 1. One-Time `age` Keypair & GitHub Secrets Setup
 
@@ -80,6 +95,8 @@ Inspect the archive table of contents before restoring anything:
 pg_restore --list /tmp/growgen-restore/restore.dump | head -n 40
 ```
 
+> **Tool versions:** the dumps are written by PostgreSQL 17 `pg_dump` (custom format). `pg_restore` must also be version 17 or newer, otherwise it refuses the archive ("unsupported version in file header"). On macOS: `brew install libpq` (or `postgresql@17`) and put its `bin` first on `PATH`; verify with `pg_restore --version`. The local Supabase container also ships 17 (`docker exec supabase_db_<project> pg_restore --version`).
+
 ### Restore into `local` (Supabase local stack)
 
 ```bash
@@ -110,8 +127,10 @@ Only restore into `production` with explicit owner approval after verifying the 
 
 ```bash
 set -a; . ./.env; set +a
-# Take a pre-restore safety snapshot first if production is reachable:
-pg_dump "$SUPABASE_PRODUCTION_POOLER_URL" --format=custom --schema=public --no-owner --no-privileges \
+# Take a pre-restore safety snapshot first if production is reachable. Match the nightly scope
+# exactly: public plus derived (drop the derived line only if that schema does not exist yet).
+# Use pg_dump 17, same as the nightly job.
+pg_dump "$SUPABASE_PRODUCTION_POOLER_URL" --format=custom --schema=public --schema=derived --no-owner --no-privileges \
   -f "/tmp/growgen-restore/pre-restore-$(date -u +%Y%m%dT%H%M%SZ).dump"
 
 pg_restore --clean --if-exists --no-owner --no-privileges \
