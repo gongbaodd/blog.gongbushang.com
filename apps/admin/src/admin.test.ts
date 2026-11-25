@@ -295,10 +295,10 @@ describe("Cloudinary Node env wrapper", () => {
 		expect(lookup("CLOUDINARY_CLOUD_NAME")).toBe("demo-cloud");
 		expect(lookup("MISSING_VAR")).toBeUndefined();
 
-		const fetchMock = vi.fn(async () =>
-			new Response(
-				JSON.stringify({
-					resources: [
+		const fetchMock = vi.fn(async (input: string | URL | Request) => {
+			const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+			const resources = url.includes("/resources/image/upload")
+				? [
 						{
 							public_id: "growgen/cover",
 							format: "jpg",
@@ -307,11 +307,10 @@ describe("Cloudinary Node env wrapper", () => {
 							width: 800,
 							height: 600,
 						},
-					],
-				}),
-				{ status: 200 },
-			),
-		);
+					]
+				: [];
+			return new Response(JSON.stringify({ resources }), { status: 200 });
+		});
 
 		const provider = createNodeCloudinaryProvider(
 			{ folder: "growgen" },
@@ -325,7 +324,7 @@ describe("Cloudinary Node env wrapper", () => {
 		);
 
 		const listResult = await provider.list({ limit: 10 });
-		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(fetchMock).toHaveBeenCalledTimes(3);
 		expect(listResult.items).toHaveLength(1);
 		expect(listResult.items[0]?.id).toBe("growgen/cover");
 	});
