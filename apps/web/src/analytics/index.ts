@@ -172,9 +172,10 @@ export function optIn(): void {
   writeStoredConsent("granted");
   void initAnalytics();
   enqueue((mp) => {
+    // Superseded by a later choice made before init finished (Allow then No thanks): do nothing.
     // Already opted in (a repeat click on /privacy/, or a click before init where initAnalytics()
     // just synced the flag and sent the page view): do not send a second `$opt_in` / page view.
-    if (mp.has_opted_in_tracking()) return;
+    if (pendingConsent !== "granted" || mp.has_opted_in_tracking()) return;
     mp.opt_in_tracking();
     // Initial page view was skipped while opted out; send it once now.
     mp.register(superProperties());
@@ -189,6 +190,8 @@ export function optOut(): void {
   writeStoredConsent("denied");
   void initAnalytics();
   enqueue((mp) => {
+    // Superseded by a later Allow: initAnalytics() / optIn() already follow the latest choice.
+    if (pendingConsent !== "denied") return;
     mp.opt_out_tracking({ delete_user: false });
   });
 }

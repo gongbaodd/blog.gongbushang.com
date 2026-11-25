@@ -200,6 +200,31 @@ describe("analytics", () => {
     expect(mp.track_pageview).toHaveBeenCalledTimes(1);
   });
 
+  it("Allow then No thanks before init: ends denied, no opt-in or page view", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    a.optIn();
+    a.optOut();
+    await a.initAnalytics();
+    expect(a.getConsent()).toBe("denied");
+    expect(mp.opt_in_tracking).not.toHaveBeenCalled();
+    expect(mp.track_pageview).not.toHaveBeenCalled();
+    expect(mpOptedIn).toBe(false);
+  });
+
+  it("No thanks then Allow before init: ends granted with exactly one page view", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    a.optOut();
+    a.optIn();
+    await a.initAnalytics();
+    expect(a.getConsent()).toBe("granted");
+    expect(mp.opt_out_tracking).not.toHaveBeenCalled();
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+    expect(mpOptedIn).toBe(true);
+  });
+
   it("sends one opt-in and one page view when the click lands before init", async () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
     const a = await load();

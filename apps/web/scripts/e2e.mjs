@@ -14,7 +14,7 @@
 // (directory indexes, 404.html) instead of the Worker. SITE_ENV=production is set because analytics only
 // runs on a production build (src/analytics/env.ts); PUBLIC_MIXPANEL_TOKEN stays empty unless --analytics-on.
 import { spawn } from "node:child_process";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import net from "node:net";
 import { extname, join, normalize, resolve } from "node:path";
@@ -115,7 +115,13 @@ if (!flag("--skip-build")) {
 			"postgresql://postgres:postgres@127.0.0.1:54322/postgres",
 	};
 	console.log(`[e2e] building apps/web (${analyticsOn ? "analytics on" : "analytics off"}, ${base})`);
+	// The Cloudflare adapter rewrites .wrangler/deploy/config.json to point at the build it just made; put the previous
+	// pointer back afterwards so `wrangler dev/deploy` keeps targeting the real dist/ instead of dist-e2e/.
+	const deployCfg = join(webRoot, ".wrangler/deploy/config.json");
+	const previousCfg = existsSync(deployCfg) ? readFileSync(deployCfg) : undefined;
 	const code = await run("pnpm", ["build"], { cwd: webRoot, env });
+	if (previousCfg) writeFileSync(deployCfg, previousCfg);
+	else rmSync(deployCfg, { force: true });
 	if (code !== 0) process.exit(code);
 }
 if (!existsSync(join(client, "index.html"))) {
