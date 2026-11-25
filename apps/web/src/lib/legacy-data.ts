@@ -52,9 +52,11 @@ export interface LegacyData {
 	/** Newest first. */
 	podcast: PodcastEpisode[];
 	gallery: GalleryEntry[];
+	/** Basenames of the traced gallery SVGs copied to public/api/gallery/trace. */
+	traceFiles: string[];
 }
 
-const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], gallery: [] };
+const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], gallery: [], traceFiles: [] };
 
 const mods = import.meta.glob("../generated/legacy-data.json", { eager: true, import: "default" });
 

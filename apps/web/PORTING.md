@@ -55,3 +55,17 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/stores/{links,podcast,yearCovers,heatmap}.ts` | `src/stores/*`, `packages/heat/store/heatmap.ts` | import paths only |
 | `src/components/{BlogListPage,YearFolders,WorldMap}.astro` | `src/components/*` | `WorldMap` is a placeholder (TODO PORT-6); `/year/` search banner TODO (search story) |
 | `scripts/legacy-data.mjs`, `src/lib/legacy-data.ts` | `src/content/generated/**` | **TODO DATA-1 / PORT-6 / PORT-8**: covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order. Reads `LEGACY_GENERATED_DIR` (default `../../src/content/generated`); missing dir = empty data. Output `src/generated/`, `public/api/` is git-ignored |
+
+## PORT-4 (home) - copied, originals stay until CUT-2
+
+| New (`apps/web/`) | Legacy original | Notes |
+|---|---|---|
+| `src/pages/index.astro` | `src/pages/index.astro` | starter home removed; data from `src/lib/listing.ts` (`getBadges`, `homeGalleryImage`, `cityPages`) |
+| `src/particle-hero/**` | `packages/particle-hero/**` | three.js + GLSL shaders unchanged; `loadUmapPosts.ts` dropped (island fetches `/api/posts/umap.json`); `ParticleHero.astro` renders `src/hero/fragments/*.md` with `renderMarkdown` instead of MDX |
+| `src/hero/fragments/{title,description}.md` | `packages/hero/fragments/*.mdx` | `.mdx` -> `.md` (no MDX runtime) |
+| `src/carousel/*` | `packages/carousel/*` | `IconX` -> lucide `X`; `BlogCarousel.test.tsx` not ported (needs jsdom + jest-dom, not set up in apps/web) |
+| `src/heat/*` | `packages/heat/*` | unchanged (store + wrapper use `listing.getCounts`) |
+| `src/map/*`, `src/components/WorldMap.astro` | `packages/map/*`, `src/components/WorldMap.astro` | real maplibre `GLMap` replaces the PORT-3 placeholder (also used by `/world/`); `track("city_opened")` TODO PORT-7 |
+| `src/tags/*` | `packages/tags/*` | `track("tag_clicked")` TODO PORT-7 |
+| `src/components/{BlogSections.astro,GridHalf.tsx,ReactErrorBoundary.tsx}`, `src/react/ScaledAsciiSkeleton.tsx` | `src/components/*`, `packages/scaffold/GridHalf.tsx`, `packages/react/*` | import paths only |
+| `scripts/legacy-data.mjs` | - | now also records `traceFiles` (gallery trace SVG names) so prerender can set `traceUrl` without disk access |

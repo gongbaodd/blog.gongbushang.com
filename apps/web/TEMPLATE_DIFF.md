@@ -109,3 +109,7 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `astro.config.mjs`: `vite.ssr.noExternal: ["react-plock"]` (masonry).
 - `package.json`: build runs `scripts/legacy-data.mjs` first; new deps `ascii-reveal`, `react-plock`, `dayjs`, `@mantine/charts`, `recharts`, `remark-smartypants`.
 - `.gitignore`: `src/generated/`, `public/api/`.
+
+## PORT-4
+- `astro.config.mjs`: `vite-plugin-glsl`; `vite.optimizeDeps` include `react-plock` / exclude `onnxruntime-node`, rapier packages; `build.rollupOptions.treeshake.moduleSideEffects: "no-external"`; alias `onnxruntime-node` -> `src/empty-module.js` (all mirror legacy, webgl-components skill).
+- `package.json`: new deps `three`, `maplibre-gl`, `react-map-gl`; dev deps `vite-plugin-glsl`, `@types/three`.

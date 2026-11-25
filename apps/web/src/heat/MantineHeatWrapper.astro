@@ -1,0 +1,10 @@
+---
+import dayjs from "dayjs";
+import MantineHeat from "./MantineHeat";
+import { getCounts } from "@/src/lib/listing";
+
+const counts = await getCounts();
+const initialCount = counts[dayjs().format("YYYY")] ?? 0;
+---
+
+<MantineHeat initialCount={initialCount} client:visible />

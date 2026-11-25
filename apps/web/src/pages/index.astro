@@ -1,56 +1,33 @@
 ---
-import { getEmDashCollection } from "emdash";
-import { Image } from "emdash/ui";
+// Home (legacy `src/pages/index.astro`): particle hero, heatmap, latest/history carousels, world map, tag cloud.
 import Global from "../layouts/Global.astro";
 import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import BlogSections from "../components/BlogSections.astro";
+import WorldMap from "../components/WorldMap.astro";
+import Tags from "../tags/Tags.astro";
+import MantineHeatWrapper from "../heat/MantineHeatWrapper.astro";
+import ParticleHero from "../particle-hero/ParticleHero.astro";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
-import { mapPost } from "../lib/content";
+import { cityPages, getBadges, homeGalleryImage } from "../lib/listing";
 
 export const prerender = true;
 
-// TODO(PORT-3+): replace this starter list with the ported home sections (hero, heatmap, blog sections, world map, tags).
-const { entries: posts } = await getEmDashCollection("posts", {
-	orderBy: { published_at: "desc" },
-	limit: 10,
-});
+const [badges, cityCount] = await Promise.all([getBadges(), cityPages().then((c) => c.length)]);
+const galleryImage = homeGalleryImage();
 ---
 
 <Global title={SITE_TITLE} description={SITE_DESCRIPTION}>
 	<Header />
-	<section id="home-page" class="main" style="max-width:60rem;margin:0 auto;padding:5rem 1rem 1rem;">
-		<h1>Recent Posts</h1>
-
-		{
-			posts.length === 0 ? (
-				<p>No posts yet.</p>
-			) : (
-				<ul>
-					{posts.map((post) => (
-						<li>
-							<a href={mapPost(post)?.href ?? "/"}>
-								{post.data.featured_image && (
-									<div>
-										<Image image={post.data.featured_image} />
-									</div>
-								)}
-								<h2>{post.data.title}</h2>
-							</a>
-							{post.data.excerpt && <p>{post.data.excerpt}</p>}
-							{post.data.publishedAt && (
-								<time datetime={post.data.publishedAt.toISOString()}>
-									{post.data.publishedAt.toLocaleDateString("en-US", {
-										year: "numeric",
-										month: "long",
-										day: "numeric",
-									})}
-								</time>
-							)}
-						</li>
-					))}
-				</ul>
-			)
-		}
+	<section id="home-page" class="main">
+		<MantineMain client:load>
+			<ParticleHero galleryImage={galleryImage} />
+			<MantineHeatWrapper />
+			<BlogSections />
+			<WorldMap cityCount={cityCount} />
+			<Tags tags={badges} />
+			<Footer slug={"index"} />
+		</MantineMain>
 	</section>
-	<Footer slug="index" />
 </Global>
