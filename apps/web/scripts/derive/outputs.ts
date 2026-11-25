@@ -1,38 +1,20 @@
 // Assemble the build inputs the pages and APIs read (same shapes as the legacy scripts/derive/index.ts):
 //   src/generated/legacy-data.json, src/generated/rss-items.json, public/api/posts/{all,umap}.json,
-//   public/api/gallery/trace/*.svg (podcast and gallery still come from the content submodule until MIG-3).
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+//   public/api/gallery/trace/*.svg (podcast and gallery come from EmDash, MIG-3; nothing is read from the content submodule).
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import type { ColorSet, Location, Xy } from "./cache.ts";
 import type { DerivedPost } from "./posts.ts";
 import { RELATES_LIMIT, findNearest, type Candidate } from "./relates.ts";
 
-const readJson = (p: string) => JSON.parse(readFileSync(p, "utf8"));
 const noDash = (id: string) => id.replaceAll("-", "");
 
 export interface Extras {
+	/** Episodes in legacy JSON shape (with `embeddings` when the vector is available), from EmDash (media.ts). */
 	podcast: Record<string, any>[];
-	podcastChannel: unknown;
 	gallery: unknown[];
-	traceFiles: string[];
-	galleryDir?: string;
-}
-
-/** Podcast episodes (with embeddings), channel and gallery from the legacy generated dir. Empty when the dir is missing. */
-export function readExtras(dir: string): Extras {
-	const x: Extras = { podcast: [], podcastChannel: null, gallery: [], traceFiles: [] };
-	if (existsSync(resolve(dir, "podcast"))) {
-		x.podcast = readdirSync(resolve(dir, "podcast"))
-			.filter((f) => f.endsWith(".json") && !f.startsWith("."))
-			.map((f) => readJson(resolve(dir, "podcast", f)));
-	}
-	if (existsSync(resolve(dir, "podcast.json"))) x.podcastChannel = readJson(resolve(dir, "podcast.json")).channel ?? null;
-	if (existsSync(resolve(dir, "gallery.json"))) x.gallery = readJson(resolve(dir, "gallery.json")).images ?? [];
-	if (existsSync(resolve(dir, "gallery"))) {
-		x.galleryDir = resolve(dir, "gallery");
-		x.traceFiles = readdirSync(x.galleryDir).filter((f) => f.endsWith(".svg"));
-	}
-	return x;
+	/** Trace SVG text by basename (`MM-DD-name.svg`). */
+	traces: Map<string, string>;
 }
 
 export interface AssembleInput {
@@ -65,7 +47,7 @@ export function assemble(input: AssembleInput) {
 			return ka < kb ? -1 : ka > kb ? 1 : 0;
 		});
 
-	const out: Record<string, any> = { source, posts: {}, podcast: [], podcastChannel: extras.podcastChannel, podcastRelated: {}, gallery: extras.gallery, traceFiles: extras.traceFiles, umapPosts: 0 };
+	const out: Record<string, any> = { source, posts: {}, podcast: [], podcastRelated: {}, gallery: extras.gallery, traceFiles: [...extras.traces.keys()].sort(), umapPosts: 0 };
 
 	for (const e of meta) {
 		const rec: Record<string, any> = {};
@@ -111,10 +93,10 @@ export function writeOutputs(root: string, r: ReturnType<typeof assemble>, extra
 	mkdirSync(resolve(apiDir, "posts"), { recursive: true });
 	writeFileSync(resolve(apiDir, "posts/all.json"), JSON.stringify({ posts: r.search }));
 	writeFileSync(resolve(apiDir, "posts/umap.json"), JSON.stringify(r.umap));
-	if (extras.galleryDir) {
+	if (extras.traces.size) {
 		const dest = resolve(apiDir, "gallery/trace");
 		mkdirSync(dest, { recursive: true });
-		for (const f of extras.traceFiles) copyFileSync(resolve(extras.galleryDir, f), resolve(dest, f));
+		for (const [f, svg] of extras.traces) writeFileSync(resolve(dest, f), svg);
 	}
 	const target = resolve(root, "src/generated/legacy-data.json");
 	mkdirSync(dirname(target), { recursive: true });

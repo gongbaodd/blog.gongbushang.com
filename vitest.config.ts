@@ -19,6 +19,7 @@ export default defineConfig({
       "packages/metadata-embedding/**/*.test.ts",
       "packages/particle-hero/**/*.test.ts",
       "packages/prepare-gallery/**/*.test.ts",
+      "packages/fetch-podcast/**/*.test.ts",
       "packages/sitemap/**/*.test.ts",
       "packages/post-embedding/**/*.test.ts",
       "src/**/*.test.ts",

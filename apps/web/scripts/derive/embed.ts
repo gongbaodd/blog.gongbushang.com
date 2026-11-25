@@ -6,8 +6,15 @@ import type pg from "pg";
 import { embedFromText } from "../../../../packages/metadata-embedding/src/embedding.ts";
 import { EMBEDDING_DIMENSIONS, resolveModel } from "../../../../packages/post-embedding/src/client.ts";
 import { isEmbeddingServerRunning } from "../../../../packages/post-embedding/src/is-embedding-server-running.ts";
-import { embeddingIndex, loadEmbeddings, upsertEmbedding } from "./cache.ts";
-import type { DerivedPost } from "./posts.ts";
+import { embeddingIndex, loadEmbeddings, upsertEmbedding, type EmbeddingTable } from "./cache.ts";
+
+/** Anything with an embedding input text: posts and podcast episodes. */
+export interface Embeddable {
+	legacyId: string;
+	embeddingText: string;
+	/** sha256 of embeddingText: the cache key. */
+	contentHash: string;
+}
 
 export type EmbedMode = "auto" | "require" | "skip" | "fake";
 
@@ -37,10 +44,11 @@ export function fakeEmbedding(text: string): number[] {
 	return out.map((f) => Math.fround(f / Math.sqrt(norm)));
 }
 
-export async function embedPosts(c: pg.Client, posts: DerivedPost[], mode: EmbedMode, concurrency = 3): Promise<EmbedResult> {
+export async function embedPosts(c: pg.Client, posts: Embeddable[], mode: EmbedMode, concurrency = 3, table: EmbeddingTable = "post_embeddings"): Promise<EmbedResult> {
 	const t0 = Date.now();
+	const noun = table === "post_embeddings" ? "post" : "episode";
 	const model = resolveModel();
-	const index = await embeddingIndex(c);
+	const index = await embeddingIndex(c, table);
 	const stale = posts.filter((p) => {
 		const row = index.get(p.legacyId);
 		return !row || row.contentHash !== p.contentHash || row.model !== model;
@@ -51,12 +59,12 @@ export async function embedPosts(c: pg.Client, posts: DerivedPost[], mode: Embed
 	if (stale.length) {
 		let embed: ((text: string) => Promise<number[]>) | undefined;
 		if (mode === "fake") {
-			console.warn(`[derive] DERIVE_EMBED=fake: using pseudo embeddings for ${stale.length} post(s) (test only)`);
+			console.warn(`[derive] DERIVE_EMBED=fake: using pseudo embeddings for ${stale.length} ${noun}(s) (test only)`);
 			embed = async (t) => fakeEmbedding(t);
 		} else if (mode !== "skip") {
 			if (await isEmbeddingServerRunning()) embed = (t) => embedFromText(t);
 			else if (mode === "require") {
-				throw new Error(`${stale.length} post(s) need embeddings but the embedding server is not running (start LM Studio with ${model}, run "pnpm embedding:sync").`);
+				throw new Error(`${stale.length} ${noun}(s) need embeddings but the embedding server is not running (start LM Studio with ${model}, run "pnpm embedding:sync").`);
 			}
 		}
 		if (embed) {
@@ -65,22 +73,22 @@ export async function embedPosts(c: pg.Client, posts: DerivedPost[], mode: Embed
 				for (let p = queue.shift(); p; p = queue.shift()) {
 					const v = await embed(p.embeddingText);
 					if (v.length !== EMBEDDING_DIMENSIONS) throw new Error(`embedding for ${p.legacyId} has ${v.length} dims, expected ${EMBEDDING_DIMENSIONS}`);
-					await upsertEmbedding(c, p.legacyId, p.contentHash, model, v);
+					await upsertEmbedding(c, p.legacyId, p.contentHash, model, v, table);
 					embedded.push(p.legacyId);
-					console.log(`[derive] embedded ${p.legacyId}`);
+					console.log(`[derive] embedded ${noun} ${p.legacyId}`);
 				}
 			};
 			await Promise.all(Array.from({ length: Math.min(concurrency, stale.length) }, worker));
 		} else {
 			missing = stale.map((p) => p.legacyId);
 			console.warn(
-				`[derive] WARNING: ${missing.length} post(s) have no embedding (${mode === "skip" ? "DERIVE_EMBED=skip" : "embedding server not running"}); they are left out of related posts and /umap until "pnpm --filter web derive" runs where the embedding model is available: ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ", ..." : ""}`,
+				`[derive] WARNING: ${missing.length} ${noun}(s) have no embedding (${mode === "skip" ? "DERIVE_EMBED=skip" : "embedding server not running"}); they are left out of related posts and /umap until "pnpm --filter web derive" runs where the embedding model is available: ${missing.slice(0, 5).join(", ")}${missing.length > 5 ? ", ..." : ""}`,
 			);
 		}
 	}
 
 	const valid = new Map<string, { contentHash: string; model: string }>();
 	for (const p of posts) valid.set(p.legacyId, { contentHash: p.contentHash, model });
-	const vectors = await loadEmbeddings(c, valid);
+	const vectors = await loadEmbeddings(c, valid, table);
 	return { vectors, model, reused: posts.length - stale.length, embedded, missing, seconds: (Date.now() - t0) / 1000 };
 }
