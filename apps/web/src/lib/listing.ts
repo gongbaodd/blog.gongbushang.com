@@ -1,7 +1,7 @@
 // Listing data for the prerendered list pages and JSON/NDJSON APIs (PORT-3).
 // EmDash posts + taxonomies -> legacy-shaped list entries / client posts. Build time only.
-// Covers, card colors, UMAP, relates, podcast and gallery still come from the legacy generated data
-// (src/lib/legacy-data.ts). TODO DATA-1 / PORT-6 / PORT-8: move that data into EmDash.
+// Covers, card colors, UMAP, relates, podcast and gallery come from the derive step (src/lib/legacy-data.ts, written from
+// EmDash by scripts/derive, PORT-8 / MIG-3); nothing reads the legacy content submodule.
 import { getAllPosts, postExcerpt, type BlogPost } from "./content";
 import { legacy, postRecord, type PodcastEpisode } from "./legacy-data";
 import { optimizeCloudinaryUrl } from "./cloudinary";

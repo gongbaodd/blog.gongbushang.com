@@ -1,14 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_MODEL, EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
 import { toVector } from "./db.ts";
-import { embedPosts, fakeEmbedding, parseEmbedMax, parseEmbedProvider, resolveEmbedTarget } from "./embed.ts";
+import { embedPosts, fakeEmbedding, parseEmbedProvider, resolveEmbedTarget } from "./embed.ts";
 import {
 	WORKERS_AI_EMBED_MODEL,
+	WorkersAiError,
 	embedBatchWorkersAi,
+	estimateTokens,
 	isWorkersAiConfigured,
+	normalizeEmbeddingInput,
 	parseRetryAfterMs,
 	resolveWorkersAiConfig,
-	truncateEmbeddingInput,
+	truncateToTokenBudget,
+	validateEmbedModel,
 } from "./embed-workers-ai.ts";
 import type { DerivedPost } from "./posts.ts";
 
@@ -42,7 +46,7 @@ const mkPost = (legacyId: string, text = `content for ${legacyId}`, contentHash 
 });
 
 /** Minimal in-memory pg.Client mock supporting post_embeddings cache queries in cache.ts. */
-function createMockCacheClient(initial: Array<{ legacy_id: string; content_hash: string; model: string; v: number[] }> = []) {
+function createMockCacheClient(initial: Array<{ legacy_id: string; content_hash: string; model: string; v: number[] }> = [], table = "post_embeddings") {
 	const store = new Map<string, { legacy_id: string; content_hash: string; model: string; v: string }>();
 	for (const row of initial) {
 		store.set(row.legacy_id, { ...row, v: toVector(row.v) });
@@ -51,12 +55,13 @@ function createMockCacheClient(initial: Array<{ legacy_id: string; content_hash:
 
 	const client = {
 		query: vi.fn(async (sql: string, params?: unknown[]) => {
+			if (!sql.includes(table)) throw new Error(`mock client for ${table} got SQL for another table: ${sql}`);
 			if (sql.includes("select legacy_id, content_hash, model from")) {
 				return {
 					rows: [...store.values()].map(({ legacy_id, content_hash, model }) => ({ legacy_id, content_hash, model })),
 				};
 			}
-			if (sql.includes("insert into") && sql.includes("post_embeddings")) {
+			if (sql.includes("insert into") && sql.includes(table)) {
 				const [legacyId, contentHash, model, vecText] = params as [string, string, string, string];
 				store.set(legacyId, { legacy_id: legacyId, content_hash: contentHash, model, v: vecText });
 				upserts.push({ legacyId, contentHash, model });
@@ -81,18 +86,40 @@ describe("Workers AI config & helpers", () => {
 
 		expect(resolveWorkersAiConfig({ CF_ACCOUNT_ID: "acc1", CF_AI_TOKEN: "tok1" })).toEqual({ accountId: "acc1", token: "tok1" });
 		expect(resolveWorkersAiConfig({ CLOUDFLARE_ACCOUNT_ID: "acc2", CLOUDFLARE_AI_API_TOKEN: "tok2" })).toEqual({ accountId: "acc2", token: "tok2" });
-		expect(resolveWorkersAiConfig({ CLOUDFLARE_ACCOUNT_ID: "acc3", CLOUDFLARE_API_TOKEN: "tok3" })).toEqual({ accountId: "acc3", token: "tok3" });
-		expect(isWorkersAiConfigured({ CLOUDFLARE_ACCOUNT_ID: "acc3", CLOUDFLARE_API_TOKEN: "tok3" })).toBe(true);
+		// The deploy token must never be picked up for Workers AI.
+		expect(resolveWorkersAiConfig({ CLOUDFLARE_ACCOUNT_ID: "acc3", CLOUDFLARE_API_TOKEN: "tok3" })).toBeUndefined();
+		expect(isWorkersAiConfigured({ CLOUDFLARE_ACCOUNT_ID: "acc3", CLOUDFLARE_API_TOKEN: "tok3" })).toBe(false);
 	});
 
-	it("truncates oversized inputs safely without splitting surrogate pairs", () => {
-		expect(truncateEmbeddingInput("hello", 10)).toBe("hello");
-		expect(truncateEmbeddingInput("abcdef", 4)).toBe("abcd");
-		expect(truncateEmbeddingInput("abcdef", 0)).toBe("abcdef");
-		// "ab" (2 code units) + "🚀" (2 code units, surrogate pair at indices 2..3)
-		const withEmoji = "ab🚀cd";
-		expect(truncateEmbeddingInput(withEmoji, 3)).toBe("ab");
-		expect(truncateEmbeddingInput(withEmoji, 4)).toBe("ab🚀");
+	it("normalises newlines like legacy embed.py", () => {
+		expect(normalizeEmbeddingInput("title: a\ncontent: b\n\nc")).toBe("title: a content: b  c");
+	});
+
+	it("estimates tokens conservatively and CJK-safe, cutting at code point boundaries", () => {
+		expect(estimateTokens("hello world")).toBe(4); // 11 * 0.3 = 3.3 -> 4
+		expect(estimateTokens("你好世界")).toBe(4); // 1 token per CJK char
+		expect(truncateToTokenBudget("hello", 100)).toBe("hello");
+		expect(truncateToTokenBudget("abc", 0)).toBe("abc"); // 0 disables
+		// Chinese: 6000 chars is already the whole budget
+		const zh = "字".repeat(10_000);
+		expect(truncateToTokenBudget(zh, 6000)).toHaveLength(6000);
+		// English: 6000 tokens is about 20k chars, while CJK gets 6000 chars
+		const en = "a".repeat(100_000);
+		expect(Math.abs(truncateToTokenBudget(en, 6000).length - 20_000)).toBeLessThanOrEqual(1);
+		// astral code points count 2 and are never split
+		const emoji = "ab" + "\u{1F680}".repeat(10);
+		const cut = truncateToTokenBudget(emoji, 5); // 2*0.3 + 2 + 2 = 4.6 ok, third emoji exceeds
+		expect(cut).toBe("ab\u{1F680}\u{1F680}");
+		expect(() => encodeURIComponent(cut)).not.toThrow(); // no lone surrogate
+	});
+
+	it("validates the model charset", () => {
+		expect(validateEmbedModel("@cf/qwen/qwen3-embedding-0.6b")).toBe("@cf/qwen/qwen3-embedding-0.6b");
+		expect(validateEmbedModel("text-embedding-qwen3-embedding-0.6b")).toBe("text-embedding-qwen3-embedding-0.6b");
+		for (const bad of ["", "a b", "../x", "@cf/a/../b", "a?x=1", "a#b", "m\nx", "@cf//x", "x;rm"]) {
+			expect(() => validateEmbedModel(bad), bad).toThrow(/Invalid DERIVE_EMBED_MODEL/);
+		}
+		expect(() => resolveEmbedTarget("workers-ai", { DERIVE_EMBED_MODEL: "bad model" })).toThrow(/Invalid DERIVE_EMBED_MODEL/);
 	});
 
 	it("parses numeric and HTTP-date Retry-After headers", () => {
@@ -105,18 +132,11 @@ describe("Workers AI config & helpers", () => {
 		expect(parseRetryAfterMs("not-a-date", now)).toBeUndefined();
 	});
 
-	it("validates DERIVE_EMBED_PROVIDER and DERIVE_EMBED_MAX parsers", () => {
+	it("validates the DERIVE_EMBED_PROVIDER parser", () => {
 		expect(parseEmbedProvider(undefined)).toBe("auto");
 		expect(parseEmbedProvider("workers-ai")).toBe("workers-ai");
 		expect(parseEmbedProvider("local")).toBe("local");
 		expect(() => parseEmbedProvider("openai")).toThrow(/Invalid DERIVE_EMBED_PROVIDER/);
-
-		expect(parseEmbedMax(undefined)).toBeUndefined();
-		expect(parseEmbedMax("")).toBeUndefined();
-		expect(parseEmbedMax("200")).toBe(200);
-		expect(() => parseEmbedMax("0")).toThrow(/Invalid DERIVE_EMBED_MAX/);
-		expect(() => parseEmbedMax("-5")).toThrow(/Invalid DERIVE_EMBED_MAX/);
-		expect(() => parseEmbedMax("abc")).toThrow(/Invalid DERIVE_EMBED_MAX/);
 	});
 });
 
@@ -156,13 +176,16 @@ describe("embedBatchWorkersAi", () => {
 			return mkJsonResponse({ success: true, errors: [], result: { data: [mkVector(1)] } });
 		});
 
-		await embedBatchWorkersAi(["x".repeat(500)], {
+		const truncatedIdx: number[] = [];
+		await embedBatchWorkersAi(["x\n".repeat(500)], {
 			accountId: "a",
 			token: "t",
-			maxInputChars: 100,
+			maxInputTokens: 30, // 100 ASCII chars
 			fetchFn: fetchFn as unknown as typeof fetch,
+			onTruncate: (i) => truncatedIdx.push(i),
 		});
-		expect(sentTexts).toEqual(["x".repeat(100)]);
+		expect(sentTexts[0]!.length).toBeGreaterThanOrEqual(99); expect(sentTexts[0]).toMatch(/^(x )+x?$/); // newlines became spaces, then capped
+		expect(truncatedIdx).toEqual([0]);
 	});
 
 	it("returns empty array without calling fetch when texts is empty", async () => {
@@ -271,7 +294,7 @@ describe("embedBatchWorkersAi", () => {
 	});
 });
 
-describe("embedPosts provider selection, model isolation & DERIVE_EMBED_MAX", () => {
+describe("embedPosts provider selection, provider switch, quota & podcast table", () => {
 	it("auto-selects workers-ai when CF credentials are set and keys cache on @cf/qwen/qwen3-embedding-0.6b", async () => {
 		const posts = [mkPost("p1"), mkPost("p2")];
 		// Cache already has legacy LM Studio vectors for p1 and p2 — they must NOT be reused for workers-ai!
@@ -372,59 +395,168 @@ describe("embedPosts provider selection, model isolation & DERIVE_EMBED_MAX", ()
 		).rejects.toThrow(/Cloudflare Workers AI credentials are not configured/);
 	});
 
-	it("enforces DERIVE_EMBED_MAX chunked backfill, commits per batch, and leaves remainder in missing", async () => {
-		const posts = [mkPost("p1"), mkPost("p2"), mkPost("p3"), mkPost("p4"), mkPost("p5")];
-		// p1 is already cached with the Workers AI model; p2..p5 are stale (4 stale posts).
-		const { client, upserts } = createMockCacheClient([
-			{ legacy_id: "p1", content_hash: "hash-p1", model: WORKERS_AI_EMBED_MODEL, v: mkVector(1) },
-		]);
+	const okResponder = () =>
+		vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+			const { text } = JSON.parse(String(init?.body)) as { text: string[] };
+			return mkJsonResponse({ success: true, errors: [], messages: [], result: { shape: [text.length, EMBEDDING_DIMENSIONS], data: text.map((_, i) => mkVector(20 + i)) } });
+		});
 
-		const batchSizes: number[] = [];
-		const upsertOrder: string[] = [];
+	it("re-embeds the whole corpus in one run on a provider switch (no chunking) and ignores DERIVE_EMBED_MAX", async () => {
+		const posts = Array.from({ length: 5 }, (_, i) => mkPost(`p${i + 1}`));
+		const { client } = createMockCacheClient(posts.map((p, i) => ({ legacy_id: p.legacyId, content_hash: p.contentHash, model: DEFAULT_MODEL, v: mkVector(i) })));
+		const fetchFn = okResponder();
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, posts, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok", DERIVE_EMBED_MAX: "2" }, batchSize: 2, fetchFn: fetchFn as unknown as typeof fetch });
+			expect(res.embedded).toHaveLength(5);
+			expect(res.missing).toEqual([]);
+			expect(res.staleModel).toEqual([]);
+			expect(res.vectors.size).toBe(5);
+			expect(fetchFn).toHaveBeenCalledTimes(3);
+			expect(warnSpy.mock.calls.some((c) => String(c[0]).includes("DERIVE_EMBED_MAX is no longer supported"))).toBe(true);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("quota 429 after retries is graceful: old-model vectors keep the corpus intact, new items are missing (D10)", async () => {
+		const posts = [mkPost("p1"), mkPost("p2"), mkPost("p3"), mkPost("p4")];
+		// p1..p3 have old LM Studio vectors for the same text; p4 is new.
+		const { client, store } = createMockCacheClient(
+			["p1", "p2", "p3"].map((id, i) => ({ legacy_id: id, content_hash: `hash-${id}`, model: DEFAULT_MODEL, v: mkVector(i) })),
+		);
+		let call = 0;
 		const fetchFn = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
 			const { text } = JSON.parse(String(init?.body)) as { text: string[] };
-			batchSizes.push(text.length);
-			// Track that previous batch was already committed before next batch is requested
-			upsertOrder.push(`fetch:${text.length}:committed=${upserts.length}`);
-			return mkJsonResponse({
-				success: true,
-				errors: [],
-				result: { data: text.map((_, i) => mkVector(20 + i)) },
+			call++;
+			if (call === 1) return mkJsonResponse({ success: true, errors: [], result: { data: text.map(() => mkVector(77)) } });
+			return mkJsonResponse({ success: false, errors: [{ code: 4006, message: "daily free allocation exceeded" }] }, 429);
+		});
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, posts, "auto", {
+				env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" },
+				batchSize: 2,
+				maxRetries: 1,
+				sleepFn: async () => {},
+				fetchFn: fetchFn as unknown as typeof fetch,
 			});
-		});
+			expect(res.embedded).toEqual(["p1", "p2"]);
+			expect(res.staleModel).toEqual(["p3"]); // still in the corpus with its old vector
+			expect(res.missing).toEqual(["p4"]); // brand new, nothing to fall back to
+			expect(res.vectors.has("p3")).toBe(true);
+			expect(res.vectors.get("p3")).toEqual(mkVector(2));
+			expect(res.vectors.size).toBe(3);
+			expect(store.get("p3")?.model).toBe(DEFAULT_MODEL);
+		} finally {
+			warnSpy.mockRestore();
+		}
+		// require mode: the same quota failure is a hard error.
+		call = 1;
+		const { client: client2 } = createMockCacheClient();
+		await expect(
+			embedPosts(client2, posts, "require", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" }, maxRetries: 0, sleepFn: async () => {}, fetchFn: fetchFn as unknown as typeof fetch }),
+		).rejects.toBeInstanceOf(WorkersAiError);
+	});
 
-		const env = {
-			CF_ACCOUNT_ID: "acct",
-			CF_AI_TOKEN: "tok",
-			DERIVE_EMBED_MAX: "3",
+	it("DERIVE_EMBED=skip after a provider switch keeps old-model vectors", async () => {
+		const posts = [mkPost("p1"), mkPost("p2")];
+		const { client } = createMockCacheClient([{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(3) }]);
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, posts, "skip", { env: { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" } });
+			expect(res.staleModel).toEqual(["p1"]);
+			expect(res.missing).toEqual(["p2"]);
+			expect(res.vectors.has("p1")).toBe(true);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("does not reuse a vector whose content_hash changed even when falling back", async () => {
+		const posts = [mkPost("p1", "new text", "hash-new")];
+		const { client } = createMockCacheClient([{ legacy_id: "p1", content_hash: "hash-old", model: DEFAULT_MODEL, v: mkVector(3) }]);
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, posts, "skip", { env: {} });
+			expect(res.missing).toEqual(["p1"]);
+			expect(res.vectors.size).toBe(0);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("embeds podcast episodes into podcast_embeddings (table path), keyed by model", async () => {
+		const episodes = [mkPost("e1"), mkPost("e2")];
+		const { client, upserts, store } = createMockCacheClient([{ legacy_id: "e1", content_hash: "hash-e1", model: DEFAULT_MODEL, v: mkVector(1) }], "podcast_embeddings");
+		const fetchFn = okResponder();
+		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" }, fetchFn: fetchFn as unknown as typeof fetch }, "podcast_embeddings");
+			expect(res.embedded).toEqual(["e1", "e2"]);
+			expect(res.vectors.size).toBe(2);
+			expect(upserts.every((u) => u.model === WORKERS_AI_EMBED_MODEL)).toBe(true);
+			expect(store.get("e2")?.model).toBe(WORKERS_AI_EMBED_MODEL);
+			expect(logSpy.mock.calls.some((c) => String(c[0]).includes("embedded episode e1"))).toBe(true);
+			// The 4th positional form used by derive/index.ts (concurrency number) also works with the table.
+			const again = await embedPosts(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" } }, "podcast_embeddings");
+			expect(again.reused).toBe(2);
+			expect(fetchFn).toHaveBeenCalledTimes(1);
+		} finally {
+			logSpy.mockRestore();
+		}
+		// Posts table must not be touched by the mock for podcast runs.
+		const fetchCount = fetchFn.mock.calls.length;
+		expect(fetchCount).toBe(1);
+	});
+
+	it("truncates and retries a single oversized item on a context-length error instead of failing the batch", async () => {
+		const big = "x".repeat(10_000);
+		const posts = [mkPost("small", "short"), mkPost("big", big)];
+		const { client } = createMockCacheClient();
+		const sent: number[][] = [];
+		const fetchFn = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+			const { text } = JSON.parse(String(init?.body)) as { text: string[] };
+			sent.push(text.map((t) => t.length));
+			// Simulate the model rejecting anything over 2,000 chars.
+			if (text.some((t) => t.length > 2000)) {
+				return mkJsonResponse({ success: false, errors: [{ code: 5006, message: "input exceeds the maximum context length of 8192 tokens" }] }, 400);
+			}
+			return mkJsonResponse({ success: true, errors: [], result: { data: text.map(() => mkVector(5)) } });
+		});
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, posts, "auto", {
+				env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" },
+				maxInputTokens: 6000, // 20k ASCII chars, so the pre-cap does not cut it; only the retry does
+				fetchFn: fetchFn as unknown as typeof fetch,
+			});
+			expect(res.embedded.sort()).toEqual(["big", "small"]);
+			expect(res.truncated).toEqual(["big"]);
+			expect(res.vectors.size).toBe(2);
+			// batch (rejected) -> small alone -> big alone, shrinking by 60 % until under 2000 chars
+			expect(sent[0]).toEqual([5, 10_000]);
+			expect(sent.at(-1)![0]).toBeLessThanOrEqual(2000);
+			expect(sent.at(-1)![0]).toBeGreaterThan(500);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("parses a realistic Workers AI REST response (envelope with result.shape/result.data, messages, no errors)", async () => {
+		// Shape documented for @cf/qwen/qwen3-embedding-0.6b: result = { shape: [n, 1024], data: number[][] } inside the v4 envelope.
+		const body = {
+			result: { shape: [2, EMBEDDING_DIMENSIONS], data: [mkVector(1), mkVector(2)] },
+			success: true,
+			errors: [],
+			messages: [],
 		};
-
-		// Day 1 run: embeds 3 of the 4 stale posts (p2, p3, p4) in batches of 2 + 1; p5 deferred to missing.
-		const day1 = await embedPosts(client, posts, "auto", {
-			env,
-			batchSize: 2,
-			fetchFn: fetchFn as unknown as typeof fetch,
-		});
-
-		expect(day1.reused).toBe(1);
-		expect(day1.embedded).toEqual(["p2", "p3", "p4"]);
-		expect(day1.missing).toEqual(["p5"]);
-		expect(day1.vectors.size).toBe(4);
-		expect(batchSizes).toEqual([2, 1]);
-		// Second batch saw the first 2 posts already committed to cache!
-		expect(upsertOrder).toEqual(["fetch:2:committed=0", "fetch:1:committed=2"]);
-
-		// Day 2 run: picks up only p5 seamlessly.
-		const day2 = await embedPosts(client, posts, "auto", {
-			env,
-			batchSize: 2,
-			fetchFn: fetchFn as unknown as typeof fetch,
-		});
-
-		expect(day2.reused).toBe(4);
-		expect(day2.embedded).toEqual(["p5"]);
-		expect(day2.missing).toEqual([]);
-		expect(day2.vectors.size).toBe(5);
+		const fetchFn = vi.fn(async () => mkJsonResponse(body));
+		const out = await embedBatchWorkersAi(["a", "b"], { accountId: "acct", token: "tok", fetchFn: fetchFn as unknown as typeof fetch });
+		expect(out).toEqual(body.result.data);
+		const [url, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+		expect(url).toBe("https://api.cloudflare.com/client/v4/accounts/acct/ai/run/@cf/qwen/qwen3-embedding-0.6b");
+		expect(JSON.parse(String(init.body))).toEqual({ text: ["a", "b"] });
 	});
 
 	it("preserves DERIVE_EMBED=skip and DERIVE_EMBED=fake modes", async () => {
@@ -437,10 +569,10 @@ describe("embedPosts provider selection, model isolation & DERIVE_EMBED_MAX", ()
 			expect(skipped.missing).toEqual(["p1", "p2"]);
 			expect(skipped.model).toBe(WORKERS_AI_EMBED_MODEL);
 
-			const faked = await embedPosts(client, posts, "fake", { env: {}, maxEmbed: 1 });
+			const faked = await embedPosts(client, posts, "fake", { env: {} });
 			expect(faked.provider).toBe("fake");
-			expect(faked.embedded).toEqual(["p1"]);
-			expect(faked.missing).toEqual(["p2"]);
+			expect(faked.embedded).toEqual(["p1", "p2"]);
+			expect(faked.missing).toEqual([]);
 			expect(faked.vectors.get("p1")).toEqual(fakeEmbedding(posts[0]!.embeddingText));
 		} finally {
 			warnSpy.mockRestore();

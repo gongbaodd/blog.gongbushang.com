@@ -19,6 +19,7 @@ Environment secrets (Settings, Environments):
 |---|---|---|---|
 | `DATABASE_POOLER_URL` (session pooler, IPv4, port 5432) | exists | exists | web-ci, web-deploy (migrate check/apply, build prerender), web-guards (keep-alive on testing, backup on production) |
 | `CLOUDFLARE_API_TOKEN` | exists | exists | web-ci, web-deploy (`wrangler deploy`) |
+| `CF_AI_TOKEN` (Workers-AI-only scope, never the deploy token) + `CF_ACCOUNT_ID` | not yet wired (PORT-8b) | not yet wired (PORT-8b) | build step running `derive` (embeddings); see data.md |
 | `BACKUP_AGE_RECIPIENT` (age public key `age1...`) | not needed | **missing, must be created** | web-guards backup |
 
 Repository variables (optional): `WEB_MIN_POSTS`, `WEB_MIN_PAGES`.

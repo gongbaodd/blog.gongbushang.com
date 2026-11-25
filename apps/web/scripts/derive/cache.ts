@@ -39,34 +39,62 @@ export async function saveHints(c: pg.Client, rows: { legacyId: string; tags: st
 }
 
 // ---- embeddings ----
-export async function embeddingIndex(c: pg.Client) {
-	const r = await c.query(`select legacy_id, content_hash, model from ${q("post_embeddings")}`);
+export type EmbeddingTable = "post_embeddings" | "podcast_embeddings";
+
+export async function embeddingIndex(c: pg.Client, table: EmbeddingTable = "post_embeddings") {
+	const r = await c.query(`select legacy_id, content_hash, model from ${q(table)}`);
 	return new Map<string, { contentHash: string; model: string }>(r.rows.map((x) => [x.legacy_id, { contentHash: x.content_hash, model: x.model }]));
 }
 
-export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHash: string, model: string, v: number[]) {
+export async function upsertEmbedding(c: pg.Client, legacyId: string, contentHash: string, model: string, v: number[], table: EmbeddingTable = "post_embeddings") {
 	await c.query(
-		`insert into ${q("post_embeddings")} (legacy_id, content_hash, model, embedding) values ($1, $2, $3, $4::extensions.vector)
+		`insert into ${q(table)} (legacy_id, content_hash, model, embedding) values ($1, $2, $3, $4::extensions.vector)
 		 on conflict (legacy_id) do update set content_hash = excluded.content_hash, model = excluded.model, embedding = excluded.embedding, updated_at = now()`,
 		[legacyId, contentHash, model, toVector(v)],
 	);
 }
 
-/** Valid vectors only (hash and model match the current content). */
-export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>) {
-	const r = await c.query(`select legacy_id, content_hash, model, embedding::text as v from ${q("post_embeddings")}`);
+/**
+ * Valid vectors only (hash and model match the current content). With `acceptOtherModel`, a row whose content_hash
+ * matches is also accepted when another model made it (provider switch that could not finish re-embedding).
+ */
+export async function loadEmbeddings(c: pg.Client, valid: Map<string, { contentHash: string; model: string }>, table: EmbeddingTable = "post_embeddings", acceptOtherModel = false) {
+	const r = await c.query(`select legacy_id, content_hash, model, embedding::text as v from ${q(table)}`);
 	const out = new Map<string, number[]>();
 	for (const x of r.rows) {
 		const want = valid.get(x.legacy_id);
-		if (want && want.contentHash === x.content_hash && want.model === x.model) out.set(x.legacy_id, fromVector(x.v));
+		if (want && want.contentHash === x.content_hash && (acceptOtherModel || want.model === x.model)) out.set(x.legacy_id, fromVector(x.v));
 	}
 	return out;
 }
 
-export async function pruneEmbeddings(c: pg.Client, keep: string[]) {
-	const r = await c.query(`delete from ${q("post_embeddings")} where legacy_id <> all($1::text[])`, [keep]);
-	await c.query(`delete from ${q("post_hints")} where legacy_id <> all($1::text[])`, [keep]);
+export async function pruneEmbeddings(c: pg.Client, keep: string[], table: EmbeddingTable = "post_embeddings") {
+	const r = await c.query(`delete from ${q(table)} where legacy_id <> all($1::text[])`, [keep]);
+	if (table === "post_embeddings") await c.query(`delete from ${q("post_hints")} where legacy_id <> all($1::text[])`, [keep]);
 	return r.rowCount ?? 0;
+}
+
+// ---- gallery traces (key = Cloudinary image URL) ----
+export interface TraceRow {
+	svg: string;
+	colorSet: ColorSet;
+}
+
+export async function loadTraces(c: pg.Client): Promise<Map<string, TraceRow>> {
+	const r = await c.query(`select image_url, svg, bg_color, title_color from ${q("gallery_traces")}`);
+	return new Map(r.rows.map((x) => [x.image_url, { svg: x.svg, colorSet: { bgColor: x.bg_color, titleColor: x.title_color } }]));
+}
+
+export async function upsertTrace(c: pg.Client, url: string, t: TraceRow) {
+	await c.query(
+		`insert into ${q("gallery_traces")} (image_url, svg, bg_color, title_color) values ($1, $2, $3, $4)
+		 on conflict (image_url) do update set svg = excluded.svg, bg_color = excluded.bg_color, title_color = excluded.title_color, updated_at = now()`,
+		[url, t.svg, t.colorSet.bgColor, t.colorSet.titleColor],
+	);
+}
+
+export async function pruneTraces(c: pg.Client, keepUrls: string[]) {
+	return (await c.query(`delete from ${q("gallery_traces")} where image_url <> all($1::text[])`, [keepUrls])).rowCount ?? 0;
 }
 
 // ---- cover colours ----

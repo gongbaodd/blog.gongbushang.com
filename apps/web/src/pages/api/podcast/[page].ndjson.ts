@@ -1,4 +1,4 @@
-// /api/podcast/<n>.ndjson: raw episodes (legacy shape, incl. UMAP). Data from the legacy generated dir (TODO PORT-8 / DATA-1).
+// /api/podcast/<n>.ndjson: raw episodes (legacy shape, incl. UMAP). Episodes come from EmDash `podcasts` through the derive step (MIG-3).
 import type { APIRoute } from "astro";
 import { ndjson } from "../../../lib/api";
 import { legacy, type PodcastEpisode } from "../../../lib/legacy-data";
