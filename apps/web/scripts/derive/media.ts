@@ -1,17 +1,15 @@
 // Podcast episodes and gallery images from EmDash (collections `podcasts` and `gallery`, MIG-3), plus their derived data:
 //   episodes: embedding (derived.podcast_embeddings; text = title|podcast|summary), colour set (cover_colors, only when
 //             the CMS has no color_set), nearest-neighbour ids and UMAP (assembled in outputs.ts)
-//   gallery:  trace SVG + colour set (derived.gallery_traces, key = image URL)
+//   gallery:  frozen trace SVG cache + colour set (derived.gallery_traces, key = image URL); an image with no cached trace
+//             gets a placeholder SVG (PORT-8b part 3: nothing is traced any more)
 // Read with plain SQL in a READ ONLY transaction, like posts. Same legacy JSON key order as the old generated files,
 // so /api/podcast/*.ndjson stays byte-identical.
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import type pg from "pg";
 import { buildPodcastEmbeddingText } from "../../../../packages/metadata-embedding/src/embedding.ts";
-import { getColorSet } from "../../../../packages/image-metadata/src/get-color-set.ts";
-import { loadTraces, pruneTraces, upsertTrace, type ColorSet, type TraceRow } from "./cache.ts";
+import { getPaletteColorSet } from "../../../../packages/image-metadata/src/get-palette.ts";
+import { loadTraces, PLACEHOLDER_MARK, pruneTraces, type ColorSet, type TraceRow } from "./cache.ts";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
@@ -159,62 +157,70 @@ export function buildGallery(rows: GalleryRow[]): DerivedGalleryImage[] {
 }
 
 export interface TraceResult {
-	/** image URL -> SVG text, for every gallery image that has one. */
+	/** image URL -> SVG text (cached trace, or the placeholder), for every gallery image. */
 	svgByUrl: Map<string, string>;
+	/** Image URLs whose SVG is the placeholder rather than a real trace. */
+	placeholderUrls: Set<string>;
 	reused: number;
-	traced: number;
+	/** Images that had no cached trace and got a placeholder. */
+	placeholders: number;
 	failed: string[];
 	seconds: number;
 }
 
+const NEUTRAL_GREY = "#808080";
+
+/** Tiny deterministic stand-in for a trace: one solid rect in the image's `bgColor` (neutral grey when unknown or not a hex colour). */
+export function placeholderSvg(bgColor?: string | null): string {
+	const fill = bgColor && /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(bgColor) ? bgColor.toLowerCase() : NEUTRAL_GREY;
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9" preserveAspectRatio="none" ${PLACEHOLDER_MARK}><rect width="16" height="9" fill="${fill}"/></svg>`;
+}
+
+export const isPlaceholderSvg = (svg: string): boolean => svg.includes(PLACEHOLDER_MARK);
+
 /**
- * Trace SVG for every gallery image, cached by image URL (derived.gallery_traces). Only new URLs are fetched from
- * Cloudinary and traced (sobel + potrace, the legacy `getColorSet`); the colour set fills `entry.colorSet` when the CMS has none.
+ * Trace SVG for every gallery image from the FROZEN cache (derived.gallery_traces, key = image URL). Nothing is traced any
+ * more: an image with no cached trace gets a placeholder SVG at the same URL (`/api/gallery/trace/<name>.svg` never changes).
+ * Its colour set is the CMS one, else the legacy palette extraction (colours only, no trace). Placeholders are not cached.
  */
 export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[], extract = true, concurrency = 4, keepUrls?: string[]): Promise<TraceResult> {
 	const t0 = Date.now();
 	const cache = await loadTraces(c);
 	const urls = [...new Set(gallery.map((g) => g.entry.image))];
-	const todo = urls.filter((u) => !cache.has(u));
+	// A cached placeholder row (older build) counts as uncached: placeholders are never stored now, so their colour cannot go stale.
+	const todo = urls.filter((u) => !cache.has(u) || isPlaceholderSvg(cache.get(u)!.svg));
+	const cmsColors = new Map(gallery.flatMap((g) => (g.entry.colorSet ? [[g.entry.image, g.entry.colorSet] as const] : [])));
 	const failed: string[] = [];
-	let traced = 0;
-	if (extract && todo.length) {
-		const dir = mkdtempSync(join(tmpdir(), "derive-trace-"));
-		try {
-			const queue = [...todo];
-			let n = 0;
-			const worker = async () => {
-				for (let u = queue.shift(); u; u = queue.shift()) {
-					try {
-						const sub = join(dir, String(n++));
-						const colorSet = await getColorSet(u, { relPath: "t", saveTraceToDir: sub });
-						const svg = readFileSync(join(sub, "t.svg"), "utf8");
-						if (!colorSet.bgColor && !colorSet.titleColor) throw new Error("no palette");
-						const row: TraceRow = { svg, colorSet };
-						await upsertTrace(c, u, row);
-						cache.set(u, row);
-						traced++;
-						console.log(`[derive] traced ${u}`);
-					} catch (err) {
-						failed.push(u);
-						console.warn(`[derive] WARNING: gallery trace failed for ${u}: ${(err as Error).message}`);
-					}
+	const queue = [...todo];
+	const worker = async () => {
+		for (let u = queue.shift(); u; u = queue.shift()) {
+			let colorSet: ColorSet | undefined = cmsColors.get(u);
+			if (!colorSet && extract) {
+				try {
+					colorSet = await getPaletteColorSet(u);
+					if (!colorSet.bgColor && !colorSet.titleColor) throw new Error("no palette");
+				} catch (err) {
+					colorSet = undefined;
+					failed.push(u);
+					console.warn(`[derive] WARNING: gallery colours failed for ${u}: ${(err as Error).message}`);
 				}
-			};
-			await Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker));
-		} finally {
-			rmSync(dir, { recursive: true, force: true });
+			}
+			// Never stored in gallery_traces: it would go stale and could shadow the real trace that `derive:seed:media` restores.
+			const row: TraceRow = { svg: placeholderSvg(colorSet?.bgColor), colorSet: colorSet ?? { bgColor: "", titleColor: "" } };
+			cache.set(u, row);
+			if (colorSet) console.log(`[derive] gallery placeholder ${u}`);
 		}
-	}
+	};
+	await Promise.all(Array.from({ length: Math.min(concurrency, todo.length) }, worker));
 	await pruneTraces(c, keepUrls ? [...new Set([...keepUrls, ...urls])] : urls);
 	const svgByUrl = new Map<string, string>();
+	const placeholderUrls = new Set<string>();
 	for (const g of gallery) {
 		const t = cache.get(g.entry.image);
 		if (!t) continue;
 		svgByUrl.set(g.entry.image, t.svg);
-		if (!g.entry.colorSet) g.entry.colorSet = t.colorSet;
+		if (isPlaceholderSvg(t.svg)) placeholderUrls.add(g.entry.image);
+		if (!g.entry.colorSet && (t.colorSet.bgColor || t.colorSet.titleColor)) g.entry.colorSet = t.colorSet;
 	}
-	if (todo.length && !extract) console.warn(`[derive] WARNING: ${todo.length} gallery image(s) have no trace (DERIVE_SKIP_COLORS=1)`);
-	return { svgByUrl, reused: urls.length - todo.length, traced, failed, seconds: (Date.now() - t0) / 1000 };
+	return { svgByUrl, placeholderUrls, reused: urls.length - todo.length, placeholders: todo.length, failed, seconds: (Date.now() - t0) / 1000 };
 }
-

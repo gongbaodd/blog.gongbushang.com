@@ -63,6 +63,8 @@ export interface LegacyData {
   gallery: GalleryEntry[];
   /** Basenames of the traced gallery SVGs written to public/api/gallery/trace. */
   traceFiles: string[];
+  /** Subset of `traceFiles` that are placeholder rects, not real traces (new images after PORT-8b part 3). */
+  placeholderTraceFiles?: string[];
 }
 
 const EMPTY: LegacyData = {
@@ -72,6 +74,7 @@ const EMPTY: LegacyData = {
   podcastRelated: {},
   gallery: [],
   traceFiles: [],
+  placeholderTraceFiles: [],
 };
 
 const mods = import.meta.glob("../generated/legacy-data.json", { eager: true, import: "default" });

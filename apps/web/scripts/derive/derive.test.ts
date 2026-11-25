@@ -69,7 +69,7 @@ describe("posts -> legacy metadata entries", () => {
 });
 
 describe("assemble (legacy-data.json, search index, rss, umap)", () => {
-	const extras: Extras = { podcast: [{ id: "ep1", title: "E1", link: "/podcast/ep1", pubDate: "2020-02-01T00:00:00Z", embeddings: [0, 1] }], gallery: [], traces: new Map([["01-02-a.svg", "<svg/>"]]) };
+	const extras: Extras = { podcast: [{ id: "ep1", title: "E1", link: "/podcast/ep1", pubDate: "2020-02-01T00:00:00Z", embeddings: [0, 1] }], gallery: [], traces: new Map([["01-02-a.svg", "<svg/>"], ["03-04-b.svg", "<svg data-placeholder=\"1\"/>"]]), placeholderTraces: new Set(["03-04-b.svg"]) };
 	it("produces the shapes the pages read", async () => {
 		const posts = await buildPosts(
 			[
@@ -101,7 +101,8 @@ describe("assemble (legacy-data.json, search index, rss, umap)", () => {
 		expect(r.umap.posts.map((p: any) => p.id)).toEqual(["ep1", "2020/01/03/two", "2020/01/02/one"]); // newest first, podcast included
 		expect(r.out.podcast[0].umap2D).toEqual([5, 6]);
 		expect(r.out.umapPosts).toBe(2);
-		expect(r.out.traceFiles).toEqual(["01-02-a.svg"]);
+		expect(r.out.traceFiles).toEqual(["01-02-a.svg", "03-04-b.svg"]);
+		expect(r.out.placeholderTraceFiles).toEqual(["03-04-b.svg"]);
 	});
 	it("a post without an embedding is left out of relates but stays in search and rss", async () => {
 		const posts = await buildPosts([row("2020/01/02/one", "# One\n\nalpha", [term("category", "tech")]), row("2020/01/03/new", "# New\n\nfresh", [term("category", "tech")])], new Map());

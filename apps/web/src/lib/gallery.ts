@@ -2,7 +2,7 @@
 // scripts/derive/index.ts reads them (plus the cached trace SVGs, derived.gallery_traces) into
 // src/generated/legacy-data.json and writes the traces as static files under public/api/gallery/trace/.
 import { legacy, type GalleryEntry } from "./legacy-data";
-import { optimizeCloudinaryUrl } from "./cloudinary";
+import { blurredCloudinaryUrl, optimizeCloudinaryUrl } from "./cloudinary";
 
 export type { GalleryEntry };
 
@@ -15,3 +15,26 @@ export const getGalleryEntry = (id: string): GalleryEntry | undefined =>
 /** `08/26/jinghong` -> `/api/gallery/trace/08-26-jinghong.svg` (the PORT-3 static copy). */
 export const getGalleryTraceUrl = (id: string): string =>
   `/api/gallery/trace/${id.replaceAll("/", "-")}.svg`;
+
+/** True when the trace SVG for `id` is a placeholder rect (an image that was never traced), not a real trace. */
+export const isPlaceholderTrace = (id: string): boolean =>
+  (legacy.placeholderTraceFiles ?? []).includes(`${id.replaceAll("/", "-")}.svg`);
+
+/**
+ * Hero gallery image props. A real trace is the placeholder background; for a placeholder trace the hero falls back to
+ * `colorSet.bgColor` plus a blurred Cloudinary rendition (the trace URL itself keeps resolving).
+ */
+export function buildHeroGalleryImage(
+  entry: GalleryEntry,
+  opts: { url?: string; hasTrace: boolean; placeholder: boolean },
+) {
+  return {
+    url: opts.url ?? entry.image,
+    traceUrl: opts.hasTrace && !opts.placeholder ? getGalleryTraceUrl(entry.id) : undefined,
+    lqipUrl: opts.placeholder ? blurredCloudinaryUrl(entry.image) : undefined,
+    colorSet: entry.colorSet,
+  };
+}
+
+export const toHeroGalleryImage = (entry: GalleryEntry) =>
+  buildHeroGalleryImage(entry, { hasTrace: true, placeholder: isPlaceholderTrace(entry.id) });

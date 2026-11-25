@@ -33,6 +33,7 @@ import App from "./core/App.js";
 import LegendCategoryChips from "./components/LegendCategoryChips";
 import LegendYearSlider from "./components/LegendYearSlider";
 import { usePostFilter } from "./usePostFilter";
+import { galleryPlaceholderStyle } from "./placeholder-style";
 import {
   getCategoryColor,
   getFilterOptions,
@@ -67,6 +68,8 @@ export interface IGalleryImage {
   url: string;
   /** URL of the traced SVG placeholder served by /api/gallery/trace/[file].svg */
   traceUrl?: string;
+  /** Blurred Cloudinary rendition, used instead of `traceUrl` when the trace is only a placeholder rect. */
+  lqipUrl?: string;
   colorSet?: {
     bgColor: string;
     titleColor: string;
@@ -172,16 +175,7 @@ export default function ParticleHero({
     [cardStack, cardCache],
   );
 
-  const placeholderStyle = useMemo((): CSSProperties | undefined => {
-    if (!galleryImage?.traceUrl && !galleryImage?.colorSet?.bgColor) return undefined;
-
-    return {
-      backgroundColor: galleryImage.colorSet?.bgColor,
-      backgroundImage: galleryImage.traceUrl ? `url(${galleryImage.traceUrl})` : undefined,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }, [galleryImage]);
+  const placeholderStyle = useMemo(() => galleryPlaceholderStyle(galleryImage), [galleryImage]);
 
   const showPlaceholder = Boolean(placeholderStyle) && (loading || webglFailed);
 

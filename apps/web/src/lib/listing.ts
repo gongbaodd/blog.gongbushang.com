@@ -5,6 +5,7 @@
 import { getAllPosts, postExcerpt, type BlogPost } from "./content";
 import { legacy, postRecord, type PodcastEpisode } from "./legacy-data";
 import { optimizeCloudinaryUrl } from "./cloudinary";
+import { buildHeroGalleryImage, isPlaceholderTrace } from "./gallery";
 import { smartypants } from "./smartypants";
 import { INITIAL_SSR_POSTS, POST_COUNT_PER_PAGE } from "../consts-list";
 import {
@@ -315,12 +316,11 @@ function nearestGalleryEntry(now: Date, pubDates: Map<string, string>) {
 export function homeGalleryImage(now = new Date()) {
   const best = nearestGalleryEntry(now, new Map(legacy.podcast.map((e) => [e.id, e.pubDate])));
   if (!best) return undefined;
-  const base = `${best.id.replaceAll("/", "-")}.svg`;
-  return {
+  return buildHeroGalleryImage(best, {
     url: optimizeCloudinaryUrl(best.image),
-    traceUrl: legacy.traceFiles.includes(base) ? `/api/gallery/trace/${base}` : undefined,
-    colorSet: best.colorSet,
-  };
+    hasTrace: legacy.traceFiles.includes(`${best.id.replaceAll("/", "-")}.svg`),
+    placeholder: isPlaceholderTrace(best.id), // a placeholder trace is a flat rect: bgColor + blurred rendition instead
+  });
 }
 
 async function galleryPost(now: Date): Promise<TClientPost | undefined> {

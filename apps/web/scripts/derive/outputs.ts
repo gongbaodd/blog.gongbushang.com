@@ -15,6 +15,8 @@ export interface Extras {
 	gallery: unknown[];
 	/** Trace SVG text by basename (`MM-DD-name.svg`). */
 	traces: Map<string, string>;
+	/** Basenames in `traces` that are placeholders, not real traces (PORT-8b part 3). */
+	placeholderTraces?: Set<string>;
 }
 
 export interface AssembleInput {
@@ -47,7 +49,7 @@ export function assemble(input: AssembleInput) {
 			return ka < kb ? -1 : ka > kb ? 1 : 0;
 		});
 
-	const out: Record<string, any> = { source, posts: {}, podcast: [], podcastRelated: {}, gallery: extras.gallery, traceFiles: [...extras.traces.keys()].sort(), umapPosts: 0 };
+	const out: Record<string, any> = { source, posts: {}, podcast: [], podcastRelated: {}, gallery: extras.gallery, traceFiles: [...extras.traces.keys()].sort(), placeholderTraceFiles: [...(extras.placeholderTraces ?? [])].sort(), umapPosts: 0 };
 
 	for (const e of meta) {
 		const rec: Record<string, any> = {};
