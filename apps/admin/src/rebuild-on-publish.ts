@@ -23,7 +23,8 @@ export function readNodeDispatchEnv(env: NodeJS.ProcessEnv = process.env): Dispa
 	return {
 		GITHUB_DISPATCH_TOKEN: read("GITHUB_DISPATCH_TOKEN"),
 		GITHUB_DISPATCH_REPO: read("GITHUB_DISPATCH_REPO"),
-		GITHUB_API_URL: read("GITHUB_API_URL"),
+		// A custom API base (fake GitHub for tests) is honoured only for SITE_ENV=local; testing/production always use api.github.com.
+		GITHUB_API_URL: read("SITE_ENV") === "local" ? read("GITHUB_API_URL") : undefined,
 		SITE_ENV: read("SITE_ENV"),
 	};
 }

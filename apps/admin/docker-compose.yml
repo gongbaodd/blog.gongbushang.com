@@ -12,7 +12,8 @@ services:
       context: ../..
       dockerfile: apps/admin/Dockerfile
     image: growgen-emdash-admin:latest
-    restart: unless-stopped
+    # "no" by default so a production admin is only ever started deliberately; set ADMIN_RESTART=unless-stopped for local/testing.
+    restart: "${ADMIN_RESTART:-no}"
     ports:
       - "${BIND_HOST:-127.0.0.1}:${PORT:-4322}:4322"
     extra_hosts:
@@ -22,21 +23,29 @@ services:
       HOST: "0.0.0.0"
       PORT: "4322"
       SITE_ENV: "${SITE_ENV:-local}"
+      # SITE_ENV=production refuses to start without ADMIN_CONFIRM_PRODUCTION=yes and requires Cloudflare Access below.
+      ADMIN_CONFIRM_PRODUCTION: "${ADMIN_CONFIRM_PRODUCTION:-}"
+      CF_ACCESS_TEAM_DOMAIN: "${CF_ACCESS_TEAM_DOMAIN:-}"
+      CF_ACCESS_AUD: "${CF_ACCESS_AUD:-}"
+      SUPABASE_PRODUCTION_REF: "${SUPABASE_PRODUCTION_REF:-}"
+      SUPABASE_TESTING_REF: "${SUPABASE_TESTING_REF:-}"
+      ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "${ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL:-}"
+      DATABASE_CA_CERT: "${DATABASE_CA_CERT:-}"
       DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in apps/admin/.env (local, testing, or production pooler URL)}"
       EMDASH_ENCRYPTION_KEY: "${EMDASH_ENCRYPTION_KEY:-}"
       EMDASH_SITE_URL: "${EMDASH_SITE_URL:-http://localhost:4322}"
       EMDASH_ALLOWED_ORIGINS: "${EMDASH_ALLOWED_ORIGINS:-}"
       SETUP_TOKEN: "${SETUP_TOKEN:-}"
       SESSION_DRIVER: "${SESSION_DRIVER:-fs-lite}"
-      SESSION_DIR: "/app/apps/admin/.astro/sessions"
+      SESSION_DIR: "/app/.astro/sessions"
       CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME:-}"
       CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY:-}"
       CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET:-}"
       GITHUB_DISPATCH_TOKEN: "${GITHUB_DISPATCH_TOKEN:-}"
       GITHUB_DISPATCH_REPO: "${GITHUB_DISPATCH_REPO:-gongbaodd/blog.gongbushang.com}"
-      GITHUB_API_URL: "${GITHUB_API_URL:-https://api.github.com}"
+      GITHUB_API_URL: "${GITHUB_API_URL:-}" # honoured only when SITE_ENV=local
     volumes:
-      - admin_sessions:/app/apps/admin/.astro/sessions
+      - admin_sessions:/app/.astro/sessions
     healthcheck:
       test:
         [

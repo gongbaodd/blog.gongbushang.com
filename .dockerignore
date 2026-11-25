@@ -1,6 +1,8 @@
 # VCS & agent state
 .git
+.github
 .claude
+.agents
 
 # Dependencies & build outputs
 node_modules
@@ -9,7 +11,11 @@ dist
 **/dist
 .astro
 **/.astro
+**/.wrangler
 .pnpm-store
+.venv
+**/__pycache__
+target
 tmp
 e2e-results
 
@@ -33,9 +39,13 @@ e2e-results
 
 # Unrelated directories not needed by apps/admin/Dockerfile
 src/content
+public
 e2e
 docs
+supabase
+future
 
 # OS noise
 .DS_Store
 **/.DS_Store
+**/*.log

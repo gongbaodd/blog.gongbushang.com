@@ -11,7 +11,8 @@ import {
 	normalize,
 	onRequest,
 } from "./middleware.ts";
-import { buildHealthzResponse, GET as getHealthz, onRequest as healthzOuterMiddleware } from "./pages/healthz.ts";
+import { createOuterMiddleware } from "./outer.ts";
+import { buildHealthzResponse, GET as getHealthz } from "./pages/healthz.ts";
 import {
 	createPlugin,
 	dispatchFromNodeEnv,
@@ -141,13 +142,25 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 				options: {
 					path: "/_emdash/",
 					httpOnly: true,
-					secure: true,
+					secure: false, // plain http on localhost: browsers would drop a Secure cookie
 					sameSite: "strict",
 					maxAge: 3600,
 				},
 			},
 		]);
 		expect(next).not.toHaveBeenCalled();
+	});
+
+	it("marks the setup cookie Secure on every non-localhost origin", async () => {
+		const mw = createAdminMiddleware({
+			getEnv: () => ({ SETUP_TOKEN: "valid-token", SITE_ENV: "testing" }),
+			isDev: false,
+		});
+		for (const origin of ["https://admin.growgen.xyz", "https://localhost:4322", "http://admin.example.test"]) {
+			const { context, setCalls } = createMockContext(`${origin}/_emdash/admin/setup?setup_token=valid-token`);
+			await runMw(mw, context, vi.fn(async () => new Response("x")));
+			expect(setCalls[0]?.options?.secure, origin).toBe(true);
+		}
 	});
 
 	it("rejects wrong ?setup_token or wrong cookie with 404", async () => {
@@ -255,6 +268,7 @@ describe("/healthz endpoint and outer middleware", () => {
 	});
 
 	it("short-circuits /healthz in outer middleware without calling next()", async () => {
+		const healthzOuterMiddleware = createOuterMiddleware({ getEnv: () => ({}), checkStartup: false });
 		const next = vi.fn(async () => new Response("downstream"));
 		const { context: healthCtx } = createMockContext("http://localhost:4322/healthz");
 		const res = await runMw(healthzOuterMiddleware, healthCtx, next);
@@ -351,12 +365,17 @@ describe("rebuild-on-publish Node env wrapper", () => {
 			SITE_ENV: "testing",
 		} as unknown as NodeJS.ProcessEnv;
 
+		// GITHUB_API_URL is honoured only for SITE_ENV=local; testing/production always use the default api.github.com.
 		expect(readNodeDispatchEnv(env)).toEqual({
 			GITHUB_DISPATCH_TOKEN: "ghp_test_token",
 			GITHUB_DISPATCH_REPO: "gongbaodd/blog.gongbushang.com",
-			GITHUB_API_URL: "https://api.github.com/",
+			GITHUB_API_URL: undefined,
 			SITE_ENV: "testing",
 		});
+		expect(
+			readNodeDispatchEnv({ ...env, GITHUB_API_URL: "http://fake-github.test", SITE_ENV: "local" } as unknown as NodeJS.ProcessEnv)
+				.GITHUB_API_URL,
+		).toBe("http://fake-github.test");
 
 		const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
 		const log = { info: vi.fn(), warn: vi.fn(), error: vi.fn() };

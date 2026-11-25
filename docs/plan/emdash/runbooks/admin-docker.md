@@ -2,7 +2,7 @@
 
 The public Cloudflare Worker (`apps/web`) serves static prerendered pages only and locks down `/_emdash/*` with a 404 because EmDash's authenticated admin routes exceed the 10 ms CPU limit on Cloudflare Workers Free.
 
-`apps/admin` is a minimal, EmDash-only Astro application built with `@astrojs/node` (`mode: "standalone"`) and `emdash/db` `postgres()`. It runs as a production Node server (`node dist/server/entry.mjs`) inside Docker—either locally via `docker compose` or on a free-tier container host (such as Altare's 4 GB RAM free tier behind Cloudflare Access)—with zero blog UI, Three.js, Rapier, Shiki, Mermaid, or Chromium dependencies.
+`apps/admin` is a minimal, EmDash-only Astro application built with `@astrojs/node` (`mode: "standalone"`) and `emdash/db` `postgres()`. It runs as a production Node server (`node scripts/start.mjs`, which checks the environment then loads `dist/server/entry.mjs`) inside Docker—either locally via `docker compose` or on a free-tier container host (such as Altare's 4 GB RAM free tier behind Cloudflare Access)—with zero blog UI, Three.js, Rapier, Shiki, Mermaid, or Chromium dependencies.
 
 For the host-native `astro dev` workflow (`pnpm admin:local|testing|production`), see [`admin.md`](./admin.md).
 
@@ -20,7 +20,7 @@ Copy `apps/admin/.env.example` to `apps/admin/.env` (or separate `.env.local`, `
 | `EMDASH_SITE_URL` | Yes | Browser-facing origin of this admin instance (`http://localhost:4322` locally, or `https://admin.growgen.xyz` online). Determines the WebAuthn passkey Relying Party ID (RP ID). |
 | `EMDASH_ALLOWED_ORIGINS` | Optional | Comma-separated additional passkey origins sharing the same registrable parent domain. |
 | `SETUP_TOKEN` | First setup only | Fail-closed setup gate token. When empty/unset, `/_emdash/admin/setup` and `/_emdash/api/setup` return `404`. |
-| `SESSION_DRIVER` | Optional | `fs-lite` (default, stored in `/app/apps/admin/.astro/sessions` volume) or `memory`. |
+| `SESSION_DRIVER` | Optional | `fs-lite` (default, stored in `/app/.astro/sessions` volume) or `memory`. |
 | `CLOUDINARY_CLOUD_NAME` | For media | Cloudinary cloud name for media browsing/uploads (`growgen` folder). |
 | `CLOUDINARY_API_KEY` | For media | Cloudinary API key. |
 | `CLOUDINARY_API_SECRET` | For media | Cloudinary API secret. |
@@ -78,7 +78,7 @@ If you want to edit from any device without running Docker locally, deploy `apps
 
 - **Dockerfile path**: `apps/admin/Dockerfile`
 - **Build context**: monorepo root (`.`)
-- **Command**: `node dist/server/entry.mjs` (runs as non-root `node` user; **never** run `astro dev` in a container)
+- **Command**: `node scripts/start.mjs` (runs as non-root `node` user; **never** run `astro dev` in a container)
 - **Port**: `4322` (`HOST=0.0.0.0`, `PORT=4322`)
 - **Healthcheck**: `GET /healthz` (expects HTTP `200` JSON; does not query Postgres so it won't prevent Supabase idle pause or fail before migrations)
 - **Database connection**: Supabase direct hosts (`db.<ref>.supabase.co`) are IPv6-only; container platforms without IPv6 egress **must** use the Supabase **IPv4 session pooler** URL (port `5432`) as `DATABASE_URL`.
@@ -111,3 +111,33 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 2. When `SITE_ENV` is `testing` or `production` and `GITHUB_DISPATCH_TOKEN` + `GITHUB_DISPATCH_REPO` are set, the plugin sends a `repository_dispatch` (`event_type: "emdash-publish"`, `client_payload: { environment, collection, id, slug }`) to GitHub.
 3. GitHub Actions (`web-deploy.yml`) rebuilds the static site from Supabase and deploys the updated assets to Cloudflare Workers.
 4. When `SITE_ENV=local` (or unset), dispatch is skipped so local testing never triggers a cloud deployment.
+
+---
+
+## 6. Safety rails and access control (INF-9 review fixes)
+
+**Recommended exposure: Cloudflare Tunnel only.** Run `cloudflared` next to the container, publish no host port (drop the `ports:` mapping or keep it on `127.0.0.1`), and put the hostname behind a Cloudflare Access application. The origin then verifies the Access JWT itself (below), so a leaked container URL or a misrouted port is not an open admin.
+
+| Variable | Effect |
+|---|---|
+| `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` | When `CF_ACCESS_AUD` is set, every request except the exact raw path `/healthz` must carry a valid `Cf-Access-Jwt-Assertion` (RS256, `exp` required, signature from `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`, issuer = team origin, audience = AUD). The team domain must be `<team>` or `<team>.cloudflareaccess.com`. Otherwise `403`. The check is EmDash's `middleware.outer` (`src/outer.ts`), so it runs before any EmDash middleware: no runtime init, DB lookups, sessions or 302/401 for an unauthenticated request. |
+| Production target | Access is mandatory unless the server listens on loopback only. "Production" means `SITE_ENV=production` **or** a `DATABASE_URL` whose project ref (`postgres.<ref>` pooler user) equals `SUPABASE_PRODUCTION_REF`, whatever `SITE_ENV` says (INF-5 rule). Missing or half-configured Access then answers `503` to everything except `/healthz`. `start.mjs` pins `HOST` (default `127.0.0.1`) and exports `ADMIN_REQUIRE_ACCESS=1` for the request-time gate; an unset `HOST` is never treated as loopback. |
+| `ADMIN_CONFIRM_PRODUCTION=yes` | Required for any production target (the analogue of `--yes-production` in [`admin.md`](./admin.md)). Without it `scripts/start.mjs` exits 1. |
+| `SUPABASE_PRODUCTION_REF` / `SUPABASE_TESTING_REF` | **Required for any remote database** (fail closed, as in INF-5): without `SUPABASE_PRODUCTION_REF` a production URL cannot be told apart from the rest. `SITE_ENV=production` needs a matching URL ref; `SITE_ENV=testing` also needs `SUPABASE_TESTING_REF` and a matching ref, and must not point at the production ref. |
+| `SITE_ENV=local` with a remote DB | Refused unless `ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL=yes`. Testing/production with a loopback DB is refused too. Only `?sslmode=` is accepted as a URL query parameter (libpq would let `user=`/`host=` override what was checked). `sslmode` itself is **stripped** before connecting, because pg would let it override our TLS settings; a remote URL with `disable`, `no-verify`, `allow` or `prefer` is refused (`require`, `verify-ca`, `verify-full` are accepted and mean "use our computed TLS"). |
+| `DATABASE_URL` | Required at runtime, **not** baked into the image (`astro build` only sees a placeholder; missing value fails closed). Pool size 3. |
+| `DATABASE_CA_CERT` | Optional. **Use a file path** (mounted into the container): a PEM passed through an env var often arrives with literal `\n` sequences, which is rejected. When set, TLS to the pooler is verified (verify-full); when unset the certificate is not verified. A blank (whitespace-only) value or an unreadable file is a startup error. Production should set it. |
+| `ADMIN_RESTART` | Compose restart policy, default `no`. Use `unless-stopped` only for local/testing. |
+| `GITHUB_API_URL` | Honoured only when `SITE_ENV=local`; otherwise the real `api.github.com` is used. |
+
+**Same rules without the launcher.** The rules live in `scripts/safety.mjs` and run in three places: `start.mjs` (refuses to start), the runtime pool (`db-config.ts` throws) and `src/outer.ts` (every request except `/healthz` gets 503 on an unsafe configuration, and a production target turns Access on). Running `node dist/server/entry.mjs` directly is therefore no less safe.
+
+**Public assets.** `/_astro/*` build assets are served by the Node adapter before middleware and are not behind Access; they contain no content or secrets.
+
+**Sidecar caveat.** With `HOST=127.0.0.1` and a `cloudflared` sidecar in the same network namespace, every request arrives from loopback and the Access check is switched off for a production target. Keep the default container setup (`HOST=0.0.0.0`, port unpublished, `cloudflared` reaching it over the Docker network) so origin verification stays on.
+
+At start `scripts/start.mjs` connects with the runtime `DATABASE_URL` and logs `DB IDENTITY: SITE_ENV=... -> host:port/db (database, role)` (never the password) before the server listens. Check that line in `docker compose logs admin` before editing anything.
+
+Verify a build locally against local Supabase only (never testing/production): `pnpm --filter admin build && pnpm --filter admin smoke`. It checks that `dist/` holds no credential, `/healthz` is 200, `/_emdash/admin/setup` is 404 without `SETUP_TOKEN`, the DB identity is logged, Access enforce mode answers 403 (and misconfigured Access 503) for `/_emdash/admin`, `/_emdash/api/manifest` and `/_emdash/api/auth/me` on the real built server, and the startup refusals above.
+
+The image uses `pnpm --config.inject-workspace-packages=true --filter admin deploy --prod /out` (about 615 MB of `node_modules`, versus about 2.3 GB when the whole workspace was copied), and the root `.dockerignore` keeps `.env*`, `.dev.vars*`, `node_modules`, `.claude`, `src/content` and similar out of the build context.

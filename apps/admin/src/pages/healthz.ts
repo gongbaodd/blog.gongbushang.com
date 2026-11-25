@@ -5,7 +5,6 @@
  * without querying Postgres or failing on an unmigrated database.
  */
 import type { APIRoute } from "astro";
-import { defineMiddleware } from "astro:middleware";
 
 export const prerender = false;
 
@@ -30,11 +29,3 @@ export function buildHealthzResponse(env: NodeJS.ProcessEnv = process.env): Resp
 }
 
 export const GET: APIRoute = () => buildHealthzResponse();
-
-export const onRequest = defineMiddleware((context, next) => {
-	const pathname = context.url.pathname.replace(/\/+$/, "") || "/";
-	if (pathname === "/healthz" && (context.request.method === "GET" || context.request.method === "HEAD")) {
-		return Promise.resolve(buildHealthzResponse());
-	}
-	return next();
-});

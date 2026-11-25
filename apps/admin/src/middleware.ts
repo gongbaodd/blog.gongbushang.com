@@ -1,6 +1,8 @@
 /**
  * First-admin setup gate & noindex middleware for the Node admin app (D11, D12).
  *
+ * The Cloudflare Access check lives in outer.ts (EmDash `middleware.outer`), which runs before EmDash itself.
+ *
  * EmDash has no built-in lock on the setup wizard: on a fresh DB the first visitor to
  * /_emdash/admin/setup who completes passkey registration becomes admin. This gate returns 404 for the
  * setup page and setup API unless the visitor presents `process.env.SETUP_TOKEN`, first as
@@ -8,6 +10,8 @@
  * that cookie. No SETUP_TOKEN configured => setup is closed (fail closed), except in `astro dev`.
  */
 import { defineMiddleware } from "astro:middleware";
+import { normalizePath } from "../../web/src/lib/lockdown.ts";
+import { isLoopbackHost } from "./access.ts";
 
 export const SETUP_GATE_COOKIE = "growgen_setup_gate";
 const GATED = [/^\/_emdash\/admin\/setup(\/|$)/, /^\/_emdash\/api\/setup(\/|$)/];
@@ -47,14 +51,8 @@ async function withRobots(next: () => Promise<Response>, siteEnv: string | undef
 	return res;
 }
 
-/** Decode, lowercase and collapse slashes so encoded/cased variants (e.g. `/_emdash/api/%73etup`) can't bypass the gate. */
-export function normalize(pathname: string): string | null {
-	try {
-		return decodeURIComponent(pathname).toLowerCase().replace(/\/{2,}/g, "/");
-	} catch {
-		return null;
-	}
-}
+/** Shared with apps/web's Worker lockdown (`normalizePath`): decode, lowercase, collapse slashes. */
+export const normalize = normalizePath;
 
 const defaultIsDev = Boolean(
 	import.meta.env?.DEV && !import.meta.env?.VITEST && process.env.NODE_ENV !== "test",
@@ -68,6 +66,7 @@ export function createAdminMiddleware(options: AdminMiddlewareOptions = {}) {
 		const env = getEnv();
 		const pathname = normalize(context.url.pathname);
 		if (pathname === null) return new Response("Bad request", { status: 400 });
+
 		if (!GATED.some((re) => re.test(pathname))) return withRobots(next, env.SITE_ENV);
 		if (isDev) return withRobots(next, env.SITE_ENV);
 
@@ -79,7 +78,8 @@ export function createAdminMiddleware(options: AdminMiddlewareOptions = {}) {
 			context.cookies.set(SETUP_GATE_COOKIE, queryToken, {
 				path: "/_emdash/",
 				httpOnly: true,
-				secure: true,
+				// Browsers drop Secure cookies on plain http except for localhost; keep Secure for every real origin.
+				secure: !(context.url.protocol === "http:" && isLoopbackHost(context.url.hostname)),
 				sameSite: "strict",
 				maxAge: 3600,
 			});

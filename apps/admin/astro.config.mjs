@@ -4,7 +4,9 @@ import { defineConfig, sessionDrivers } from "astro/config";
 import emdash, { memoryCache } from "emdash/astro";
 import { postgres } from "emdash/db";
 import { localMedia } from "emdash/media";
+import { fileURLToPath } from "node:url";
 import { cloudinaryMedia } from "./src/cloudinary-media.ts";
+import { PLACEHOLDER_DATABASE_URL } from "./src/db-config.ts";
 import { rebuildOnPublish } from "./src/rebuild-on-publish.ts";
 
 // Public origin for passkey RP ID & outbound links: resolved at runtime via EMDASH_SITE_URL / SITE_URL too.
@@ -16,12 +18,15 @@ const sessionDriver =
 		? sessionDrivers.memory()
 		: sessionDrivers.fsLite({ base: process.env.SESSION_DIR || ".astro/sessions" });
 
+const dbConfigModule = fileURLToPath(new URL("./src/db-config.ts", import.meta.url));
+
 export default defineConfig({
 	site,
 	output: "server",
 	adapter: node({ mode: "standalone" }),
 	server: {
-		host: process.env.HOST || "0.0.0.0",
+		// Loopback by default; the container sets HOST=0.0.0.0 itself (and the adapter prefers the HOST env at runtime).
+		host: process.env.HOST || "127.0.0.1",
 		port: Number(process.env.PORT) || 4322,
 	},
 	session: {
@@ -30,10 +35,12 @@ export default defineConfig({
 	integrations: [
 		react(),
 		emdash({
-			database: postgres({ connectionString: process.env.DATABASE_URL }),
+			// Placeholder only: this config is serialized into dist/. The real DATABASE_URL is read at runtime (see the vite plugin).
+			database: postgres({ connectionString: PLACEHOLDER_DATABASE_URL }),
 			objectCache: memoryCache({ defaultTtl: 600 }),
 			fonts: false,
-			middleware: { outer: "./src/pages/healthz.ts" },
+			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
+			middleware: { outer: "./src/outer.ts" },
 			plugins: [rebuildOnPublish()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
@@ -41,14 +48,21 @@ export default defineConfig({
 	vite: {
 		plugins: [
 			{
-				// EmDash serializes `virtual:emdash/config` at `astro build` time. Wrap `createDialect`
-				// so `process.env.DATABASE_URL` supplied at container runtime always takes effect.
+				// EmDash serializes `virtual:emdash/config` at `astro build` time. Replace the dialect factory so the pool is always
+				// built from the runtime environment (DATABASE_URL, TLS unless loopback, small pool) and fails closed without it.
 				name: "admin-runtime-database-url",
 				transform(code, id) {
 					if (id === "\0virtual:emdash/dialect") {
-						return code.replace(
-							"export const createDialect = _createDialect;",
-							"export const createDialect = (cfg = {}) => _createDialect({ ...cfg, connectionString: process.env.DATABASE_URL || cfg.connectionString });",
+						const marker = "export const createDialect = _createDialect;";
+						if (!code.includes(marker)) {
+							throw new Error("admin-runtime-database-url: emdash dialect virtual module changed; update this plugin");
+						}
+						return (
+							`import { runtimeDialectConfig as _runtimeDialectConfig } from ${JSON.stringify(dbConfigModule)};\n` +
+							code.replace(
+								marker,
+								"export const createDialect = (cfg = {}) => _createDialect({ ...cfg, ..._runtimeDialectConfig() });",
+							)
 						);
 					}
 				},
