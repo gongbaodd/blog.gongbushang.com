@@ -22,6 +22,7 @@ export function createPlugin() {
 						GITHUB_DISPATCH_TOKEN: read("GITHUB_DISPATCH_TOKEN"),
 						GITHUB_DISPATCH_REPO: read("GITHUB_DISPATCH_REPO"),
 						GITHUB_API_URL: read("GITHUB_API_URL"),
+						SITE_ENV: read("SITE_ENV"),
 					},
 					{
 						collection: event.collection,

@@ -1,11 +1,11 @@
-# CI runbook (INF-4, INF-6)
+# CI runbook (INF-4, INF-6, INF-8)
 
 Three workflows under `.github/workflows/`. Legacy `e2e.yml` and `sync-content.yml` are untouched. The new ones use a `paths` filter (web-ci) or are event-driven, so legacy-only changes (`src/`, other `packages/*`) do not trigger them. Build happens in GitHub Actions, never in Workers Builds.
 
 | Workflow | Triggers | Environment | What it does |
 |---|---|---|---|
 | `web-ci.yml` | PR to `feat/emdash` or `master` touching `apps/web/**`, `supabase/**`, lockfile, `packages/shiki-plantuml`, `web-*.yml`; manual | `testing` | vitest, `astro check`, `emdash migrate --from-config --check`, build (`CLOUDFLARE_ENV=testing SITE_ENV=testing`), empty-build guard, size guard, `wrangler deploy` to `growgen-web-testing`. Fork PRs are skipped (no secrets). |
-| `web-deploy.yml` | `repository_dispatch` `emdash-publish`, nightly 02:17 UTC, manual (`environment` testing/production, `apply_migrations`) | testing for dispatch and manual default; **production** for the nightly schedule or manual choice | optional migration apply, build, guards, deploy |
+| `web-deploy.yml` | `repository_dispatch` `emdash-publish`, nightly 02:17 UTC, manual (`environment` testing/production, `apply_migrations`) | dispatch: `client_payload.environment` (allowlist testing/production, anything else becomes testing); manual: the chosen input (default testing); nightly: **production** | optional migration apply, build, guards, deploy |
 | `web-guards.yml` | daily 03:41 UTC (production backup), daily 05:23 UTC (testing keep-alive), manual | `production` (backup), `testing` (keep-alive) | `select 1` via pooler; `pg_dump -Fc --schema=public` of production piped through `age`, uploaded as artifact `production-db-backup`, retention 14 days |
 
 Guards in the build jobs:
@@ -22,6 +22,21 @@ Environment secrets (Settings, Environments):
 | `BACKUP_AGE_RECIPIENT` (age public key `age1...`) | not needed | **missing, must be created** | web-guards backup |
 
 Repository variables (optional): `WEB_MIN_POSTS`, `WEB_MIN_PAGES`.
+
+Environment **variables** (Settings, Environments, Variables; public values, not secrets). Set them on the `production` environment only. `web-deploy` passes them to the build as `PUBLIC_*`, and they take effect only when `SITE_ENV=production`, which the workflow sets for the production target:
+
+| Variable | Meaning |
+|---|---|
+| `PUBLIC_MIXPANEL_TOKEN` | Mixpanel project token (empty: analytics never loads) |
+| `PUBLIC_MIXPANEL_API_HOST` | e.g. `https://api-eu.mixpanel.com` |
+| `PUBLIC_ADSENSE_ENABLED` | `true` to render AdSense |
+| `PUBLIC_ADSENSE_CONSENT_READY` | `true` once the consent flow gates ads |
+| `PUBLIC_ADSENSE_SLOT_ID` | AdSense slot id |
+
+Leave them unset on `testing`: testing builds are noindex and carry no analytics or ads anyway. `web-ci.yml` only ever builds `testing`, so it passes none of them.
+
+## Which environment a CMS publish rebuilds
+The `rebuild-on-publish` plugin sends `client_payload.environment` taken from the Worker's `SITE_ENV` var (`testing` on the testing Worker, `production` on production). If `SITE_ENV` is anything else (`local`, unset, a typo) the plugin sends nothing and logs that it skipped, so a local admin session, even one pointed at the production DB, never triggers a rebuild. `web-deploy`'s `target` job validates the value against the allowlist (default testing) and passes it on as a job output; the payload is never interpolated into a `run:` script. Scheduled posts published by the deployed cron have no dispatch token, so they appear after the nightly rebuild.
 Not secret, hardcoded in the workflows: `CLOUDFLARE_ACCOUNT_ID`.
 Separate from CI: the CMS publish hook (`GITHUB_DISPATCH_TOKEN`, a fine-grained token allowed to dispatch to this repo) is a Worker secret, not a GitHub secret.
 

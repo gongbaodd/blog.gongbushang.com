@@ -1,7 +1,8 @@
 # Publish pipeline for the EmDash site (INF-4): rebuild static pages from the CMS and deploy.
 # Triggers: CMS publish (repository_dispatch `emdash-publish`), nightly rebuild, manual.
 # Scheduled and dispatch events always use the default branch's workflow; production is only
-# deployed manually or by the nightly schedule, through the `production` environment.
+# deployed manually, by the nightly schedule, or by a dispatch whose client_payload.environment is `production`
+# (sent by the rebuild-on-publish plugin from the Worker's SITE_ENV), always through the `production` GitHub environment.
 name: web-deploy
 
 on:
@@ -30,22 +31,58 @@ defaults:
     shell: bash
 
 jobs:
+  # Resolves and validates the target environment. Needs no secrets and no environment.
+  # manual -> inputs.environment; nightly -> production; repository_dispatch -> client_payload.environment.
+  # The payload only reaches a script through env: and is matched against literals; anything else becomes testing.
+  target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      environment: ${{ steps.pick.outputs.environment }}
+    steps:
+      - id: pick
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ENV: ${{ inputs.environment }}
+          PAYLOAD_ENV: ${{ github.event.client_payload.environment }}
+        run: |
+          case "$EVENT_NAME" in
+            workflow_dispatch) want="$INPUT_ENV" ;;
+            schedule) want=production ;;
+            repository_dispatch) want="$PAYLOAD_ENV" ;;
+            *) want=testing ;;
+          esac
+          case "$want" in
+            testing|production) env_name="$want" ;;
+            *) echo "::warning::unrecognised environment, falling back to testing"; env_name=testing ;;
+          esac
+          echo "environment=$env_name" >> "$GITHUB_OUTPUT"
+          echo "target environment: $env_name"
+
   deploy:
+    needs: target
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # CMS publishes and manual runs target the chosen env (testing by default, testing for dispatch events);
-    # the nightly schedule rebuilds production. Production uses the `production` environment (add required reviewers there for manual approval).
-    environment: ${{ inputs.environment || (github.event_name == 'schedule' && 'production') || 'testing' }}
+    # Target resolution (allowlist, default testing): see the `target` job. Production uses the `production` environment
+    # (add required reviewers there for manual approval; that also gates the nightly and CMS-triggered production rebuilds).
+    environment: ${{ needs.target.outputs.environment }}
     concurrency:
-      group: web-deploy-${{ inputs.environment || (github.event_name == 'schedule' && 'production') || 'testing' }}
+      group: web-deploy-${{ needs.target.outputs.environment }}
       cancel-in-progress: false
     env:
-      TARGET: ${{ inputs.environment || (github.event_name == 'schedule' && 'production') || 'testing' }}
+      TARGET: ${{ needs.target.outputs.environment }}
       CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
       PUBLIC_BUILD_SHA: ${{ github.sha }}
       WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
       WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
       CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+      # Public build-time values (baked into the static HTML): environment *variables*, not secrets. They only take effect
+      # when SITE_ENV=production; define them on the `production` environment only so testing builds never carry analytics or ads.
+      PUBLIC_MIXPANEL_TOKEN: ${{ vars.PUBLIC_MIXPANEL_TOKEN }}
+      PUBLIC_MIXPANEL_API_HOST: ${{ vars.PUBLIC_MIXPANEL_API_HOST }}
+      PUBLIC_ADSENSE_ENABLED: ${{ vars.PUBLIC_ADSENSE_ENABLED }}
+      PUBLIC_ADSENSE_CONSENT_READY: ${{ vars.PUBLIC_ADSENSE_CONSENT_READY }}
+      PUBLIC_ADSENSE_SLOT_ID: ${{ vars.PUBLIC_ADSENSE_SLOT_ID }}
     steps:
       - name: Select environment
         run: |
