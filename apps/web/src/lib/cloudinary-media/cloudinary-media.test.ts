@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cloudinaryMedia } from "./index";
-import { createCloudinaryProvider } from "./provider";
+import { assertInFolder, createCloudinaryProvider } from "./provider";
 import { createMediaProvider, createRuntimeEnvLookup, loadWorkersEnv } from "./runtime";
 import {
   MIME,
@@ -736,6 +736,51 @@ describe("provider", () => {
       }),
     ).rejects.toThrow("Cloudinary upload failed: 401 bad signature");
     await expect(errProvider.delete!("growgen/a")).rejects.toThrow("Cloudinary delete failed: 401");
+  });
+
+  it("enforces folder confinement and rejects path traversal in get() and delete()", async () => {
+    // Valid IDs under configured folder pass
+    expect(() => assertInFolder("growgen/pic", "growgen")).not.toThrow();
+    expect(() => assertInFolder("growgen/nested/pic", "/growgen/")).not.toThrow();
+    expect(() => assertInFolder("growgen/notes#1.txt", "growgen")).not.toThrow();
+    expect(() => assertInFolder("any/pic", "")).not.toThrow();
+
+    // Traversal, backslashes, empty segments, and out-of-folder IDs are rejected
+    const badIds = [
+      "growgen/../other/secret",
+      "growgen/sub/../../other/secret",
+      "growgen/./pic",
+      "growgen//pic",
+      "/growgen/pic",
+      "growgen/pic/",
+      "growgen\\..\\other\\secret",
+      "growgen/a\\b",
+      "other/pic",
+      "growgen-other/pic",
+      "growgen",
+      "video:growgen/../other/secret",
+      "raw:other/secret.pdf",
+    ];
+
+    const neverFetch = vi.fn();
+    const p = createCloudinaryProvider(
+      { folder: "growgen" },
+      env,
+      neverFetch as unknown as typeof fetch,
+    );
+
+    for (const badId of badIds) {
+      await expect(p.get!(badId)).rejects.toThrow(/Cloudinary:/);
+      await expect(p.delete!(badId)).rejects.toThrow(/Cloudinary:/);
+    }
+    expect(neverFetch).not.toHaveBeenCalled();
+
+    // Even with an empty folder, traversal and malformed segments are rejected
+    expect(() => assertInFolder("../secret", "")).toThrow(/invalid publicId/);
+    expect(() => assertInFolder("a/./b", "")).toThrow(/invalid publicId/);
+    expect(() => assertInFolder("a//b", "")).toThrow(/invalid publicId/);
+    expect(() => assertInFolder("a\\b", "")).toThrow(/invalid publicId/);
+    expect(() => assertInFolder("", "")).toThrow(/invalid publicId/);
   });
 });
 
