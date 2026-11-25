@@ -65,15 +65,17 @@ export default function GLMap({ cityCount = 0 }: IMapProps) {
         >
           {loadingCities && (
             <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 10,
-                overflow: "hidden",
-                pointerEvents: "none",
-                background: "var(--mantine-color-body)",
-                "--ascii-skeleton": "var(--mantine-primary-color-filled)",
-              } as React.CSSProperties}
+              style={
+                {
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 10,
+                  overflow: "hidden",
+                  pointerEvents: "none",
+                  background: "var(--mantine-color-body)",
+                  "--ascii-skeleton": "var(--mantine-primary-color-filled)",
+                } as React.CSSProperties
+              }
             >
               <ScaledAsciiSkeleton variant="terminal" rows={40} />
             </div>

@@ -1,16 +1,5 @@
 import ViewCount from "@/src/components/ViewCount";
-import {
-  Avatar,
-  Flex,
-  Card,
-  Text,
-  Anchor,
-  Box,
-  Badge,
-  Group,
-  Title,
-  Stack,
-} from "@mantine/core";
+import { Avatar, Flex, Card, Text, Anchor, Box, Badge, Group, Title, Stack } from "@mantine/core";
 import dayjs from "dayjs";
 import { Calendar, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -83,26 +72,13 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
 
   const badgeRow = (
     <Flex justify={"space-between"} align={"center"}>
-      <Badge
-        color="gray"
-        variant="default"
-        size="sm"
-        className={classes.category}
-      >
+      <Badge color="gray" variant="default" size="sm" className={classes.category}>
         <Group gap={6}>
           <Calendar size={12} />
-          <Text size="xs">
-            {post.dateText ?? dayjs(post.date).format("YYYY-MM-DD")}
-          </Text>
+          <Text size="xs">{post.dateText ?? dayjs(post.date).format("YYYY-MM-DD")}</Text>
         </Group>
       </Badge>
-      <Avatar
-        color="gray"
-        variant="default"
-        size="sm"
-        className={classes.category}
-        p={0}
-      >
+      <Avatar color="gray" variant="default" size="sm" className={classes.category} p={0}>
         <ViewCount path={post.href} />
       </Avatar>
     </Flex>
@@ -111,12 +87,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const metaRow = (
     <Flex gap="xs" justify={"space-between"} align={"end"}>
       <Group flex={1}>
-        <Badge
-          color="gray"
-          variant="default"
-          size="sm"
-          className={classes.category}
-        >
+        <Badge color="gray" variant="default" size="sm" className={classes.category}>
           {post.data.category}
         </Badge>
       </Group>
@@ -135,13 +106,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
         )}
 
         {post.data.tag?.map((tag: string) => (
-          <Badge
-            key={tag}
-            color="gray"
-            variant="default"
-            size="xs"
-            className={classes.category}
-          >
+          <Badge key={tag} color="gray" variant="default" size="xs" className={classes.category}>
             #{tag}
           </Badge>
         ))}
@@ -172,12 +137,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
       <Box className={classes.cover_footer}>{titleBlock}</Box>
     </>
   ) : (
-    <Flex
-      direction={"column"}
-      justify={"space-between"}
-      flex={1}
-      className={classes.content}
-    >
+    <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
       {badgeRow}
       {titleBlock}
       {metaRow}
@@ -186,11 +146,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
 
   return (
     <CustomMantineProvider>
-      <Stack
-        justify={"center"}
-        align={fill ? "stretch" : "center"}
-        w={fill ? "100%" : undefined}
-      >
+      <Stack justify={"center"} align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
         <Box
           maw={fill ? undefined : CARD_WIDTH}
           miw={fill ? CARD_MIN_WIDTH : undefined}
@@ -202,11 +158,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
             display={fill ? "block" : undefined}
             w={fill ? "100%" : undefined}
           >
-            <AsciiReveal
-              loading={loading}
-              revealOnMount={false}
-              style={{ width: "100%" }}
-            >
+            <AsciiReveal loading={loading} revealOnMount={false} style={{ width: "100%" }}>
               <Card
                 key={post.id}
                 shadow="sm"
@@ -223,11 +175,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
           </Anchor>
           {!hideExcerpt && (
             <Flex pl={5} pr={10} pt={5}>
-              <Avatar
-                size="xs"
-                variant="transparent"
-                style={{ transform: "rotateZ(180deg)" }}
-              >
+              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
                 <Quote />
               </Avatar>
               <Text size="sm" lineClamp={2} className={classes.excerpt}>
