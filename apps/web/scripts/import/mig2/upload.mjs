@@ -1,19 +1,24 @@
-// MIG-2 step 4: upload planned assets to Cloudinary. PREPARED, NOT RUN in phase 1.
+// MIG-2 step 4: upload planned assets to Cloudinary (cloud dmq8ipket, folder growgen/legacy/).
 //
 // Dry run is the default: it prints the exact cld commands and makes no cloud calls.
 // Real uploads need --execute. Each asset is checked with `cld admin resource` first and
-// skipped when it already exists, so re-runs are idempotent.
+// skipped when it already exists (idempotent). overwrite=false is always sent.
+// Concurrency is capped at 3. Each failed upload is retried once.
+// Results go to $TMPDIR/mig2-cache/upload-index.json (scratch) and to the committed
+// mig2/upload-result.json (public_id -> status).
 //
 // Usage:
-//   node apps/web/scripts/import/mig2/upload.mjs                    (dry run, prints plan)
-//   node apps/web/scripts/import/mig2/upload.mjs --limit 5          (dry run, first 5)
-//   node apps/web/scripts/import/mig2/upload.mjs --execute --batch 50 --sleep-ms 400
+//   node apps/web/scripts/import/mig2/upload.mjs                          (dry run, prints plan)
+//   node apps/web/scripts/import/mig2/upload.mjs --execute --limit 5      (first 5 only)
+//   node apps/web/scripts/import/mig2/upload.mjs --execute --concurrency 3 (the rest)
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CACHE, DOCS, PUBLIC_DIR, readJson } from "./lib.mjs";
 
+const HERE = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
 const argOf = (n, def) => {
@@ -22,12 +27,12 @@ const argOf = (n, def) => {
 };
 const DRY_RUN = flag("--dry-run") || !flag("--execute");
 const LIMIT = Number(argOf("--limit", "0")) || Infinity;
-const BATCH = Number(argOf("--batch", "50"));
-const SLEEP_MS = Number(argOf("--sleep-ms", "400"));
+const CONCURRENCY = Math.min(3, Math.max(1, Number(argOf("--concurrency", "3"))));
 const CLD = process.env.CLD_BIN ?? join(homedir(), ".local/bin/cld");
 
-const plan = JSON.parse(readFileSync(new URL("./upload-plan.json", import.meta.url), "utf8"));
-const index = readJson(join(CACHE, "upload-index.json"), {});
+const plan = JSON.parse(readFileSync(join(HERE, "upload-plan.json"), "utf8"));
+const INDEX = join(CACHE, "upload-index.json");
+const index = readJson(INDEX, {});
 const LOG = join(CACHE, "upload.log");
 mkdirSync(CACHE, { recursive: true });
 
@@ -42,66 +47,80 @@ function sourcePath(p) {
 }
 
 function cld(argv) {
-  const r = spawnSync(CLD, argv, { encoding: "utf8", timeout: 120000 });
-  return { code: r.status, out: `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() };
+  const r = spawnSync(CLD, argv, { encoding: "utf8", timeout: 180000 });
+  const out = `${r.stdout ?? ""}${r.stderr ?? ""}`.trim();
+  return { code: r.status, out, ok: r.status === 0 && !/^error:/m.test(out) };
 }
 
-// `cld admin resource <public_id>` exits 0 and returns JSON when the asset exists.
+// `cld admin resource <public_id>` succeeds with JSON when the asset exists; 404 when it does not.
 function exists(publicId) {
   const r = cld(["admin", "resource", publicId]);
-  if (r.code === 0 && /"public_id"/.test(r.out)) return true;
-  if (/not found|404/i.test(r.out)) return false;
+  if (r.ok && /"public_id"/.test(r.out)) return true;
+  if (/404|not found/i.test(r.out)) return false;
   throw new Error(`admin lookup failed for ${publicId}: ${r.out.slice(0, 200)}`);
 }
 
-const queue = plan.filter((p) => index[p.publicId]?.status !== "uploaded" && index[p.publicId]?.status !== "exists").slice(0, LIMIT);
-const counts = { planned: plan.length, queued: queue.length, uploaded: 0, exists: 0, failed: 0, missingSource: 0 };
+function uploadOnce(p, src) {
+  // The Admin API (exists check) has an hourly rate limit on the Free plan (error 420). Uploads use the
+  // Upload API and overwrite=false already makes them idempotent, so on 420 skip the check and upload.
+  let already = false;
+  try {
+    already = exists(p.publicId);
+  } catch (e) {
+    if (!/Error 420|Rate Limit/i.test(String(e.message))) throw e;
+  }
+  if (already) return { status: "exists" };
+  const r = cld(["uploader", "upload", src, `public_id=${p.publicId}`, "overwrite=false", "resource_type=image"]);
+  if (r.ok) return { status: "uploaded" };
+  return { status: "failed", error: r.out.slice(0, 300) };
+}
+
+const pending = plan.filter((p) => !["uploaded", "exists"].includes(index[p.publicId]?.status));
+const queue = pending.slice(0, LIMIT);
+const counts = { planned: plan.length, alreadyDone: plan.length - pending.length, queued: queue.length, uploaded: 0, exists: 0, failed: 0, missingSource: 0 };
 
 if (DRY_RUN) {
   for (const p of queue.slice(0, 20)) {
-    const src = sourcePath(p);
     console.log(`[dry-run] check: ${CLD} admin resource ${p.publicId}`);
     console.log(`[dry-run] upload: ${CLD} uploader upload <${p.source}> public_id=${p.publicId} overwrite=false resource_type=image`);
-    if (!existsSync(src)) counts.missingSource++;
   }
   console.log(JSON.stringify({ mode: "dry-run", ...counts, note: "no cld calls were made; pass --execute to upload" }, null, 1));
   process.exit(0);
 }
 
-let n = 0;
-for (const p of queue) {
-  const src = sourcePath(p);
-  if (!existsSync(src)) {
-    index[p.publicId] = { status: "missing-source", source: p.source };
-    counts.missingSource++;
-    continue;
-  }
-  try {
-    if (exists(p.publicId)) {
-      index[p.publicId] = { status: "exists" };
-      counts.exists++;
+let done = 0;
+let next = 0;
+async function worker() {
+  while (next < queue.length) {
+    const p = queue[next++];
+    const src = sourcePath(p);
+    if (!existsSync(src)) {
+      index[p.publicId] = { status: "missing-source", source: p.source };
+      counts.missingSource++;
     } else {
-      const r = cld(["uploader", "upload", src, `public_id=${p.publicId}`, "overwrite=false", "resource_type=image"]);
-      if (r.code === 0) {
-        index[p.publicId] = { status: "uploaded", bytes: p.bytes };
-        counts.uploaded++;
-      } else {
-        index[p.publicId] = { status: "failed", error: r.out.slice(0, 300) };
-        counts.failed++;
-        log(`failed ${p.publicId}: ${r.out.slice(0, 200)}`);
+      let res;
+      try {
+        res = uploadOnce(p, src);
+        if (res.status === "failed") {
+          log(`retry ${p.publicId}: ${res.error.slice(0, 160)}`);
+          await new Promise((r) => setTimeout(r, 2000));
+          res = uploadOnce(p, src);
+        }
+      } catch (e) {
+        res = { status: "failed", error: String(e.message).slice(0, 300) };
       }
+      index[p.publicId] = { ...res, bytes: p.bytes };
+      counts[res.status === "uploaded" ? "uploaded" : res.status === "exists" ? "exists" : "failed"]++;
+      if (res.status === "failed") log(`failed ${p.publicId}: ${res.error.slice(0, 200)}`);
     }
-  } catch (e) {
-    index[p.publicId] = { status: "failed", error: String(e.message).slice(0, 300) };
-    counts.failed++;
+    done++;
+    if (done % 25 === 0) {
+      writeFileSync(INDEX, JSON.stringify(index, null, 1));
+      log(`progress ${done}/${queue.length} ${JSON.stringify(counts)}`);
+    }
   }
-  n++;
-  if (n % BATCH === 0) {
-    writeFileSync(join(CACHE, "upload-index.json"), JSON.stringify(index, null, 1));
-    log(`progress ${n}/${queue.length} ${JSON.stringify(counts)}`);
-  }
-  await new Promise((r) => setTimeout(r, SLEEP_MS));
 }
-writeFileSync(join(CACHE, "upload-index.json"), JSON.stringify(index, null, 1));
+await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+writeFileSync(INDEX, JSON.stringify(index, null, 1));
 log(`done ${JSON.stringify(counts)}`);
 console.log(JSON.stringify({ mode: "execute", ...counts }, null, 1));
