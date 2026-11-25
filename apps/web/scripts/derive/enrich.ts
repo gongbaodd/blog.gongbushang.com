@@ -12,9 +12,10 @@ export interface ColorResult {
 	failed: string[];
 }
 
-export async function resolveColors(c: pg.Client, posts: DerivedPost[], extract = true): Promise<ColorResult> {
+/** `extraUrls`: other images that need a colour set (podcast covers the CMS has no color_set for); same cache, same key. */
+export async function resolveColors(c: pg.Client, posts: DerivedPost[], extract = true, extraUrls: string[] = []): Promise<ColorResult> {
 	const cache = await loadColors(c);
-	const urls = [...new Set(posts.flatMap((p) => (p.cover ? [p.cover.url] : [])))];
+	const urls = [...new Set([...posts.flatMap((p) => (p.cover ? [p.cover.url] : [])), ...extraUrls])];
 	const todo = urls.filter((u) => !cache.has(u) && /^https?:\/\//.test(u)); // relative legacy covers (./x.jpg) cannot be fetched
 	const failed: string[] = [];
 	let extracted = 0;
