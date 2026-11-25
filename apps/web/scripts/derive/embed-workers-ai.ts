@@ -33,6 +33,8 @@ export interface WorkersAiEmbedOptions {
 	batchSize?: number;
 	/** Estimated-token cap per input text (default 6000; model context is 8192). */
 	maxInputTokens?: number;
+	/** Per-request timeout in ms (default 60000; 0 disables). */
+	requestTimeoutMs?: number;
 	/** Called with the batch-relative index of each input that had to be truncated. */
 	onTruncate?: (index: number) => void;
 	/** Max retries on HTTP 429 / 5xx responses (default 3). */
@@ -146,7 +148,7 @@ export class WorkersAiError extends Error {
 	}
 }
 
-const CONTEXT_RE = /context|too (long|large|many tokens)|token limit|max(imum)? (input )?(length|tokens)|exceed/i;
+const CONTEXT_RE = /context (length|window)|too (long|large|many tokens)|token limit|max(imum)? (input )?(length|tokens)/i;
 const QUOTA_CODES = new Set([4006]); // "daily free allocation of 10,000 neurons"
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -192,14 +194,24 @@ function validateVectors(data: unknown, expected: number): number[][] {
 	return data as number[][];
 }
 
+/** Per input: its vector, or the WorkersAiError that stopped it (kind "context" = that item alone; "quota"/"unavailable" = stop). */
+export type SettledEmbedding = number[] | WorkersAiError;
+
+/** Longest honoured Retry-After; a larger value is capped so a build never sleeps for minutes. */
+export const MAX_RETRY_AFTER_MS = 30_000;
+export const DEFAULT_WORKERS_AI_REQUEST_TIMEOUT_MS = 60_000;
+
+function errorCodes(errors: WorkersAiResponse["errors"]): number[] {
+	return (Array.isArray(errors) ? errors : []).flatMap((e) => (typeof e === "object" && e && typeof e.code === "number" ? [e.code] : []));
+}
+
 /**
- * Embed an array of texts via Cloudflare Workers AI REST API (`@cf/qwen/qwen3-embedding-0.6b` by default).
- * Normalises newlines like legacy, caps inputs by estimated tokens, splits into batches, retries 429/5xx with backoff,
- * and validates vector count and 1024-dim output. A context-length error truncates and retries per item.
- * After retries, 429 / 5xx / quota errors throw `WorkersAiError` (kind "quota" | "unavailable"); derive treats those as
- * "missing" (D10). Other errors (bad token, malformed response) throw plain errors.
+ * Like embedBatchWorkersAi, but WorkersAiError outcomes are returned per item instead of thrown, so vectors already
+ * fetched are never lost: an item that still exceeds the context after every shrink gets a "context" error and the
+ * rest continue; a quota/unavailable error is returned for that item and every item after it (the caller stops).
+ * Other errors (bad token, malformed response) still throw.
  */
-export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmbedOptions = {}): Promise<number[][]> {
+export async function embedSettledWorkersAi(texts: string[], options: WorkersAiEmbedOptions = {}): Promise<SettledEmbedding[]> {
 	if (texts.length === 0) return [];
 
 	const envCfg = resolveWorkersAiConfig(options.env ?? process.env);
@@ -227,6 +239,7 @@ export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmb
 	if (typeof baseDelayMs !== "number" || !Number.isFinite(baseDelayMs) || baseDelayMs < 0) {
 		throw new Error(`Invalid Workers AI baseDelayMs "${baseDelayMs}": must be a non-negative finite number.`);
 	}
+	const requestTimeoutMs = options.requestTimeoutMs ?? DEFAULT_WORKERS_AI_REQUEST_TIMEOUT_MS;
 
 	const fetchFn = options.fetchFn ?? globalThis.fetch;
 	const sleepFn = options.sleepFn ?? defaultSleep;
@@ -236,17 +249,28 @@ export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmb
 	/** One HTTP call for already-prepared inputs, with retries. Throws WorkersAiError on quota/unavailable/context. */
 	const request = async (batch: string[]): Promise<number[][]> => {
 		for (let attempt = 0; ; attempt++) {
-			const res = await fetchFn(url, {
-				method: "POST",
-				headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-				body: JSON.stringify({ text: batch }),
-			});
+			let res: Response;
+			try {
+				res = await fetchFn(url, {
+					method: "POST",
+					headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+					body: JSON.stringify({ text: batch }),
+					signal: requestTimeoutMs > 0 ? AbortSignal.timeout(requestTimeoutMs) : undefined,
+				});
+			} catch (e) {
+				// Network failure (DNS, reset, "fetch failed", timeout): retry, then degrade like an outage (D10).
+				if (attempt < maxRetries) {
+					await sleepFn(Math.min(baseDelayMs * 2 ** attempt, MAX_RETRY_AFTER_MS));
+					continue;
+				}
+				throw new WorkersAiError(`Workers AI request failed (network): ${e instanceof Error ? e.message : String(e)}`, "unavailable");
+			}
 
 			const retryable = res.status === 429 || (res.status >= 500 && res.status < 600);
 			if (retryable) {
 				if (attempt < maxRetries) {
 					const retryAfterMs = parseRetryAfterMs(res.headers.get("retry-after"));
-					await sleepFn(retryAfterMs ?? baseDelayMs * 2 ** attempt);
+					await sleepFn(Math.min(retryAfterMs ?? baseDelayMs * 2 ** attempt, MAX_RETRY_AFTER_MS));
 					continue;
 				}
 				const snippet = await readErrorSnippet(res);
@@ -258,18 +282,27 @@ export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmb
 			}
 
 			if (!res.ok) {
-				const snippet = await readErrorSnippet(res);
-				if (res.status === 400 || res.status === 413 || res.status === 422) {
-					if (CONTEXT_RE.test(snippet)) throw new WorkersAiError(`Workers AI context length exceeded (HTTP ${res.status}): ${snippet}`, "context", res.status);
+				const raw = await readErrorSnippet(res);
+				let codes: number[] = [];
+				try {
+					codes = errorCodes((JSON.parse(raw) as WorkersAiResponse).errors);
+				} catch {
+					// snippet may be truncated or not JSON
 				}
-				throw new Error(`Workers AI request failed with HTTP ${res.status}${snippet ? `: ${snippet}` : ""}`);
+				// Quota first: it must never enter the shrink loop.
+				if (codes.some((c) => QUOTA_CODES.has(c)) || /daily free allocation|neurons/i.test(raw)) {
+					throw new WorkersAiError(`Workers AI quota exhausted (HTTP ${res.status}): ${raw}`, "quota", res.status);
+				}
+				if ((res.status === 400 || res.status === 413 || res.status === 422) && CONTEXT_RE.test(raw)) {
+					throw new WorkersAiError(`Workers AI context length exceeded (HTTP ${res.status}): ${raw}`, "context", res.status);
+				}
+				throw new Error(`Workers AI request failed with HTTP ${res.status}${raw ? `: ${raw}` : ""}`);
 			}
 
 			const payload = (await res.json()) as WorkersAiResponse;
 			if (!payload || payload.success !== true) {
 				const details = formatErrors(payload?.errors);
-				const codes = (Array.isArray(payload?.errors) ? payload.errors : []).map((e) => (typeof e === "object" && e ? e.code : undefined));
-				if (codes.some((c) => c !== undefined && QUOTA_CODES.has(c))) throw new WorkersAiError(`Workers AI quota exhausted: ${details}`, "quota");
+				if (errorCodes(payload?.errors).some((c) => QUOTA_CODES.has(c))) throw new WorkersAiError(`Workers AI quota exhausted: ${details}`, "quota");
 				if (CONTEXT_RE.test(details)) throw new WorkersAiError(`Workers AI context length exceeded: ${details}`, "context");
 				throw new Error(`Workers AI embedding failed${details ? `: ${details}` : ": response success !== true"}`);
 			}
@@ -295,7 +328,7 @@ export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmb
 		}
 	};
 
-	const out: number[][] = [];
+	const out: SettledEmbedding[] = [];
 	for (let offset = 0; offset < texts.length; offset += batchSize) {
 		const raw = texts.slice(offset, offset + batchSize).map(normalizeEmbeddingInput);
 		const batch = raw.map((t, i) => {
@@ -306,10 +339,37 @@ export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmb
 		try {
 			out.push(...(await request(batch)));
 		} catch (e) {
-			if (!(e instanceof WorkersAiError) || e.kind !== "context") throw e;
+			if (!(e instanceof WorkersAiError)) throw e;
+			if (e.kind !== "context") {
+				// quota / unavailable: this batch and everything after it
+				while (out.length < texts.length) out.push(e);
+				return out;
+			}
 			// One oversized input must not fail the batch: go item by item.
-			for (let i = 0; i < batch.length; i++) out.push(await requestOne(batch[i]!, offset + i));
+			for (let i = 0; i < batch.length; i++) {
+				try {
+					out.push(await requestOne(batch[i]!, offset + i));
+				} catch (e2) {
+					if (!(e2 instanceof WorkersAiError)) throw e2;
+					out.push(e2);
+					if (e2.kind !== "context") {
+						while (out.length < texts.length) out.push(e2);
+						return out;
+					}
+				}
+			}
 		}
 	}
 	return out;
+}
+
+/**
+ * Embed an array of texts via Cloudflare Workers AI REST API (`@cf/qwen/qwen3-embedding-0.6b` by default).
+ * Throws the first WorkersAiError (quota / unavailable / an item that never fits the context); see
+ * embedSettledWorkersAi for the per-item variant derive uses.
+ */
+export async function embedBatchWorkersAi(texts: string[], options: WorkersAiEmbedOptions = {}): Promise<number[][]> {
+	const settled = await embedSettledWorkersAi(texts, options);
+	for (const s of settled) if (s instanceof WorkersAiError) throw s;
+	return settled as number[][];
 }

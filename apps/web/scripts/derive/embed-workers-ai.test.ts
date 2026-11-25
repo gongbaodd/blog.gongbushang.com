@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_MODEL, EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
 import { toVector } from "./db.ts";
-import { embedPosts, fakeEmbedding, parseEmbedProvider, resolveEmbedTarget } from "./embed.ts";
+import { embedPosts, finalizeEmbeddings, fakeEmbedding, parseEmbedProvider, resolveEmbedTarget } from "./embed.ts";
 import {
 	WORKERS_AI_EMBED_MODEL,
 	WorkersAiError,
@@ -295,6 +295,12 @@ describe("embedBatchWorkersAi", () => {
 });
 
 describe("embedPosts provider selection, provider switch, quota & podcast table", () => {
+	/** embedPosts + the end-of-run commit of a pure model switch (what derive/index.ts does). */
+	const embedAndSwitch = async (...args: Parameters<typeof embedPosts>) => {
+		const r = await embedPosts(...args);
+		await finalizeEmbeddings(args[0], [r]);
+		return r;
+	};
 	it("auto-selects workers-ai when CF credentials are set and keys cache on @cf/qwen/qwen3-embedding-0.6b", async () => {
 		const posts = [mkPost("p1"), mkPost("p2")];
 		// Cache already has legacy LM Studio vectors for p1 and p2 — they must NOT be reused for workers-ai!
@@ -312,7 +318,7 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 			});
 		});
 
-		const res = await embedPosts(client, posts, "auto", {
+		const res = await embedAndSwitch(client, posts, "auto", {
 			env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" },
 			fetchFn: fetchFn as unknown as typeof fetch,
 		});
@@ -335,7 +341,7 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		]);
 
 		const embedLocal = vi.fn(async () => mkVector(42));
-		const res = await embedPosts(client, posts, "auto", {
+		const res = await embedAndSwitch(client, posts, "auto", {
 			// Even with CF credentials present, explicit DERIVE_EMBED_PROVIDER=local forces legacy LM Studio.
 			env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok", DERIVE_EMBED_PROVIDER: "local" },
 			checkLocalServer: async () => true,
@@ -407,7 +413,7 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		const fetchFn = okResponder();
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 		try {
-			const res = await embedPosts(client, posts, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok", DERIVE_EMBED_MAX: "2" }, batchSize: 2, fetchFn: fetchFn as unknown as typeof fetch });
+			const res = await embedAndSwitch(client, posts, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok", DERIVE_EMBED_MAX: "2" }, batchSize: 2, fetchFn: fetchFn as unknown as typeof fetch });
 			expect(res.embedded).toHaveLength(5);
 			expect(res.missing).toEqual([]);
 			expect(res.staleModel).toEqual([]);
@@ -419,10 +425,10 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		}
 	});
 
-	it("quota 429 after retries is graceful: old-model vectors keep the corpus intact, new items are missing (D10)", async () => {
+	it("partial model switch (quota mid-run) writes nothing and keeps the WHOLE corpus on the old model; new items are missing (D10)", async () => {
 		const posts = [mkPost("p1"), mkPost("p2"), mkPost("p3"), mkPost("p4")];
 		// p1..p3 have old LM Studio vectors for the same text; p4 is new.
-		const { client, store } = createMockCacheClient(
+		const { client, store, upserts } = createMockCacheClient(
 			["p1", "p2", "p3"].map((id, i) => ({ legacy_id: id, content_hash: `hash-${id}`, model: DEFAULT_MODEL, v: mkVector(i) })),
 		);
 		let call = 0;
@@ -434,20 +440,23 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		});
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 		try {
-			const res = await embedPosts(client, posts, "auto", {
+			const res = await embedAndSwitch(client, posts, "auto", {
 				env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" },
 				batchSize: 2,
 				maxRetries: 1,
 				sleepFn: async () => {},
 				fetchFn: fetchFn as unknown as typeof fetch,
 			});
-			expect(res.embedded).toEqual(["p1", "p2"]);
-			expect(res.staleModel).toEqual(["p3"]); // still in the corpus with its old vector
-			expect(res.missing).toEqual(["p4"]); // brand new, nothing to fall back to
-			expect(res.vectors.has("p3")).toBe(true);
+			// p1, p2 were embedded (held back), p3 and p4 were not: switch incomplete.
+			expect(upserts).toEqual([]); // nothing written, not even for the successful batch
+			expect(res.embedded).toEqual([]);
+			expect(res.vectors.get("p1")).toEqual(mkVector(0)); // old vectors, all of them
+			expect(res.vectors.get("p2")).toEqual(mkVector(1));
 			expect(res.vectors.get("p3")).toEqual(mkVector(2));
+			expect([...res.staleModel].sort()).toEqual(["p1", "p2", "p3"]);
+			expect(res.missing).toEqual(["p4"]); // brand new, nothing to fall back to
 			expect(res.vectors.size).toBe(3);
-			expect(store.get("p3")?.model).toBe(DEFAULT_MODEL);
+			expect(store.get("p1")?.model).toBe(DEFAULT_MODEL);
 		} finally {
 			warnSpy.mockRestore();
 		}
@@ -459,7 +468,148 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		).rejects.toBeInstanceOf(WorkersAiError);
 	});
 
-	it("DERIVE_EMBED=skip after a provider switch keeps old-model vectors", async () => {
+	it("edited posts commit incrementally even while the model switch is held back", async () => {
+		const posts = [mkPost("p1"), mkPost("p2", "edited text", "hash-new")];
+		const { client, upserts } = createMockCacheClient([
+			{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(1) },
+			{ legacy_id: "p2", content_hash: "hash-old", model: DEFAULT_MODEL, v: mkVector(2) },
+		]);
+		const fetchFn = okResponder();
+		const res = await embedAndSwitch(client, posts, "auto", { env: { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" }, batchSize: 1, fetchFn: fetchFn as unknown as typeof fetch });
+		expect(res.embedded.sort()).toEqual(["p1", "p2"]); // complete: both written
+		expect(upserts.length).toBe(2);
+	});
+
+	it("the model switch spans tables: posts succeed, podcasts hit quota -> nothing is written for either", async () => {
+		const posts = [mkPost("p1")];
+		const eps = [mkPost("e1")];
+		// One client serves both tables (as in derive/index.ts); ids are distinct, "embeddings" matches both table names.
+		const { client: pc, upserts: pu } = createMockCacheClient(
+			[
+				{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(1) },
+				{ legacy_id: "e1", content_hash: "hash-e1", model: DEFAULT_MODEL, v: mkVector(2) },
+			],
+			"embeddings",
+		);
+		const ec = pc;
+		const eu = pu;
+		const env = { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" };
+		const session = {};
+		const ok = okResponder();
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const pr = await embedPosts(pc, posts, "auto", { env, session, fetchFn: ok as unknown as typeof fetch });
+			const quota = vi.fn(async () => mkJsonResponse({ success: false, errors: [{ code: 4006, message: "quota" }] }, 429));
+			const er = await embedPosts(ec, eps, "auto", { env, session, maxRetries: 0, fetchFn: quota as unknown as typeof fetch });
+			expect(pr.switchPending).toHaveLength(1);
+			expect(er.switchOutstanding).toEqual(["e1"]);
+			// one shared client object per table in the mock, but finalize writes through each result's own table
+			await finalizeEmbeddings(pc, [pr, er]);
+			expect(pu).toEqual([]);
+			expect(eu).toEqual([]);
+			expect(pr.vectors.get("p1")).toEqual(mkVector(1));
+			expect(er.vectors.get("e1")).toEqual(mkVector(2));
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("after posts hit quota/outage the podcast call skips Workers AI (shared session)", async () => {
+		const env = { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" };
+		const session: { workersAiDown?: string } = {};
+		const down = vi.fn(async () => new Response("down", { status: 503 }));
+		const { client: pc } = createMockCacheClient();
+		const { client: ec } = createMockCacheClient([], "podcast_embeddings");
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			await embedPosts(pc, [mkPost("p1")], "auto", { env, session, maxRetries: 0, fetchFn: down as unknown as typeof fetch });
+			expect(session.workersAiDown).toMatch(/unavailable/);
+			const callsAfterPosts = down.mock.calls.length;
+			const er = await embedPosts(ec, [mkPost("e1")], "auto", { env, session, maxRetries: 0, fetchFn: down as unknown as typeof fetch }, "podcast_embeddings");
+			expect(down.mock.calls.length).toBe(callsAfterPosts); // no extra call
+			expect(er.missing).toEqual(["e1"]);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("an item that never fits the context is skipped without losing the batch or blocking the run", async () => {
+		const posts = [mkPost("bad", "x".repeat(5000)), mkPost("ok1", "short"), mkPost("ok2", "short too")];
+		const { client } = createMockCacheClient();
+		const fetchFn = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+			const { text } = JSON.parse(String(init?.body)) as { text: string[] };
+			if (text.some((t) => t.length > 1)) {
+				// "bad" never fits: always rejects anything over 100 chars, however short we cut it (min budget 64 tokens ~ 213 chars)
+				if (text.some((t) => t.length > 100)) return mkJsonResponse({ success: false, errors: [{ code: 5006, message: "input exceeds the maximum context length" }] }, 400);
+			}
+			return mkJsonResponse({ success: true, errors: [], result: { data: text.map(() => mkVector(3)) } });
+		});
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedAndSwitch(client, posts, "auto", { env: { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" }, fetchFn: fetchFn as unknown as typeof fetch });
+			expect(res.unembeddable).toEqual(["bad"]);
+			expect(res.embedded.sort()).toEqual(["ok1", "ok2"]); // fetched vectors kept
+			expect(res.missing).toEqual(["bad"]);
+			expect(res.vectors.size).toBe(2);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("a quota error on the 400 path is quota (never enters the shrink loop); bare 'exceed' is not a context error", async () => {
+		const { client } = createMockCacheClient();
+		const calls: number[] = [];
+		const quota400 = vi.fn(async () => {
+			calls.push(1);
+			return mkJsonResponse({ success: false, errors: [{ code: 4006, message: "you have exceeded the daily free allocation" }] }, 400);
+		});
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, [mkPost("p1", "x".repeat(3000))], "auto", { env: { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" }, fetchFn: quota400 as unknown as typeof fetch });
+			expect(calls.length).toBe(1); // no shrink retries
+			expect(res.missing).toEqual(["p1"]);
+		} finally {
+			warnSpy.mockRestore();
+		}
+		const exceedOther = vi.fn(async () => mkJsonResponse({ success: false, errors: [{ code: 1000, message: "rate exceeded for key" }] }, 400));
+		await expect(embedBatchWorkersAi(["a"], { accountId: "a", token: "t", fetchFn: exceedOther as unknown as typeof fetch })).rejects.toThrow(/HTTP 400/);
+		expect(exceedOther).toHaveBeenCalledTimes(1);
+	});
+
+	it("caps Retry-After, passes an abort signal, and degrades network errors to 'unavailable' (D10)", async () => {
+		const sleeps: number[] = [];
+		const slow = vi.fn(async () => new Response("", { status: 429, headers: { "retry-after": "3600" } }));
+		await expect(
+			embedBatchWorkersAi(["a"], { accountId: "a", token: "t", maxRetries: 1, sleepFn: async (ms) => void sleeps.push(ms), fetchFn: slow as unknown as typeof fetch }),
+		).rejects.toMatchObject({ kind: "quota" });
+		expect(sleeps).toEqual([30_000]);
+
+		let signal: AbortSignal | undefined | null;
+		const ok = vi.fn(async (_u: string | URL | Request, init?: RequestInit) => {
+			signal = init?.signal;
+			return mkJsonResponse({ success: true, errors: [], result: { data: [mkVector(1)] } });
+		});
+		await embedBatchWorkersAi(["a"], { accountId: "a", token: "t", fetchFn: ok as unknown as typeof fetch });
+		expect(signal).toBeInstanceOf(AbortSignal);
+
+		const netErr = vi.fn(async () => {
+			throw new TypeError("fetch failed");
+		});
+		await expect(embedBatchWorkersAi(["a"], { accountId: "a", token: "t", maxRetries: 1, sleepFn: async () => {}, fetchFn: netErr as unknown as typeof fetch })).rejects.toMatchObject({ kind: "unavailable" });
+		expect(netErr).toHaveBeenCalledTimes(2);
+
+		// In derive (auto) that means graceful, not a crash.
+		const { client } = createMockCacheClient();
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const res = await embedPosts(client, [mkPost("p1")], "auto", { env: { CF_ACCOUNT_ID: "a", CF_AI_TOKEN: "t" }, maxRetries: 0, fetchFn: netErr as unknown as typeof fetch });
+			expect(res.missing).toEqual(["p1"]);
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+it("DERIVE_EMBED=skip after a provider switch keeps old-model vectors", async () => {
 		const posts = [mkPost("p1"), mkPost("p2")];
 		const { client } = createMockCacheClient([{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(3) }]);
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -492,14 +642,14 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		const fetchFn = okResponder();
 		const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 		try {
-			const res = await embedPosts(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" }, fetchFn: fetchFn as unknown as typeof fetch }, "podcast_embeddings");
-			expect(res.embedded).toEqual(["e1", "e2"]);
+			const res = await embedAndSwitch(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" }, fetchFn: fetchFn as unknown as typeof fetch }, "podcast_embeddings");
+			expect([...res.embedded].sort()).toEqual(["e1", "e2"]);
 			expect(res.vectors.size).toBe(2);
 			expect(upserts.every((u) => u.model === WORKERS_AI_EMBED_MODEL)).toBe(true);
 			expect(store.get("e2")?.model).toBe(WORKERS_AI_EMBED_MODEL);
-			expect(logSpy.mock.calls.some((c) => String(c[0]).includes("embedded episode e1"))).toBe(true);
+			expect(logSpy.mock.calls.some((c) => String(c[0]).includes("embedded episode e2"))).toBe(true);
 			// The 4th positional form used by derive/index.ts (concurrency number) also works with the table.
-			const again = await embedPosts(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" } }, "podcast_embeddings");
+			const again = await embedAndSwitch(client, episodes, "auto", { env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok" } }, "podcast_embeddings");
 			expect(again.reused).toBe(2);
 			expect(fetchFn).toHaveBeenCalledTimes(1);
 		} finally {

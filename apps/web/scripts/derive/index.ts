@@ -34,7 +34,7 @@ const { webRoot } = await import("./db.ts");
 const { connect, describeTarget, resolveConnectionString, schemaReady, SCHEMA } = await import("./db.ts");
 const { buildPosts, readPosts } = await import("./posts.ts");
 const { loadHints, pruneEmbeddings, saveHints } = await import("./cache.ts");
-const { embedPosts } = await import("./embed.ts");
+const { embedPosts, finalizeEmbeddings } = await import("./embed.ts");
 const { resolveColors, resolveGeocodes } = await import("./enrich.ts");
 const { resolveUmap } = await import("./umap.ts");
 const { assemble, writeOutputs } = await import("./outputs.ts");
@@ -68,9 +68,9 @@ try {
 
 	t = Date.now();
 	const mode = (process.env.DERIVE_EMBED || "auto") as "auto" | "require" | "skip" | "fake";
-	const emb = await embedPosts(client, posts, mode);
+	const session = {};
+	const emb = await embedPosts(client, posts, mode, { session });
 	const pruned = await pruneEmbeddings(client, posts.map((p) => p.legacyId));
-	console.log(`[derive] embeddings (${emb.provider}, ${emb.model}): ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${emb.staleModel.length} kept from a previous model, ${pruned} pruned (${lap(t)})`);
 
 	// Podcast episodes and gallery images (EmDash `podcasts`, `gallery`).
 	t = Date.now();
@@ -80,7 +80,9 @@ try {
 		console.error(`[derive] ERROR: ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)} (wrong database, or the MIG-3 import has not run: node apps/web/scripts/import/mig3/import.mjs). Set ALLOW_EMPTY_DATA=1 to build without them.`);
 		process.exit(1);
 	}
-	const pemb = await embedPosts(client, episodes, mode, 3, "podcast_embeddings");
+	const pemb = await embedPosts(client, episodes, mode, { session }, "podcast_embeddings");
+	await finalizeEmbeddings(client, [emb, pemb]);
+	console.log(`[derive] embeddings (${emb.provider}, ${emb.model}): ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${emb.staleModel.length} kept from a previous model, ${pruned} pruned (${lap(t)})`);
 	const prunedEp = await pruneEmbeddings(client, episodes.map((e) => e.legacyId), "podcast_embeddings");
 	console.log(`[derive] podcast: ${episodes.length} episodes, embeddings: ${pemb.reused} cached, ${pemb.embedded.length} embedded, ${pemb.missing.length} missing, ${pemb.staleModel.length} kept from a previous model, ${prunedEp} pruned (${lap(t)})`);
 

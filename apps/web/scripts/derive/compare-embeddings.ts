@@ -8,11 +8,10 @@
 // ~0.95 means the two paths embed different text or different pooling; do not switch providers until understood.
 process.env.TZ ||= "Europe/Tallinn";
 import { resolveModel } from "../../../../packages/post-embedding/src/client.ts";
-import { embeddingIndex, loadEmbeddings } from "./cache.ts";
+import { embeddingIndex, loadEmbeddings, loadHints } from "./cache.ts";
 import { connect, describeTarget, resolveConnectionString } from "./db.ts";
-import { embedBatchWorkersAi, isWorkersAiConfigured } from "./embed-workers-ai.ts";
+import { DEFAULT_WORKERS_AI_MAX_TOKENS, embedBatchWorkersAi, estimateTokens, isWorkersAiConfigured } from "./embed-workers-ai.ts";
 import { buildPosts, readPosts } from "./posts.ts";
-import { loadHints } from "./cache.ts";
 
 const n = Number(process.argv[2] ?? 20);
 if (!isWorkersAiConfigured()) {
@@ -38,7 +37,16 @@ try {
 	const usable = posts.filter((p) => index.get(p.legacyId)?.model === localModel && index.get(p.legacyId)?.contentHash === p.contentHash);
 	console.log(`${describeTarget(url)}: ${usable.length}/${posts.length} posts have a cached ${localModel} vector for the current text`);
 	const step = Math.max(1, Math.floor(usable.length / n));
-	const sample = usable.filter((_, i) => i % step === 0).slice(0, n);
+	// Always include the edge cases: the longest posts (the ones over the ~6k-token cap get truncated, which is what we
+	// want to see) and the most CJK-heavy ones (token estimate per character is highest there), then an even spread.
+	const cjkShare = (t: string) => [...t].filter((ch) => ch.codePointAt(0)! > 0x2e80).length / Math.max(1, t.length);
+	const edge = [
+		...[...usable].sort((a, b) => estimateTokens(b.embeddingText) - estimateTokens(a.embeddingText)).slice(0, 3),
+		...[...usable].sort((a, b) => cjkShare(b.embeddingText) - cjkShare(a.embeddingText)).slice(0, 2),
+	];
+	const spread = usable.filter((_, i) => i % step === 0);
+	const sample = [...new Map([...edge, ...spread].map((p) => [p.legacyId, p])).values()].slice(0, Math.max(n, edge.length));
+	console.log(`sample ${sample.length}: ${sample.filter((p) => estimateTokens(p.embeddingText) > DEFAULT_WORKERS_AI_MAX_TOKENS).length} over the ${DEFAULT_WORKERS_AI_MAX_TOKENS}-token cap (truncated before embedding)`);
 	const old = await loadEmbeddings(client, new Map(sample.map((p) => [p.legacyId, { contentHash: p.contentHash, model: localModel }])));
 	const fresh = await embedBatchWorkersAi(sample.map((p) => p.embeddingText), { batchSize: 8 });
 	const sims = sample.map((p, i) => ({ id: p.legacyId, cos: cosine(old.get(p.legacyId)!, fresh[i]!) })).sort((a, b) => a.cos - b.cos);
