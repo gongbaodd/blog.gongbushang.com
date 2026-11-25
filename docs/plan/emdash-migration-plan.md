@@ -196,6 +196,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | INF-5 | Env content sync: `pnpm content:pull testing` (`supabase db dump --data-only` + `psql` through the pooler, excluding auth tables) | Builder-Infra | 2 |
 | INF-7 ✅ | Local admin + Worker lockdown (D12): `pnpm admin:local/testing/production` launcher (`apps/web/scripts/admin/start.mjs`: stops a stale `astro dev`, generated `.dev.vars.admin-<env>` so env wins over `.dev.vars`, nonce DB probe, `--yes-production`); deployed Worker 404s `/_emdash/*` and `/.well-known/oauth*`; runbook `admin.md` | Builder-Infra | 3 |
 | INF-6 | Free-tier guards: keep-alive query for `testing` (production is kept alive by the nightly rebuild); **nightly encrypted `pg_dump` backup** of production (age-encrypted artifact, because the repo is public); Worker size check (fail above 60 MiB uncompressed or 18k asset files); Cloudinary usage report | Builder-Infra | 3 |
+| INF-8 | Publish → rebuild targets the right env: the rebuild plugin sends `client_payload.environment` (from `SITE_ENV`) and `web-deploy.yml` honours it | Builder-Infra | 1 |
 
 ### EPIC E2: CMS model and media
 | ID | Story | Agent | Pts |
