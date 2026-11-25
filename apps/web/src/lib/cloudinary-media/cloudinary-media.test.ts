@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cloudinaryMedia } from "./index";
 import { assertInFolder, createCloudinaryProvider } from "./provider";
-import { createMediaProvider, createRuntimeEnvLookup, loadWorkersEnv } from "./runtime";
+import { createMediaProvider, createRuntimeEnvLookup } from "./runtime";
 import {
   MIME,
   buildDestroyRequest,
@@ -17,6 +17,9 @@ import {
   stringToSign,
   videoPosterUrl,
 } from "./sign";
+
+// `cloudflare:workers` is statically imported by runtime.ts; outside workerd it only exists as this mock.
+vi.mock("cloudflare:workers", () => ({ env: { CLOUDINARY_CLOUD_NAME: "cf-cloud" } }));
 
 const creds = { cloudName: "demo", apiKey: "key123", apiSecret: "sekret" };
 const envMap: Record<string, string> = {
@@ -347,13 +350,13 @@ describe("provider", () => {
       id: "raw:growgen/paper.pdf",
       filename: "paper.pdf",
       mimeType: "application/pdf",
-      previewUrl: "https://res.cloudinary.com/demo/raw/upload/growgen/paper.pdf",
+      previewUrl: undefined,
     });
     expect(page1.items[3]).toMatchObject({
       id: "video:growgen/ep-1",
       filename: "ep-1.mp3",
       mimeType: "audio/mpeg",
-      previewUrl: "https://res.cloudinary.com/demo/video/upload/growgen/ep-1.mp3",
+      previewUrl: undefined,
     });
     expect(page1.nextCursor).toBeDefined();
 
@@ -523,7 +526,7 @@ describe("provider", () => {
       id: "video:growgen/sound",
       filename: "sound.wav",
       mimeType: "audio/wav",
-      previewUrl: "https://res.cloudinary.com/demo/video/upload/growgen/sound.wav",
+      previewUrl: undefined,
       meta: { resourceType: "video", publicId: "growgen/sound", isAudio: true },
     });
     await p.delete!(aud.id);
@@ -538,7 +541,7 @@ describe("provider", () => {
       id: "raw:growgen/data.json",
       filename: "data.json",
       mimeType: "application/json",
-      previewUrl: "https://res.cloudinary.com/demo/raw/upload/growgen/data.json",
+      previewUrl: undefined,
       meta: { resourceType: "raw", publicId: "growgen/data.json" },
     });
     await p.delete!(raw.id);
@@ -670,25 +673,35 @@ describe("provider", () => {
       "https://res.cloudinary.com/demo/video/upload/growgen/ep1.mp3",
     );
 
-    // Raw embed + thumbnail (no image transforms)
+    // Raw files: never an image embed (EmbedResult has no file type) and a generic icon thumbnail, not the file itself
     const rawEmbed = await p.getEmbed(
       { id: "raw:growgen/spec.pdf", filename: "spec.pdf" },
       { width: 600 },
     );
-    expect(rawEmbed).toMatchObject({
-      type: "image",
-      src: "https://res.cloudinary.com/demo/raw/upload/growgen/spec.pdf",
-      alt: "spec.pdf",
-      cdnBaseUrl: "https://res.cloudinary.com/demo/raw/upload",
+    expect(rawEmbed).toEqual({
+      type: "component",
+      package: "@growgen/file-link",
+      export: "FileLink",
+      props: {
+        href: "https://res.cloudinary.com/demo/raw/upload/growgen/spec.pdf",
+        filename: "spec.pdf",
+        label: "spec.pdf",
+      },
     });
-    if (rawEmbed.type === "image") {
-      expect(rawEmbed.getSrc?.({ width: 400 })).toBe(
-        "https://res.cloudinary.com/demo/raw/upload/growgen/spec.pdf",
-      );
-    }
-    expect(p.getThumbnailUrl!("raw:growgen/spec.pdf", "application/pdf", { width: 400 })).toBe(
-      "https://res.cloudinary.com/demo/raw/upload/growgen/spec.pdf",
-    );
+    const rawThumb = p.getThumbnailUrl!("raw:growgen/spec.pdf", "application/pdf", { width: 400 });
+    expect(rawThumb).toMatch(/^data:image\/svg\+xml,/);
+    expect(rawThumb).not.toContain("res.cloudinary.com");
+  });
+
+  it("treats a dot in an unprefixed public_id as an extension only when it is a known one", async () => {
+    expect(parseMediaId("growgen/v1.2/cover")).toMatchObject({ resourceType: "image", explicit: false });
+    expect(parseMediaId("growgen/team.photo-final")).toMatchObject({ resourceType: "image" });
+    expect(parseMediaId("growgen/spec.pdf").resourceType).toBe("raw");
+    expect(parseMediaId("growgen/clip.mp4").resourceType).toBe("video");
+    expect(parseMediaId("growgen/pic.png").resourceType).toBe("image");
+    const p = createCloudinaryProvider({}, env);
+    const embed = await p.getEmbed({ id: "growgen/team.photo-final" });
+    expect(embed.type).toBe("image");
   });
 
   it("enforces upload size limits, missing credential messages, and HTTP error handling", async () => {
@@ -785,27 +798,19 @@ describe("provider", () => {
 });
 
 describe("env-portable runtime and config descriptor", () => {
-  it("loads runtime.ts cleanly in Node without cloudflare:workers and falls back to process.env", async () => {
-    expect(await loadWorkersEnv()).toBeUndefined();
-
+  it("createMediaProvider reads the statically imported cloudflare:workers env first", () => {
     vi.stubEnv("CLOUDINARY_CLOUD_NAME", "node-cloud");
     const provider = createMediaProvider({});
     expect(provider.getThumbnailUrl!("growgen/pic")).toBe(
-      "https://res.cloudinary.com/node-cloud/image/upload/c_fill,w_400,f_auto,q_auto/growgen/pic",
+      "https://res.cloudinary.com/cf-cloud/image/upload/c_fill,w_400,f_auto,q_auto/growgen/pic",
     );
   });
 
-  it("prefers cloudflare:workers env when populated and falls back to process.env when empty or throwing", async () => {
-    const workersEnv = await loadWorkersEnv(async () => ({
-      env: { CLOUDINARY_CLOUD_NAME: "cf-cloud", EMPTY_VAR: "" },
-    }));
-    expect(workersEnv).toEqual({ CLOUDINARY_CLOUD_NAME: "cf-cloud", EMPTY_VAR: "" });
-
-    const lookup = createRuntimeEnvLookup(workersEnv, {
-      CLOUDINARY_CLOUD_NAME: "node-cloud",
-      EMPTY_VAR: "from-node",
-      ONLY_NODE: "present",
-    });
+  it("prefers Workers env when populated and falls back to process.env when empty or throwing", () => {
+    const lookup = createRuntimeEnvLookup(
+      { CLOUDINARY_CLOUD_NAME: "cf-cloud", EMPTY_VAR: "" },
+      { CLOUDINARY_CLOUD_NAME: "node-cloud", EMPTY_VAR: "from-node", ONLY_NODE: "present" },
+    );
     expect(lookup("CLOUDINARY_CLOUD_NAME")).toBe("cf-cloud");
     expect(lookup("EMPTY_VAR")).toBe("from-node");
     expect(lookup("ONLY_NODE")).toBe("present");

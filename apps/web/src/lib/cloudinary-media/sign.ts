@@ -158,8 +158,11 @@ export function parseMediaId(id: string): ParsedMediaId {
       explicit: true,
     };
   }
+  // Unprefixed ids are legacy image public_ids. A dot in the last segment ("growgen/v1.2/cover", "a.b") is not an
+  // extension unless it is a known one; unknown extensions stay "image" instead of being mistaken for raw files.
+  const ext = extensionOf(id);
   return {
-    resourceType: inferResourceType(undefined, id, "image"),
+    resourceType: ext && MIME[ext] ? inferResourceType(undefined, id, "image") : "image",
     publicId: id,
     explicit: false,
   };

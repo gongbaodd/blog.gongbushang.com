@@ -233,9 +233,10 @@ function resolveMediaKind(input: {
       : parsed.publicId;
   const metaFormat =
     typeof input.meta?.format === "string" && input.meta.format ? input.meta.format : undefined;
-  const ext =
-    (metaFormat || extensionOf(input.filename ?? "") || extensionOf(publicId)).toLowerCase() ||
-    undefined;
+  const explicitExt = metaFormat || extensionOf(input.filename ?? "");
+  // A dot in a bare public_id is only an extension when it is a known one (see parseMediaId).
+  const idExt = extensionOf(publicId);
+  const ext = (explicitExt || (MIME[idExt] ? idExt : "")).toLowerCase() || undefined;
   const mime = normalizeMimeType(input.mimeType);
 
   if (
@@ -276,6 +277,19 @@ function resolveMediaKind(input: {
   }
   return { kind: "image", resourceType: "image", publicId };
 }
+
+/** Component package named in raw-file embeds (EmDash has no file embed type; see the CMS-2 knowledge note). */
+// TODO(portable-text media story): nothing renders this embed yet. Whichever story renders Portable Text media must provide
+// this package/export (a plain link from `props.href`) or map these names to a local component.
+export const RAW_FILE_COMPONENT_PACKAGE = "@growgen/file-link";
+export const RAW_FILE_COMPONENT_EXPORT = "FileLink";
+
+/** Generic document icon for raw (pdf/zip/...) items: a data URI, so no request and no Cloudinary credit. */
+export const RAW_FILE_THUMBNAIL =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#e5e7eb"/><path d="M18 8h20l10 10v38H18z" fill="#fff" stroke="#6b7280" stroke-width="2"/><path d="M38 8v10h10" fill="none" stroke="#6b7280" stroke-width="2"/></svg>',
+  );
 
 /** Testable core: env lookup and fetch are injected. */
 export function createCloudinaryProvider(
@@ -322,7 +336,7 @@ export function createCloudinaryProvider(
         ? deliveryUrl(cloudName, r.public_id, { resourceType: "image", width: 400 })
         : resourceType === "video" && !isAudio
           ? videoPosterUrl(cloudName, r.public_id, { width: 400 })
-          : url;
+          : undefined; // raw files and audio have no image rendition: an <img> would download the whole file
 
     return {
       id: encodeMediaId(resourceType, r.public_id),
@@ -531,13 +545,17 @@ export function createCloudinaryProvider(
       }
 
       if (resolved.kind === "raw") {
-        const rawUrl = deliveryUrl(cloudName, resolved.publicId, { resourceType: "raw" });
+        // EmDash's EmbedResult has no file/download variant, and an `image` embed would make renderers emit <img src="file.pdf">.
+        // Describe the file as a component embed instead; consumers render a link from `props.href`.
         return {
-          type: "image" as const,
-          src: rawUrl,
-          alt: value.alt ?? value.filename,
-          cdnBaseUrl: `https://res.cloudinary.com/${cloudName}/raw/upload`,
-          getSrc: () => rawUrl,
+          type: "component" as const,
+          package: RAW_FILE_COMPONENT_PACKAGE,
+          export: RAW_FILE_COMPONENT_EXPORT,
+          props: {
+            href: deliveryUrl(cloudName, resolved.publicId, { resourceType: "raw" }),
+            filename: value.filename ?? resolved.publicId.split("/").pop(),
+            label: value.alt ?? value.filename,
+          },
         };
       }
 
@@ -569,7 +587,8 @@ export function createCloudinaryProvider(
       const cloudName = need(config.cloudNameEnvVar, "CLOUDINARY_CLOUD_NAME");
       const resolved = resolveMediaKind({ id, mimeType });
       if (resolved.kind === "raw") {
-        return deliveryUrl(cloudName, resolved.publicId, { resourceType: "raw" });
+        // The contract returns a string used as an <img> source; a raw file has no image rendition, so use a generic icon.
+        return RAW_FILE_THUMBNAIL;
       }
       if (resolved.kind === "audio") {
         return deliveryUrl(cloudName, resolved.publicId, {
