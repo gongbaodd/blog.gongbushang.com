@@ -193,6 +193,27 @@ function encodePublicIdPath(publicId: string): string {
   return publicId.split("/").map(encodeURIComponent).join("/");
 }
 
+/**
+ * Enforce Cloudinary folder confinement (SEC-13).
+ * Rejects empty IDs, backslashes, empty path segments, `.` / `..` traversal segments,
+ * and (when `folder` is non-empty) any `publicId` not strictly under `${folder}/`.
+ */
+export function assertInFolder(publicId: string, folder: string): void {
+  const cleanFolder = folder.replace(/^\/+|\/+$/g, "");
+  if (!publicId || publicId.includes("\\")) {
+    throw new Error(`Cloudinary: invalid publicId "${publicId}"`);
+  }
+  const segments = publicId.split("/");
+  if (segments.some((seg) => seg === "" || seg === "." || seg === "..")) {
+    throw new Error(`Cloudinary: invalid publicId "${publicId}"`);
+  }
+  if (cleanFolder && !publicId.startsWith(`${cleanFolder}/`)) {
+    throw new Error(
+      `Cloudinary: publicId "${publicId}" is outside configured folder "${cleanFolder}"`,
+    );
+  }
+}
+
 /** Resolve media kind (`image` | `video` | `audio` | `raw`) for `MediaValue` or `(id, mimeType)`. */
 function resolveMediaKind(input: {
   id: string;
@@ -389,9 +410,10 @@ export function createCloudinaryProvider(
     },
 
     async get(id: string) {
-      const c = creds();
       const parsed = parseMediaId(id);
       if (!parsed.publicId) return null;
+      assertInFolder(parsed.publicId, folder);
+      const c = creds();
 
       const candidates: CloudinaryResourceType[] = parsed.explicit
         ? [parsed.resourceType]
@@ -433,9 +455,10 @@ export function createCloudinaryProvider(
     },
 
     async delete(id: string) {
-      const c = creds();
       const parsed = parseMediaId(id);
       if (!parsed.publicId) return;
+      assertInFolder(parsed.publicId, folder);
+      const c = creds();
 
       const candidates: CloudinaryResourceType[] = parsed.explicit
         ? [parsed.resourceType]
