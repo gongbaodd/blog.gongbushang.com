@@ -29,7 +29,6 @@ Conventional commits (`feat(web): …`, `chore(infra): …`), ending with:
 | Plan & backlog | Linear project [Blog (`P-GON-6`)](https://linear.app/gongbaodd/project/blog-fc8994e42e5e) (index in `docs/plan/emdash-migration-plan.md`) |
 | New public site | `apps/web/` |
 | Dockerized Node admin (INF-9) | `apps/admin/` |
-| Cover color Worker (PORT-8b) | `apps/colorize/` |
 | Supabase local project | `supabase/` |
 | Scout notes | `docs/plan/emdash/scout/` |
 | Runbooks | `docs/plan/emdash/runbooks/` |

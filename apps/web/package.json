@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "content:pull": "node scripts/sync/pull.mjs",
     "derive": "tsx scripts/derive/index.ts",
     "derive:migrate": "tsx scripts/derive/migrate.ts",
     "derive:seed": "tsx scripts/derive/seed-from-legacy.ts",

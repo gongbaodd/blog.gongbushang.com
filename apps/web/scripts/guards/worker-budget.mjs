@@ -27,12 +27,13 @@ function assertDirectory(dirPath, label) {
 	}
 }
 
-function walkFiles(dirPath, onFile) {
+function walkFiles(dirPath, onFile, onDir) {
 	const entries = readdirSync(dirPath, { withFileTypes: true });
 	for (const entry of entries) {
 		const fullPath = join(dirPath, entry.name);
 		if (entry.isDirectory()) {
-			walkFiles(fullPath, onFile);
+			onDir?.(fullPath);
+			walkFiles(fullPath, onFile, onDir);
 		} else if (entry.isFile()) {
 			onFile(fullPath);
 		}
@@ -67,17 +68,27 @@ export function measureWorkerBundle(workerDir) {
 }
 
 /**
- * Count all static asset files recursively inside assetsDir.
+ * Count static asset files recursively inside assetsDir. Like wrangler's asset manifest (and Cloudflare's
+ * 20,000 limit) this counts regular files only: directories and symlinks are skipped. `dirs` is informational.
  */
 export function countStaticAssets(assetsDir) {
 	assertDirectory(assetsDir, "assets");
-	let count = 0;
-	walkFiles(assetsDir, () => {
-		count += 1;
-	});
+	let files = 0;
+	let dirs = 0;
+	walkFiles(
+		assetsDir,
+		() => {
+			files += 1;
+		},
+		() => {
+			dirs += 1;
+		},
+	);
 	return {
 		dir: assetsDir,
-		count,
+		count: files,
+		files,
+		dirs,
 	};
 }
 
