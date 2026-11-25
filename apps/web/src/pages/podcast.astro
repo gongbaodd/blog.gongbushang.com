@@ -1,0 +1,39 @@
+---
+// /podcast/ (ported from src/pages/podcast.astro). Episodes come from src/lib/podcast.ts (legacy snapshot until MIG-3).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import { GridWithMenu } from "../components/GridWithMenu";
+import PodcastPlock from "../masonry/PodcastPlock";
+import PodcastSidebar from "../components/PodcastSidebar";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { INITIAL_SSR_POSTS } from "../consts-list";
+import { getPodcastChannel, getPodcastEpisodes, slimEpisode } from "../lib/podcast";
+
+export const prerender = true;
+
+const episodes = getPodcastEpisodes();
+const channel = getPodcastChannel();
+const initialEpisodes = episodes.slice(0, INITIAL_SSR_POSTS).map(slimEpisode);
+---
+
+<Global title={`${SITE_TITLE} | Podcast`} description={SITE_DESCRIPTION}>
+	<Header />
+	<section id="podcast-page" class="main">
+		<MantineMain client:load>
+			<GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
+				<PodcastSidebar
+					slot="menuNode"
+					client:load
+					title={channel.title}
+					description={channel.description}
+					link={channel.link}
+					image={channel.image}
+				/>
+				<PodcastPlock totalCount={episodes.length} initialEpisodes={initialEpisodes} slot="gridContent" client:load />
+			</GridWithMenu>
+			<Footer slug="podcast" />
+		</MantineMain>
+	</section>
+</Global>

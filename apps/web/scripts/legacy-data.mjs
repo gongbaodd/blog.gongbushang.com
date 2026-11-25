@@ -14,7 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = resolve(root, process.env.LEGACY_GENERATED_DIR || "../../src/content/generated");
 const RELATES_LIMIT = 8; // POST_COUNT_PER_PAGE / 2
 
-const out = { source: null, posts: {}, podcast: [], gallery: [], umapPosts: 0 };
+const out = { source: null, posts: {}, podcast: [], podcastChannel: null, podcastRelated: {}, gallery: [], umapPosts: 0 };
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 
 const apiDir = resolve(root, "public/api");
@@ -94,6 +94,14 @@ if (existsSync(resolve(dir, "podcast"))) {
 			return coords[ep.id] ? { ...ep, umap2D: coords[ep.id] } : ep;
 		})
 		.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+}
+
+// podcast.json carries only the channel (episodes live in podcast/*.json). "More to discover" on episode pages
+// uses the same nearest-neighbour rule as the legacy getStaticPaths (4 per episode, embeddings then UMAP).
+if (existsSync(resolve(dir, "podcast.json"))) out.podcastChannel = readJson(resolve(dir, "podcast.json")).channel ?? null;
+{
+	const candidates = out.podcast.map((e) => ({ ...e, category: { label: "podcast" } }));
+	for (const e of candidates) out.podcastRelated[e.id] = findNearest(e, candidates, 4).map((r) => r.id);
 }
 
 if (out._meta) {

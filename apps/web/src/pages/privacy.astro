@@ -1,0 +1,232 @@
+---
+import AdSenseHead from "../ads/AdSenseHead.astro";
+import Footer from "../footer/Footer.astro";
+import Header from "../header/Header.astro";
+import Global from "../layouts/Global.astro";
+import MantineMain from "../components/MantineMain";
+
+export const prerender = true;
+
+const description =
+  "Privacy, analytics, advertising, and consent information for GrowGen.";
+// TODO PORT-7: Boolean(import.meta.env.PUBLIC_MIXPANEL_TOKEN) once packages/analytics is ported; until then analytics is off.
+const analyticsEnabled = false;
+const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
+---
+
+<Global title="Privacy | GrowGen" description={description}>
+  {adsenseConsentReady && <AdSenseHead slot="head" />}
+  <Header />
+  <section id="privacy-page" class="main">
+    <MantineMain>
+      <main class="mx-auto w-full max-w-4xl px-4 py-10">
+        <article class="mx-auto max-w-3xl space-y-6">
+          <header class="space-y-2">
+            <h1 class="text-3xl font-bold">Privacy &amp; advertising</h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Last updated: November 21, 2026</p>
+          </header>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">About this site</h2>
+            <p>
+              GrowGen is a personal website operated by Jian Gong. For privacy questions, contact
+              {" "}
+              <a class="underline" href="mailto:gongbaodd@outlook.com">gongbaodd@outlook.com</a>.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Traffic measurement</h2>
+            <p>
+              This site uses GoatCounter to measure page views and understand aggregate site traffic.
+              GoatCounter documents that its hosted service stores aggregate statistics and does not
+              store IP addresses, full user-agent strings, or tracking identifiers in its database;
+              it may process an IP address and user-agent temporarily in memory to avoid counting
+              repeat visits. Its analytics script does not use browser cookies or local storage.
+              {" "}
+              <a class="underline" href="https://www.goatcounter.com/help/privacy" rel="noopener noreferrer">
+                GoatCounter privacy details
+              </a>.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Advertising and consent</h2>
+            <p>
+              This site is set up for Google AdSense on manually approved blog articles. Ads can be
+              requested only when an article is explicitly opted in and an AdSense display-unit ID
+              is configured; this page itself has no ad unit. When the AdSense script or an ad is
+              requested, Google and configured ad partners may receive request and device data such
+              as the page URL, IP address, browser, and ad interaction data. They may use cookies
+              or similar technologies to deliver, measure, and protect advertising. Personalization
+              depends on the user's choices and the account's regional settings.
+            </p>
+            <p>
+              Google explains how partner sites use data in its
+              {" "}
+              <a class="underline" href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer">
+                information about Google's partner sites
+              </a> and
+              {" "}
+              <a class="underline" href="https://policies.google.com/technologies/ads" rel="noopener noreferrer">
+                advertising technologies
+              </a>.
+            </p>
+            <p>
+              {adsenseConsentReady
+                ? "Google's European regulations message lists the configured ad partners and consent choices. Use the control below to reopen it and review or withdraw consent."
+                : "Google's European regulations message will list the configured ad partners and consent choices once published for GrowGen. The consent-settings control will appear here after the message is published in AdSense Privacy & messaging and enabled for this site."}
+            </p>
+            <div id="ad-preferences" class="space-y-2">
+              {adsenseConsentReady ? (
+                <>
+                  <button
+                    id="manage-ad-preferences"
+                    type="button"
+                    class="rounded-md border border-gray-400 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    Manage ad consent
+                  </button>
+                  <p id="ad-preferences-status" class="text-sm text-gray-600 dark:text-gray-400" role="status" aria-live="polite"></p>
+                </>
+              ) : (
+                <p class="text-sm text-gray-600 dark:text-gray-400" role="status">
+                  Google consent settings will appear here after Google Privacy &amp; messaging is configured for GrowGen.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Product analytics (Mixpanel)</h2>
+            <p>
+              If you allow it, this site uses Mixpanel to understand how posts are read and which
+              features are used. Nothing is sent to Mixpanel until you choose Allow. When allowed,
+              we collect: page views (URL, referrer, and campaign parameters), how far you scroll
+              through an article (25, 50, 75, and 100 percent), whether site search is opened, the
+              text you type into site search (trimmed to 100 characters) with the number of results
+              and which result you pick, outbound link clicks, tag, related-post, podcast-listen and
+              map-city clicks, and basic device and browser information such as browser, operating
+              system, screen size, and color scheme.
+            </p>
+            <p>
+              Your IP address is not used for location and is not stored in the analytics data. We
+              collect no account data, no email addresses, and nothing from contact or resume forms.
+              Mixpanel stores a random identifier in your browser's local storage (key
+              {" "}<code>mp_&lt;token&gt;_mixpanel</code>) and processes data on Mixpanel's servers
+              (region configured for this site). Your browser's Do Not Track setting is honored.
+              Session replay and autocapture are not used.
+            </p>
+            <p>
+              You can change your choice at any time with the control below. Choosing Don't allow
+              stops collection and clears Mixpanel's stored data in this browser.
+              {" "}
+              <a class="underline" href="https://mixpanel.com/legal/privacy-policy" rel="noopener noreferrer">
+                Mixpanel privacy policy
+              </a>.
+            </p>
+            <div id="analytics-preferences" class="space-y-2">
+              <h3 class="text-lg font-medium">Analytics preferences</h3>
+              <div class="flex gap-2">
+                <button
+                  id="analytics-allow"
+                  type="button"
+                  class="rounded-md border border-gray-400 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Allow
+                </button>
+                <button
+                  id="analytics-deny"
+                  type="button"
+                  class="rounded-md border border-gray-400 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  Don't allow
+                </button>
+              </div>
+              <p id="analytics-status" class="text-sm text-gray-600 dark:text-gray-400" role="status" aria-live="polite">
+                {analyticsEnabled ? "" : "Analytics is not enabled on this site."}
+              </p>
+            </div>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Third-party services</h2>
+            <p>
+              Post images may be delivered by Cloudinary. Some pages link to or embed third-party
+              media, including podcast services. When your browser requests those resources or you
+              follow those links, the provider may receive technical request data and apply its own
+              privacy policy.
+            </p>
+          </section>
+
+          <section class="space-y-3">
+            <h2 class="text-xl font-semibold">Your choices</h2>
+            <p>
+              You can manage advertising consent with the control above when Google's message is
+              available. You can also review or change Google ad personalization settings at
+              {" "}
+              <a class="underline" href="https://myadcenter.google.com/" rel="noopener noreferrer">
+                Google My Ad Center
+              </a>. Browser settings can be used to manage cookies and local storage.
+            </p>
+          </section>
+        </article>
+      </main>
+      <Footer slug="privacy" />
+    </MantineMain>
+  </section>
+</Global>
+
+<script>
+  // TODO PORT-7: restore the consent controls (getConsent/optIn/optOut from the ported analytics module).
+  // Until then analytics is off (analyticsEnabled=false): keep the buttons inert.
+  for (const id of ["analytics-allow", "analytics-deny"]) {
+    const button = document.getElementById(id) as HTMLButtonElement | null;
+    if (button) button.disabled = true;
+  }
+</script>
+
+<script is:inline>
+  (() => {
+    const button = document.getElementById("manage-ad-preferences");
+    const status = document.getElementById("ad-preferences-status");
+
+    const openConsentMessage = () => {
+      if (typeof window.googlefc?.showRevocationMessage === "function") {
+        window.googlefc.showRevocationMessage();
+        return;
+      }
+
+      const callbackQueue = window.googlefc?.callbackQueue;
+      if (!callbackQueue) {
+        if (status) {
+          status.textContent = "Google's consent message is not available. Try again later.";
+        }
+        return;
+      }
+
+      if (status) status.textContent = "Loading Google consent settings…";
+      let timedOut = false;
+      const timeout = window.setTimeout(() => {
+        timedOut = true;
+        if (status) {
+          status.textContent = "Google's consent message is not available. Try again later.";
+        }
+      }, 8000);
+
+      callbackQueue.push({
+        CONSENT_API_READY: () => {
+          window.clearTimeout(timeout);
+          if (timedOut) return;
+          if (typeof window.googlefc?.showRevocationMessage === "function") {
+            window.googlefc.showRevocationMessage();
+          } else if (status) {
+            status.textContent = "Google's consent message is not available. Try again later.";
+          }
+        },
+      });
+    };
+
+    button?.addEventListener("click", openConsentMessage);
+  })();
+</script>

@@ -36,6 +36,13 @@ export interface PodcastEpisode extends Record<string, unknown> {
 	umap2D?: [number, number];
 }
 
+export interface PodcastChannel {
+	title: string;
+	description?: string;
+	link?: string;
+	image?: string;
+}
+
 export interface GalleryEntry {
 	id: string;
 	file: string;
@@ -51,10 +58,13 @@ export interface LegacyData {
 	posts: Record<string, LegacyPostRecord>;
 	/** Newest first. */
 	podcast: PodcastEpisode[];
+	podcastChannel: PodcastChannel | null;
+	/** Episode id -> ids of the 4 nearest episodes ("More to discover"). */
+	podcastRelated: Record<string, string[]>;
 	gallery: GalleryEntry[];
 }
 
-const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], gallery: [] };
+const EMPTY: LegacyData = { source: null, posts: {}, podcast: [], podcastChannel: null, podcastRelated: {}, gallery: [] };
 
 const mods = import.meta.glob("../generated/legacy-data.json", { eager: true, import: "default" });
 

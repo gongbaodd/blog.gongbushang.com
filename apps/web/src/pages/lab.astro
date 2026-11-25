@@ -1,0 +1,19 @@
+---
+// /lab/ = the `portfolio` tag list (ported from src/pages/lab.astro).
+import BlogListPage from "../components/BlogListPage.astro";
+import { FILTER_ENTRY } from "../consts-list";
+import { tagPages } from "../lib/listing";
+
+export const prerender = true;
+
+const filter = "portfolio";
+const result = (await tagPages()).find((r) => r.params.filter === filter)!;
+---
+
+<BlogListPage
+	subTitle={["|", filter].join(" ")}
+	totalCount={result.props.posts.length}
+	filter={filter}
+	entryType={FILTER_ENTRY.TAG}
+	posts={result.props.posts}
+/>
