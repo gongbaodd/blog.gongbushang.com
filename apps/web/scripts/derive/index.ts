@@ -38,7 +38,7 @@ const { embedPosts, finalizeEmbeddings } = await import("./embed.ts");
 const { resolveColors, resolveGeocodes } = await import("./enrich.ts");
 const { resolveUmap } = await import("./umap.ts");
 const { assemble, writeOutputs } = await import("./outputs.ts");
-const { buildEpisodes, buildGallery, readGalleryRows, readPodcastRows, resolveTraces } = await import("./media.ts");
+const { buildEpisodes, buildGallery, readGalleryRows, readGalleryUrls, readPodcastKeys, readPodcastRows, resolveTraces } = await import("./media.ts");
 
 const t0 = Date.now();
 const lap = (t: number) => ((Date.now() - t) / 1000).toFixed(1) + "s";
@@ -83,7 +83,8 @@ try {
 	const pemb = await embedPosts(client, episodes, mode, { session }, "podcast_embeddings");
 	await finalizeEmbeddings(client, [emb, pemb]);
 	console.log(`[derive] embeddings (${emb.provider}, ${emb.model}): ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${emb.staleModel.length} kept from a previous model, ${pruned} pruned (${lap(t)})`);
-	const prunedEp = await pruneEmbeddings(client, episodes.map((e) => e.legacyId), "podcast_embeddings");
+	// Keep embeddings of every episode that still exists in EmDash (drafts/unpublished too); an empty read never prunes.
+	const prunedEp = await pruneEmbeddings(client, await readPodcastKeys(client), "podcast_embeddings");
 	console.log(`[derive] podcast: ${episodes.length} episodes, embeddings: ${pemb.reused} cached, ${pemb.embedded.length} embedded, ${pemb.missing.length} missing, ${pemb.staleModel.length} kept from a previous model, ${prunedEp} pruned (${lap(t)})`);
 
 	t = Date.now();
@@ -107,7 +108,7 @@ try {
 	console.log(`[derive] colors: ${colors.reused} cached, ${colors.extracted} extracted, ${colors.failed.length} failed; geocodes: ${geo.reused} cached, ${geo.fetched} fetched, ${geo.missing.length} missing (${lap(t)})`);
 
 	t = Date.now();
-	const tr = await resolveTraces(client, galleryImages, process.env.DERIVE_SKIP_COLORS !== "1");
+	const tr = await resolveTraces(client, galleryImages, process.env.DERIVE_SKIP_COLORS !== "1", 4, await readGalleryUrls(client));
 	extras.gallery = galleryImages.map((g) => g.entry);
 	for (const g of galleryImages) if (tr.svgByUrl.has(g.entry.image)) extras.traces.set(g.traceFile, tr.svgByUrl.get(g.entry.image)!);
 	console.log(`[derive] gallery: ${galleryImages.length} images, traces: ${tr.reused} cached, ${tr.traced} traced, ${tr.failed.length} failed (${lap(t)})`);

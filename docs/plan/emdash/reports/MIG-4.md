@@ -1,0 +1,42 @@
+# MIG-4 DOM parity diff
+
+Harness: `apps/web/scripts/import/mig4/{diff.mjs,lib.mjs,diff-worker.mjs}`, tests `diff.test.ts` (in the apps/web vitest include via `scripts/import/**`).
+Usage: `node apps/web/scripts/import/mig4/diff.mjs --legacy <legacy dist> --new apps/web/dist/client [--out report.json] [--fail-on-error|--fail-on-warn]`.
+
+## Review fixes
+Branch `fix/MIG-4` (from `emdash/MIG-4-diff` + `feat/emdash`; the story branch is checked out in another worktree).
+
+1. OOM fixed. jsdom retains every document, so the run now uses short-lived child processes (`runBulkDiffIsolated`: batches of 40 posts, 3 in parallel, each child exits after its batch). Scripts and styles are also cut out of the markup before parsing (no CSS parse noise, less memory). Full 995-post run at default Node heap (v24.13.1): **24-28 s**, no `--max-old-space-size`. `--in-process` keeps the old behaviour for tiny samples; a test asserts both runners return identical reports.
+2. PORT-9 duplicate-h1 class is now an error:
+   - any EXTRA heading is an error (`extra-h1` / `extra-heading`);
+   - static visibility check: the `display:none` rules that mention `h1` are read from inline `<style>` and linked stylesheets (`distDir`), and every `h1` is tested with `element.matches()`. Legacy hides body h1 with `._content_x > h1 {display:none}`; a wrapper such as `<astro-slot>` stops the rule matching, so the h1 is counted visible. `visibleContentH1` (visible h1 inside the content root; legacy normally 0) larger than legacy is an error (`extra-visible-h1`). The page-wide `visibleH1` count is a warning only (cards/widgets legitimately differ; e.g. legacy mermaid has an extra self-card h1, which by coincidence cancelled the astro-slot h1 in a naive page-wide count).
+   - mutation proof on the real page: legacy `/fe/2025/09/08/mermaid/index.html` used as "new" -> exit 0, OK; with `<h1 id="mermaid-wait-umls-are-back">` wrapped in `<astro-slot>` -> exit 1, `extra-visible-h1`, fields `visibleH1, visibleContentH1`. Also covered by a unit test.
+3. One-sided URL normalisation. `expectedNewUrl(legacyUrl)` maps legacy URLs to what the new site should emit (rewrite map, legacy->new origin, `/tag/c#` -> `/tag/c%23`, `f_auto,q_auto` only for rehosted images, same rule as `src/lib/cloudinary.ts`, kept in sync by a test) and the new page's URL must EQUAL it. A new page with `/tag/c#`, a dropped `f_auto,q_auto`, a leaked origin (`next.growgen.xyz`) or an unrewritten relative image is flagged (tests for each). Default `--new-origin` is the legacy origin (both builds emit `https://growgen.xyz` canonicals).
+4. `<style>`, `<script>`, `<template>` never contribute to text/headings/counts. Inter-element whitespace-only text differences (legacy minified markup glues blocks, e.g. "rotationLet's") are an "expected" diff (`whitespace-only`), not drift.
+5. `scripts/dev/parity-post.cjs` (PORT-2) deleted; refs in `TEMPLATE_DIFF.md` and `reports/PORT-2.md` updated. Content-root fallbacks are counted per side in the summary: **0 legacy, 0 new** (all 995 pages matched the `prose ... content` root).
+6. Minors: hardcoded `/Volumes/MacData` path and gitdir probing removed; `jsdom ^30.1.0` declared in apps/web devDependencies (lockfile diff: exactly the 3 lines of the apps/web importer; `pnpm install --frozen-lockfile` passes); posts present in the build but not in `legacy-urls.txt` are listed as `newPosts` (1: `/fe/2026/11/25/gameplay-atlas/`) and not compared; expected-diff reasons are counted in the summary (`expectedReasonCounts`: rewrite-map, origin, tag-hash, cloudinary-auto, whitespace-only); `--fail-on-warn`; CSS parse noise silenced; error reasons counted (`errorReasonCounts`).
+
+## Full run (legacy dist vs fresh full `pnpm --filter web build` of feat/emdash 12f591e, local Supabase)
+995 posts, 0 missing files, 0 content-root fallbacks, 1 new post. 0 OK, 19 warn, 976 error. Error reasons: `extra-visible-h1` 974, `image-missing-or-wrong` 141.
+
+## Triage (real regression vs harness)
+- **974 posts: duplicate visible h1 (real, PORT-9)**. This build still wraps the body in `<astro-slot>`, so `._content_*>h1{display:none}` no longer hides the body h1. Headings are identical, so only the visibility check sees it. Expected to go to 0 once the PORT-9 fix is merged.
+- **141 posts: images not rehosted/rewritten (real, data state)**. The new HTML keeps the original reference while the mig2 rewrite map says it should be Cloudinary: 43 posts emit a relative `./x.jpg` / `../17/x.jpg` (broken, resolves under the post URL), the rest hot-link the original host (sinaimg, douban, ...). Includes `/life/2020/07/19/study-surfing-in-houhai-sanya/`: legacy `/_astro/2020-07-17.DroK_MKJ_1fCVHd.webp`, new `../17/2020-07-17.jpg`, while `rewrite-map.json` has `"../17/2020-07-17.jpg" -> .../growgen/legacy/2020/07/19/study-surfing-in-houhai-sanya/e223f3630d49`. The local DB content was never run through the rewrite (MIG-2/MIG-3 media import); re-check on the testing DB after the rewrite is applied. 2 of the 141 also show it in links.
+- **`/fe/2025/09/09/tetris-ai/` 7 -> 8 code blocks (real, content/markdown)**. New has an extra `pre.astro-code` (`data-language="plaintext"`) after "Opponent's evil choices": legacy renders the three lines `- Move A -> picks **A3 = 2** ...` as a `<ul>`, new renders them as a code block. Block order otherwise identical; text +26 chars comes from that block. Cause is in how that list is stored/rendered (likely indented list treated as indented code); needs a look at the DB body for this post.
+- **`the-bank-card-password...` description `"..."` (real, minor)**. Legacy `<meta name=description content="">`, new `content="..."`. `postExcerpt` (src/lib/content.ts) appends `"..."` even when the stripped body is empty; legacy `excerpt()` has the same code but legacy's `post.body` was falsy here. Fix: return `""` when the stripped excerpt is empty.
+- `/fe/2025/08/18/blog-cards/` text +1 char: harness artifact (whitespace between blocks), now classified `whitespace-only` (expected).
+- `/tech/2026/05/09/vlm/` image: harness artifact of the first version (raw-HTML `<img>` with an existing Cloudinary URL has no `f_auto,q_auto` on either side); fixed by applying the transform only to rewrite-map targets.
+- 38 posts `visibleH1` page-wide differences (warn, e.g. 5 -> 4): cards/related-post widgets outside the body, not a body regression; listed for awareness.
+
+## Verification
+- `pnpm --filter web exec vitest run scripts/import/mig4`: 30 tests pass. Whole apps/web run: 304 pass, 1 fail (`src/lib/route-parity.test.ts` "no built HTML page is outside the legacy URL list": the new local post `/fe/2026/11/25/gameplay-atlas/`; fixed by the QA-1 fixes, not by this branch).
+- `pnpm --filter web typecheck`: 0 errors; root `pnpm exec astro check`: 0 errors.
+
+## Re-review fixes (second round)
+- Merged the current `feat/emdash` (clean).
+- CLI e2e tests: file-wide 60 s test timeout (`vi.setConfig`), and the fixture CLI tests use `--in-process` (the child-process runner has its own tests).
+- Gate: `--fail-on-warn` is the documented gate (exit 1 on warn, error or missing files); `--fail-on-error` is the weaker one. Canonical mismatch, link mismatch and URLs on preview/dev origins (`next.growgen.xyz`, localhost, `*.workers.dev`, `*.pages.dev`) are now errors (`canonical-mismatch`, `link-mismatch`, `leaked-origin`).
+- Per-batch timeout: `--batch-timeout <ms>` (default 180000). A hung worker is killed and the run fails with exit 2 (test with a worker that never answers).
+- Documented limits of the static visibility heuristic (in `lib.mjs` and here): `display:none` inside `@media` is treated as unconditional; Tailwind `hidden`/`md:hidden`, `visibility:hidden`, `opacity:0`, zero height and hidden ancestors are not modelled.
+- rewrite-map keys are now normalised with the site's per-segment slug (lowercase, drop punctuation, space to `-`, same as Astro's glob loader); all 184 keys, including the 20 that did not match before (e.g. `2020/07/19/Study-surfing-in-Houhai,-Sanya.md`), now meet their page URL. Test for the study-surfing case.
+- Checks: mig4 tests 35 pass; apps/web vitest 361 pass, 1 fail (`route-parity` extra-path test on the new local post, fixed by `fix/QA-1`, unrelated to this branch); `fmt:check` clean; apps/web and root `astro check` 0 errors. Full diff on the same build: exit 1 under `--fail-on-warn` as expected (19 warn, 976 error: 974 PORT-9 h1, 141 image data, 2 link-mismatch from the unrewritten images), 27 s at default heap.

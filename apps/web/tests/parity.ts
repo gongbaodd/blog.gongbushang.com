@@ -8,8 +8,12 @@ import {
 	builtPaths,
 	diffGroup,
 	loadGroups,
+	isInfraPath,
+	latestLegacyPostDate,
+	legacyCategories,
 	loadLegacyUrls,
 	normalizePath,
+	postDateKey,
 } from "./built-paths.ts";
 
 export interface ParityOptions {
@@ -21,6 +25,8 @@ export interface ParityOptions {
 	groupsFile?: string;
 	urlsFile?: string;
 	failOnExtra?: boolean;
+	/** Paths/globs (or a file of them) that may exist in the build without being a legacy URL. */
+	allowExtra?: string[];
 }
 
 export interface GroupParityResult {
@@ -47,6 +53,12 @@ export interface ParityReport {
 		missing: number;
 		extra: number;
 	};
+	/** Built paths that are not legacy URLs but are allowed (`--allow-extra`). */
+	allowedExtraPaths: string[];
+	/** Post-shaped paths (page, `/api/cards|relates`) dated after the newest legacy post: genuinely new posts. */
+	newPostPaths: string[];
+	/** Date (`YYYYMMDD`) of the newest legacy post; built posts dated after it count as new. */
+	legacyLatestPostDate: string;
 	groups: GroupParityResult[];
 	extraPaths: string[];
 	error?: string;
@@ -85,13 +97,10 @@ export function compilePathMatcher(pattern: string): (candidate: string) => bool
 		return (candidate: string) => normalizePath(candidate) === exact;
 	}
 
-	let normPattern = normalizePath(pattern, { stripTrailingSlash: false });
+	let normPattern = normalizePath(pattern);
 	// Preserve leading wildcard patterns like `*.svg` or `**/*.svg`
 	if (pattern.trim().startsWith("*")) {
 		normPattern = normPattern.slice(1); // remove leading `/` added by normalizePath
-	}
-	if (normPattern.length > 1 && normPattern.endsWith("/")) {
-		normPattern = normPattern.slice(0, -1);
 	}
 
 	let regexStr = "";
@@ -161,6 +170,9 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 	const matchers = allowMissingPatterns.map(compilePathMatcher);
 	const isAllowedMissing = (p: string) => matchers.some((m) => m(p));
 
+	const allowExtraMatchers = resolveAllowMissingPatterns(options.allowExtra).map(compilePathMatcher);
+	const isAllowedExtra = (p: string) => allowExtraMatchers.some((m) => m(p));
+
 	const baseEmptyReport = (error: string): ParityReport => ({
 		ok: false,
 		dir,
@@ -172,6 +184,9 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 		totals: { expected: 0, allowedMissing: 0, present: 0, missing: 0, extra: 0 },
 		groups: [],
 		extraPaths: [],
+		allowedExtraPaths: [],
+		newPostPaths: [],
+		legacyLatestPostDate: "",
 		error,
 	});
 
@@ -194,11 +209,9 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 	const allLegacy = new Set([...allGroupPaths, ...legacyTxtUrls]);
 
 	const groupResults: GroupParityResult[] = [];
-	let extraPaths: string[] = [];
 
 	const checkBucket = (name: string, paths: string[]) => {
-		const { missing: rawMissing, extra } = diffGroup(paths, built, allLegacy);
-		extraPaths = extra;
+		const { missing: rawMissing } = diffGroup(paths, built, allLegacy);
 		const missing: string[] = [];
 		let allowedMissing = 0;
 		for (const p of rawMissing) {
@@ -224,9 +237,19 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 		checkBucket("(ungrouped)", ungroupedUrls);
 	}
 
-	if (groupResults.length === 0) {
-		// Still compute unexpected extra paths when all selected groups were ignored
-		extraPaths = diffGroup([], built, allLegacy).extra;
+	// Extras: built paths that are not legacy URLs. Infra files are always ignored; paths of posts newer
+	// than the legacy snapshot are "new posts" (reported, never failing); `--allow-extra` covers the rest.
+	const legacyLatestPostDate = latestLegacyPostDate(allLegacy);
+	const categories = legacyCategories(allLegacy);
+	const { extra: rawExtra } = diffGroup([], built, allLegacy);
+	const extraPaths: string[] = [];
+	const allowedExtraPaths: string[] = [];
+	const newPostPaths: string[] = [];
+	for (const p of rawExtra) {
+		const key = postDateKey(p, categories);
+		if (key && key >= legacyLatestPostDate) newPostPaths.push(p);
+		else if (isAllowedExtra(p) || isInfraPath(p)) allowedExtraPaths.push(p);
+		else extraPaths.push(p);
 	}
 
 	const totals = groupResults.reduce(
@@ -253,6 +276,9 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 		totals,
 		groups: groupResults,
 		extraPaths,
+		allowedExtraPaths,
+		newPostPaths,
+		legacyLatestPostDate,
 	};
 }
 
@@ -304,6 +330,10 @@ export function formatHumanSummary(report: ParityReport, previewLimit = 20): str
 		}
 	}
 
+	lines.push(
+		`New posts newer than the legacy snapshot (${report.legacyLatestPostDate}): ${report.newPostPaths.length} paths` +
+			` | allowed extras (--allow-extra): ${report.allowedExtraPaths.length}`,
+	);
 	if (report.extraPaths.length === 0) {
 		lines.push("Unexpected extra paths (0 total): none");
 	} else {

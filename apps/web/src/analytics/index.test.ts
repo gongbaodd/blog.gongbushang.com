@@ -22,6 +22,7 @@ async function load() {
 }
 
 const store = new Map<string, string>();
+let mpOptedIn = false;
 
 describe("analytics", () => {
   beforeEach(() => {
@@ -37,6 +38,15 @@ describe("analytics", () => {
     });
     vi.stubGlobal("document", { documentElement: { dataset: {} } });
     vi.stubEnv("PUBLIC_SITE_ENV", "production");
+    // Behave like Mixpanel: opt_in/out flip the persisted flag that has_opted_in_tracking reads.
+    mpOptedIn = false;
+    mp.has_opted_in_tracking.mockImplementation(() => mpOptedIn);
+    mp.opt_in_tracking.mockImplementation(() => {
+      mpOptedIn = true;
+    });
+    mp.opt_out_tracking.mockImplementation(() => {
+      mpOptedIn = false;
+    });
   });
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -141,34 +151,88 @@ describe("analytics", () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
     // Earlier "Allow", then "No thanks" whose opt_out call never ran: mixpanel's flag still says in.
     store.set("growgen_analytics_consent", "denied");
-    mp.has_opted_in_tracking.mockReturnValue(true);
+    mpOptedIn = true;
     const a = await load();
     await a.initAnalytics();
     expect(mp.init.mock.calls[0][1]).toMatchObject({ track_pageview: false });
     expect(mp.opt_out_tracking).toHaveBeenCalledWith({ delete_user: false });
     expect(mp.opt_in_tracking).not.toHaveBeenCalled();
     expect(mp.track_pageview).not.toHaveBeenCalled();
-    mp.has_opted_in_tracking.mockReturnValue(false);
   });
 
   it("treats an unanswered visitor with a leftover mixpanel opt-in as opted out", async () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
-    mp.has_opted_in_tracking.mockReturnValue(true);
+    mpOptedIn = true;
     const a = await load();
     await a.initAnalytics();
     expect(mp.opt_out_tracking).toHaveBeenCalledWith({ delete_user: false });
-    mp.has_opted_in_tracking.mockReturnValue(false);
   });
 
   it("records the page view of a returning, already-opted-in visitor", async () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
     store.set("growgen_analytics_consent", "granted");
-    mp.has_opted_in_tracking.mockReturnValue(true);
+    mpOptedIn = true;
     const a = await load();
     await a.initAnalytics();
     expect(mp.opt_in_tracking).not.toHaveBeenCalled();
     expect(mp.track_pageview).toHaveBeenCalledTimes(1);
-    mp.has_opted_in_tracking.mockReturnValue(false);
+  });
+
+  it("records the page view of a returning granted visitor whose mixpanel flag was cleared", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    store.set("growgen_analytics_consent", "granted");
+    mpOptedIn = false;
+    const a = await load();
+    await a.initAnalytics();
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not send a second opt-in or page view when already opted in", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    await a.initAnalytics();
+    a.optIn();
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+    a.optIn(); // /privacy/ re-click
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+  });
+
+  it("Allow then No thanks before init: ends denied, no opt-in or page view", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    a.optIn();
+    a.optOut();
+    await a.initAnalytics();
+    expect(a.getConsent()).toBe("denied");
+    expect(mp.opt_in_tracking).not.toHaveBeenCalled();
+    expect(mp.track_pageview).not.toHaveBeenCalled();
+    expect(mpOptedIn).toBe(false);
+  });
+
+  it("No thanks then Allow before init: ends granted with exactly one page view", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    a.optOut();
+    a.optIn();
+    await a.initAnalytics();
+    expect(a.getConsent()).toBe("granted");
+    expect(mp.opt_out_tracking).not.toHaveBeenCalled();
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+    expect(mpOptedIn).toBe(true);
+  });
+
+  it("sends one opt-in and one page view when the click lands before init", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    const a = await load();
+    a.optIn();
+    a.optIn();
+    await a.initAnalytics();
+    expect(mp.opt_in_tracking).toHaveBeenCalledTimes(1);
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
   });
 
   it("trims and truncates query", async () => {

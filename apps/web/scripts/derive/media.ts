@@ -19,7 +19,11 @@ export interface PodcastRow {
 	legacy_id: string;
 	title: string;
 	link: string | null;
-	pub_date: string;
+	pub_date: string | null;
+	/** True when `legacy_id` was empty and the key fell back to the EmDash slug/id. */
+	legacy_missing?: boolean;
+	/** True when `pub_date` was empty and fell back to the entry's created_at. */
+	pub_missing?: boolean;
 	description: string | null;
 	summary: string | null;
 	duration: string | null;
@@ -30,6 +34,7 @@ export interface PodcastRow {
 
 export interface GalleryRow {
 	legacy_id: string;
+	legacy_missing?: boolean;
 	file: string | null;
 	hash: string | null;
 	image_url: string;
@@ -47,20 +52,45 @@ async function readOnly<T>(client: pg.Client, sql: string): Promise<T[]> {
 	}
 }
 
-/** Published, non-deleted episodes. */
+/**
+ * Published, non-deleted episodes. An episode created in the admin has no `legacy_id`: it is keyed by its slug (then
+ * id) instead of being dropped, and a null `pub_date` falls back to `created_at`; `buildEpisodes` warns about both.
+ */
 export const readPodcastRows = (client: pg.Client) =>
 	readOnly<PodcastRow>(
 		client,
-		`select legacy_id, title, link, pub_date, description, summary, duration, audio_url, image_url, color_set
-		 from ec_podcasts where status = 'published' and deleted_at is null and legacy_id is not null order by legacy_id`,
+		`select coalesce(legacy_id, slug, id) as legacy_id, (legacy_id is null) as legacy_missing,
+		        title, link, coalesce(pub_date, created_at) as pub_date, (pub_date is null) as pub_missing,
+		        description, summary, duration, audio_url, image_url, color_set
+		 from ec_podcasts where status = 'published' and deleted_at is null order by 1`,
 	);
 
 export const readGalleryRows = (client: pg.Client) =>
 	readOnly<GalleryRow>(
 		client,
-		`select legacy_id, file, hash, image_url, doc, added_at, color_set
-		 from ec_gallery where status = 'published' and deleted_at is null and legacy_id is not null and image_url is not null order by legacy_id`,
+		`select coalesce(legacy_id, slug, id) as legacy_id, (legacy_id is null) as legacy_missing,
+		        file, hash, image_url, doc, added_at, color_set
+		 from ec_gallery where status = 'published' and deleted_at is null and image_url is not null order by 1`,
 	);
+
+/**
+ * Cache keep-sets. Embeddings and traces are pruned against every entry that still EXISTS in EmDash (any status), not
+ * only the published ones: unpublishing an episode must not throw away an embedding that took an LM Studio run to
+ * compute. Only entries gone from EmDash (deleted) lose their cache rows.
+ */
+export const readPodcastKeys = async (client: pg.Client) =>
+	(await readOnly<{ k: string }>(client, `select coalesce(legacy_id, slug, id) as k from ec_podcasts where deleted_at is null`)).map((r) => r.k);
+
+export const readGalleryUrls = async (client: pg.Client) =>
+	(await readOnly<{ u: string }>(client, `select image_url as u from ec_gallery where deleted_at is null and image_url is not null`)).map((r) => r.u);
+
+/** EmDash timestamps are ISO strings or SQL `YYYY-MM-DD HH:MM:SS` (UTC, no zone); null when unparseable. */
+export function parseDate(s: string | null | undefined): Date | null {
+	if (!s) return null;
+	const iso = /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d(\.\d+)?$/.test(s) ? `${s.replace(" ", "T")}Z` : s;
+	const d = new Date(iso);
+	return Number.isNaN(d.getTime()) ? null : d;
+}
 
 export interface DerivedEpisode {
 	legacyId: string;
@@ -71,12 +101,27 @@ export interface DerivedEpisode {
 }
 
 export function buildEpisodes(rows: PodcastRow[]): DerivedEpisode[] {
-	return rows.map((r) => {
+	const out: DerivedEpisode[] = [];
+	const seen = new Set<string>();
+	for (const r of rows) {
+		// The slug/id fallback can collide with another episode's legacy_id: keep the first (rows are ordered by key), skip the rest.
+		if (seen.has(r.legacy_id)) {
+			console.warn(`[derive] WARNING: duplicate podcast key "${r.legacy_id}" ("${r.title}"); skipped, the first entry wins`);
+			continue;
+		}
+		seen.add(r.legacy_id);
+		if (r.legacy_missing) console.warn(`[derive] WARNING: podcast episode "${r.title}" has no legacy_id; keyed by its EmDash slug/id "${r.legacy_id}"`);
+		const date = parseDate(r.pub_date);
+		if (!date) {
+			console.warn(`[derive] WARNING: podcast episode "${r.title}" (${r.legacy_id}) has no usable pub_date (${JSON.stringify(r.pub_date)}); skipped. Set "Published" in the admin.`);
+			continue;
+		}
+		if (r.pub_missing) console.warn(`[derive] WARNING: podcast episode "${r.title}" (${r.legacy_id}) has no pub_date; using its creation date ${date.toISOString()}`);
 		const episode: DerivedEpisode["episode"] = {
 			id: r.legacy_id,
 			title: r.title,
 			link: r.link ?? "",
-			pubDate: new Date(r.pub_date).toUTCString(), // legacy RSS form, "Sun, 28 Apr 2024 07:30:00 GMT"
+			pubDate: date.toUTCString(), // legacy RSS form, "Sun, 28 Apr 2024 07:30:00 GMT"
 			description: r.description ?? "",
 			summary: r.summary ?? "",
 			duration: r.duration ?? "",
@@ -85,8 +130,9 @@ export function buildEpisodes(rows: PodcastRow[]): DerivedEpisode[] {
 		};
 		if (r.color_set?.bgColor) episode.colorSet = r.color_set;
 		const embeddingText = buildPodcastEmbeddingText({ title: r.title, summary: r.summary ?? "" });
-		return { legacyId: r.legacy_id, episode, embeddingText, contentHash: sha256(embeddingText) };
-	});
+		out.push({ legacyId: r.legacy_id, episode, embeddingText, contentHash: sha256(embeddingText) });
+	}
+	return out;
 }
 
 export interface DerivedGalleryImage {
@@ -97,7 +143,14 @@ export interface DerivedGalleryImage {
 }
 
 export function buildGallery(rows: GalleryRow[]): DerivedGalleryImage[] {
-	return rows.map((r) => {
+	const seen = new Set<string>();
+	const unique = rows.filter((r) => {
+		if (!seen.has(r.legacy_id)) return seen.add(r.legacy_id);
+		console.warn(`[derive] WARNING: duplicate gallery key "${r.legacy_id}" (${r.image_url}); skipped, the first entry wins`);
+		return false;
+	});
+	return unique.map((r) => {
+		if (r.legacy_missing) console.warn(`[derive] WARNING: gallery image ${r.image_url} has no legacy_id; keyed by its EmDash slug/id "${r.legacy_id}"`);
 		// colorSet stays between doc and addedAt (legacy key order); undefined is dropped by JSON.stringify.
 		const entry: DerivedGalleryImage["entry"] = { id: r.legacy_id, file: r.file ?? r.legacy_id, hash: r.hash ?? "", image: r.image_url, doc: r.doc ?? "", colorSet: r.color_set?.bgColor ? r.color_set : undefined };
 		if (r.added_at) entry.addedAt = r.added_at;
@@ -118,7 +171,7 @@ export interface TraceResult {
  * Trace SVG for every gallery image, cached by image URL (derived.gallery_traces). Only new URLs are fetched from
  * Cloudinary and traced (sobel + potrace, the legacy `getColorSet`); the colour set fills `entry.colorSet` when the CMS has none.
  */
-export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[], extract = true, concurrency = 4): Promise<TraceResult> {
+export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[], extract = true, concurrency = 4, keepUrls?: string[]): Promise<TraceResult> {
 	const t0 = Date.now();
 	const cache = await loadTraces(c);
 	const urls = [...new Set(gallery.map((g) => g.entry.image))];
@@ -153,7 +206,7 @@ export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[]
 			rmSync(dir, { recursive: true, force: true });
 		}
 	}
-	await pruneTraces(c, urls);
+	await pruneTraces(c, keepUrls ? [...new Set([...keepUrls, ...urls])] : urls);
 	const svgByUrl = new Map<string, string>();
 	for (const g of gallery) {
 		const t = cache.get(g.entry.image);

@@ -23,3 +23,16 @@ Cold, empty cache, 75 Cloudinary images, 4 parallel: **13.3 s** (sobel + potrace
 - Run on testing/production: `derive:migrate`, importer, `derive:seed:media` (steps in the runbook). `emdash-env.d.ts` not regenerated (reverted); types for the two collections are not generated.
 - The nothing-reads-`src/content` claim: true for `src/`, `astro.config`, derive build path. Still reading it by design: import scripts (mig0..3), `derive:seed*`, and `DERIVE_PARITY_LEGACY=1`.
 - Gantt not edited (the plan file was off limits); `admin:local` stopped (`pnpm admin:stop`).
+
+## Review fixes
+
+Branch `emdash/MIG-3-followup` (from `feat/emdash`).
+
+1. **Prune guards** (`scripts/derive/cache.ts`): `pruneEmbeddings` (posts and podcasts) and `pruneTraces` do nothing and warn when the keep set is empty (a read that returned 0 items means a wrong DB or a failed import, and the cache costs hours to rebuild). Decision on unpublished episodes: the podcast embedding keep set is every episode that still exists in EmDash in **any status** (`readPodcastKeys`, `deleted_at is null`), so unpublishing or reverting to draft keeps the embedding; only deleted entries lose theirs. Gallery traces follow the same rule (`readGalleryUrls`).
+2. **Keyless and undated rows** (`scripts/derive/media.ts`): episodes and gallery images without `legacy_id` are no longer dropped; they are keyed by slug, then id, with a warning. A null `pub_date` falls back to `created_at` (parsed as UTC) with a warning, never 1970; an episode with no parseable date at all is skipped with a warning. `fetch-podcast --emdash` skips and warns on an unparseable RSS date and never writes `pub_date: null`. `podcasts.pub_date` is now `required` in `scripts/schema/apply.mjs`; `apply` never alters existing fields, so this only affects fresh environments (no migration of existing ones).
+3. **Credentials** : `packages/fetch-podcast/src/emdash.ts` now uses `scripts/import/mig3/rest.mjs` (`createClient`, `listByLegacyId`) instead of its own copy (a `rest.d.mts` supplies types for the root check). `createClient` throws before any request if a bearer token or `EMDASH_HEADERS` would go to a non-https URL, unless the host is localhost, 127.0.0.1 or [::1]. This also covers the MIG-3 importers.
+4. **Channel drift**: the show constants moved to the dependency-free `src/lib/podcast-channel.ts` (re-used by `src/lib/podcast.ts`). `fetch-podcast --emdash` warns per field when the RSS title, description or image differs.
+
+Tests: `scripts/derive/media.test.ts` (prune guards, keyless, null and invalid dates) and `packages/fetch-podcast/src/emdash.test.ts` (null pub_date, skip, https and localhost rules, channel drift).
+
+Verified: full `pnpm --filter web build` with PDFs, exit 0; `pnpm --filter web exec vitest run` 166 passed, 1 failed (`route-parity`: `/fe/2026/11/25/gameplay-atlas/`, the local-only MIG-6 test post; legacy-urls not edited); `astro check` in apps/web and at the root, 0 errors; root `test:unit` 219 passed, 3 skipped.

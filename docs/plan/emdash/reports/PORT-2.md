@@ -20,7 +20,7 @@ Branch `emdash/PORT-2` (from `feat/emdash`). Plan §4 E4, D5, D8; features F2, F
 - Dev servers stopped (`astro dev stop`).
 
 ## Parity (new `apps/web/dist/client/<url>/index.html` vs legacy `dist/<url>/index.html`)
-Tool: `apps/web/scripts/dev/parity-post.cjs <worktree> <legacy-dist> <urls...>` (jsdom: `<title>`, h1, meta description, canonical, post-body text, headings with ids, links, img src, counts of `.katex` / `pre.mermaid` / `pre.astro-code` / iframes / tables). Sample: every 12th legacy post (82) + 6 named (mermaid, plantuml, matrix, bohai-rim, blog-cards, puzzle-game, tetris-ai) = 88 posts.
+Tool (since replaced by `scripts/import/mig4/diff.mjs`; the old `scripts/dev/parity-post.cjs` was deleted) (jsdom: `<title>`, h1, meta description, canonical, post-body text, headings with ids, links, img src, counts of `.katex` / `pre.mermaid` / `pre.astro-code` / iframes / tables). Sample: every 12th legacy post (82) + 6 named (mermaid, plantuml, matrix, bohai-rim, blog-cards, puzzle-game, tetris-ai) = 88 posts.
 
 Identical on all 88: title, h1, description, canonical, headings (incl. ids), links. Differences:
 | Post(s) | Diff | Cause / status |
