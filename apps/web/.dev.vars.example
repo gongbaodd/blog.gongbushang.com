@@ -1,4 +1,6 @@
 # Copy to apps/web/.dev.vars (gitignored). No real secrets here.
+# `pnpm admin:<env>` never edits this file: it only reads it and writes a generated .dev.vars.admin-<env> (docs/plan/emdash/runbooks/admin.md).
+# For testing/production the DB URL, key and SITE_ENV come from the repo-root .env; GITHUB_DISPATCH_* and CLOUDINARY_* may live here or in .env (.env wins).
 # Local Hyperdrive target for `astro dev` / `wrangler dev` / `emdash migrate --from-config`
 # (same value as hyperdrive.localConnectionString in wrangler.jsonc; Supabase local default).
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://postgres:postgres@127.0.0.1:54322/postgres

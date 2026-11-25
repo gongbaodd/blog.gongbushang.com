@@ -194,6 +194,7 @@ Points: 1 = a few hours, 8 = several days. ✅ = done.
 | INF-3 | Hyperdrive per env (direct vs pooler origin test, D3); `wrangler.jsonc` `env.testing` + production; secrets `EMDASH_ENCRYPTION_KEY` / `EMDASH_SITE_URL`; `not_found_handling`; noindex headers; **first testing deploy with the owner claiming the admin** (D11); **CPU-ms check** of admin requests via `wrangler tail` | Builder-Infra | 5 |
 | INF-4 | CI: on PR, `migrate --check`, build, deploy to testing, e2e smoke. On `master`, migrate and deploy to production. `PUBLIC_BUILD_SHA` comes from `GITHUB_SHA`; the `shiki-plantuml` submodule is checked out. **Empty-build guard:** if the DB is unreachable, the build still exits 0 and emits an empty site (S0-3), so CI fails the build when the log contains `runtime init failed` or the prerendered post count is below the expected minimum | Builder-Infra | 5 |
 | INF-5 | Env content sync: `pnpm content:pull testing` (`supabase db dump --data-only` + `psql` through the pooler, excluding auth tables) | Builder-Infra | 2 |
+| INF-7 ✅ | Local admin + Worker lockdown (D12): `pnpm admin:local/testing/production` launcher (`apps/web/scripts/admin/start.mjs`: stops a stale `astro dev`, generated `.dev.vars.admin-<env>` so env wins over `.dev.vars`, nonce DB probe, `--yes-production`); deployed Worker 404s `/_emdash/*` and `/.well-known/oauth*`; runbook `admin.md` | Builder-Infra | 3 |
 | INF-6 | Free-tier guards: keep-alive query for `testing` (production is kept alive by the nightly rebuild); **nightly encrypted `pg_dump` backup** of production (age-encrypted artifact, because the repo is public); Worker size check (fail above 60 MiB uncompressed or 18k asset files); Cloudinary usage report | Builder-Infra | 3 |
 
 ### EPIC E2: CMS model and media
@@ -294,6 +295,7 @@ gantt
   CMS-3 passkeys + roles      :bi4, 2026-12-14, 1d
   INF-4 CI pipeline           :active, bi5, after bi4, 3d
   INF-6 guards + backups      :bi6, after bi5, 1d
+  INF-7 local admin lockdown  :done, bi10, 2026-11-25, 1d
   INF-5 env content sync      :bi7, 2026-12-21, 1d
   CUT-1 cutover               :crit, bi8, 2027-02-15, 2d
   CUT-2 retire legacy         :bi9, 2027-02-26, 1d

@@ -118,3 +118,14 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `package.json`: `build` ends with `node scripts/generate-pdfs.mjs` (resume PDFs into `dist/client/resume/pdfs/`); new script `resume:pdfs`; new deps `@sparticuz/chromium`, `puppeteer-core` (build-time only, never bundled into the Worker).
 - `public/`: legacy static assets copied (`CNAME`, `ads.txt`, `browserconfig.xml`, android-chrome/mstile/icon PNGs, `fonts/`, `llm/` 28 MB for the search story, `assets/bits/...`, `2025/08/18/record.gif`, `resume/pdfs/.gitkeep`). Legacy `robots.txt` is not copied: `src/pages/robots.txt.ts` owns it.
 - `scripts/legacy-data.mjs`: also snapshots the podcast channel and per-episode "More to discover" ids.
+
+## INF-7 (local admin, Worker lockdown; D12)
+
+| File | Change | Why |
+|---|---|---|
+| `wrangler.jsonc` | `assets.run_worker_first: false` (the `/_emdash/*` and `/.well-known/*` rules removed); `env.admin-local`, `env.admin-testing`, `env.admin-production` (dev-only blocks, placeholder bindings) | Admin no longer served by the Worker. wrangler reads `.dev.vars.<CLOUDFLARE_ENV>` instead of `.dev.vars`, so the admin envs make env values win over `.dev.vars` |
+| `src/worker.ts` | `fetch` wrapper: 404 for locked paths unless `import.meta.env.DEV` | Asset misses still invoke the Worker even with `not_found_handling: "404-page"`, so config alone does not lock `/_emdash/*` |
+| `src/lib/lockdown.ts` (+ test) | Added | Pure path matcher (decode, lowercase, collapse slashes) |
+| `scripts/admin/{start,lib,check-build-env}.mjs`, `scripts/admin/*.test.ts` | Added | `pnpm admin:<env>` launcher with DB probe; build guard; tests |
+| `vitest.config.ts` | `include` also `scripts/admin/*.test.ts` | Run the new tests |
+| `src/middleware.ts` | Unchanged (the setup gate is now unreachable on the Worker, kept harmless) | D11 |
