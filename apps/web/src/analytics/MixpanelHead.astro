@@ -1,4 +1,24 @@
 ---
-// TODO(PORT-7): port packages/analytics/MixpanelHead.astro (+ index.ts, events.ts, outbound.ts, read-depth.ts).
-// Stub: renders nothing. The slot stays in BaseHead so PORT-7 only replaces this file.
+import { isAnalyticsConfigured } from "./env";
+
+const enabled = isAnalyticsConfigured();
 ---
+
+{
+  enabled && (
+    <script>
+      import { initAnalytics } from "./index";
+      import { installOutboundTracking } from "./outbound";
+
+      const start = () => {
+        void initAnalytics();
+        installOutboundTracking();
+      };
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(start);
+      } else {
+        setTimeout(start, 1);
+      }
+    </script>
+  )
+}

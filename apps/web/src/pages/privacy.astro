@@ -1,5 +1,6 @@
 ---
 import AdSenseHead from "../ads/AdSenseHead.astro";
+import { isAnalyticsConfigured } from "../analytics/env";
 import Footer from "../footer/Footer.astro";
 import Header from "../header/Header.astro";
 import Global from "../layouts/Global.astro";
@@ -9,8 +10,7 @@ export const prerender = true;
 
 const description =
   "Privacy, analytics, advertising, and consent information for GrowGen.";
-// TODO PORT-7: Boolean(import.meta.env.PUBLIC_MIXPANEL_TOKEN) once packages/analytics is ported; until then analytics is off.
-const analyticsEnabled = false;
+const analyticsEnabled = isAnalyticsConfigured(); // token + production build only
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
 ---
 
@@ -178,12 +178,34 @@ const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "tr
 </Global>
 
 <script>
-  // TODO PORT-7: restore the consent controls (getConsent/optIn/optOut from the ported analytics module).
-  // Until then analytics is off (analyticsEnabled=false): keep the buttons inert.
-  for (const id of ["analytics-allow", "analytics-deny"]) {
-    const button = document.getElementById(id) as HTMLButtonElement | null;
-    if (button) button.disabled = true;
+  import { getConsent, optIn, optOut } from "@/src/analytics";
+
+  const status = document.getElementById("analytics-status");
+  const allow = document.getElementById("analytics-allow") as HTMLButtonElement | null;
+  const deny = document.getElementById("analytics-deny") as HTMLButtonElement | null;
+  const labels = {
+    granted: "Analytics is currently allowed.",
+    denied: "Analytics is currently not allowed.",
+    unset: "You have not chosen yet; nothing is sent until you allow it.",
+  };
+  const render = () => {
+    if (status && !status.dataset.disabled) status.textContent = labels[getConsent()];
+  };
+  if (status?.textContent?.trim()) {
+    status.dataset.disabled = "1";
+    if (allow) allow.disabled = true;
+    if (deny) deny.disabled = true;
+  } else {
+    render();
   }
+  allow?.addEventListener("click", () => {
+    optIn();
+    render();
+  });
+  deny?.addEventListener("click", () => {
+    optOut();
+    render();
+  });
 </script>
 
 <script is:inline>

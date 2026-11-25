@@ -15,7 +15,7 @@ import {
   requestAllTags,
 } from "@/src/stores/links";
 import { useMounted } from "@mantine/hooks";
-// TODO(PORT-7): track("tag_clicked", { tag, location: "list-menu" }) once src/analytics is real.
+import { track } from "@/src/analytics";
 
 interface IMenuProps {
   title: string;
@@ -120,7 +120,7 @@ function MenuTag() {
           <Anchor
             href={href}
             key={label}
-
+            onClick={() => track("tag_clicked", { tag: label, location: "list-menu" })}
           >
             <Badge variant={"outline"} color="green" style={{ cursor: "pointer" }} size="sm">
               {label}

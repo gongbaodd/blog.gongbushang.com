@@ -13,6 +13,15 @@ import { Calendar, Clock, ExternalLink } from "lucide-react";
 import dayjs from "dayjs";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
 import classes from "@/src/components/BlogContent.module.css";
+import { track } from "@/src/analytics";
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "unknown";
+  }
+}
 
 interface IPodcastEpisodeContentProps {
   title: string;
@@ -89,7 +98,7 @@ export default function PodcastEpisodeContent({
               color="green"
               radius="xl"
               size="md"
-              // TODO PORT-7: track("podcast_listen_clicked", { episode: title, provider: hostOf(link) })
+              onClick={() => track("podcast_listen_clicked", { episode: title, provider: hostOf(link) })}
               rightSection={<ExternalLink size={16} />}
               style={{ alignSelf: "flex-start" }}
             >

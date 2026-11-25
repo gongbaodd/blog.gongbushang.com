@@ -1,7 +1,55 @@
 ---
-// TODO(PORT-7): port packages/ads/AdSenseSlot.astro. Stub: renders nothing.
+// Ported from packages/ads/AdSenseSlot.astro. Renders only on a production build (or `astro dev`).
+import { isProductionBuild } from "../analytics/env";
+
 interface Props {
 	slotId?: string;
 	test?: boolean;
 }
+
+const { slotId = "", test = false } = Astro.props;
+const enabled = isProductionBuild() || import.meta.env.DEV;
+// Test output (placeholder, data-adtest) is never emitted unless explicitly requested.
+const isTest = enabled && test && (import.meta.env.DEV || import.meta.env.PUBLIC_ADSENSE_TEST === "true");
 ---
+
+{
+	enabled && (
+		<>
+			<aside
+				aria-label="Advertisements"
+				class:list={[
+					"mx-auto my-10 w-full max-w-3xl border-y border-gray-200 py-4 dark:border-gray-700",
+					isTest && "border-dashed border-2",
+				]}
+			>
+				<p class="mb-2 text-center text-xs text-gray-600 dark:text-gray-400">Advertisements</p>
+				{isTest && <p class="mb-2 text-center text-xs text-red-600">DEV ONLY: ad slot ({slotId}, auto)</p>}
+				<ins
+					class="adsbygoogle"
+					style="display:block; min-height:100px"
+					data-ad-client="ca-pub-7617483459228974"
+					data-ad-slot={slotId}
+					data-ad-format="auto"
+					data-full-width-responsive="true"
+					data-adtest={isTest ? "on" : undefined}
+				/>
+			</aside>
+			<script is:inline>
+				window.adsbygoogle = window.adsbygoogle || [];
+				window.adsbygoogle.push({});
+			</script>
+			{isTest && (
+				<script is:inline>
+					window.addEventListener("load", function () {
+						setTimeout(function () {
+							document.querySelectorAll("ins.adsbygoogle").forEach(function (el) {
+								console.log("[adsense-test] data-ad-status:", el.getAttribute("data-ad-status") || "none");
+							});
+						}, 2000);
+					});
+				</script>
+			)}
+		</>
+	)
+}

@@ -86,7 +86,7 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 |---|---|---|
 | `src/pages/{posts/index,posts/[slug],[slug],category/[slug],tag/[slug]}.astro` | Deleted | Starter SSR pages; with `not_found_handling: "404-page"` and `run_worker_first: ["/_emdash/*"]` they would 404 in production. Replaced by PORT-2/3 prerendered routes |
 | `src/pages/404.astro` | Prerendered, uses `Global` + Header/Footer | `dist/client/404.html` must exist |
-| `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. Sitemap is a stub (TODO PORT-7) |
+| `src/pages/robots.txt.ts`, `src/pages/sitemap.xml.ts` | Added (prerendered) | Override EmDash's injected SSR routes; production gets allow + Sitemap, others disallow-all. PORT-7: `robots.txt` reads `import.meta.env.PUBLIC_SITE_ENV` (process.env is empty in the prerender workerd, so production built disallow-all) and points to `/sitemap-index.xml`; `sitemap.xml` is an alias of the index |
 | `scripts/check-static-routes.mjs`, `package.json` `build` | Added guard; `build` = guard + `astro build` + `post-build.mjs` | Fail the build if any `src/pages` route is not prerendered |
 | `scripts/post-build.mjs` | `_headers` append is idempotent | Root `deploy:testing:build` runs it a second time |
 | `package.json` | `deploy` = `pnpm build && wrangler deploy -c dist/server/wrangler.json`; added `types` script; devDependency `@types/node` | Legacy root `wrangler.json` hijack; tsconfig `types: ["node"]` needs it |
@@ -129,3 +129,11 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `scripts/admin/{start,lib,check-build-env}.mjs`, `scripts/admin/*.test.ts` | Added | `pnpm admin:<env>` launcher with DB probe; build guard; tests |
 | `vitest.config.ts` | `include` also `scripts/admin/*.test.ts` | Run the new tests |
 | `src/middleware.ts` | Unchanged (the setup gate is now unreachable on the Worker, kept harmless) | D11 |
+
+## PORT-7 (analytics, ads, RSS, sitemap)
+
+| File | Change | Why |
+|---|---|---|
+| `astro.config.mjs` | `@astrojs/sitemap` integration (legacy filter + `sitemap.xml`); `vite.define` `PUBLIC_SITE_ENV` (from `SITE_ENV ?? CLOUDFLARE_ENV ?? "testing"`) and `PUBLIC_BUILD_SHA` (`GITHUB_SHA`) | One env switch for noindex, analytics and ads; sitemap-index/-0 |
+| `package.json` | Added `mixpanel-browser`, `@astrojs/rss`, `@astrojs/sitemap` | Same ranges as root |
+| `scripts/legacy-data.mjs` | also writes `src/generated/rss-items.json` | RSS parity |

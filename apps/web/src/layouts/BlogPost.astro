@@ -35,7 +35,7 @@ const { id, entryId, title, description, date, category, tags, links, headings, 
 	Astro.props;
 
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
-// Tag on every post (site review needs to see it); ad units only on opted-in posts. PORT-7 owns the real slot.
+// Tag on every post (site review needs to see it); ad units only on opted-in posts.
 const adsenseEnabled = import.meta.env.PUBLIC_ADSENSE_ENABLED === "true";
 const adsenseTest = import.meta.env.DEV || import.meta.env.PUBLIC_ADSENSE_TEST === "true";
 const adsenseSlotId =
@@ -90,7 +90,96 @@ const adsenseSlotId =
 	</MantineMain>
 </Global>
 
-<!-- TODO(PORT-7): port the post_read scroll-depth <script> (needs track() from the analytics port). -->
+<script>
+  // post_read: fires once per depth (25/50/75/100) per page load, measured over the
+  // article wrapper only (not related posts/footer). A passive, rAF-throttled scroll
+  // handler computes how far the viewport bottom has travelled through the wrapper,
+  // so it works for any post length. Short posts (fully visible on load) reach all
+  // thresholds at once; to avoid counting bounces, nothing fires until the tab has been
+  // visible for DWELL_MS (2s), after which pending thresholds fire in order.
+  import { track } from "@/src/analytics";
+  import { newlyReached, readProgress } from "@/src/analytics/read-depth";
+
+  const DWELL_MS = 2000;
+
+  function initPostRead() {
+    const el = document.querySelector<HTMLElement>("[data-post-read]");
+    if (!el || el.dataset.readInit === "1") return;
+    el.dataset.readInit = "1";
+
+    const { slug, category, year, readingTimeMin, tags } = el.dataset;
+    if (!slug || !category) return;
+    let tagList: string[] = [];
+    try {
+      tagList = JSON.parse(tags ?? "[]");
+    } catch {
+      /* ignore */
+    }
+    const minutes = Number(readingTimeMin);
+
+    const fired = new Set<number>();
+    let visibleMs = 0;
+    let visibleSince: number | null = document.visibilityState === "visible" ? performance.now() : null;
+    let raf = 0;
+    let timer = 0;
+
+    const dwellLeft = () =>
+      DWELL_MS - visibleMs - (visibleSince === null ? 0 : performance.now() - visibleSince);
+
+    const check = () => {
+      raf = 0;
+      if (fired.size === 4) return;
+      const left = dwellLeft();
+      if (visibleSince === null) return; // hidden tab: resume on visibilitychange
+      if (left > 0) {
+        clearTimeout(timer);
+        timer = window.setTimeout(schedule, left + 20);
+        return;
+      }
+      const rect = el.getBoundingClientRect();
+      const progress = readProgress(rect.top, rect.height, window.innerHeight);
+      for (const depth of newlyReached(progress, fired, rect.height)) {
+        fired.add(depth);
+        track("post_read", {
+          slug,
+          category,
+          year: year ?? "",
+          depth,
+          ...(Number.isFinite(minutes) ? { reading_time_min: minutes } : {}),
+          ...(tagList.length ? { tags: tagList } : {}),
+        });
+      }
+      if (fired.size === 4) cleanup();
+    };
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        visibleSince = performance.now();
+        schedule();
+      } else if (visibleSince !== null) {
+        visibleMs += performance.now() - visibleSince;
+        visibleSince = null;
+      }
+    };
+    function cleanup() {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("visibilitychange", onVisibility);
+      clearTimeout(timer);
+    }
+
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+    schedule();
+  }
+
+  // Idempotent: guarded by data-read-init on the element, so firing both is safe.
+  initPostRead();
+  document.addEventListener("astro:page-load", initPostRead);
+</script>
 
 <style is:global>
 	.description-image {
