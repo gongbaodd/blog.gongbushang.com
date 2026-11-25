@@ -38,3 +38,11 @@ Notes:
 - Before (feat/emdash build): `docs/plan/emdash/reports/PORT-9/post-before.png`
 - After: `docs/plan/emdash/reports/PORT-9/post-after.png`
 - Legacy build for reference: `docs/plan/emdash/reports/PORT-9/post-legacy.png`
+
+## Review fixes
+
+- `src/analytics/index.ts`: the returning-visitor page view now fires whenever the stored consent is `granted` after the Mixpanel flag sync. Before, it was gated on `mpOptedIn` read before the sync, so a visitor whose Mixpanel flag had been cleared got no `$mp_web_page_view`.
+- `optIn()` skips `opt_in_tracking` and `track_pageview` when Mixpanel already reports opted in. A repeat click on `/privacy/` and a click before init (init already synced and sent the page view) no longer send a second `$opt_in` or page view.
+- Tests (`src/analytics/index.test.ts`): the Mixpanel mock is now stateful, like the real flag. New cases: granted + no Mixpanel flag, already opted in (re-click), click before init.
+- `scripts/e2e.mjs` builds into `apps/web/dist-e2e` (gitignored) through `ASTRO_OUT_DIR`, which `astro.config.mjs`, `post-build.mjs` and `generate-pdfs.mjs` honour (default `dist`). The fake-token, no-PDF build never touches `apps/web/dist`; the real `dist` keeps its 18 PDFs.
+- Verified: `test:e2e` 14 scenarios passed; `test:e2e:analytics-on` 2 scenarios passed; `e2e.mjs --hydration` clean; analytics unit tests 15 passed; `astro check` 0 errors.
