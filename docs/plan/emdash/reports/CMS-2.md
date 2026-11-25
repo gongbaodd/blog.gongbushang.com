@@ -11,6 +11,11 @@ Review verdict was approve with fixes; all applied.
 3. **`sign.ts` `parseMediaId`:** an unprefixed id's last-segment dot is only treated as an extension when it is in the `MIME` table; otherwise the id is a legacy image public_id (`growgen/v1.2/cover`, `a.b`). `resolveMediaKind` in `provider.ts` got the same rule for extensions taken from the public_id.
 4. **Knowledge note** added to `docs/plan/emdash/knowledge.md`: Admin API calls on every list/get against the 500 per hour Free limit, video derived-transcode credit cost, the EmDash embed/thumbnail contract, and the dot-in-public_id rule.
 
+## Review fixes, round 2 (branch `fix/CMS-2`)
+
+- `list()` now returns `previewUrl: undefined` for raw files and audio (it used the file URL, so the admin's `<img>` downloaded the whole file); images and video posters are unchanged.
+- `RAW_FILE_COMPONENT_PACKAGE` and `RAW_FILE_COMPONENT_EXPORT` are exported constants with a TODO for whichever story renders Portable Text media.
+
 ## Verification (CMS-2 + latest feat/emdash)
 
 - `apps/web` vitest for `src/lib/cloudinary-media`: 20 passed. Full `apps/web` vitest: 289 passed, 2 failed in `route-parity.test.ts`, both because the build used `SKIP_PDFS=1` (18 resume PDFs absent); unrelated to this story.

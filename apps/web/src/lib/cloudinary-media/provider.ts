@@ -279,7 +279,10 @@ function resolveMediaKind(input: {
 }
 
 /** Component package named in raw-file embeds (EmDash has no file embed type; see the CMS-2 knowledge note). */
+// TODO(portable-text media story): nothing renders this embed yet. Whichever story renders Portable Text media must provide
+// this package/export (a plain link from `props.href`) or map these names to a local component.
 export const RAW_FILE_COMPONENT_PACKAGE = "@growgen/file-link";
+export const RAW_FILE_COMPONENT_EXPORT = "FileLink";
 
 /** Generic document icon for raw (pdf/zip/...) items: a data URI, so no request and no Cloudinary credit. */
 export const RAW_FILE_THUMBNAIL =
@@ -333,7 +336,7 @@ export function createCloudinaryProvider(
         ? deliveryUrl(cloudName, r.public_id, { resourceType: "image", width: 400 })
         : resourceType === "video" && !isAudio
           ? videoPosterUrl(cloudName, r.public_id, { width: 400 })
-          : url;
+          : undefined; // raw files and audio have no image rendition: an <img> would download the whole file
 
     return {
       id: encodeMediaId(resourceType, r.public_id),
@@ -547,7 +550,7 @@ export function createCloudinaryProvider(
         return {
           type: "component" as const,
           package: RAW_FILE_COMPONENT_PACKAGE,
-          export: "FileLink",
+          export: RAW_FILE_COMPONENT_EXPORT,
           props: {
             href: deliveryUrl(cloudName, resolved.publicId, { resourceType: "raw" }),
             filename: value.filename ?? resolved.publicId.split("/").pop(),

@@ -350,13 +350,13 @@ describe("provider", () => {
       id: "raw:growgen/paper.pdf",
       filename: "paper.pdf",
       mimeType: "application/pdf",
-      previewUrl: "https://res.cloudinary.com/demo/raw/upload/growgen/paper.pdf",
+      previewUrl: undefined,
     });
     expect(page1.items[3]).toMatchObject({
       id: "video:growgen/ep-1",
       filename: "ep-1.mp3",
       mimeType: "audio/mpeg",
-      previewUrl: "https://res.cloudinary.com/demo/video/upload/growgen/ep-1.mp3",
+      previewUrl: undefined,
     });
     expect(page1.nextCursor).toBeDefined();
 
@@ -526,7 +526,7 @@ describe("provider", () => {
       id: "video:growgen/sound",
       filename: "sound.wav",
       mimeType: "audio/wav",
-      previewUrl: "https://res.cloudinary.com/demo/video/upload/growgen/sound.wav",
+      previewUrl: undefined,
       meta: { resourceType: "video", publicId: "growgen/sound", isAudio: true },
     });
     await p.delete!(aud.id);
@@ -541,7 +541,7 @@ describe("provider", () => {
       id: "raw:growgen/data.json",
       filename: "data.json",
       mimeType: "application/json",
-      previewUrl: "https://res.cloudinary.com/demo/raw/upload/growgen/data.json",
+      previewUrl: undefined,
       meta: { resourceType: "raw", publicId: "growgen/data.json" },
     });
     await p.delete!(raw.id);
