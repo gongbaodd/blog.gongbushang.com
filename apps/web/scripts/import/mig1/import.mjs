@@ -52,6 +52,7 @@ const URL_BASE = (opt("--url", process.env.EMDASH_URL ?? "http://localhost:4332"
 const LIMIT = opt("--limit") ? Number(opt("--limit")) : Infinity;
 const DRY = flag("--dry-run");
 const MATCH = opt("--match", ""); // substring of legacy_id, for targeted tests
+const MATCH_EXACT = flag("--match-exact"); // opt-in: legacy_id must equal --match
 const FORCE = flag("--force"); // overwrite entries edited in the admin since our last import
 const REWRITE = opt("--rewrite", "none");
 const CONCURRENCY = Math.max(1, Math.min(4, Number(opt("--concurrency", "4"))));
@@ -483,7 +484,7 @@ async function main() {
   // MIG-1c: one label per tag term (see tagLabelMap). Posts keep their slugs; only labels change.
   const tagLabels = tagLabelMap(yamlPosts);
   for (const p of yamlPosts) p.terms.tag = p.terms.tag.map((t) => ({ slug: t.slug, label: tagLabels.get(t.slug) ?? t.label }));
-  const matched = MATCH ? yamlPosts.filter((p) => p.legacyId.includes(MATCH)) : yamlPosts;
+  const matched = MATCH ? yamlPosts.filter((p) => (MATCH_EXACT ? p.legacyId === MATCH : p.legacyId.includes(MATCH))) : yamlPosts;
   const posts = matched.slice(0, LIMIT === Infinity ? undefined : LIMIT);
 
   // Counts of anomalies and cover states across ALL 995 posts (for the report), then the selected subset.

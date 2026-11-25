@@ -33,8 +33,20 @@ const URL_ = opt("--url", process.env.EMDASH_URL);
 const WRITE = flag("--write");
 const DRY = flag("--dry-run") || !WRITE;
 
-const base = git(REPO, "rev-parse", "HEAD:src/content");
-const target = git(REPO, "rev-parse", `${REF}:src/content`);
+const BUMP = flag("--bump");
+if (BUMP && !WRITE) {
+  console.error("--bump needs --write (it only runs after a successful import)");
+  process.exit(2);
+}
+const REAL_WRITE = WRITE && !flag("--dry-run");
+let base, target;
+try {
+  base = git(REPO, "rev-parse", "HEAD:src/content");
+  target = git(REPO, "rev-parse", `${REF}:src/content`);
+} catch {
+  console.error(`cannot resolve ${REF}:src/content (bad --ref? try git fetch)`);
+  process.exit(1);
+}
 console.log(`ref ${REF}\nbase   ${base}\ntarget ${target}`);
 
 let rows = [];
@@ -49,12 +61,13 @@ const show = (label, list) => {
 show("added", c.added);
 show("modified", c.modified);
 show("renamed", c.renamed);
+for (const r of c.renamed) console.warn(`WARN renamed: old legacy id ${legacyIdOf(r.from)} stays in EmDash as an orphan (report only, delete in the admin if wanted)`);
 show("deleted (report only, never removed from EmDash)", c.deleted);
 
 const paths = importable(c);
 if (!paths.length) {
   console.log("nothing to import");
-  if (flag("--bump") && base !== target) bump();
+  if (BUMP && REAL_WRITE && base !== target) bump();
   process.exit(0);
 }
 
@@ -77,7 +90,6 @@ function bump() {
 console.log(`\nplan: import ${paths.length} post(s): ${paths.map(legacyIdOf).join(", ")}`);
 if (DRY) {
   console.log("dry run: nothing written. Add --write --url <admin> to import.");
-  if (flag("--bump")) bump();
   process.exit(0);
 }
 if (!URL_) {
@@ -96,16 +108,15 @@ try {
     console.log(`\n== ${id}`);
     const r = spawnSync(
       process.execPath,
-      [importer, "--url", URL_, "--source", join(tmp, "_docs"), "--match", id, ...(flag("--dry-run") ? ["--dry-run"] : []), ...(flag("--force") ? ["--force"] : [])],
+      [importer, "--url", URL_, "--source", join(tmp, "_docs"), "--match", id, "--match-exact", ...(flag("--dry-run") ? ["--dry-run"] : []), ...(flag("--force") ? ["--force"] : [])],
       { stdio: "inherit" },
     );
     if (r.status !== 0) failed++;
   }
   if (failed) {
     console.error(`${failed} import(s) failed`);
-    process.exit(1);
-  }
+    process.exitCode = 1;
+  } else if (BUMP && REAL_WRITE) bump();
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }
-if (flag("--bump")) bump();

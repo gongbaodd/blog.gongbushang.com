@@ -43,3 +43,10 @@ describe("image guard", () => {
     expect(imageRefs("[l](https://example.com)\n![i](https://res.cloudinary.com/x.png)")).toEqual(["https://res.cloudinary.com/x.png"]);
   });
 });
+
+describe("renames", () => {
+  it("rename old id is derivable for the orphan warning", () => {
+    const [r] = parseNameStatus("R100\t_docs/2021/01/01/old.md\t_docs/2021/01/02/new.md");
+    expect(legacyIdOf(r.from)).toBe("2021/01/01/old");
+  });
+});
