@@ -67,11 +67,27 @@ export function isInfraPath(p: string): boolean {
 const POST_RE = /^\/[^/]+\/(\d{4})\/(\d{2})\/(\d{2})\/[^/]+\/$/;
 const POST_API_RE = /^\/api\/(?:cards|relates)\/(\d{4})\/(\d{2})\/(\d{2})\/[^/]+\.json$/;
 
-/** `YYYYMMDD` of a post-shaped path (post page or its `/api/cards|relates` file), else null. */
-export function postDateKey(p: string): string | null {
+/**
+ * `YYYYMMDD` of a post-shaped path (post page or its `/api/cards|relates` file), else null. With `categories`
+ * (the first path segments legacy posts live under) a post page only counts when its category is known, so
+ * `/admin/2099/12/31/leak/` is not mistaken for a post.
+ */
+export function postDateKey(p: string, categories?: ReadonlySet<string>): string | null {
 	const n = normalizePath(p);
-	const m = POST_RE.exec(n) ?? POST_API_RE.exec(n);
-	return m ? m[1] + m[2] + m[3] : null;
+	const page = POST_RE.exec(n);
+	if (page) return !categories || categories.has(n.split("/")[1]) ? page[1] + page[2] + page[3] : null;
+	const api = POST_API_RE.exec(n);
+	return api ? api[1] + api[2] + api[3] : null;
+}
+
+/** First path segments (categories) of the post pages in a legacy URL list. */
+export function legacyCategories(legacy: Iterable<string>): Set<string> {
+	const out = new Set<string>();
+	for (const p of legacy) {
+		const n = normalizePath(p);
+		if (POST_RE.test(n)) out.add(n.split("/")[1]);
+	}
+	return out;
 }
 
 /** Latest post-page date (`YYYYMMDD`) among the legacy URLs: the legacy snapshot's "now". */

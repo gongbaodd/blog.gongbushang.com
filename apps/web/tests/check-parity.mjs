@@ -22,9 +22,11 @@ Options:
   --groups-file <path>         Override legacy-route-groups.json path
   --urls-file <path>           Override legacy-urls.txt path
   --limit <n>                  Max missing/extra paths shown in summary (default: 20)
-  --fail-on-extra              Also fail if unexpected extra paths are present. Infra files (/.assetsignore,
-                               /_headers, /sitemap.xml, /_astro/*...) and post-shaped paths of posts dated after
-                               the newest legacy post (new posts + their /api/cards|relates files) never count.
+  --fail-on-extra              Also fail if unexpected extra paths are present. LOCAL / CUTOVER
+                               check only, not a CI gate: content in the mutable testing DB (a post with a new tag,
+                               the first post of a new year, a new series or city) legitimately adds pages. Infra files (/.assetsignore,
+                               /_headers, /sitemap.xml, /_astro/*...) and post-shaped paths (known legacy category, or
+                               /api/cards|relates) of posts dated on/after the newest legacy post (new posts + their /api/cards|relates files) never count.
   --allow-extra <pattern>      Path, glob or file of patterns allowed to exist outside the legacy list (repeatable)
   --json                       Print JSON report to stdout
   -h, --help                   Show this help message and exit 0

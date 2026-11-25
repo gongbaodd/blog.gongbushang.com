@@ -13,3 +13,10 @@ Branch `fix/QA-1` (from `emdash/QA-1-url-parity` + `feat/emdash`, because the st
 ## Verification
 - `pnpm --filter web exec vitest run`: 23 files, 177 tests pass (one earlier run under heavy machine load had 2 transient failures; rerun twice clean).
 - Full build (`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=... pnpm --filter web build`) then `pnpm --filter web parity --fail-on-extra --allow-extra tests/parity-allow-extra.txt`: PASS.
+
+## Re-review fixes (second round)
+- Merged the current `feat/emdash` (conflicts resolved: vitest config from feat, `route-parity.test.ts` from QA-1, both package.json script blocks).
+- CI determinism: `web-ci.yml` now runs `pnpm --filter web parity` WITHOUT `--fail-on-extra`. The testing DB is mutable (a post with a new tag, the first post of a new year, a new series or city add pages), so extras would fail unrelated PRs. Missing legacy URLs remain the CI gate; `--fail-on-extra --allow-extra tests/parity-allow-extra.txt` is a local/cutover check (documented in `--help`).
+- The new-post exemption now requires a category segment that exists in the legacy post URLs (`/admin/2099/12/31/leak/` is an extra), and posts dated on or after the newest legacy post count as new (same-day posts). Test added.
+- `pnpm --filter web fmt` run; `fmt:check` clean.
+- Checks: apps/web vitest 31 files / 347 tests pass; parity (with and without `--fail-on-extra`) PASS; actionlint clean; apps/web typecheck 0 errors.

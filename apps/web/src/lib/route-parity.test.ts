@@ -8,7 +8,21 @@ import { DIST_CLIENT } from "../../tests/built-paths";
 import { runParityCheck } from "../../tests/parity";
 
 /** Groups owned by landed stories. Add a group here when its story merges. */
-const DONE = ["post", "category", "tag", "series", "year", "world", "api/*", "podcast", "resume", "static", "gallery", "other", "rss/sitemap"] as const;
+const DONE = [
+  "post",
+  "category",
+  "tag",
+  "series",
+  "year",
+  "world",
+  "api/*",
+  "podcast",
+  "resume",
+  "static",
+  "gallery",
+  "other",
+  "rss/sitemap",
+] as const;
 
 /** Paths of a DONE group that a later story owns (kept visible here so they are not forgotten). */
 const OWNED_LATER: Record<string, string[]> = {};
@@ -16,18 +30,33 @@ const OWNED_LATER: Record<string, string[]> = {};
 const hasBuild = existsSync(DIST_CLIENT);
 
 describe.skipIf(!hasBuild)("built paths contain every legacy path", () => {
-	for (const name of DONE) {
-		test(`${name}: 0 missing`, () => {
-			const report = runParityCheck({ dir: DIST_CLIENT, groups: [name], allowMissing: OWNED_LATER[name] ?? [] });
-			const missing = report.groups.flatMap((g) => g.missing);
-			if (missing.length) console.warn(`[route-parity] ${name}: ${missing.length} missing, e.g. ${missing.slice(0, 5).join(" ")}`);
-			expect(missing).toEqual([]);
-		});
-	}
+  for (const name of DONE) {
+    test(`${name}: 0 missing`, () => {
+      const report = runParityCheck({
+        dir: DIST_CLIENT,
+        groups: [name],
+        allowMissing: OWNED_LATER[name] ?? [],
+      });
+      const missing = report.groups.flatMap((g) => g.missing);
+      if (missing.length)
+        console.warn(
+          `[route-parity] ${name}: ${missing.length} missing, e.g. ${missing.slice(0, 5).join(" ")}`,
+        );
+      expect(missing).toEqual([]);
+    });
+  }
 
-	test("no built page or file is outside the legacy URL list (infra files and new posts excepted)", () => {
-		const report = runParityCheck({ dir: DIST_CLIENT, all: true, failOnExtra: true, allowExtra: [fileURLToPath(new URL("../../tests/parity-allow-extra.txt", import.meta.url))] });
-		if (report.extraPaths.length) console.warn(`[route-parity] ${report.extraPaths.length} built paths not in legacy-urls.txt, e.g. ${report.extraPaths.slice(0, 5).join(" ")}`);
-		expect(report.extraPaths).toEqual([]);
-	});
+  test("no built page or file is outside the legacy URL list (infra files and new posts excepted)", () => {
+    const report = runParityCheck({
+      dir: DIST_CLIENT,
+      all: true,
+      failOnExtra: true,
+      allowExtra: [fileURLToPath(new URL("../../tests/parity-allow-extra.txt", import.meta.url))],
+    });
+    if (report.extraPaths.length)
+      console.warn(
+        `[route-parity] ${report.extraPaths.length} built paths not in legacy-urls.txt, e.g. ${report.extraPaths.slice(0, 5).join(" ")}`,
+      );
+    expect(report.extraPaths).toEqual([]);
+  });
 });

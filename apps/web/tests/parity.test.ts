@@ -264,6 +264,21 @@ describe("runParityCheck", () => {
 		expect(allowed.ok).toBe(true);
 	});
 
+	test("new-post exemption needs a real legacy category: /admin/2099/12/31/leak/ is an extra; same-day new posts are new", () => {
+		const root = makeTempDir();
+		const { groupsFile, urlsFile } = writeSnapshotFixture(root, { post: ["/fe/2026/11/19/old/"], static: ["/"] });
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, {
+			"index.html": "home",
+			"fe/2026/11/19/old/index.html": "old",
+			"fe/2026/11/19/same-day-new/index.html": "new",
+			"admin/2099/12/31/leak/index.html": "leak",
+		});
+		const report = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile });
+		expect(report.newPostPaths).toEqual(["/fe/2026/11/19/same-day-new/"]);
+		expect(report.extraPaths).toEqual(["/admin/2099/12/31/leak/"]);
+	});
+
 	test("an HTML page in an unexpected form is both missing and extra (/about.html does not satisfy /about/)", () => {
 		const root = makeTempDir();
 		const { groupsFile, urlsFile } = writeSnapshotFixture(root, { static: ["/", "/about/"] });

@@ -10,6 +10,7 @@ import {
 	loadGroups,
 	isInfraPath,
 	latestLegacyPostDate,
+	legacyCategories,
 	loadLegacyUrls,
 	normalizePath,
 	postDateKey,
@@ -239,13 +240,14 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 	// Extras: built paths that are not legacy URLs. Infra files are always ignored; paths of posts newer
 	// than the legacy snapshot are "new posts" (reported, never failing); `--allow-extra` covers the rest.
 	const legacyLatestPostDate = latestLegacyPostDate(allLegacy);
+	const categories = legacyCategories(allLegacy);
 	const { extra: rawExtra } = diffGroup([], built, allLegacy);
 	const extraPaths: string[] = [];
 	const allowedExtraPaths: string[] = [];
 	const newPostPaths: string[] = [];
 	for (const p of rawExtra) {
-		const key = postDateKey(p);
-		if (key && key > legacyLatestPostDate) newPostPaths.push(p);
+		const key = postDateKey(p, categories);
+		if (key && key >= legacyLatestPostDate) newPostPaths.push(p);
 		else if (isAllowedExtra(p) || isInfraPath(p)) allowedExtraPaths.push(p);
 		else extraPaths.push(p);
 	}
