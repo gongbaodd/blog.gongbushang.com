@@ -1,6 +1,6 @@
 # Derived data runbook (PORT-8, D10/D13)
 
-> **Planned update (`PORT-8b`, 2026-11-25):** Embeddings will move from local LM Studio / Python `uv` to **Cloudflare Workers AI `@cf/qwen/qwen3-embedding-0.6b`** (REST API, free daily Neurons, one-time chunked backfill so CI embeds new posts automatically); cover colour extraction will move out to a standalone single Cloudflare Worker (**`apps/colorize`**, reading tiny Cloudinary thumbnails without `sharp`/`potrace`); and **SVG traces** (`potrace`, Sobel, Python `depth-estimation`) will be removed (`ParticleHero` falls back to `colorSet.bgColor` / Cloudinary blurred LQIP).
+> **Planned update (`PORT-8b`, 2026-11-25):** Embeddings will move from local LM Studio / Python `uv` to **Cloudflare Workers AI `@cf/qwen/qwen3-embedding-0.6b`** (REST API, free daily Neurons, one-time chunked backfill so CI embeds new posts automatically); cover colours stay a Node build step (legacy `getColorSet` in derive — the `apps/colorize` Worker was dropped 2026-11-25 because Cloudinary downscaling cannot reproduce legacy colours); and **SVG traces** (`potrace`, Sobel, Python `depth-estimation`) will be removed (`ParticleHero` falls back to `colorSet.bgColor` / Cloudinary blurred LQIP).
 
 Everything the site shows that is not stored in EmDash but can be computed from it is derived **at build time** by `apps/web/scripts/derive/` (first step of `pnpm --filter web build`). Nothing generated is committed. The deployed Worker only serves static files.
 
