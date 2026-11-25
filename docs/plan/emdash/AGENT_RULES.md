@@ -1,6 +1,6 @@
 # Agent rules: EmDash migration
 
-Every agent on the migration reads this file first. The plan and story backlog live in Linear: project [EmDash Migration (`P-GON-6`)](https://linear.app/gongbaodd/project/emdash-migration-fc8994e42e5e) and document [EmDash Migration Plan (v3)](https://linear.app/gongbaodd/document/emdash-migration-plan-v3-732d5d1b3cf3) (stub & story ID index in `docs/plan/emdash-migration-plan.md`). Decisions D1–D13 and the free-tier budget are binding. To change one, raise it with Lead; don't work around it.
+Every agent on the migration reads this file first. The plan and story backlog live in Linear: project [Blog (`P-GON-6`)](https://linear.app/gongbaodd/project/blog-fc8994e42e5e) and document [EmDash Migration Plan (v3)](https://linear.app/gongbaodd/document/emdash-migration-plan-v3-732d5d1b3cf3) (stub & story ID index in `docs/plan/emdash-migration-plan.md`). Decisions D1–D13 and the free-tier budget are binding. To change one, raise it with Lead; don't work around it.
 
 ## Hard rules
 1. **Wheel first.** Before writing code for a story, read the Scout note `docs/plan/emdash/scout/<story-id>.md`. If it says an existing package, CLI command or plugin covers the need, use it. Custom code is glue only.
@@ -26,7 +26,7 @@ Conventional commits (`feat(web): …`, `chore(infra): …`), ending with:
 ## Where things live
 | What | Path |
 |---|---|
-| Plan & backlog | Linear project [`P-GON-6`](https://linear.app/gongbaodd/project/emdash-migration-fc8994e42e5e) (index in `docs/plan/emdash-migration-plan.md`) |
+| Plan & backlog | Linear project [Blog (`P-GON-6`)](https://linear.app/gongbaodd/project/blog-fc8994e42e5e) (index in `docs/plan/emdash-migration-plan.md`) |
 | New public site | `apps/web/` |
 | Dockerized Node admin (INF-9) | `apps/admin/` |
 | Cover color Worker (PORT-8b) | `apps/colorize/` |

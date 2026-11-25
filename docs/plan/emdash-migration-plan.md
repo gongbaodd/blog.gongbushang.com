@@ -2,7 +2,7 @@
 
 > **Moved to Linear on 2026-11-25.** Linear is now the source of truth for the migration plan, decisions, milestones, and story tracking.
 
-- **Linear Project:** [EmDash Migration (`P-GON-6`)](https://linear.app/gongbaodd/project/emdash-migration-fc8994e42e5e)
+- **Linear Project:** [Blog (`P-GON-6`)](https://linear.app/gongbaodd/project/blog-fc8994e42e5e)
 - **Full Plan Document (v3):** [EmDash Migration Plan (v3)](https://linear.app/gongbaodd/document/emdash-migration-plan-v3-732d5d1b3cf3)
 - **Team:** `Gongbaodd` (`GON`) · **Integration branch:** `feat/emdash`
 
