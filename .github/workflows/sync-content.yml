@@ -24,6 +24,10 @@ concurrency:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -34,11 +38,19 @@ jobs:
 
       - name: Bump src/content to latest
         id: bump
+        env:
+          INPUT_SHA: ${{ inputs.sha || github.event.client_payload.sha }}
         run: |
+          if [ -n "$INPUT_SHA" ]; then
+            if [[ ! "$INPUT_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+              echo "::error::Invalid sha format"
+              exit 1
+            fi
+            TARGET="$INPUT_SHA"
+          fi
           git submodule update --init src/content
           git -C src/content fetch origin astro
-          TARGET="${{ inputs.sha || github.event.client_payload.sha }}"
-          if [ -z "$TARGET" ]; then
+          if [ -z "${TARGET:-}" ]; then
             TARGET="$(git -C src/content rev-parse origin/astro)"
           fi
           git -C src/content checkout --detach "$TARGET"
@@ -53,8 +65,14 @@ jobs:
 
       - name: Commit and push
         if: steps.bump.outputs.changed == 'true'
+        env:
+          TARGET_SHA: ${{ steps.bump.outputs.target }}
         run: |
+          if [[ ! "$TARGET_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Invalid target sha format"
+            exit 1
+          fi
           git -c user.name="github-actions[bot]" \
               -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-              commit -m "chore: sync src/content to ${{ steps.bump.outputs.target }}"
+              commit -m "chore: sync src/content to $TARGET_SHA"
           git push

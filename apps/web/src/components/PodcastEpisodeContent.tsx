@@ -1,14 +1,4 @@
-import {
-  Anchor,
-  Avatar,
-  Badge,
-  Button,
-  Divider,
-  Group,
-  Paper,
-  Stack,
-  Text,
-} from "@mantine/core";
+import { Anchor, Avatar, Badge, Button, Divider, Group, Paper, Stack, Text } from "@mantine/core";
 import { Calendar, Clock, ExternalLink } from "lucide-react";
 import dayjs from "dayjs";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
@@ -85,9 +75,7 @@ export default function PodcastEpisodeContent({
           <Divider />
           <Stack className={"prose lg:prose-xl " + classes.content}>
             {image && <img src={image} alt={title} />}
-            {description && (
-              <p style={{ whiteSpace: "pre-wrap" }}>{description}</p>
-            )}
+            {description && <p style={{ whiteSpace: "pre-wrap" }}>{description}</p>}
           </Stack>
           {link && (
             <Button
@@ -98,7 +86,9 @@ export default function PodcastEpisodeContent({
               color="green"
               radius="xl"
               size="md"
-              onClick={() => track("podcast_listen_clicked", { episode: title, provider: hostOf(link) })}
+              onClick={() =>
+                track("podcast_listen_clicked", { episode: title, provider: hostOf(link) })
+              }
               rightSection={<ExternalLink size={16} />}
               style={{ alignSelf: "flex-start" }}
             >
