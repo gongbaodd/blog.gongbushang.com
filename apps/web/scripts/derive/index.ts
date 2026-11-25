@@ -5,12 +5,18 @@
 //                                           cover colours (derived.cover_colors), geocodes (derived.geocodes)
 //                                       ->  src/generated/*.json + public/api/posts/*.json (same shapes as before)
 // Podcast and gallery data still come from the content submodule (LEGACY_GENERATED_DIR) until MIG-3.
-// Nothing generated is committed. Runs on the owner's Mac today (embeddings need LM Studio) and in GitHub Actions later
-// (cache hits only; new posts without embeddings are left out of related posts and /umap, D10).
+// Nothing generated is committed. Runs locally or in GitHub Actions: uses Cloudflare Workers AI when configured,
+// falls back to local LM Studio if running, or cache hits only (new posts without embeddings are left out of
+// related posts and /umap, D10).
 //
 // Env: CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE | DERIVE_DATABASE_URL  database (read-only for content)
 //      LEGACY_GENERATED_DIR   podcast/gallery source (default ../../src/content/generated)
 //      DERIVE_EMBED           auto (default) | require | skip | fake (tests only)
+//      DERIVE_EMBED_PROVIDER  auto (default: workers-ai if configured, else local) | workers-ai | local
+//      DERIVE_EMBED_MODEL     override embedding model key (default @cf/qwen/qwen3-embedding-0.6b for workers-ai)
+//      DERIVE_EMBED_MAX       positive integer cap on stale posts embedded per run (chunked backfill within daily quotas)
+//      CF_ACCOUNT_ID | CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID for Workers AI embeddings
+//      CF_AI_TOKEN | CLOUDFLARE_AI_API_TOKEN | CLOUDFLARE_API_TOKEN  Cloudflare API token for Workers AI embeddings
 //      DERIVE_SKIP_COLORS=1   do not extract cover colours (cache hits only)
 //      DERIVE_PARITY_LEGACY=1 only posts the legacy metadata knows (the 3 .mdx posts were never indexed); for parity comparisons
 //      DERIVE_SCHEMA          cache schema name (default derived)
@@ -70,7 +76,7 @@ try {
 	const mode = (process.env.DERIVE_EMBED || "auto") as "auto" | "require" | "skip" | "fake";
 	const emb = await embedPosts(client, posts, mode);
 	const pruned = await pruneEmbeddings(client, posts.map((p) => p.legacyId));
-	console.log(`[derive] embeddings: ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${pruned} pruned (${lap(t)})`);
+	console.log(`[derive] embeddings (${emb.provider}, ${emb.model}): ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${pruned} pruned (${lap(t)})`);
 
 	t = Date.now();
 	const extras = readExtras(dir);
