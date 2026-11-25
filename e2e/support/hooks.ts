@@ -22,6 +22,8 @@ let browser: Browser | null = null;
 
 BeforeAll(async function () {
   browser = await chromium.launch({
+    // Optional: use an installed browser (E2E_CHROME_CHANNEL=chrome) when the bundled Chromium is missing.
+    ...(process.env.E2E_CHROME_CHANNEL ? { channel: process.env.E2E_CHROME_CHANNEL } : {}),
     headless: process.env.E2E_HEADED !== "1",
   });
 });

@@ -8,10 +8,15 @@ import { getAllEntries, toClient, type ListEntry } from "../../../lib/listing";
 export const prerender = true;
 
 const hasUmap = (e: ListEntry) =>
-	e.data.category === "podcast" ? !!legacy.podcast.find((p) => p.id === e.id)?.umap2D : !!postRecord(e.id)?.umap2D;
+  e.data.category === "podcast"
+    ? !!legacy.podcast.find((p) => p.id === e.id)?.umap2D
+    : !!postRecord(e.id)?.umap2D;
 
 export async function getStaticPaths() {
-	return (await getAllEntries()).filter(hasUmap).map((e) => ({ params: { id: e.id }, props: { entry: e } }));
+  return (await getAllEntries())
+    .filter(hasUmap)
+    .map((e) => ({ params: { id: e.id }, props: { entry: e } }));
 }
 
-export const GET: APIRoute<{ entry: ListEntry }> = async ({ props }) => json({ post: await toClient(props.entry) });
+export const GET: APIRoute<{ entry: ListEntry }> = async ({ props }) =>
+  json({ post: await toClient(props.entry) });

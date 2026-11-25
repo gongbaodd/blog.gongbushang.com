@@ -6,8 +6,8 @@ import { localParts } from "../../../lib/listing-core";
 export const prerender = true;
 
 export const GET: APIRoute = async () =>
-	json({
-		heatData: await getHeatmapData(),
-		countsMap: await getCounts(),
-		currentYear: String(localParts(new Date()).year),
-	});
+  json({
+    heatData: await getHeatmapData(),
+    countsMap: await getCounts(),
+    currentYear: String(localParts(new Date()).year),
+  });

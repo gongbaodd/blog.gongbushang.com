@@ -137,6 +137,40 @@ describe("analytics", () => {
     expect(mp.opt_in_tracking).toHaveBeenCalled();
   });
 
+  it("applies a stored 'denied' to a leftover mixpanel opt-in before anything is sent", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    // Earlier "Allow", then "No thanks" whose opt_out call never ran: mixpanel's flag still says in.
+    store.set("growgen_analytics_consent", "denied");
+    mp.has_opted_in_tracking.mockReturnValue(true);
+    const a = await load();
+    await a.initAnalytics();
+    expect(mp.init.mock.calls[0][1]).toMatchObject({ track_pageview: false });
+    expect(mp.opt_out_tracking).toHaveBeenCalledWith({ delete_user: false });
+    expect(mp.opt_in_tracking).not.toHaveBeenCalled();
+    expect(mp.track_pageview).not.toHaveBeenCalled();
+    mp.has_opted_in_tracking.mockReturnValue(false);
+  });
+
+  it("treats an unanswered visitor with a leftover mixpanel opt-in as opted out", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    mp.has_opted_in_tracking.mockReturnValue(true);
+    const a = await load();
+    await a.initAnalytics();
+    expect(mp.opt_out_tracking).toHaveBeenCalledWith({ delete_user: false });
+    mp.has_opted_in_tracking.mockReturnValue(false);
+  });
+
+  it("records the page view of a returning, already-opted-in visitor", async () => {
+    vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
+    store.set("growgen_analytics_consent", "granted");
+    mp.has_opted_in_tracking.mockReturnValue(true);
+    const a = await load();
+    await a.initAnalytics();
+    expect(mp.opt_in_tracking).not.toHaveBeenCalled();
+    expect(mp.track_pageview).toHaveBeenCalledTimes(1);
+    mp.has_opted_in_tracking.mockReturnValue(false);
+  });
+
   it("trims and truncates query", async () => {
     vi.stubEnv("PUBLIC_MIXPANEL_TOKEN", "tok");
     const a = await load();
