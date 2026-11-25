@@ -11,7 +11,7 @@ import {
 	normalize,
 	onRequest,
 } from "./middleware.ts";
-import { onRequest as healthzOuterMiddleware } from "./outer.ts";
+import { createOuterMiddleware } from "./outer.ts";
 import { buildHealthzResponse, GET as getHealthz } from "./pages/healthz.ts";
 import {
 	createPlugin,
@@ -268,6 +268,7 @@ describe("/healthz endpoint and outer middleware", () => {
 	});
 
 	it("short-circuits /healthz in outer middleware without calling next()", async () => {
+		const healthzOuterMiddleware = createOuterMiddleware({ getEnv: () => ({}), checkStartup: false });
 		const next = vi.fn(async () => new Response("downstream"));
 		const { context: healthCtx } = createMockContext("http://localhost:4322/healthz");
 		const res = await runMw(healthzOuterMiddleware, healthCtx, next);

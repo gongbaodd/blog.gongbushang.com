@@ -28,6 +28,15 @@ Lockfile: `pnpm install --lockfile-only` gives a minimal diff (`@astrojs/node` 1
 4. `jwtVerify` has `requiredClaims: ["exp"]`; `CF_ACCESS_TEAM_DOMAIN` must be `<team>` or `*.cloudflareaccess.com`.
 5. Optional `DATABASE_CA_CERT` gives verify-full TLS (documented; production should set it).
 
+## Review fixes, round 3 (branch `fix/INF-9`)
+
+1. `sslmode` is stripped from the URL (start.mjs probe and runtime pool use `connectionConfig()`), our computed `ssl` always applies; `disable`, `no-verify`, `allow`, `prefer` are refused for remote DBs.
+2. Any remote database requires `SUPABASE_PRODUCTION_REF`; `SITE_ENV=testing` also requires `SUPABASE_TESTING_REF` and a matching ref. Fail closed.
+3. `evaluateStartup` also runs in the runtime (`runtimeDialectConfig` throws; `outer.ts` answers 503 on errors and turns Access on for a production target), so `node dist/server/entry.mjs` directly is covered. Smoke-tested.
+4. start.mjs no longer clears an operator-set `ADMIN_REQUIRE_ACCESS=1`.
+5. `DATABASE_CA_CERT`: blank is an error, unreadable file and literal-`\n` PEM give clear errors; the runbook recommends a file path.
+6. Runbook notes that `/_astro/*` assets are served without Access.
+
 ## Re-merge of feat/emdash
 
 `feat/emdash` advanced while these fixes were made (SEC-02, SEC-13, SEC-14, INF-6, and the original CMS-2 had already landed there). Re-merged: the only conflict was the root `.dockerignore` (SEC-02 added one too); the resolved file is the union of both (SEC-02's secret/dump rules plus `.github`, `.agents`, `.venv`, `target`, `supabase`, `public`, `.wrangler`, etc.). SEC-13 already restricts `GITHUB_API_URL` to `https://api.github.com` inside `dispatch.ts`, so the admin wrapper's local-only gating is belt and braces. `admin.test.ts` auto-merged: feat/emdash already expects 3 Cloudinary list calls (one per resource type), so the old line 328 expectation needed no further change.

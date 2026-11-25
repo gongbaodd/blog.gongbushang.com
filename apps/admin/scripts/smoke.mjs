@@ -44,9 +44,9 @@ const freePort = () =>
 		});
 	});
 
-async function boot(env) {
+async function boot(env, script = "scripts/start.mjs") {
 	const port = await freePort();
-	const child = spawn("node", ["scripts/start.mjs"], {
+	const child = spawn("node", [script], {
 		cwd: root,
 		env: { PATH: process.env.PATH, NODE_ENV: "production", HOST: "127.0.0.1", PORT: String(port), SESSION_DRIVER: "memory", ...env },
 		stdio: ["ignore", "pipe", "pipe"],
@@ -92,6 +92,7 @@ const probe = async (label, extraEnv, expected) => {
 	srv.child.kill();
 };
 await probe("access enforce, no JWT", { CF_ACCESS_TEAM_DOMAIN: "smoke-team", CF_ACCESS_AUD: "smoke-aud" }, 403);
+await probe("operator ADMIN_REQUIRE_ACCESS=1 kept (HOST=0.0.0.0, no Access config)", { ADMIN_REQUIRE_ACCESS: "1", HOST: "0.0.0.0" }, 503);
 await probe("access misconfigured", { CF_ACCESS_TEAM_DOMAIN: "evil.example.com", CF_ACCESS_AUD: "smoke-aud" }, 503);
 
 const noDb = spawnSync("node", ["scripts/start.mjs"], { cwd: root, env: { PATH: process.env.PATH, SITE_ENV: "local" }, encoding: "utf8" });
@@ -108,5 +109,26 @@ const remoteLocal = run({ SITE_ENV: "local", DATABASE_URL: prodUrl });
 check("SITE_ENV=local with a remote database is refused", remoteLocal.status !== 0 && /remote host/.test(remoteLocal.stderr));
 const badParam = run({ SITE_ENV: "testing", DATABASE_URL: `${prodUrl}?host=evil.example.com` });
 check("unknown URL query params are refused", badParam.status !== 0 && /unsupported query/.test(badParam.stderr));
+
+const bad = (label, r, re) => check(label, r.status !== 0 && re.test(r.stderr), r.stderr.split("\n")[1] ?? "");
+const T = "tttttttttt1234567890";
+const testingUrl = `postgresql://postgres.${T}:pw@aws-0-eu.pooler.supabase.com:5432/postgres`;
+const refs = { SUPABASE_PRODUCTION_REF: REF, SUPABASE_TESTING_REF: T };
+bad("remote sslmode=disable is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: `${testingUrl}?sslmode=disable` }), /sslmode/);
+bad("remote sslmode=no-verify is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: `${testingUrl}?sslmode=no-verify` }), /sslmode/);
+bad("testing + production-ref URL + no refs is refused", run({ SITE_ENV: "testing", DATABASE_URL: prodUrl }), /SUPABASE_PRODUCTION_REF/);
+bad("blank DATABASE_CA_CERT is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: testingUrl, DATABASE_CA_CERT: "  " }), /blank/);
+bad("unreadable DATABASE_CA_CERT file is refused", run({ SITE_ENV: "testing", ...refs, DATABASE_URL: testingUrl, DATABASE_CA_CERT: "/nonexistent/ca.pem" }), /could not be read/);
+
+// dist/server/entry.mjs run directly (no launcher): the runtime rules still apply (pool is lazy, so no DB is contacted).
+const direct = await boot({ SITE_ENV: "testing", DATABASE_URL: prodUrl, HOST: "127.0.0.1" }, "dist/server/entry.mjs");
+check("direct entry.mjs boots", !direct.failed, direct.log().slice(-200));
+if (!direct.failed) {
+	for (const p of GATED) {
+		const r = await fetch(`${direct.base}${p}`, { redirect: "manual" });
+		check(`direct entry.mjs, prod-ref URL under testing label: ${p} -> 503`, r.status === 503, `HTTP ${r.status}`);
+	}
+}
+direct.child.kill();
 
 process.exit(failures.length ? 1 : 0);

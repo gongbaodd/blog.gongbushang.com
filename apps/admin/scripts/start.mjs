@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { evaluateStartup, sslOptionsFor } from "./safety.mjs";
+import { connectionConfig, evaluateStartup } from "./safety.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = resolve(here, "../dist/server/entry.mjs");
@@ -24,11 +24,12 @@ const plan = evaluateStartup(process.env);
 if (plan.errors.length > 0) die(`refusing to start:\n  - ${plan.errors.join("\n  - ")}`);
 if (!existsSync(entry)) die(`${entry} not found: run \`pnpm --filter admin build\` first`);
 // Tell the request-time Access gate that this process targets production even if SITE_ENV says otherwise.
+// An operator-set ADMIN_REQUIRE_ACCESS=1 is kept (OR, never cleared).
 if (plan.requireAccess) process.env.ADMIN_REQUIRE_ACCESS = "1";
-else delete process.env.ADMIN_REQUIRE_ACCESS;
 
 const url = process.env.DATABASE_URL.trim();
-const db = new pg.Client({ connectionString: url, ssl: sslOptionsFor(url), connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
+// sslmode is stripped from the URL and our computed ssl object always applies (pg would otherwise let sslmode override it).
+const db = new pg.Client({ ...connectionConfig(process.env), connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
 try {
 	await db.connect();
 	const r = await db.query(

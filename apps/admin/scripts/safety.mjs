@@ -1,6 +1,7 @@
-// Pure startup safety rules shared by scripts/start.mjs (container/CLI entrypoint) and src/db-config.ts (runtime pool).
+// Pure startup safety rules shared by scripts/start.mjs (container/CLI entrypoint), src/db-config.ts (runtime pool) and
+// src/outer.ts (request-time gate), so protection never depends on which entrypoint launched the server.
 // Plain JS so the production image needs no TypeScript. The project-ref gate mirrors INF-5
-// (apps/web/scripts/sync/lib.mjs: parseProjectRef, disallowedUrlParams); safety.test.ts checks they stay in step.
+// (apps/web/scripts/sync/lib.mjs: parseProjectRef, disallowedUrlParams); access.test.ts checks they stay in step.
 import { readFileSync } from "node:fs";
 
 export const LOOPBACK_DB_HOST_RE = /^(localhost|127\.0\.0\.1|\[?::1\]?|host\.docker\.internal)$/i;
@@ -33,9 +34,25 @@ export function disallowedUrlParams(url) {
 	return undefined;
 }
 
+/** `sslmode` values a remote database may carry; they only say "use TLS" and are stripped (our own ssl object decides). */
+const REMOTE_OK_SSLMODES = new Set(["require", "verify-ca", "verify-full"]);
+
+/** Split the URL into its connection string without `sslmode` and the `sslmode` value (lowercased) if any. */
+export function splitSslMode(url) {
+	try {
+		const u = new URL(url);
+		const mode = u.searchParams.get("sslmode")?.toLowerCase();
+		for (const k of [...u.searchParams.keys()]) if (k.toLowerCase() === "sslmode") u.searchParams.delete(k);
+		return { url: u.toString(), sslmode: mode };
+	} catch {
+		return { url, sslmode: undefined };
+	}
+}
+
 /**
- * pg `ssl` option. Loopback = none. Otherwise TLS: with DATABASE_CA_CERT (PEM text or a file path) the chain and hostname are
+ * pg `ssl` option. Loopback = false. Otherwise TLS: with DATABASE_CA_CERT (PEM text or a file path) the chain and hostname are
  * verified (verify-full); without it the certificate is not verified (Supabase's pooler CA is not in the system store).
+ * Throws an Error with a clear message when DATABASE_CA_CERT is whitespace-only or unreadable.
  */
 export function sslOptionsFor(url, env = process.env) {
 	let host = "";
@@ -45,20 +62,38 @@ export function sslOptionsFor(url, env = process.env) {
 		return { rejectUnauthorized: false };
 	}
 	if (LOOPBACK_DB_HOST_RE.test(host)) return false;
-	const ca = env.DATABASE_CA_CERT?.trim();
-	if (ca) return { ca: ca.includes("-----BEGIN") ? ca : readFileSync(ca, "utf8"), rejectUnauthorized: true };
-	return { rejectUnauthorized: false };
+	const raw = env.DATABASE_CA_CERT;
+	if (raw && !raw.trim()) throw new Error("DATABASE_CA_CERT is set but blank; unset it or give a PEM / file path");
+	const ca = raw?.trim();
+	if (!ca) return { rejectUnauthorized: false };
+	if (ca.includes("-----BEGIN")) return { ca, rejectUnauthorized: true };
+	if (/\\n/.test(ca)) throw new Error("DATABASE_CA_CERT looks like a PEM with literal \\n sequences; use a file path or real newlines");
+	try {
+		return { ca: readFileSync(ca, "utf8"), rejectUnauthorized: true };
+	} catch (e) {
+		throw new Error(`DATABASE_CA_CERT file could not be read (${e?.code ?? "error"}): ${ca}`);
+	}
+}
+
+/**
+ * What the pg client/pool must be given: the URL WITHOUT `sslmode` (pg's parser would otherwise override our `ssl` object:
+ * `disable` -> plaintext, `no-verify` -> no verification, `require`/`verify-full` -> drops the CA) plus the computed `ssl`.
+ */
+export function connectionConfig(env = process.env) {
+	const raw = env.DATABASE_URL?.trim() ?? "";
+	return { connectionString: splitSslMode(raw).url, ssl: sslOptionsFor(raw, env) };
 }
 
 /**
  * Decide whether the admin may start and what protection it needs.
- * Returns { errors: string[], effectiveProduction, requireAccess, host, target }.
+ * Returns { errors: string[], siteEnv, effectiveProduction, requireAccess, host, target }.
+ * An unset HOST is NOT loopback (the adapter may fall back to a build-time host); start.mjs pins it before calling this.
  */
 export function evaluateStartup(env) {
 	const errors = [];
 	const siteEnv = env.SITE_ENV || "local";
 	const url = env.DATABASE_URL?.trim();
-	const host = (env.HOST ?? "127.0.0.1").trim();
+	const host = (env.HOST ?? "").trim();
 	const result = { errors, siteEnv, effectiveProduction: false, requireAccess: false, host, target: "" };
 
 	if (!["local", "testing", "production"].includes(siteEnv)) errors.push(`SITE_ENV must be local, testing or production (got "${siteEnv}")`);
@@ -78,6 +113,18 @@ export function evaluateStartup(env) {
 	result.target = `${u.hostname}:${u.port || "5432"}${u.pathname}`;
 
 	const loopbackDb = LOOPBACK_DB_HOST_RE.test(u.hostname);
+	const sslmode = splitSslMode(url).sslmode;
+	if (!loopbackDb && sslmode && !REMOTE_OK_SSLMODES.has(sslmode)) {
+		errors.push(`DATABASE_URL sslmode=${sslmode} would weaken TLS to a remote database; use require, verify-ca or verify-full (or omit it)`);
+	}
+	if (!loopbackDb) {
+		try {
+			sslOptionsFor(url, env);
+		} catch (e) {
+			errors.push(e.message);
+		}
+	}
+
 	const ref = parseProjectRef(url);
 	const prodRef = env.SUPABASE_PRODUCTION_REF?.trim().toLowerCase() || undefined;
 	const testingRef = env.SUPABASE_TESTING_REF?.trim().toLowerCase() || undefined;
@@ -90,16 +137,18 @@ export function evaluateStartup(env) {
 		);
 	}
 	if (!loopbackDb) {
+		// Fail closed like INF-5: a remote target can only be classified by project ref, so the production ref must be known.
 		if (!ref) errors.push('DATABASE_URL user is not "postgres.<project-ref>"; cannot verify which Supabase project it targets');
-		if (siteEnv === "production") {
-			if (!prodRef) errors.push("SITE_ENV=production requires SUPABASE_PRODUCTION_REF to verify the target project");
-			else if (ref && ref !== prodRef) errors.push("DATABASE_URL project ref does not match SUPABASE_PRODUCTION_REF");
+		if (!prodRef) errors.push("a remote database requires SUPABASE_PRODUCTION_REF (to tell production from the rest)");
+		if (siteEnv === "production" && prodRef && ref && ref !== prodRef) errors.push("DATABASE_URL project ref does not match SUPABASE_PRODUCTION_REF");
+		if (siteEnv === "testing") {
+			if (!testingRef) errors.push("SITE_ENV=testing requires SUPABASE_TESTING_REF");
+			else if (ref && ref !== testingRef) errors.push("DATABASE_URL project ref does not match SUPABASE_TESTING_REF");
+			if (refIsProduction) errors.push("SITE_ENV=testing but DATABASE_URL targets the production project");
 		}
-		if (siteEnv === "testing" && refIsProduction) errors.push("SITE_ENV=testing but DATABASE_URL targets the production project");
-		if (siteEnv === "testing" && testingRef && ref && ref !== testingRef) errors.push("DATABASE_URL project ref does not match SUPABASE_TESTING_REF");
 	}
 
-	// A production project (by ref) always counts as production, whatever SITE_ENV claims.
+	// A production project (by ref) always counts as production, whatever SITE_ENV says.
 	result.effectiveProduction = siteEnv === "production" || refIsProduction;
 	if (result.effectiveProduction) {
 		if (env.ADMIN_CONFIRM_PRODUCTION !== "yes") {

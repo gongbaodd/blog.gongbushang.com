@@ -5,7 +5,7 @@
  * a real credential: it is `PLACEHOLDER_DATABASE_URL` and the real `DATABASE_URL` is read from the environment when the server
  * creates its pool. A missing `DATABASE_URL` at runtime throws (fail closed) instead of falling back to the build-time value.
  */
-import { sslOptionsFor as sslOptionsForUnchecked } from "../scripts/safety.mjs";
+import { connectionConfig, evaluateStartup, sslOptionsFor as sslOptionsForUnchecked } from "../scripts/safety.mjs";
 
 export const PLACEHOLDER_DATABASE_URL = "postgresql://placeholder:placeholder@placeholder.invalid:5432/placeholder";
 
@@ -31,5 +31,9 @@ export interface RuntimeDialectConfig {
 export function runtimeDialectConfig(env: NodeJS.ProcessEnv = process.env): RuntimeDialectConfig {
 	const url = env.DATABASE_URL?.trim();
 	if (!url) throw new Error("DATABASE_URL is not set: refusing to start without an explicit database (no build-time fallback).");
-	return { connectionString: url, ssl: sslFor(url, env), pool: { max: POOL_MAX } };
+	// The same rules as scripts/start.mjs, so `node dist/server/entry.mjs` run directly is no less safe than the launcher.
+	const plan = evaluateStartup(env) as { errors: string[] };
+	if (plan.errors.length > 0) throw new Error(`refusing to connect:\n  - ${plan.errors.join("\n  - ")}`);
+	const conn = connectionConfig(env) as { connectionString: string; ssl: SslOptions };
+	return { connectionString: conn.connectionString, ssl: conn.ssl, pool: { max: POOL_MAX } };
 }

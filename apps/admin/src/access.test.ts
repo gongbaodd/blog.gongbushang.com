@@ -1,7 +1,7 @@
 import { exportJWK, generateKeyPair, SignJWT, createLocalJWKSet } from "jose";
 import { describe, expect, it, vi } from "vitest";
 import { parseProjectRef as webParseProjectRef, disallowedUrlParams as webDisallowedUrlParams } from "../../web/scripts/sync/lib.mjs";
-import { evaluateStartup, parseProjectRef, disallowedUrlParams } from "../scripts/safety.mjs";
+import { connectionConfig, evaluateStartup, parseProjectRef, disallowedUrlParams, sslOptionsFor } from "../scripts/safety.mjs";
 import { accessMode, isLoopbackHost, teamOrigin, verifyAccessJwt } from "./access.ts";
 import { PLACEHOLDER_DATABASE_URL, POOL_MAX, runtimeDialectConfig, sslFor } from "./db-config.ts";
 import { createOuterMiddleware } from "./outer.ts";
@@ -62,7 +62,7 @@ describe("Cloudflare Access", () => {
 	it("outer middleware: 403 without a valid JWT, passes with one, exempts only the raw /healthz path, 503 when unconfigured", async () => {
 		const { getKey, sign } = await signer();
 		const verifyAccess = (t: string | null | undefined, e: typeof env) => verifyAccessJwt(t, e, { getKey });
-		const mk = (e: Record<string, string>) => createOuterMiddleware({ getEnv: () => e, verifyAccess: verifyAccess as never });
+		const mk = (e: Record<string, string>) => createOuterMiddleware({ getEnv: () => e, verifyAccess: verifyAccess as never, checkStartup: false });
 		const ctx = (path: string, jwt?: string) =>
 			({
 				url: new URL(`https://admin.growgen.xyz${path}`),
@@ -92,14 +92,62 @@ describe("runtime database config", () => {
 		expect(PLACEHOLDER_DATABASE_URL).toContain(".invalid");
 	});
 
+	const REF = "abcdefghij1234567890";
+	const TREF = "tttttttttt1234567890";
+	const poolerUrl = (qs = "") => `postgresql://postgres.${TREF}:p@aws-0-eu.pooler.supabase.com:5432/postgres${qs}`;
+	const testingEnv = { SITE_ENV: "testing", SUPABASE_PRODUCTION_REF: REF, SUPABASE_TESTING_REF: TREF, HOST: "0.0.0.0" };
+
 	it("uses TLS for the Supabase pooler and none for loopback, with a small pool", () => {
-		const pooler = runtimeDialectConfig({ DATABASE_URL: "postgresql://u:p@aws-0-eu.pooler.supabase.com:5432/postgres" } as never);
+		const pooler = runtimeDialectConfig({ ...testingEnv, DATABASE_URL: poolerUrl() } as never);
 		expect(pooler.ssl).toEqual({ rejectUnauthorized: false });
 		expect(pooler.pool.max).toBe(POOL_MAX);
 		expect(POOL_MAX).toBeLessThanOrEqual(3);
 		expect(sslFor("postgresql://postgres:postgres@127.0.0.1:54322/postgres")).toBe(false);
 		expect(sslFor("postgresql://u:p@host.docker.internal:54322/postgres")).toBe(false);
 		expect(sslFor("postgresql://u:p@localhost/postgres")).toBe(false);
+	});
+
+	it("strips sslmode so it can never override our ssl object, and refuses weakening modes for remote DBs", () => {
+		const cfg = runtimeDialectConfig({ ...testingEnv, DATABASE_URL: poolerUrl("?sslmode=verify-full") } as never);
+		expect(cfg.connectionString).not.toMatch(/sslmode/);
+		expect(connectionConfig({ ...testingEnv, DATABASE_URL: poolerUrl("?sslmode=require") } as never).connectionString).not.toMatch(/sslmode|\?/);
+		for (const mode of ["disable", "no-verify", "allow", "prefer"]) {
+			expect(() => runtimeDialectConfig({ ...testingEnv, DATABASE_URL: poolerUrl(`?sslmode=${mode}`) } as never), mode).toThrow(/sslmode/);
+		}
+		// loopback: stripped too, ssl stays off
+		const local = connectionConfig({ DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres?sslmode=disable" } as never);
+		expect(local.ssl).toBe(false);
+		expect(local.connectionString).not.toMatch(/sslmode/);
+	});
+
+	it("runtime refuses what start.mjs refuses (no refs configured, wrong ref)", () => {
+		expect(() => runtimeDialectConfig({ SITE_ENV: "testing", HOST: "0.0.0.0", DATABASE_URL: poolerUrl() } as never)).toThrow(/SUPABASE_PRODUCTION_REF/);
+		expect(() => runtimeDialectConfig({ ...testingEnv, SUPABASE_TESTING_REF: "other00000123456789", DATABASE_URL: poolerUrl() } as never)).toThrow(/SUPABASE_TESTING_REF/);
+	});
+
+	it("DATABASE_CA_CERT: blank is an error, unreadable file is a clear error, literal \\n PEM is rejected, empty means unset", () => {
+		const url = poolerUrl();
+		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "   " } as never)).toThrow(/blank/);
+		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "/nonexistent/ca.pem" } as never)).toThrow(/could not be read/);
+		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "-x\\nabc" } as never)).toThrow(/literal/);
+		expect(sslOptionsFor(url, { DATABASE_CA_CERT: "" } as never)).toEqual({ rejectUnauthorized: false });
+		expect(evaluateStartup({ ...testingEnv, DATABASE_URL: url, DATABASE_CA_CERT: "  " }).errors.join()).toMatch(/blank/);
+	});
+
+	it("outer middleware fails closed (503) on unsafe startup config and turns Access on for a mislabelled production ref", async () => {
+		const next = vi.fn(async () => new Response("ok"));
+		const ctx = (p: string) => ({ url: new URL(`https://a.test${p}`), request: new Request(`https://a.test${p}`) }) as never;
+		const prodUrl = `postgresql://postgres.${REF}:p@aws-0-eu.pooler.supabase.com:5432/postgres`;
+		const mk = (e: Record<string, string>) => createOuterMiddleware({ getEnv: () => e });
+		// testing label + prod URL, refs unset: unsafe
+		expect((await mk({ SITE_ENV: "testing", HOST: "0.0.0.0", DATABASE_URL: prodUrl })(ctx("/_emdash/admin"), next))!.status).toBe(503);
+		// prod ref under a testing label with refs set: mismatch with TESTING_REF -> unsafe
+		expect((await mk({ ...testingEnv, DATABASE_URL: prodUrl, ADMIN_CONFIRM_PRODUCTION: "yes" })(ctx("/_emdash/admin"), next))!.status).toBe(503);
+		// production by ref, confirmed, but Access not configured: 503 from the Access gate
+		const prodNoAccess = mk({ SITE_ENV: "production", SUPABASE_PRODUCTION_REF: REF, HOST: "0.0.0.0", ADMIN_CONFIRM_PRODUCTION: "yes", DATABASE_URL: prodUrl });
+		expect((await prodNoAccess(ctx("/_emdash/admin"), next))!.status).toBe(503);
+		expect((await prodNoAccess(ctx("/healthz"), next))!.status).toBe(200);
+		expect(next).not.toHaveBeenCalled();
 	});
 
 	it("verifies the chain when DATABASE_CA_CERT is set", () => {
