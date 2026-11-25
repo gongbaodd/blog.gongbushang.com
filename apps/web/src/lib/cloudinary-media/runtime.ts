@@ -1,28 +1,12 @@
 /**
  * Runtime entrypoint loaded by EmDash (`createMediaProvider`).
- * Portable across Cloudflare Workers (`cloudflare:workers`) and Node/test runtimes (`process.env`).
+ * Loaded only inside the Cloudflare Worker, so `cloudflare:workers` is imported statically: a missing binding must fail loudly
+ * instead of silently falling back to an empty `process.env`. The Node admin (apps/admin) does not load this file; it wraps
+ * `createCloudinaryProvider` with a `process.env` lookup in `apps/admin/src/cloudinary-media.ts`.
  */
+import { env as workersEnvBinding } from "cloudflare:workers";
 import type { CreateMediaProviderFn } from "emdash/media";
 import { createCloudinaryProvider, type CloudinaryMediaConfig, type EnvLookup } from "./provider";
-
-export type ModuleImporter = (specifier: string) => Promise<unknown>;
-
-const WORKERS_MODULE = "cloudflare:workers";
-
-/** Attempt to load `env` from `cloudflare:workers`, returning `undefined` when unavailable. */
-export async function loadWorkersEnv(
-  importer: ModuleImporter = (specifier) => import(/* @vite-ignore */ specifier),
-): Promise<Record<string, unknown> | undefined> {
-  try {
-    const mod = (await importer(WORKERS_MODULE)) as { env?: unknown } | null | undefined;
-    if (mod && typeof mod === "object" && mod.env && typeof mod.env === "object") {
-      return mod.env as Record<string, unknown>;
-    }
-  } catch {
-    // Not running on Cloudflare Workers (e.g. Node / Vitest); fall back to process.env.
-  }
-  return undefined;
-}
 
 /** Build an `EnvLookup` reading non-empty strings from Workers `env` first, then `process.env`. */
 export function createRuntimeEnvLookup(
@@ -44,8 +28,7 @@ export function createRuntimeEnvLookup(
   };
 }
 
-const workersEnv = await loadWorkersEnv();
-const lookup = createRuntimeEnvLookup(workersEnv);
+const lookup = createRuntimeEnvLookup(workersEnvBinding as unknown as Record<string, unknown>);
 
 export const createMediaProvider: CreateMediaProviderFn<CloudinaryMediaConfig> = (config) =>
   createCloudinaryProvider(config, lookup);
