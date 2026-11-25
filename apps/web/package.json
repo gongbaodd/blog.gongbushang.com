@@ -12,6 +12,7 @@
     "content:pull": "node scripts/sync/pull.mjs",
     "derive": "tsx scripts/derive/index.ts",
     "derive:migrate": "tsx scripts/derive/migrate.ts",
+    "derive:compare-embeddings": "tsx scripts/derive/compare-embeddings.ts",
     "derive:seed": "tsx scripts/derive/seed-from-legacy.ts",
     "derive:seed:media": "tsx scripts/derive/seed-media.ts",
     "import:media": "node scripts/import/mig3/import.mjs",

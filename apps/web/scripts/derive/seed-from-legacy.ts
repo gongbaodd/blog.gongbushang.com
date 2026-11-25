@@ -5,6 +5,10 @@
 //   pnpm --filter web derive:seed            (dry run)
 //   pnpm --filter web derive:seed -- --write
 // Safe to re-run (upserts). Never touches EmDash tables.
+// Model tag: the legacy vectors came from LM Studio, so they are always tagged with the LM Studio model id
+// (resolveModel(): EMBEDDING_MODEL or text-embedding-qwen3-embedding-0.6b), never with the Workers AI id and
+// independent of DERIVE_EMBED_PROVIDER/DERIVE_EMBED_MODEL. If derive then runs with Workers AI, these rows count as
+// stale and are re-embedded in one run; if that cannot finish they stay in use for relates/UMAP (same content_hash).
 process.env.TZ ||= "Europe/Tallinn";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
