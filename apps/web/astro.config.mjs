@@ -17,8 +17,12 @@ const site = process.env.EMDASH_SITE_URL || process.env.SITE_URL || "https://gro
 // Env switch (D11): only SITE_ENV=production is indexable and runs analytics/ads. Fails closed.
 const siteEnv = process.env.SITE_ENV ?? process.env.CLOUDFLARE_ENV ?? "testing";
 
+// Build output dir (default dist). scripts/e2e.mjs sets ASTRO_OUT_DIR=dist-e2e so a fake-token production build never lands in dist/.
+const outDir = process.env.ASTRO_OUT_DIR || "./dist";
+
 export default defineConfig({
 	site,
+	outDir,
 	// Legacy parity: prefetch every link on hover.
 	prefetch: { prefetchAll: true, defaultStrategy: "hover" },
 	output: "server",

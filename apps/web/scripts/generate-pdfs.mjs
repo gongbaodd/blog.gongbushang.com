@@ -30,7 +30,7 @@ const resumeLanguages = ["en", "zh"];
 const MAX_BYTES = 2 * 1024 * 1024;
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const dist = join(root, "dist", "client");
+const dist = join(root, process.env.ASTRO_OUT_DIR || "dist", "client");
 const outDir = join(dist, "resume", "pdfs");
 
 const MIME = {

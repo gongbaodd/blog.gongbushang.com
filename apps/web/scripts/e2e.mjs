@@ -1,9 +1,9 @@
 // Runs the repo-root Cucumber e2e suite (and the hydration check) against apps/web.
 //
-//   node scripts/e2e.mjs                    build (no analytics token), serve dist/client, run all but @analytics-on
+//   node scripts/e2e.mjs                    build (no analytics token), serve dist-e2e/client, run all but @analytics-on
 //   node scripts/e2e.mjs --analytics-on     build with a fake Mixpanel token + host, run @analytics-on only
 //   node scripts/e2e.mjs --hydration        build, serve, run scripts/hydration-check.mjs over tests/hydration-routes.txt
-//   --skip-build                            reuse an existing dist/client (it must match the mode you run)
+//   --skip-build                            reuse an existing dist-e2e/client (it must match the mode you run)
 //   --tags "<expr>"                         override the Cucumber tag expression
 //
 // Env: E2E_PORT (default: a free port), E2E_CHROME_CHANNEL (e.g. "chrome" when Playwright's bundled
@@ -22,7 +22,9 @@ import { fileURLToPath } from "node:url";
 
 const webRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const repoRoot = resolve(webRoot, "../..");
-const client = join(webRoot, "dist/client");
+// Separate outDir: the fake-token / no-PDF production build must never overwrite the real apps/web/dist.
+const outDirName = "dist-e2e";
+const client = join(webRoot, outDirName, "client");
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(name);
@@ -104,6 +106,7 @@ if (!flag("--skip-build")) {
 	const env = {
 		...process.env,
 		SITE_ENV: "production",
+		ASTRO_OUT_DIR: outDirName,
 		PUBLIC_MIXPANEL_TOKEN: analyticsOn ? "e2e-test-token" : "",
 		PUBLIC_MIXPANEL_API_HOST: analyticsOn ? `${base}/__mp` : "",
 		SKIP_PDFS: process.env.E2E_PDFS === "1" ? "" : "1",
@@ -121,7 +124,7 @@ if (!existsSync(join(client, "index.html"))) {
 }
 
 const server = await serve(port);
-console.log(`[e2e] serving dist/client at ${base}`);
+console.log(`[e2e] serving ${outDirName}/client at ${base}`);
 let code = 1;
 try {
 	if (hydration) {

@@ -4,7 +4,7 @@ import { appendFileSync, writeFileSync, existsSync, readFileSync } from "node:fs
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const client = resolve(dirname(fileURLToPath(import.meta.url)), "../dist/client");
+const client = resolve(dirname(fileURLToPath(import.meta.url)), "..", process.env.ASTRO_OUT_DIR || "dist", "client");
 const env = process.env.SITE_ENV ?? process.env.CLOUDFLARE_ENV ?? "testing";
 if (!existsSync(client)) throw new Error(`missing ${client}; run astro build first`);
 if (env === "production") {
