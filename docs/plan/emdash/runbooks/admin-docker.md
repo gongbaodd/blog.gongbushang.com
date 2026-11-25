@@ -2,7 +2,7 @@
 
 The public Cloudflare Worker (`apps/web`) serves static prerendered pages only and locks down `/_emdash/*` with a 404 because EmDash's authenticated admin routes exceed the 10 ms CPU limit on Cloudflare Workers Free.
 
-`apps/admin` is a minimal, EmDash-only Astro application built with `@astrojs/node` (`mode: "standalone"`) and `emdash/db` `postgres()`. It runs as a production Node server (`node dist/server/entry.mjs`) inside Docker—either locally via `docker compose` or on a free-tier container host (such as Altare's 4 GB RAM free tier behind Cloudflare Access)—with zero blog UI, Three.js, Rapier, Shiki, Mermaid, or Chromium dependencies.
+`apps/admin` is a minimal, EmDash-only Astro application built with `@astrojs/node` (`mode: "standalone"`) and `emdash/db` `postgres()`. It runs as a production Node server (`node scripts/start.mjs`, which checks the environment then loads `dist/server/entry.mjs`) inside Docker—either locally via `docker compose` or on a free-tier container host (such as Altare's 4 GB RAM free tier behind Cloudflare Access)—with zero blog UI, Three.js, Rapier, Shiki, Mermaid, or Chromium dependencies.
 
 For the host-native `astro dev` workflow (`pnpm admin:local|testing|production`), see [`admin.md`](./admin.md).
 
@@ -20,7 +20,7 @@ Copy `apps/admin/.env.example` to `apps/admin/.env` (or separate `.env.local`, `
 | `EMDASH_SITE_URL` | Yes | Browser-facing origin of this admin instance (`http://localhost:4322` locally, or `https://admin.growgen.xyz` online). Determines the WebAuthn passkey Relying Party ID (RP ID). |
 | `EMDASH_ALLOWED_ORIGINS` | Optional | Comma-separated additional passkey origins sharing the same registrable parent domain. |
 | `SETUP_TOKEN` | First setup only | Fail-closed setup gate token. When empty/unset, `/_emdash/admin/setup` and `/_emdash/api/setup` return `404`. |
-| `SESSION_DRIVER` | Optional | `fs-lite` (default, stored in `/app/apps/admin/.astro/sessions` volume) or `memory`. |
+| `SESSION_DRIVER` | Optional | `fs-lite` (default, stored in `/app/.astro/sessions` volume) or `memory`. |
 | `CLOUDINARY_CLOUD_NAME` | For media | Cloudinary cloud name for media browsing/uploads (`growgen` folder). |
 | `CLOUDINARY_API_KEY` | For media | Cloudinary API key. |
 | `CLOUDINARY_API_SECRET` | For media | Cloudinary API secret. |
@@ -78,7 +78,7 @@ If you want to edit from any device without running Docker locally, deploy `apps
 
 - **Dockerfile path**: `apps/admin/Dockerfile`
 - **Build context**: monorepo root (`.`)
-- **Command**: `node dist/server/entry.mjs` (runs as non-root `node` user; **never** run `astro dev` in a container)
+- **Command**: `node scripts/start.mjs` (runs as non-root `node` user; **never** run `astro dev` in a container)
 - **Port**: `4322` (`HOST=0.0.0.0`, `PORT=4322`)
 - **Healthcheck**: `GET /healthz` (expects HTTP `200` JSON; does not query Postgres so it won't prevent Supabase idle pause or fail before migrations)
 - **Database connection**: Supabase direct hosts (`db.<ref>.supabase.co`) are IPv6-only; container platforms without IPv6 egress **must** use the Supabase **IPv4 session pooler** URL (port `5432`) as `DATABASE_URL`.
@@ -111,3 +111,24 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 2. When `SITE_ENV` is `testing` or `production` and `GITHUB_DISPATCH_TOKEN` + `GITHUB_DISPATCH_REPO` are set, the plugin sends a `repository_dispatch` (`event_type: "emdash-publish"`, `client_payload: { environment, collection, id, slug }`) to GitHub.
 3. GitHub Actions (`web-deploy.yml`) rebuilds the static site from Supabase and deploys the updated assets to Cloudflare Workers.
 4. When `SITE_ENV=local` (or unset), dispatch is skipped so local testing never triggers a cloud deployment.
+
+---
+
+## 6. Safety rails and access control (INF-9 review fixes)
+
+**Recommended exposure: Cloudflare Tunnel only.** Run `cloudflared` next to the container, publish no host port (drop the `ports:` mapping or keep it on `127.0.0.1`), and put the hostname behind a Cloudflare Access application. The origin then verifies the Access JWT itself (below), so a leaked container URL or a misrouted port is not an open admin.
+
+| Variable | Effect |
+|---|---|
+| `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` | When `CF_ACCESS_AUD` is set, every request except `/healthz` must carry a valid `Cf-Access-Jwt-Assertion` (RS256, signature from `https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`, issuer = team origin, audience = AUD). Otherwise `403`. |
+| `SITE_ENV=production` | Access is mandatory unless the server is bound to loopback (`HOST` 127.0.0.1/localhost/::1). The container binds `0.0.0.0`, so production there without Access config answers `503` to everything (fail closed). |
+| `ADMIN_CONFIRM_PRODUCTION=yes` | Required to start with `SITE_ENV=production` (the analogue of `--yes-production` in [`admin.md`](./admin.md)). Without it `scripts/start.mjs` exits 1. |
+| `DATABASE_URL` | Required at runtime. It is **not** baked into the image: `astro build` only sees a placeholder, and a missing value fails closed. TLS is used unless the host is loopback / `host.docker.internal`; pool size is 3. `SITE_ENV` testing/production with a loopback DB is refused. |
+| `ADMIN_RESTART` | Compose restart policy, default `no`. Use `unless-stopped` only for local/testing. |
+| `GITHUB_API_URL` | Honoured only when `SITE_ENV=local`; otherwise the real `api.github.com` is used. |
+
+At start `scripts/start.mjs` connects with the runtime `DATABASE_URL` and logs `DB IDENTITY: SITE_ENV=... -> host:port/db (database, role)` (never the password) before the server listens. Check that line in `docker compose logs admin` before editing anything.
+
+Verify a build locally against local Supabase only (never testing/production): `pnpm --filter admin build && pnpm --filter admin smoke`. It checks that `dist/` holds no credential, `/healthz` is 200, `/_emdash/admin/setup` is 404 without `SETUP_TOKEN`, the DB identity is logged, and that startup refuses without `DATABASE_URL` or, for production, without `ADMIN_CONFIRM_PRODUCTION=yes`.
+
+The image uses `pnpm --config.inject-workspace-packages=true --filter admin deploy --prod /out` (about 615 MB of `node_modules`, versus about 2.3 GB when the whole workspace was copied), and the root `.dockerignore` keeps `.env*`, `.dev.vars*`, `node_modules`, `.claude`, `src/content` and similar out of the build context.
