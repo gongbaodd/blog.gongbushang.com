@@ -1,11 +1,12 @@
-// Distils the legacy build-time generated data (src/content/generated of the old site) into
+// Distils the build-time generated data (the legacy pipelines' output in the content submodule) into
 //   - src/generated/legacy-data.json   compact lookup the prerendered pages/APIs import
 //   - public/api/gallery/trace/*.svg, public/api/posts/{all,umap}.json   static copies
 // Prerender runs inside workerd, which cannot read the disk, so this runs before `astro build`.
 //
-// TODO DATA-1: covers/color sets/UMAP/embeddings/podcast/gallery move into EmDash; delete this script then.
-// Source dir: LEGACY_GENERATED_DIR (default ../../src/content/generated, the legacy submodule). If the
-// directory is missing the output is empty and the build still works (APIs lose cover colors/relates/etc).
+// D13 (temporary until PORT-8): builds run on the owner's Mac and read the legacy content submodule's
+// generated data; nothing generated is committed to this repo. PORT-8 derives this data at build time instead.
+// Source dir: LEGACY_GENERATED_DIR (override; default ../../src/content/generated, the content submodule). Guard: if the dir has no metadata/*.json the
+// build FAILS (no silent empty covers/relates/UMAP/podcast/gallery) unless ALLOW_EMPTY_DATA=1.
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +14,16 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = resolve(root, process.env.LEGACY_GENERATED_DIR || "../../src/content/generated");
 const RELATES_LIMIT = 8; // POST_COUNT_PER_PAGE / 2
+
+// Guard (DATA-1): refuse to build with missing/empty generated data.
+{
+	const metaDir = resolve(dir, "metadata");
+	const n = existsSync(metaDir) ? readdirSync(metaDir).filter((f) => f.endsWith(".json") && !f.startsWith(".")).length : 0;
+	if (n === 0 && process.env.ALLOW_EMPTY_DATA !== "1") {
+		console.error(`[legacy-data] ERROR: no generated data in ${dir} (metadata/*.json missing or empty).\n  Run "git submodule update --init src/content" (or set LEGACY_GENERATED_DIR) or set ALLOW_EMPTY_DATA=1 to build without covers, relates, UMAP, search index, podcast, gallery and RSS items.`);
+		process.exit(1);
+	}
+}
 
 const rssItems = []; // /rss.xml items (PORT-7), same source and shape as the legacy getAllClientPostsForSearch()
 const out = { source: null, posts: {}, podcast: [], podcastChannel: null, podcastRelated: {}, gallery: [], traceFiles: [], umapPosts: 0 };
@@ -127,5 +138,5 @@ writeFileSync(resolve(dirname(target), "rss-items.json"), JSON.stringify(rssItem
 console.log(
 	out.source
 		? `[legacy-data] ${Object.keys(out.posts).length} post records, ${out.podcast.length} podcast episodes, ${out.gallery.length} gallery images from ${dir}`
-		: `[legacy-data] WARNING: ${dir} not found; wrote empty data (set LEGACY_GENERATED_DIR). Covers colors, relates, podcast and UMAP APIs will be empty.`,
+		: `[legacy-data] WARNING (ALLOW_EMPTY_DATA=1): ${dir} not found; wrote empty data. Covers colors, relates, podcast and UMAP APIs will be empty.`,
 );
