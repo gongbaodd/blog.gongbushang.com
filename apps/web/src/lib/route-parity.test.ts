@@ -5,11 +5,11 @@ import { DIST_CLIENT, builtPaths, diffGroup, loadGroups } from "../../tests/buil
 import { existsSync } from "node:fs";
 
 /** Groups owned by landed stories. Add a group here when its story merges. */
-const DONE = ["post", "category", "tag", "series", "year", "world", "api/*", "podcast", "resume", "static", "gallery", "other"] as const;
+const DONE = ["post", "category", "tag", "series", "year", "world", "api/*", "podcast", "resume", "static", "gallery", "other", "rss/sitemap"] as const;
 
 /** Paths of a DONE group that a later story owns (kept visible here so they are not forgotten). */
 const OWNED_LATER: Record<string, string[]> = {
-	other: ["/umap/"], // PORT-6
+	"rss/sitemap": ["/rss.xml", "/sitemap-0.xml", "/sitemap-index.xml"], // PORT-7 (`/sitemap/` is PORT-6, built)
 };
 
 const hasBuild = existsSync(DIST_CLIENT);

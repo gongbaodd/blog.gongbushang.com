@@ -118,3 +118,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `package.json`: `build` ends with `node scripts/generate-pdfs.mjs` (resume PDFs into `dist/client/resume/pdfs/`); new script `resume:pdfs`; new deps `@sparticuz/chromium`, `puppeteer-core` (build-time only, never bundled into the Worker).
 - `public/`: legacy static assets copied (`CNAME`, `ads.txt`, `browserconfig.xml`, android-chrome/mstile/icon PNGs, `fonts/`, `llm/` 28 MB for the search story, `assets/bits/...`, `2025/08/18/record.gif`, `resume/pdfs/.gitkeep`). Legacy `robots.txt` is not copied: `src/pages/robots.txt.ts` owns it.
 - `scripts/legacy-data.mjs`: also snapshots the podcast channel and per-episode "More to discover" ids.
+
+## PORT-6
+- `package.json`: new deps `@mantine/spotlight`, `minisearch`, `excerpt` (search), `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot` (shadcn Bento on `/cv/`). All client-side; the Worker bundle is unchanged (everything is prerendered).
+- `src/types/excerpt.d.ts`: ambient types for the untyped `excerpt` package.
+- `src/components/BaseHead.astro`: imports `@mantine/spotlight/styles.css` (Search island).

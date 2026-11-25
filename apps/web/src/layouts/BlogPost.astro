@@ -10,7 +10,7 @@ import AdSenseHead from "../ads/AdSenseHead.astro";
 import AdSenseSlot from "../ads/AdSenseSlot.astro";
 import MantineMain from "../components/MantineMain";
 import { GridWithMenu } from "../components/GridWithMenu";
-import BlogContent, { BlogMenu, type IHeading, type ILink, type IMenuSeries } from "../components/BlogContent";
+import BlogContent, { BlogMenu, RelatePosts, type IHeading, type ILink, type IMenuSeries } from "../components/BlogContent";
 import { SITE_TITLE } from "../consts";
 
 interface Props {
@@ -82,8 +82,7 @@ const adsenseSlotId =
 				{adsenseSlotId && <AdSenseSlot slotId={adsenseSlotId} test={adsenseTest} />}
 			</section>
 			<aside slot="sidebarNode" class="relates-sidebar">
-				<!-- TODO(PORT-6): the related-posts island mounts here (legacy: <RelatePosts id={post.id} client:idle />). -->
-				<div id="related-posts" data-post-id={id}></div>
+				<RelatePosts id={id} client:idle />
 			</aside>
 		</GridWithMenu>
 		<Footer slug={id} />

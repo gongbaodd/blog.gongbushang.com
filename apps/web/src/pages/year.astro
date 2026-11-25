@@ -5,6 +5,7 @@ import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
 import MantineMain from "../components/MantineMain";
 import YearFolders from "../components/YearFolders.astro";
+import { SearchBanner } from "../search/Search";
 import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 
 export const prerender = true;
@@ -14,7 +15,7 @@ export const prerender = true;
 	<Header />
 	<section id="year-page" class="main">
 		<MantineMain client:load>
-			<!-- TODO(search story): <SearchBanner client:idle /> from packages/search -->
+			<SearchBanner client:idle />
 			<YearFolders />
 			<Footer />
 		</MantineMain>
