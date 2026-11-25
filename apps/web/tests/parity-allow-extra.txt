@@ -1,0 +1,26 @@
+# Built paths legacy never emitted (additive; reviewed in QA-1 fixes).
+# 24 posts whose legacy build had no /api/cards/<post>.json; the new build emits one per post.
+/api/cards/2015/03/21/dont-starve-console.json
+/api/cards/2015/05/09/ionic-todo-guide.json
+/api/cards/2015/08/25/fekit-extension.json
+/api/cards/2017/09/18/typescript-sucks-but-long-live-the-types.json
+/api/cards/2017/09/20/run-with-the-wind-.json
+/api/cards/2018/08/05/css-grid-layout.json
+/api/cards/2018/08/28/functional-reactive-programming-baconjs.json
+/api/cards/2019/02/20/aws-sqs.json
+/api/cards/2019/02/25/javascript---unsigned-int.json
+/api/cards/2019/09/10/cloudflare-worker-csp.json
+/api/cards/2019/11/19/fluent-terminal-git-bash.json
+/api/cards/2019/11/19/window-10-home-docker-desktop.json
+/api/cards/2019/11/28/windows-powertoy.json
+/api/cards/2020/01/13/website-scraping-with-python.json
+/api/cards/2020/02/25/stryker-mutation-test.json
+/api/cards/2020/03/30/css-secret.json
+/api/cards/2020/08/05/window10-action-center.json
+/api/cards/2021/02/09/latex-cheat-sheet.json
+/api/cards/2022/02/25/johnathan-agassi-saved-my-life.json
+/api/cards/2022/03/21/barrier-deskdroid-universal-control.json
+/api/cards/2022/05/14/qwert-learner.json
+/api/cards/2025/02/21/puzzle-game.json
+/api/cards/2025/08/18/blog-cards.json
+/api/cards/2025/09/09/tetris-ai.json

@@ -88,15 +88,14 @@ describe("real legacy snapshots (legacy-route-groups.json & legacy-urls.txt)", (
 });
 
 describe("builtPaths & normalization", () => {
-	test("handles percent-encoded Unicode, hash, space, and NFD/NFC filenames", () => {
+	test("handles percent-encoded Unicode, hash and space filenames", () => {
 		const root = makeTempDir();
 		const distDir = join(root, "dist/client");
 		writeFiles(distDir, {
 			"index.html": "home",
 			"tag/宇宙编辑部/index.html": "unicode-tag",
-			"tag/c#/index.html": "csharp-tag",
+			"tag/c%23/index.html": "csharp-tag",
 			"api/tag/react%20native/0.ndjson": "ndjson",
-			"tag/cafe\u0301/index.html": "nfd-tag",
 		});
 
 		const built = builtPaths(distDir);
@@ -108,28 +107,50 @@ describe("builtPaths & normalization", () => {
 			"/tag/%E5%AE%87%E5%AE%99%E7%BC%96%E8%BE%91%E9%83%A8/",
 			"/tag/c%23/",
 			"/api/tag/react native/0.ndjson",
-			"/tag/caf\u00e9/",
 		];
 		const { missing, extra } = diffGroup(legacy, built, new Set(legacy));
 		expect(missing).toEqual([]);
 		expect(extra).toEqual([]);
 	});
 
-	test("normalizes trailing slashes without collapsing root or extensions", () => {
+	test("trailing slash is significant: /about/ is not /about, /about.html or /about/index.html", () => {
 		const root = makeTempDir();
 		const distDir = join(root, "dist/client");
-		writeFiles(distDir, {
-			"index.html": "home",
-			"about/index.html": "about",
-			"404.html": "404",
-			CNAME: "blog.gongbushang.com",
-		});
-
+		writeFiles(distDir, { "index.html": "home", "about.html": "about", "404.html": "404", CNAME: "x" });
 		const built = builtPaths(distDir);
-		const legacy = ["/", "/about", "/404.html", "/CNAME"];
-		const { missing, extra } = diffGroup(legacy, built, new Set(legacy));
-		expect(missing).toEqual([]);
-		expect(extra).toEqual([]);
+
+		const legacy = ["/", "/about/", "/404.html", "/CNAME"];
+		const { missing } = diffGroup(legacy, built, new Set(legacy));
+		expect(missing).toEqual(["/about/"]);
+
+		const dirBuilt = builtPaths(
+			(() => {
+				const d = join(root, "dist2/client");
+				writeFiles(d, { "about/index.html": "about" });
+				return d;
+			})(),
+		);
+		expect(diffGroup(["/about.html"], dirBuilt, new Set(["/about.html"])).missing).toEqual(["/about.html"]);
+		expect(diffGroup(["/about"], dirBuilt, new Set(["/about"])).missing).toEqual(["/about"]);
+		expect(normalizePath("/a//b/")).toBe("/a/b/");
+		expect(normalizePath("/tag/c%23/")).toBe("/tag/c%23/");
+		expect(normalizePath("/tag/%E5%AE%87/")).toBe("/tag/宇/");
+		expect(normalizePath("/100%/")).toBe("/100%/");
+	});
+
+	test("no Unicode normalisation: NFD and NFC spellings are different paths", () => {
+		const root = makeTempDir();
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, { "tag/cafe\u0301/index.html": "nfd" });
+		const legacy = ["/tag/caf\u00e9/"];
+		expect(diffGroup(legacy, builtPaths(distDir), new Set(legacy)).missing).toEqual(legacy);
+	});
+
+	test("every legacy URL is already in NFC after decoding, so NFC folding is unnecessary", () => {
+		for (const u of loadLegacyUrls(LEGACY_URLS_PATH)) {
+			const d = normalizePath(u);
+			expect(d.normalize("NFC"), u).toBe(d);
+		}
 	});
 });
 
@@ -196,6 +217,76 @@ describe("runParityCheck", () => {
 		expect(summary).toContain("Missing paths (1 total, showing first 1):");
 		expect(summary).toContain("Unexpected extra paths (2 total, showing first 1):");
 		expect(summary).toContain("... and 1 more");
+	});
+
+	test("--fail-on-extra ignores infra files and new posts (and their api files) but flags other extras", () => {
+		const root = makeTempDir();
+		const { groupsFile, urlsFile } = writeSnapshotFixture(root, {
+			post: ["/fe/2026/11/19/old/"],
+			static: ["/"],
+		});
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, {
+			"index.html": "home",
+			"fe/2026/11/19/old/index.html": "old",
+			".assetsignore": "x",
+			_headers: "x",
+			"sitemap.xml": "x",
+			"fe/2026/11/25/new-post/index.html": "new",
+			"api/cards/2026/11/25/new-post.json": "{}",
+			"api/relates/2026/11/25/new-post.json": "{}",
+			// not new: dated before the newest legacy post and not in the legacy list
+			"fe/2026/11/01/renamed/index.html": "renamed",
+			"surprise/index.html": "surprise",
+			"extra.json": "x",
+		});
+
+		const report = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile, failOnExtra: true });
+		expect(report.legacyLatestPostDate).toBe("20261119");
+		expect(report.newPostPaths).toEqual([
+			"/api/cards/2026/11/25/new-post.json",
+			"/api/relates/2026/11/25/new-post.json",
+			"/fe/2026/11/25/new-post/",
+		]);
+		expect(report.extraPaths).toEqual(["/extra.json", "/fe/2026/11/01/renamed/", "/surprise/"]);
+		expect(report.ok).toBe(false);
+
+		const allowed = runParityCheck({
+			dir: distDir,
+			all: true,
+			groupsFile,
+			urlsFile,
+			failOnExtra: true,
+			allowExtra: ["/extra.json", "/surprise/", "/fe/2026/11/01/*/"],
+		});
+		expect(allowed.extraPaths).toEqual([]);
+		expect(allowed.allowedExtraPaths).toEqual(["/extra.json", "/fe/2026/11/01/renamed/", "/surprise/"]);
+		expect(allowed.ok).toBe(true);
+	});
+
+	test("new-post exemption needs a real legacy category: /admin/2099/12/31/leak/ is an extra; same-day new posts are new", () => {
+		const root = makeTempDir();
+		const { groupsFile, urlsFile } = writeSnapshotFixture(root, { post: ["/fe/2026/11/19/old/"], static: ["/"] });
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, {
+			"index.html": "home",
+			"fe/2026/11/19/old/index.html": "old",
+			"fe/2026/11/19/same-day-new/index.html": "new",
+			"admin/2099/12/31/leak/index.html": "leak",
+		});
+		const report = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile });
+		expect(report.newPostPaths).toEqual(["/fe/2026/11/19/same-day-new/"]);
+		expect(report.extraPaths).toEqual(["/admin/2099/12/31/leak/"]);
+	});
+
+	test("an HTML page in an unexpected form is both missing and extra (/about.html does not satisfy /about/)", () => {
+		const root = makeTempDir();
+		const { groupsFile, urlsFile } = writeSnapshotFixture(root, { static: ["/", "/about/"] });
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, { "index.html": "home", "about.html": "about" });
+		const report = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile, failOnExtra: true });
+		expect(report.groups[0].missing).toEqual(["/about/"]);
+		expect(report.extraPaths).toEqual(["/about.html"]);
 	});
 
 	test("supports --allow-missing patterns, allow-missing files, and --ignore-group", () => {
