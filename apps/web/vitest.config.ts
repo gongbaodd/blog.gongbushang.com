@@ -7,6 +7,7 @@ export default defineConfig({
 			"scripts/admin/*.test.ts",
 			"scripts/derive/*.test.ts",
 			"scripts/guards/*.test.ts",
+			"scripts/import/**/*.test.ts",
 			"tests/*.test.ts",
 		],
 		environment: "node",

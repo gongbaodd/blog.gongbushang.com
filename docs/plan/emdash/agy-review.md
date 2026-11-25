@@ -35,3 +35,6 @@ changes; custom code where an existing EmDash/npm feature exists; prerender vs S
 Postgres/Hyperdrive incompatibilities.
 If you find nothing, say "No findings". Do not restate the diff. Do not suggest style nits.
 ```
+
+## Temporary: Claude reviewers while agy is rate-limited (owner, 2026-11-25)
+Stories waiting in Linear **In Review** are reviewed by Claude subagents using the prompt template above. A story is never reviewed by the model that built it: Gemini-built swarm branches get Sonnet or Opus, and Claude-Sonnet-built stories get Opus. Each reviewer does a trial merge onto `feat/emdash` in its own worktree, runs the story's checks, and reports findings in the template's format. Lead posts the findings to the Linear issue, gets fixes made, merges, and moves the issue to Done. Switch back to agy once its limit resets.
