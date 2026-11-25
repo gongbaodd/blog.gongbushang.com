@@ -14,7 +14,9 @@ import {
   DEFAULT_NEW_ORIGIN,
   REPO_ROOT,
   filterPostUrls,
+  findNewPosts,
   runBulkDiff,
+  runBulkDiffIsolated,
 } from "./lib.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -22,6 +24,11 @@ const DEFAULT_LEGACY_DIR = join(REPO_ROOT, "dist");
 const DEFAULT_NEW_DIR = join(REPO_ROOT, "apps/web/dist/client");
 const DEFAULT_URLS_FILE = join(REPO_ROOT, "apps/web/tests/legacy-urls.txt");
 const DEFAULT_REWRITE_MAP = resolve(HERE, "../mig2/rewrite-map.json");
+
+/** Every post URL in the URLs file (ignores --filter/--limit): the "known to legacy" set for new-post detection. */
+function allPostUrls(urlsText) {
+  return filterPostUrls(urlsText);
+}
 
 export function formatHelp() {
   return `Usage: node apps/web/scripts/import/mig4/diff.mjs [options]
@@ -35,8 +42,17 @@ Options:
   --limit <n>             Maximum number of post URLs to compare
   --filter <substring>    Filter post URLs by case-insensitive substring
   --legacy-origin <url>   Legacy canonical origin (default: ${DEFAULT_LEGACY_ORIGIN})
-  --new-origin <url>      New canonical origin (default: ${DEFAULT_NEW_ORIGIN})
-  --fail-on-error         Exit with code 1 if any error diffs (or missing files) are found
+  --new-origin <url>      Origin the new site is expected to emit (default: ${DEFAULT_NEW_ORIGIN}).
+                          Legacy URLs are mapped to what the new site should emit (rewrite map, origin,
+                          /tag/c# -> /tag/c%23, f_auto,q_auto on images) and must equal the new page's URL exactly.
+  --in-process            Diff in this process (jsdom leaks memory: only for small samples). Default: batches
+                          run in short-lived child processes, so the full run fits the default heap.
+  --batch-size <n>        Posts per child process (default: 40)
+  --concurrency <n>       Parallel child processes (default: 3)
+  --batch-timeout <ms>    Fail the run (exit 2) when a child process does not answer in time (default: 180000)
+  --fail-on-warn          THE GATE: exit 1 if any warn or error diffs (or missing files) are found
+  --fail-on-error         Weaker gate: exit 1 only for error diffs (or missing files)
+  Exit codes: 0 pass, 1 gate tripped, 2 usage/IO error or a hung/crashed worker.
   -h, --help              Show this help message
 `;
 }
@@ -54,6 +70,11 @@ export function parseArgs(argv) {
     legacyOrigin: DEFAULT_LEGACY_ORIGIN,
     newOrigin: DEFAULT_NEW_ORIGIN,
     failOnError: false,
+    failOnWarn: false,
+    inProcess: false,
+    batchSize: 40,
+    concurrency: 3,
+    batchTimeoutMs: 180_000,
     help: false,
   };
 
@@ -109,6 +130,23 @@ export function parseArgs(argv) {
       case "--fail-on-error":
         opts.failOnError = true;
         break;
+      case "--fail-on-warn":
+        opts.failOnWarn = true;
+        break;
+      case "--in-process":
+        opts.inProcess = true;
+        break;
+      case "--batch-size":
+      case "--batch-timeout":
+      case "--concurrency": {
+        const raw = nextVal();
+        const n = Number(raw);
+        if (!Number.isInteger(n) || n < 1) throw new Error(`${key} must be a positive integer (got ${raw})`);
+        if (key === "--batch-size") opts.batchSize = n;
+        else if (key === "--batch-timeout") opts.batchTimeoutMs = n;
+        else opts.concurrency = n;
+        break;
+      }
       default:
         throw new Error(`Unknown option: ${arg}`);
     }
@@ -126,6 +164,11 @@ export function formatSummaryTable(report) {
     ["Warn", String(s.warn)],
     ["Error", String(s.error)],
     ["Missing files", `${s.missingFiles} (legacy=${s.missingLegacy}, new=${s.missingNew})`],
+    ["New posts (not in legacy)", String(s.newPosts ?? 0)],
+    [
+      "Content-root fallbacks",
+      `legacy=${s.contentRootFallbacks?.legacy ?? 0}, new=${s.contentRootFallbacks?.new ?? 0}`,
+    ],
     ["Duration", `${s.durationMs} ms`],
   ];
 
@@ -147,6 +190,13 @@ export function formatSummaryTable(report) {
     );
   }
 
+  const reasons = Object.entries(s.errorReasonCounts ?? {});
+  if (reasons.length > 0) lines.push(`Error reasons: ${reasons.map(([k, v]) => `${k}=${v}`).join(", ")}`);
+  const expectedWhy = Object.entries(s.expectedReasonCounts ?? {});
+  if (expectedWhy.length > 0) {
+    lines.push(`Expected diffs (posts per reason): ${expectedWhy.map(([k, v]) => `${k}=${v}`).join(", ")}`);
+  }
+
   if (report.flagged.length > 0) {
     lines.push("Top flagged posts:");
     for (const item of report.flagged.slice(0, 10)) {
@@ -162,7 +212,7 @@ export function formatSummaryTable(report) {
   return lines.join("\n");
 }
 
-export function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2)) {
   const opts = parseArgs(argv);
   if (opts.help) {
     process.stdout.write(formatHelp());
@@ -187,7 +237,12 @@ export function main(argv = process.argv.slice(2)) {
       ? JSON.parse(readFileSync(opts.rewriteMapFile, "utf8"))
       : null;
 
-  const report = runBulkDiff({
+  const newPosts = findNewPosts(opts.newDir, new Set(allPostUrls(urlsText)));
+  const runner = opts.inProcess
+    ? async (config) => runBulkDiff(config)
+    : (config) => runBulkDiffIsolated(config, { batchSize: opts.batchSize, concurrency: opts.concurrency, batchTimeoutMs: opts.batchTimeoutMs });
+  const report = await runner({
+    newPosts,
     legacyDir: opts.legacyDir,
     newDir: opts.newDir,
     urls,
@@ -214,7 +269,11 @@ export function main(argv = process.argv.slice(2)) {
     process.stdout.write(`Report written to ${opts.outFile}\n`);
   }
 
-  if (opts.failOnError && (report.summary.error > 0 || report.summary.missingFiles > 0)) {
+  if (opts.failOnError && (report.summary.error > 0 || report.summary.missingFiles > 0)) return 1;
+  if (
+    opts.failOnWarn &&
+    (report.summary.warn > 0 || report.summary.error > 0 || report.summary.missingFiles > 0)
+  ) {
     return 1;
   }
   return 0;
@@ -225,7 +284,7 @@ const isDirectRun =
 
 if (isDirectRun) {
   try {
-    const code = main();
+    const code = await main();
     process.exit(code);
   } catch (err) {
     process.stderr.write(`Error: ${err instanceof Error ? err.message : String(err)}\n`);

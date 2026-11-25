@@ -3,16 +3,25 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildRewriteLookup,
   diffPostDom,
   extractPostDom,
+  expectedNewUrl,
   filterPostUrls,
+  findNewPosts,
+  hiddenH1Selectors,
   levenshteinDistance,
-  normalizeUrlForParity,
+  slugSegment,
+  optimizeCloudinaryUrl,
   runBulkDiff,
+  runBulkDiffIsolated,
 } from "./lib.mjs";
+import { optimizeCloudinaryUrl as siteOptimizeCloudinaryUrl } from "../../../src/lib/cloudinary";
+
+// CLI end-to-end tests spawn node (and child workers); the 5 s default is flaky on a loaded CI runner.
+vi.setConfig({ testTimeout: 60_000 });
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = join(HERE, "diff.mjs");
@@ -94,7 +103,7 @@ describe("MIG-4 lib: extractPostDom", () => {
   });
 });
 
-describe("MIG-4 lib: normalizeUrlForParity", () => {
+describe("MIG-4 lib: expectedNewUrl (one-sided: legacy URL -> what the new site must emit)", () => {
   const rewriteMap = {
     deliveryBase: "https://res.cloudinary.com/dmq8ipket/image/upload/",
     posts: {
@@ -108,59 +117,202 @@ describe("MIG-4 lib: normalizeUrlForParity", () => {
       },
     },
   };
+  const cld =
+    "https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/2016/03/31/vue-riot-react/21606f5a8988";
 
-  it("maps legacy external and Astro-hashed local images through mig2 rewrite-map.json", () => {
-    const lookup = buildRewriteLookup(rewriteMap);
+  it("maps legacy external and Astro-hashed local images through the rewrite map and adds f_auto,q_auto", () => {
+    const external = expectedNewUrl("http://ww1.sinaimg.cn/large/89d0a2e1gw1f2u8fh7uygj20tv0n4473.jpg", {
+      kind: "image",
+      rewriteMap,
+      postPath: "/fe/2016/03/31/vue-riot-react/",
+    });
+    expect(external.url).toBe(cld);
+    expect(external.reasons).toEqual(["rewrite-map", "cloudinary-auto"]);
 
-    const legacyExternal = normalizeUrlForParity(
-      "http://ww1.sinaimg.cn/large/89d0a2e1gw1f2u8fh7uygj20tv0n4473.jpg",
-      { rewriteMap: lookup, postPath: "/fe/2016/03/31/vue-riot-react/" },
-    );
-    const newExternal = normalizeUrlForParity(
-      "https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/2016/03/31/vue-riot-react/21606f5a8988",
-      { rewriteMap: lookup, postPath: "/fe/2016/03/31/vue-riot-react/" },
-    );
-    expect(legacyExternal).toBe(newExternal);
-
-    const legacyAstroLocal = normalizeUrlForParity(
-      "/_astro/89d0a2e1gw1evcern5sufj21kw16rnkw.CMylg40p_Z1gK9dp.webp",
-      { rewriteMap: lookup, postPath: "/life/2015/08/18/b/" },
-    );
-    const newLocal = normalizeUrlForParity(
+    const local = expectedNewUrl("/_astro/89d0a2e1gw1evcern5sufj21kw16rnkw.CMylg40p_Z1gK9dp.webp", {
+      kind: "image",
+      rewriteMap,
+      postPath: "/life/2015/08/18/b/",
+    });
+    expect(local.url).toBe(
       "https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/2015/08/18/b/73c11c4c5944",
-      { rewriteMap: lookup, postPath: "/life/2015/08/18/b/" },
     );
-    expect(legacyAstroLocal).toBe(newLocal);
   });
 
-  it("normalizes Cloudinary f_auto,q_auto path transforms and query params while preserving other transforms", () => {
-    expect(
-      normalizeUrlForParity(
-        "https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/v123/pic.jpg",
-      ),
-    ).toBe("https://res.cloudinary.com/dmq8ipket/image/upload/v123/pic.jpg");
-
-    expect(
-      normalizeUrlForParity(
-        "https://res.cloudinary.com/dmq8ipket/image/upload/w_800,f_auto,q_auto/v123/pic.jpg?f_auto=1&q_auto=1",
-      ),
-    ).toBe("https://res.cloudinary.com/dmq8ipket/image/upload/w_800/v123/pic.jpg");
-  });
-
-  it("normalizes legacy vs new origins on canonical and absolute links", () => {
-    expect(
-      normalizeUrlForParity("https://next.growgen.xyz/book/2020/01/01/post/", {
-        legacyOrigin: "https://growgen.xyz",
-        newOrigin: "https://next.growgen.xyz",
-      }),
-    ).toBe("https://growgen.xyz/book/2020/01/01/post/");
-  });
-
-  it("normalizes encoded fragment tag links (/tag/c# -> /tag/c%23)", () => {
-    expect(normalizeUrlForParity("/tag/c#")).toBe("/tag/c%23");
-    expect(normalizeUrlForParity("https://next.growgen.xyz/tag/c#")).toBe(
-      "https://growgen.xyz/tag/c%23",
+  it("maps legacy origin to the expected new origin and /tag/c# to /tag/c%23", () => {
+    const opts = { legacyOrigin: "https://growgen.xyz", newOrigin: "https://next.growgen.xyz" };
+    expect(expectedNewUrl("https://growgen.xyz/book/2020/01/01/post/", opts).url).toBe(
+      "https://next.growgen.xyz/book/2020/01/01/post/",
     );
+    expect(expectedNewUrl("https://growgen.xyz.evil.example/x", opts).url).toBe("https://growgen.xyz.evil.example/x");
+    expect(expectedNewUrl("/tag/c#").url).toBe("/tag/c%23");
+    expect(expectedNewUrl("/tag/c#", {}).reasons).toEqual(["tag-hash"]);
+    expect(expectedNewUrl("/about/#top").url).toBe("/about/#top");
+  });
+
+  it("only rehosted images gain f_auto,q_auto; the helper matches the site's optimizeCloudinaryUrl", () => {
+    const raw = "https://res.cloudinary.com/dmq8ipket/image/upload/v123/pic.jpg";
+    // legacy-emitted Cloudinary URLs stay exactly as legacy had them (only rehosted images gain the transform)
+    expect(expectedNewUrl(raw, { kind: "image" }).url).toBe(raw);
+    expect(expectedNewUrl(raw, { kind: "link" }).url).toBe(raw);
+    for (const u of [
+      raw,
+      "https://res.cloudinary.com/dmq8ipket/image/upload/w_800/v123/pic.jpg?x=1",
+      "https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/v123/pic.jpg",
+      "https://res.cloudinary.com/dmq8ipket/video/upload/v9/a.mp4",
+      "https://example.com/a.png",
+    ]) {
+      expect(optimizeCloudinaryUrl(u)).toBe(siteOptimizeCloudinaryUrl(u));
+    }
+  });
+});
+
+describe("MIG-4 lib: one-sided URL comparison catches regressions (exact equality)", () => {
+  const legacyBody = `<h2 id="s">S</h2><a href="/tag/c#">C#</a><img src="http://ww1.sinaimg.cn/large/a.jpg" />`;
+  const legacy = extractPostDom(renderHtml({ body: legacyBody }));
+  const rewriteMap = {
+    "http://ww1.sinaimg.cn/large/a.jpg": "https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/a",
+  };
+  const goodNew = extractPostDom(
+    renderHtml({
+      body: `<h2 id="s">S</h2><a href="/tag/c%23">C#</a><img src="https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/a" />`,
+    }),
+  );
+
+  it("passes when the new page emits exactly the mapped URLs", () => {
+    const diff = diffPostDom(legacy, goodNew, { rewriteMap });
+    expect(diff.severity).toBe("expected");
+    expect(diff.expectedReasons.sort()).toEqual(["cloudinary-auto", "rewrite-map", "tag-hash"]);
+  });
+
+  it("flags a broken /tag/c# link in the NEW page", () => {
+    const bad = structuredClone(goodNew);
+    bad.links = ["/tag/c#"];
+    const diff = diffPostDom(legacy, bad, { rewriteMap });
+    expect(diff.flaggedFields).toContain("links");
+    expect(diff.fields.links.extra).toEqual(["/tag/c#"]);
+  });
+
+  it("flags dropped f_auto,q_auto as an image error", () => {
+    const bad = structuredClone(goodNew);
+    bad.images = ["https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/a"];
+    const diff = diffPostDom(legacy, bad, { rewriteMap });
+    expect(diff.severity).toBe("error");
+    expect(diff.fields.images.status).toBe("flagged-diff");
+  });
+
+  it("flags a leaked preview origin and an unrewritten relative image", () => {
+    const leaked = structuredClone(goodNew);
+    leaked.canonical = "https://next.growgen.xyz/fe/2025/01/02/sample/";
+    expect(diffPostDom(legacy, leaked, { rewriteMap }).flaggedFields).toContain("canonical");
+    const rel = structuredClone(goodNew);
+    rel.images = ["../17/2020-07-17.jpg"];
+    expect(diffPostDom(legacy, rel, { rewriteMap }).severity).toBe("error");
+  });
+});
+
+describe("MIG-4 lib: headings and visible h1 (PORT-9 duplicate-h1 class)", () => {
+  const css = "<style>._content_x>h1{display:none}._other{color:red}</style>";
+  const page = (inner: string) =>
+    renderHtml({ wrapInProseContent: false, body: "" }).replace(
+      "<main><article></article></main>",
+      `${css}<main><div class="prose lg:prose-xl _content_x">${inner}</div></main>`,
+    );
+  const legacyHtml = page(`<h1 id="t">Post Title</h1><h2 id="a">A</h2><p>Body text goes here.</p>`);
+
+  it("counts the content h1 as hidden when `.content > h1 {display:none}` matches it", () => {
+    const dom = extractPostDom(legacyHtml);
+    // only the header h1 (GrowGen) is visible
+    expect(dom.visibleH1).toBe(1);
+    expect(dom.visibleH1Texts).toEqual(["GrowGen"]);
+  });
+
+  it("MUTATION: wrapping the content h1 in <astro-slot> makes it visible -> error", () => {
+    const mutated = page(`<astro-slot><h1 id="t">Post Title</h1></astro-slot><h2 id="a">A</h2><p>Body text goes here.</p>`);
+    const legacyDom = extractPostDom(legacyHtml);
+    const newDom = extractPostDom(mutated);
+    expect(newDom.visibleH1).toBe(2);
+    expect(legacyDom.visibleContentH1).toBe(0);
+    expect(newDom.visibleContentH1).toBe(1);
+    const diff = diffPostDom(legacyDom, newDom);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("extra-visible-h1");
+    expect(diff.fields.visibleContentH1).toMatchObject({ status: "flagged-diff", legacy: 0, new: 1 });
+    // headings are identical (the wrapper does not change them), so only the visibility check can catch it
+    expect(diff.fields.headings.status).toBe("match");
+  });
+
+  it("a page-wide visible-h1 difference outside the content root (cards, widgets) is only a warning", () => {
+    const base = extractPostDom(legacyHtml);
+    const other = structuredClone(base);
+    other.visibleH1 = base.visibleH1 - 1;
+    const diff = diffPostDom(base, other);
+    expect(diff.severity).toBe("warn");
+    expect(diff.flaggedFields).toEqual(["visibleH1"]);
+  });
+
+  it("an extra heading (esp. h1) is an error, an extra h2 too", () => {
+    const base = extractPostDom(legacyHtml);
+    const extraH1 = structuredClone(base);
+    extraH1.headings = [...base.headings, "H1#dup:Post Title"];
+    let diff = diffPostDom(base, extraH1);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("extra-h1");
+
+    const extraH2 = structuredClone(base);
+    extraH2.headings = [...base.headings, "H2#more:More"];
+    diff = diffPostDom(base, extraH2);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("extra-heading");
+  });
+
+  it("reads hide rules from linked stylesheets under distDir", () => {
+    const dir = mkdtempSync(join(tmpdir(), "mig4-css-"));
+    try {
+      mkdirSync(join(dir, "_astro"));
+      writeFileSync(join(dir, "_astro", "a.css"), "._content_x>h1{display:none}");
+      const html = renderHtml({ wrapInProseContent: false, body: "" }).replace(
+        "</head>",
+        '<link rel="stylesheet" href="/_astro/a.css"></head>',
+      ).replace("<main><article></article></main>", '<main><div class="prose _content_x"><h1>T</h1></div></main>');
+      expect(extractPostDom(html, { distDir: dir }).visibleH1).toBe(1);
+      expect(extractPostDom(html).visibleH1).toBe(2);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("hiddenH1Selectors keeps only display:none rules that mention h1", () => {
+    expect(hiddenH1Selectors("._c>h1{display:none}.a{display:none}h1,h2{color:red}.m h1, .n>h1{display: none}")).toEqual([
+      "._c>h1",
+      ".m h1",
+      ".n>h1",
+    ]);
+  });
+});
+
+describe("MIG-4 lib: text excludes style/script/template; content-root fallbacks", () => {
+  it("never counts style, script or template content", () => {
+    const html = renderHtml({
+      body: `<p>Visible</p><style>.x{color:red}</style><script>var leaked = 1;</script><template><p>tpl text</p></template>`,
+    });
+    const dom = extractPostDom(html);
+    expect(dom.text).toBe("Visible");
+  });
+
+  it("treats a whitespace-only text difference between block elements as expected, not drift", () => {
+    const legacy = extractPostDom(renderHtml({ body: "<p>one</p><p>two</p>" }));
+    const next = extractPostDom(renderHtml({ body: "<p>one</p>\n<p>two</p>" }));
+    const diff = diffPostDom(legacy, next);
+    expect(diff.fields.text).toMatchObject({ status: "expected-diff", reasons: ["whitespace-only"] });
+    expect(diff.severity).toBe("expected");
+    expect(diff.expectedReasons).toEqual(["whitespace-only"]);
+  });
+
+  it("reports which content root was used", () => {
+    expect(extractPostDom(renderHtml()).contentRoot).toBe("prose");
+    expect(extractPostDom(renderHtml({ wrapInProseContent: false })).contentRoot).toBe("article");
+    expect(extractPostDom("<html><body><p>x</p></body></html>").contentRoot).toBe("body");
   });
 });
 
@@ -170,7 +322,7 @@ describe("MIG-4 lib: diffPostDom", () => {
       body: `
         <h2 id="s1">Section One</h2>
         <p>This is a sufficiently long body paragraph for parity testing across legacy and new builds.</p>
-        <a href="/tag/c#">C#</a>
+        <a href="/tag/rust">Rust</a>
         <img src="http://ww1.sinaimg.cn/large/abc.jpg" />
         <pre class="astro-code"><code>console.log(1)</code></pre>
       `,
@@ -191,14 +343,17 @@ describe("MIG-4 lib: diffPostDom", () => {
         body: `
           <h2 id="s1">Section One</h2>
           <p>This is a sufficiently long body paragraph for parity testing across legacy and new builds.</p>
-          <a href="/tag/c%23">C#</a>
+          <a href="/tag/c%23">Rust</a>
           <img src="https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/abc" />
           <pre class="astro-code"><code>console.log(1)</code></pre>
         `,
       }),
     );
 
-    const diff = diffPostDom(baseDom, newDom, {
+    const legacyWithTag = structuredClone(baseDom);
+    legacyWithTag.links = ["/tag/c#"];
+    const diff = diffPostDom(legacyWithTag, newDom, {
+      newOrigin: "https://next.growgen.xyz",
       rewriteMap: {
         "http://ww1.sinaimg.cn/large/abc.jpg":
           "https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/abc",
@@ -337,7 +492,7 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
       newDir,
       postExpected,
       renderHtml({
-        canonical: `https://next.growgen.xyz${postExpected}`,
+        canonical: `https://growgen.xyz${postExpected}`,
         body: `<h2 id="h">Pic</h2><a href="/tag/c%23">C#</a><img src="https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/2015/08/18/b/beach" />`,
       }),
     );
@@ -408,6 +563,7 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
         urlsFile,
         "--rewrite-map",
         mapFile,
+        "--in-process",
         "--out",
         reportFile,
       ],
@@ -455,6 +611,7 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
           urlsFile,
           "--rewrite-map",
           mapFile,
+          "--in-process",
           "--fail-on-error",
         ],
         { encoding: "utf8" },
@@ -477,5 +634,145 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
     });
     expect(okOnly.summary.error).toBe(0);
     expect(okOnly.flagged).toEqual([]);
+  });
+});
+
+describe("MIG-4 runner: isolated batches, new posts, --fail-on-warn", () => {
+  const tempDirs: string[] = [];
+  afterEach(() => {
+    for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function writePost(root: string, urlPath: string, html: string) {
+    const dir = join(root, ...urlPath.replace(/^\/|\/$/g, "").split("/"));
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "index.html"), html, "utf8");
+  }
+
+  function fixture() {
+    const base = mkdtempSync(join(tmpdir(), "mig4-iso-"));
+    tempDirs.push(base);
+    const legacyDir = join(base, "legacy");
+    const newDir = join(base, "new");
+    const urls = ["/fe/2020/01/01/a/", "/fe/2020/01/02/b/", "/fe/2020/01/03/c/"];
+    for (const u of urls) writePost(legacyDir, u, renderHtml({ canonical: `https://growgen.xyz${u}` }));
+    writePost(newDir, urls[0], renderHtml({ canonical: `https://growgen.xyz${urls[0]}` }));
+    writePost(newDir, urls[1], renderHtml({ canonical: `https://growgen.xyz${urls[1]}`, description: "changed" }));
+    writePost(newDir, urls[2], renderHtml({ canonical: `https://growgen.xyz${urls[2]}` }));
+    writePost(newDir, "/fe/2026/11/25/brand-new/", renderHtml());
+    const urlsFile = join(base, "urls.txt");
+    writeFileSync(urlsFile, urls.join("\n"));
+    return { base, legacyDir, newDir, urls, urlsFile };
+  }
+
+  it("runBulkDiffIsolated (child processes, batch size 1) equals the in-process report", async () => {
+    const { legacyDir, newDir, urls } = fixture();
+    const inProcess = runBulkDiff({ legacyDir, newDir, urls });
+    const isolated = await runBulkDiffIsolated({ legacyDir, newDir, urls }, { batchSize: 1, concurrency: 2 });
+    const strip = (r: { summary: Record<string, unknown> }) => ({
+      ...r,
+      generatedAt: 0,
+      summary: { ...r.summary, durationMs: 0 },
+    });
+    expect(strip(isolated)).toEqual(strip(inProcess));
+    expect(isolated.summary).toMatchObject({ total: 3, ok: 2, warn: 1, error: 0 });
+  });
+
+  it("findNewPosts lists post-shaped pages absent from the legacy list", () => {
+    const { newDir, urls } = fixture();
+    expect(findNewPosts(newDir, new Set(urls))).toEqual(["/fe/2026/11/25/brand-new/"]);
+  });
+
+  it("CLI reports new posts and content-root fallbacks; --fail-on-warn exits 1 while --fail-on-error exits 0", () => {
+    const { legacyDir, newDir, urlsFile, base } = fixture();
+    const reportFile = join(base, "r.json");
+    const args = [CLI_PATH, "--legacy", legacyDir, "--new", newDir, "--urls", urlsFile, "--out", reportFile];
+    const out = execFileSync(process.execPath, [...args, "--fail-on-error"], { encoding: "utf8" });
+    expect(out).toContain("New posts (not in legacy)");
+    const report = JSON.parse(readFileSync(reportFile, "utf8"));
+    expect(report.newPosts).toEqual(["/fe/2026/11/25/brand-new/"]);
+    expect(report.summary.contentRootFallbacks).toEqual({ legacy: 0, new: 0 });
+    let code = 0;
+    try {
+      execFileSync(process.execPath, [...args, "--fail-on-warn"], { encoding: "utf8", stdio: "pipe" });
+    } catch (err) {
+      code = (err as { status?: number }).status ?? -1;
+    }
+    expect(code).toBe(1);
+  }, 60_000);
+});
+
+describe("MIG-4 review: canonical/link mismatches and leaked origins are errors; timeouts; key slugs", () => {
+  const legacy = extractPostDom(
+    renderHtml({
+      canonical: "https://growgen.xyz/fe/2025/01/02/sample/",
+      body: `<h2 id="s">S</h2><a href="/tag/rust">Rust</a><p>Text body.</p>`,
+    }),
+  );
+
+  it("a wrong canonical is an error", () => {
+    const bad = structuredClone(legacy);
+    bad.canonical = "https://growgen.xyz/fe/2025/01/02/other/";
+    const diff = diffPostDom(legacy, bad);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("canonical-mismatch");
+  });
+
+  it("a changed or broken link is an error", () => {
+    const bad = structuredClone(legacy);
+    bad.links = ["/tag/c#"];
+    const diff = diffPostDom(legacy, bad);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("link-mismatch");
+  });
+
+  it("a URL on a preview/dev origin is a leaked-origin error", () => {
+    for (const leaked of [
+      "https://next.growgen.xyz/tag/rust/",
+      "http://localhost:4321/tag/rust/",
+      "https://blog-abc.workers.dev/tag/rust/",
+      "https://x.pages.dev/",
+    ]) {
+      const bad = structuredClone(legacy);
+      bad.links = [leaked];
+      const diff = diffPostDom(legacy, bad);
+      expect(diff.errorReasons, leaked).toContain("leaked-origin");
+    }
+    const ok = structuredClone(legacy);
+    expect(diffPostDom(legacy, ok).errorReasons).toEqual([]);
+  });
+
+  it("a hung worker fails the run with a timeout (no hang)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "mig4-hang-"));
+    try {
+      const hang = join(dir, "hang-worker.mjs");
+      writeFileSync(hang, "process.once('message', () => setInterval(() => {}, 1000));\n");
+      await expect(
+        runBulkDiffIsolated(
+          { legacyDir: dir, newDir: dir, urls: ["/fe/2020/01/01/a/"] },
+          { batchTimeoutMs: 400, workerPath: hang },
+        ),
+      ).rejects.toThrow(/timed out/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rewrite-map keys that are source file names meet the page slug (study-surfing)", () => {
+    expect(slugSegment("Study-surfing-in-Houhai,-Sanya")).toBe("study-surfing-in-houhai-sanya");
+    expect(slugSegment("Typescript sucks but long live the types")).toBe("typescript-sucks-but-long-live-the-types");
+    const map = {
+      posts: {
+        "2020/07/19/Study-surfing-in-Houhai,-Sanya.md": {
+          "../17/2020-07-17.jpg": "https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/x/e22",
+        },
+      },
+    };
+    const out = expectedNewUrl("/_astro/2020-07-17.DroK_MKJ_1fCVHd.webp", {
+      kind: "image",
+      rewriteMap: map,
+      postPath: "/life/2020/07/19/study-surfing-in-houhai-sanya/",
+    });
+    expect(out.url).toBe("https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/x/e22");
   });
 });

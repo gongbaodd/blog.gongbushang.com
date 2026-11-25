@@ -92,16 +92,19 @@ jobs:
           if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
           if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
 
+      - name: URL parity (every legacy URL is built)
+        # Exact comparison of dist/client against apps/web/tests/legacy-route-groups.json + legacy-urls.txt.
+        # Deliberately WITHOUT --fail-on-extra: the testing DB is mutable (new tags, years, series, cities add pages),
+        # so extras would fail unrelated PRs. Run `pnpm --filter web parity --fail-on-extra --allow-extra
+        # tests/parity-allow-extra.txt` locally and at cutover.
+        run: pnpm --filter web parity
+
       - name: Free-tier size guard (Worker 60 MiB, 18k assets)
         working-directory: apps/web
         run: |
           set -o pipefail
           pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json 2>&1 | tee "$RUNNER_TEMP/dry.log"
-          bytes=$(find "$RUNNER_TEMP/wrangler-dry" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.wasm' \) -print0 | xargs -0 cat | wc -c)
-          assets=$(find dist/client -type f | wc -l)
-          echo "worker uncompressed=$((bytes/1048576)) MiB (limit 64), static assets=$assets (limit 20000)"
-          if [ "$bytes" -gt $((60*1048576)) ]; then echo "::error::Worker above 60 MiB"; exit 1; fi
-          if [ "$assets" -gt 18000 ]; then echo "::error::more than 18000 static assets"; exit 1; fi
+          node scripts/guards/worker-budget.mjs --worker-dir "$RUNNER_TEMP/wrangler-dry" --assets-dir dist/client --max-mib 60 --max-assets 18000
 
       - name: Deploy to testing
         working-directory: apps/web

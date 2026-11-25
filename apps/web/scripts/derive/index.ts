@@ -7,12 +7,18 @@
 //   EmDash podcasts (read-only) -> episode embeddings (derived.podcast_embeddings), nearest episodes, UMAP corpus
 //   EmDash gallery  (read-only) -> trace SVG + colours (derived.gallery_traces) -> public/api/gallery/trace/*.svg
 // Nothing is read from the legacy content submodule (MIG-3), except with DERIVE_PARITY_LEGACY=1 (parity checks only).
-// Nothing generated is committed. Runs on the owner's Mac today (embeddings need LM Studio) and in GitHub Actions later
-// (cache hits only; new posts without embeddings are left out of related posts and /umap, D10).
+// Nothing generated is committed. Runs locally or in GitHub Actions: uses Cloudflare Workers AI when configured,
+// falls back to local LM Studio if running, or cache hits only (new posts without embeddings are left out of
+// related posts and /umap, D10). A provider switch re-embeds everything in one run; if that cannot finish, the old-model
+// vectors stay in use (never a smaller corpus).
 //
 // Env: CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE | DERIVE_DATABASE_URL  database (read-only for content)
 //      LEGACY_GENERATED_DIR   only for DERIVE_PARITY_LEGACY=1 (default ../../src/content/generated)
 //      DERIVE_EMBED           auto (default) | require | skip | fake (tests only)
+//      DERIVE_EMBED_PROVIDER  auto (default: workers-ai if configured, else local) | workers-ai | local
+//      DERIVE_EMBED_MODEL     override embedding model key (validated charset; default @cf/qwen/qwen3-embedding-0.6b for workers-ai)
+//      CF_ACCOUNT_ID | CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID for Workers AI embeddings
+//      CF_AI_TOKEN | CLOUDFLARE_AI_API_TOKEN  Workers-AI-scoped API token (CLOUDFLARE_API_TOKEN is never used)
 //      DERIVE_SKIP_COLORS=1   do not extract cover colours (cache hits only)
 //      DERIVE_PARITY_LEGACY=1 only posts the legacy metadata knows (the 3 .mdx posts were never indexed); for parity comparisons
 //      DERIVE_SCHEMA          cache schema name (default derived)
@@ -28,7 +34,7 @@ const { webRoot } = await import("./db.ts");
 const { connect, describeTarget, resolveConnectionString, schemaReady, SCHEMA } = await import("./db.ts");
 const { buildPosts, readPosts } = await import("./posts.ts");
 const { loadHints, pruneEmbeddings, saveHints } = await import("./cache.ts");
-const { embedPosts } = await import("./embed.ts");
+const { embedPosts, finalizeEmbeddings } = await import("./embed.ts");
 const { resolveColors, resolveGeocodes } = await import("./enrich.ts");
 const { resolveUmap } = await import("./umap.ts");
 const { assemble, writeOutputs } = await import("./outputs.ts");
@@ -62,9 +68,9 @@ try {
 
 	t = Date.now();
 	const mode = (process.env.DERIVE_EMBED || "auto") as "auto" | "require" | "skip" | "fake";
-	const emb = await embedPosts(client, posts, mode);
+	const session = {};
+	const emb = await embedPosts(client, posts, mode, { session });
 	const pruned = await pruneEmbeddings(client, posts.map((p) => p.legacyId));
-	console.log(`[derive] embeddings: ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${pruned} pruned (${lap(t)})`);
 
 	// Podcast episodes and gallery images (EmDash `podcasts`, `gallery`).
 	t = Date.now();
@@ -74,9 +80,11 @@ try {
 		console.error(`[derive] ERROR: ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)} (wrong database, or the MIG-3 import has not run: node apps/web/scripts/import/mig3/import.mjs). Set ALLOW_EMPTY_DATA=1 to build without them.`);
 		process.exit(1);
 	}
-	const pemb = await embedPosts(client, episodes, mode, 3, "podcast_embeddings");
+	const pemb = await embedPosts(client, episodes, mode, { session }, "podcast_embeddings");
+	await finalizeEmbeddings(client, [emb, pemb]);
+	console.log(`[derive] embeddings (${emb.provider}, ${emb.model}): ${emb.reused} cached, ${emb.embedded.length} embedded, ${emb.missing.length} missing, ${emb.staleModel.length} kept from a previous model, ${pruned} pruned (${lap(t)})`);
 	const prunedEp = await pruneEmbeddings(client, episodes.map((e) => e.legacyId), "podcast_embeddings");
-	console.log(`[derive] podcast: ${episodes.length} episodes, embeddings: ${pemb.reused} cached, ${pemb.embedded.length} embedded, ${pemb.missing.length} missing, ${prunedEp} pruned (${lap(t)})`);
+	console.log(`[derive] podcast: ${episodes.length} episodes, embeddings: ${pemb.reused} cached, ${pemb.embedded.length} embedded, ${pemb.missing.length} missing, ${pemb.staleModel.length} kept from a previous model, ${prunedEp} pruned (${lap(t)})`);
 
 	t = Date.now();
 	const extras: Extras = {

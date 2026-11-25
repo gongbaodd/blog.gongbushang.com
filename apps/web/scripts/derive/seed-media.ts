@@ -7,6 +7,9 @@
 // trace only if the legacy image URL equals the EmDash one, so a seeded row is always valid for what it is cached against.
 // Safe to re-run (upserts). Never touches EmDash tables. Independent of derive:seed (posts), which must not be re-run
 // just for this.
+// Model tag: the legacy vectors came from LM Studio, so they are always tagged with the LM Studio model id
+// (resolveModel()), independent of DERIVE_EMBED_PROVIDER/DERIVE_EMBED_MODEL; under Workers AI they are re-embedded in
+// one run and stay usable as a fallback (same content_hash) if that cannot finish.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { resolveModel } from "../../../../packages/post-embedding/src/client.ts";
