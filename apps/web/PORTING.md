@@ -54,7 +54,11 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/card/*`, `src/masonry/*`, `src/menu/BlogListMenu.tsx`, `src/folder/*`, `src/bits/Folder.tsx` | `packages/{card,masonry,menu,folder}`, `src/bits/Components/Folder` | tabler icons -> lucide; `track("tag_clicked", location "list-menu")` restored (PORT-7) |
 | `src/stores/{links,podcast,yearCovers,heatmap}.ts` | `src/stores/*`, `packages/heat/store/heatmap.ts` | import paths only |
 | `src/components/{BlogListPage,YearFolders,WorldMap}.astro` | `src/components/*` | `WorldMap` is a placeholder (TODO PORT-6); `/year/` search banner TODO (search story) |
-| `scripts/legacy-data.mjs`, `src/lib/legacy-data.ts` | `src/content/generated/**` | **TODO DATA-1 / PORT-6 / PORT-8**: covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order. Reads `LEGACY_GENERATED_DIR` (default `../../src/content/generated`); missing dir = empty data. Output `src/generated/`, `public/api/` is git-ignored |
+| `scripts/derive/index.ts`, `src/lib/legacy-data.ts` | `src/content/generated/**` | **TODO DATA-1 / PORT-6 / PORT-8**: covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order. Reads `LEGACY_GENERATED_DIR` (default `../../src/content/generated`); missing dir = empty data. Output `src/generated/`, `public/api/` is git-ignored |
+
+## PORT-8 (build-time derived data) - reuses legacy pipeline code by relative import, nothing copied
+
+`scripts/derive/` replaces the post part of the former `scripts/legacy-data.mjs` (deleted). It imports, without copying, `packages/content-prepare` (`extractDataFields`, `geocodeCities`), `packages/metadata-embedding` (`embedFromText`, `computeUmapInputHash`, `runUmapBinary`), `packages/post-embedding` (`isEmbeddingServerRunning`, model) and `packages/image-metadata` (`getColorSet`). **CUT-2 must keep those packages** (they are no longer legacy-site-only). `scripts/derive/relates.ts` is the one ported copy (of `packages/utils/nearest.ts`). Podcast and gallery data are still read from the content submodule (MIG-3). Runbook: `docs/plan/emdash/runbooks/data.md`.
 
 ## PORT-4 (home) - copied, originals stay until CUT-2
 
@@ -68,13 +72,13 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/map/*`, `src/components/WorldMap.astro` | `packages/map/*`, `src/components/WorldMap.astro` | real maplibre `GLMap` replaces the PORT-3 placeholder (also used by `/world/`); `track("city_opened")` restored (PORT-7) |
 | `src/tags/*` | `packages/tags/*` | `track("tag_clicked", location "tag-cloud")` restored (PORT-7) |
 | `src/components/{BlogSections.astro,GridHalf.tsx,ReactErrorBoundary.tsx}`, `src/react/ScaledAsciiSkeleton.tsx` | `src/components/*`, `packages/scaffold/GridHalf.tsx`, `packages/react/*` | import paths only |
-| `scripts/legacy-data.mjs` | - | now also records `traceFiles` (gallery trace SVG names) so prerender can set `traceUrl` without disk access |
+| `scripts/derive/index.ts` | - | now also records `traceFiles` (gallery trace SVG names) so prerender can set `traceUrl` without disk access |
 
 ## PORT-5 (podcast, resume, static pages, gallery data) - copied, originals stay until CUT-2
 
 | New (`apps/web/`) | Legacy original | Notes |
 |---|---|---|
-| `src/pages/podcast.astro`, `podcast/[id].astro` | same names under `src/pages` | data via `src/lib/podcast.ts` (legacy snapshot; **TODO MIG-3** swap to EmDash). `related` ("More to discover") precomputed by `scripts/legacy-data.mjs` with the legacy `findNearest` |
+| `src/pages/podcast.astro`, `podcast/[id].astro` | same names under `src/pages` | data via `src/lib/podcast.ts` (legacy snapshot; **TODO MIG-3** swap to EmDash). `related` ("More to discover") precomputed by `scripts/derive/index.ts` with the legacy `findNearest` |
 | `src/components/Podcast{Sidebar,EpisodeMenu,EpisodeContent,Discover}.tsx` | `src/components/` (same names) | tabler -> lucide; `track("podcast_listen_clicked")` restored (PORT-7) |
 | `src/carousel/BlogCarousel.module.css` | `packages/carousel/BlogCarousel.module.css` | unchanged (PORT-4 will add the carousel component beside it) |
 | `src/pages/resume.astro`, `resume/[role]/[lang].astro`, `src/resume/*` | `src/pages/resume*`, `packages/resume/{Resume.astro,MantineResume.*,data.ts,styles/paper.css}` | unchanged except imports. Not ported: `packages/resume/components/*` and `fragments/resume.mdx` (unused by the pages) |
@@ -90,7 +94,7 @@ Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6).
 
 | New file | Legacy source | Notes |
 |---|---|---|
-| `src/pages/rss.xml.ts`, `scripts/legacy-data.mjs` (writes `src/generated/rss-items.json`) | `src/pages/rss.xml.ts` | items = legacy metadata snapshot (byte-identical to legacy `dist/rss.xml`, 992 items); falls back to EmDash posts when no snapshot. **TODO DATA-1** |
+| `src/pages/rss.xml.ts`, `scripts/derive/index.ts` (writes `src/generated/rss-items.json`) | `src/pages/rss.xml.ts` | items = legacy metadata snapshot (byte-identical to legacy `dist/rss.xml`, 992 items); falls back to EmDash posts when no snapshot. **TODO DATA-1** |
 | `@astrojs/sitemap` in `astro.config.mjs` | root `astro.config.mjs` | same `filter`; emits `sitemap-index.xml` + `sitemap-0.xml` into `dist/client` (works with the Cloudflare adapter) |
 | `src/pages/sitemap.xml.ts` | (none; FIX-1 stub) | alias of the index so EmDash's SSR `/sitemap.xml` is not injected |
 | e2e `@analytics-on` / `@analytics-off` (`e2e/features/analytics.feature`) | legacy `e2e/` | not ported; PORT-9 (needs `SITE_ENV=production PUBLIC_MIXPANEL_TOKEN=e2e-test-token PUBLIC_MIXPANEL_API_HOST=...` build) |

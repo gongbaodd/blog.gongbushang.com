@@ -4,13 +4,13 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const root = resolve(import.meta.dirname, "../..");
-const script = resolve(root, "scripts/legacy-data.mjs");
+const script = resolve(root, "scripts/derive/index.ts");
 const run = (env: Record<string, string>) =>
-	spawnSync(process.execPath, [script], { env: { ...process.env, ...env }, encoding: "utf8" });
+	spawnSync(process.execPath, ["--import", "tsx", script], { cwd: root, env: { ...process.env, ...env }, encoding: "utf8" });
 
 const dataDir = resolve(root, "../../src/content/generated"); // content submodule (D13)
 
-describe("legacy-data build guard (DATA-1)", () => {
+describe("derive build guard (DATA-1, PORT-8)", () => {
 	it("fails when the generated dir is missing", () => {
 		const r = run({ LEGACY_GENERATED_DIR: resolve(root, "data/__missing__"), ALLOW_EMPTY_DATA: "" });
 		expect(r.status).toBe(1);
