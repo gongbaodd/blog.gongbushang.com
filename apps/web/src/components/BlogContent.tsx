@@ -6,6 +6,7 @@ import { useStore } from "@nanostores/react";
 import { useMediaQuery } from "@mantine/hooks";
 import { Carousel } from "../carousel/BlogCarousel";
 import { $isLoading, $relates, request } from "@/src/stores/relates";
+import { trackRelatedClick } from "./related-tracking";
 import classes from "./BlogContent.module.css";
 
 export interface ILink {
@@ -212,7 +213,6 @@ export function RelatePosts({ id }: { id: string }) {
 		request(id);
 	}, [id]);
 
-	// TODO PORT-7: track("related_post_clicked", { from_slug, to_slug, rank }) via a delegated click handler.
 	return (
 		<CustomMantineProvider>
 			<Paper
@@ -222,6 +222,7 @@ export function RelatePosts({ id }: { id: string }) {
 				p="lg"
 				mt={isDesktop ? 0 : "xl"}
 				style={isLoading ? { opacity: 0 } : {}}
+				onClickCapture={(e) => trackRelatedClick(e.target, id, relates)}
 			>
 				<Stack gap="md">
 					<Title order={2} size="h3">
