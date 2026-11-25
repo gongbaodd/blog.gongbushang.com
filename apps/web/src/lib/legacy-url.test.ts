@@ -65,7 +65,7 @@ describe("mapPost", () => {
 		const p = mapPost({ id: "x", data: base })!;
 		expect(p.href).toBe("/book/2021/02/10/matrix/");
 		expect(p.date).toBe("2021-02-10");
-		expect(p.data.tag).toEqual(["math"]);
+		expect(p.data.tag).toEqual(["Math"]);
 		expect(p.data.series).toEqual({ slug: "linear", name: "线性代数", number: 3 });
 		expect(p.data.city).toEqual([{ slug: "dalian-china", label: "Dalian, China" }]);
 	});

@@ -58,7 +58,8 @@ export function mapPost(entry: { id: string; data: any }): BlogPost | undefined 
 	const extra = (d.legacy_frontmatter_extra ?? {}) as { type?: string };
 	const seriesTerm = terms?.series?.[0];
 	const img = d.featured_image as { src?: string; alt?: string } | undefined;
-	const tag = (terms?.tag ?? []).map((t) => t.slug);
+	// Display labels keep the frontmatter casing (MIG-1c); URLs use the lowercase slug, as legacy did.
+	const tag = (terms?.tag ?? []).map((t) => t.label || t.slug);
 	const city = (terms?.city ?? []).map((t) => ({ slug: t.slug, label: t.label }));
 
 	return {
@@ -136,7 +137,7 @@ export async function postExcerpt(body: string, words = 120): Promise<string> {
 export function postLinks(post: BlogPost): TLink[] {
 	const { category, tag = [], series, city = [] } = post.data;
 	const links: TLink[] = [{ label: category, href: categoryHref(category) }];
-	for (const t of tag) links.push({ label: t, href: tagHref(t) });
+	for (const t of tag) links.push({ label: t, href: tagHref(t.toLowerCase()) });
 	if (series) links.push({ label: series.name ?? series.slug, href: seriesHref(series.slug) });
 	for (const c of city) links.push({ label: c.label, href: cityHref(c.slug) });
 	return links;
