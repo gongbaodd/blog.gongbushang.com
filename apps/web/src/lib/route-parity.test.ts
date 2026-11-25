@@ -5,7 +5,12 @@ import { DIST_CLIENT, builtPaths, diffGroup, loadGroups } from "../../tests/buil
 import { existsSync } from "node:fs";
 
 /** Groups owned by landed stories. Add a group here when its story merges. */
-const DONE = ["post", "category", "tag", "series", "year", "world", "api/*"] as const;
+const DONE = ["post", "category", "tag", "series", "year", "world", "api/*", "podcast", "resume", "static", "gallery", "other"] as const;
+
+/** Paths of a DONE group that a later story owns (kept visible here so they are not forgotten). */
+const OWNED_LATER: Record<string, string[]> = {
+	other: ["/umap/"], // PORT-6
+};
 
 const hasBuild = existsSync(DIST_CLIENT);
 const { groups } = loadGroups();
@@ -15,7 +20,12 @@ const everyLegacy = new Set(Object.values(groups).flatMap((g) => g.paths));
 describe.skipIf(!hasBuild)("built paths contain every legacy path", () => {
 	for (const name of DONE) {
 		test(`${name}: 0 missing`, () => {
-			const { missing } = diffGroup(groups[name].paths, built, everyLegacy);
+			const later = new Set(OWNED_LATER[name] ?? []);
+			const { missing } = diffGroup(
+				groups[name].paths.filter((p) => !later.has(p)),
+				built,
+				everyLegacy,
+			);
 			if (missing.length) console.warn(`[route-parity] ${name}: ${missing.length} missing, e.g. ${missing.slice(0, 5).join(" ")}`);
 			expect(missing).toEqual([]);
 		});

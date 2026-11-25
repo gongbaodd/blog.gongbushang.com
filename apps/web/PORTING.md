@@ -69,3 +69,19 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/tags/*` | `packages/tags/*` | `track("tag_clicked")` TODO PORT-7 |
 | `src/components/{BlogSections.astro,GridHalf.tsx,ReactErrorBoundary.tsx}`, `src/react/ScaledAsciiSkeleton.tsx` | `src/components/*`, `packages/scaffold/GridHalf.tsx`, `packages/react/*` | import paths only |
 | `scripts/legacy-data.mjs` | - | now also records `traceFiles` (gallery trace SVG names) so prerender can set `traceUrl` without disk access |
+
+## PORT-5 (podcast, resume, static pages, gallery data) - copied, originals stay until CUT-2
+
+| New (`apps/web/`) | Legacy original | Notes |
+|---|---|---|
+| `src/pages/podcast.astro`, `podcast/[id].astro` | same names under `src/pages` | data via `src/lib/podcast.ts` (legacy snapshot; **TODO MIG-3** swap to EmDash). `related` ("More to discover") precomputed by `scripts/legacy-data.mjs` with the legacy `findNearest` |
+| `src/components/Podcast{Sidebar,EpisodeMenu,EpisodeContent,Discover}.tsx` | `src/components/` (same names) | tabler -> lucide; `track("podcast_listen_clicked")` removed (**TODO PORT-7**) |
+| `src/carousel/BlogCarousel.module.css` | `packages/carousel/BlogCarousel.module.css` | unchanged (PORT-4 will add the carousel component beside it) |
+| `src/pages/resume.astro`, `resume/[role]/[lang].astro`, `src/resume/*` | `src/pages/resume*`, `packages/resume/{Resume.astro,MantineResume.*,data.ts,styles/paper.css}` | unchanged except imports. Not ported: `packages/resume/components/*` and `fragments/resume.mdx` (unused by the pages) |
+| `scripts/generate-pdfs.mjs` | `packages/resume/generate-pdfs.mjs` | serves `apps/web/dist/client`; browser = `CHROME_PATH`, else `@sparticuz/chromium` (linux), else local Chrome (macOS); `SKIP_PDFS=1` skips |
+| `src/pages/{about,contact,privacy,gemini,lab}.astro`, `src/follow/Follow.astro` | same names | `lab` = `portfolio` tag list. `privacy`: consent script **TODO PORT-7** (analytics forced off until `packages/analytics` is ported) |
+| `src/pages/cv.astro`, `hero-gallery.astro` | same names | **placeholders**: `Bento` and `ParticleHero` belong to PORT-4. URLs and noindex are kept; hero-gallery renders the gallery image + trace statically. **TODO PORT-4** |
+| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads the legacy snapshot; **TODO MIG-3** |
+| `public/*` (see TEMPLATE_DIFF) | `public/*` | duplicates |
+
+Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6), `/rss.xml`, `/sitemap-0.xml`, `/sitemap-index.xml` (PORT-7).

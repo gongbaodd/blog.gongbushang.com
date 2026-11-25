@@ -1,0 +1,32 @@
+---
+// /resume/<role>/<lang>/ (ported from src/pages/resume/[role]/[lang].astro); universal/en lives at /resume/.
+import Global from "../../../layouts/Global.astro";
+import Header from "../../../header/Header.astro";
+import Footer from "../../../footer/Footer.astro";
+import MantineMain from "../../../components/MantineMain";
+import ResumeCom from "../../../resume/Resume.astro";
+import { resumeLanguages, resumeRoles, variants, type ResumeLanguage, type ResumeRole } from "../../../resume/data";
+import { SITE_DESCRIPTION } from "../../../consts";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+	return resumeRoles.flatMap((role) =>
+		resumeLanguages
+			.filter((language) => !(role === "universal" && language === "en"))
+			.map((language) => ({ params: { role, lang: language } })),
+	);
+}
+
+const { role, lang: language } = Astro.params as { role: ResumeRole; lang: ResumeLanguage };
+---
+
+<Global title={`Resume - Jian Gong - ${variants[role].headline[language]}`} description={SITE_DESCRIPTION}>
+	<Header />
+	<section>
+		<MantineMain>
+			<ResumeCom role={role} language={language} />
+			<Footer slug={"resume"} />
+		</MantineMain>
+	</section>
+</Global>

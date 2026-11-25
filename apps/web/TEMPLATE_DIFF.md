@@ -113,3 +113,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 ## PORT-4
 - `astro.config.mjs`: `vite-plugin-glsl`; `vite.optimizeDeps` include `react-plock` / exclude `onnxruntime-node`, rapier packages; `build.rollupOptions.treeshake.moduleSideEffects: "no-external"`; alias `onnxruntime-node` -> `src/empty-module.js` (all mirror legacy, webgl-components skill).
 - `package.json`: new deps `three`, `maplibre-gl`, `react-map-gl`; dev deps `vite-plugin-glsl`, `@types/three`.
+
+## PORT-5
+- `package.json`: `build` ends with `node scripts/generate-pdfs.mjs` (resume PDFs into `dist/client/resume/pdfs/`); new script `resume:pdfs`; new deps `@sparticuz/chromium`, `puppeteer-core` (build-time only, never bundled into the Worker).
+- `public/`: legacy static assets copied (`CNAME`, `ads.txt`, `browserconfig.xml`, android-chrome/mstile/icon PNGs, `fonts/`, `llm/` 28 MB for the search story, `assets/bits/...`, `2025/08/18/record.gif`, `resume/pdfs/.gitkeep`). Legacy `robots.txt` is not copied: `src/pages/robots.txt.ts` owns it.
+- `scripts/legacy-data.mjs`: also snapshots the podcast channel and per-episode "More to discover" ids.
