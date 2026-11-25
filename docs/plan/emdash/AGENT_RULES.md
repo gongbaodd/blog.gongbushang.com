@@ -1,6 +1,6 @@
 # Agent rules: EmDash migration
 
-Every agent on the migration reads this file first. The plan is `docs/plan/emdash-migration-plan.md`. Decisions D1–D11 and the free-tier budget in §10 are binding. To change one, raise it with Lead; don't work around it.
+Every agent on the migration reads this file first. The plan and story backlog live in Linear: project [EmDash Migration (`P-GON-6`)](https://linear.app/gongbaodd/project/emdash-migration-fc8994e42e5e) and document [EmDash Migration Plan (v3)](https://linear.app/gongbaodd/document/emdash-migration-plan-v3-732d5d1b3cf3) (stub & story ID index in `docs/plan/emdash-migration-plan.md`). Decisions D1–D13 and the free-tier budget are binding. To change one, raise it with Lead; don't work around it.
 
 ## Hard rules
 1. **Wheel first.** Before writing code for a story, read the Scout note `docs/plan/emdash/scout/<story-id>.md`. If it says an existing package, CLI command or plugin covers the need, use it. Custom code is glue only.
@@ -12,12 +12,12 @@ Every agent on the migration reads this file first. The plan is `docs/plan/emdas
 7. **Environments** are `local` (Supabase via `supabase start`), `testing`, and `production`. Never call production "public".
 
 ## Story workflow
-1. Lead assigns `<story-id>`. Work on branch `emdash/<story-id>`, cut from `feat/emdash`, in a git worktree if another builder is active.
-2. Mark the story `active` in the Gantt chart (§6 of the plan): add `active, ` after the colon on that story's line.
+1. Lead assigns `<story-id>` (Linear issue `GON-*` in project `P-GON-6`). Work on branch `emdash/<story-id>`, cut from `feat/emdash`, in a git worktree if another builder is active.
+2. Move the story's Linear issue to **In Progress**.
 3. Implement. Keep `apps/web/TEMPLATE_DIFF.md` updated whenever you change a file the EmDash template generated.
 4. Run the checks for the story (build, unit tests, plus whatever the story names). Tester re-runs them independently.
-5. Hand back to Lead with a summary: what changed, the commands run and their results, and anything left open.
-6. After merge, mark the story `done, ` in the Gantt chart. Archivist then appends lessons to `docs/plan/emdash/knowledge.md`.
+5. Hand back to Lead (moving the Linear issue to **In Review**) with a summary: what changed, the commands run and their results, and anything left open.
+6. After merge, move the Linear issue to **Done**. Archivist then appends lessons to `docs/plan/emdash/knowledge.md`.
 
 ## Commits
 Conventional commits (`feat(web): …`, `chore(infra): …`), ending with:
@@ -26,7 +26,10 @@ Conventional commits (`feat(web): …`, `chore(infra): …`), ending with:
 ## Where things live
 | What | Path |
 |---|---|
-| New site (single package) | `apps/web/` |
+| Plan & backlog | Linear project [`P-GON-6`](https://linear.app/gongbaodd/project/emdash-migration-fc8994e42e5e) (index in `docs/plan/emdash-migration-plan.md`) |
+| New public site | `apps/web/` |
+| Dockerized Node admin (INF-9) | `apps/admin/` |
+| Cover color Worker (PORT-8b) | `apps/colorize/` |
 | Supabase local project | `supabase/` |
 | Scout notes | `docs/plan/emdash/scout/` |
 | Runbooks | `docs/plan/emdash/runbooks/` |
