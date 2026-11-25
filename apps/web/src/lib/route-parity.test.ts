@@ -9,8 +9,6 @@ const DONE = ["post", "category", "tag", "series", "year", "world", "api/*", "po
 
 /** Paths of a DONE group that a later story owns (kept visible here so they are not forgotten). */
 const OWNED_LATER: Record<string, string[]> = {
-	other: ["/umap/"], // PORT-6
-	"rss/sitemap": ["/sitemap/"], // PORT-6 (treemap page); /rss.xml, /sitemap-0.xml, /sitemap-index.xml are PORT-7
 };
 
 const hasBuild = existsSync(DIST_CLIENT);

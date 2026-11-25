@@ -137,3 +137,8 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `astro.config.mjs` | `@astrojs/sitemap` integration (legacy filter + `sitemap.xml`); `vite.define` `PUBLIC_SITE_ENV` (from `SITE_ENV ?? CLOUDFLARE_ENV ?? "testing"`) and `PUBLIC_BUILD_SHA` (`GITHUB_SHA`) | One env switch for noindex, analytics and ads; sitemap-index/-0 |
 | `package.json` | Added `mixpanel-browser`, `@astrojs/rss`, `@astrojs/sitemap` | Same ranges as root |
 | `scripts/legacy-data.mjs` | also writes `src/generated/rss-items.json` | RSS parity |
+
+## PORT-6
+- `package.json`: new deps `@mantine/spotlight`, `minisearch`, `excerpt` (search), `clsx`, `tailwind-merge`, `class-variance-authority`, `@radix-ui/react-slot` (shadcn Bento on `/cv/`). All client-side; the Worker bundle is unchanged (everything is prerendered).
+- `src/types/excerpt.d.ts`: ambient types for the untyped `excerpt` package.
+- `src/components/BaseHead.astro`: imports `@mantine/spotlight/styles.css` (Search island).

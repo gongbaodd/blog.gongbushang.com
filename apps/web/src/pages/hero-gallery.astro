@@ -1,12 +1,10 @@
 ---
-// /hero-gallery/ (noindex test page for the gallery image used by the home hero).
-// The legacy page mounts <ParticleHero> (WebGL), which PORT-4 ports with the home hero. Until then this page
-// keeps the URL and the gallery data path (entry + trace SVG), showing the image and its trace statically.
-// TODO PORT-4: replace the <img> block with <ParticleHero galleryImage={galleryImage} />.
+// /hero-gallery/: noindex test page that mounts the home hero with one fixed gallery image (ported from src/pages/hero-gallery.astro).
 import Global from "../layouts/Global.astro";
 import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
 import MantineMain from "../components/MantineMain";
+import ParticleHero from "../particle-hero/ParticleHero.astro";
 import { SITE_TITLE } from "../consts";
 import { getGalleryEntry, getGalleryTraceUrl } from "../lib/gallery";
 
@@ -23,6 +21,7 @@ const galleryImage = entry
 
 <Global title={`${SITE_TITLE} · Hero gallery test`} description="ParticleHero gallery image test page" noindex>
 	<Header />
+
 	<section>
 		<MantineMain>
 			{
@@ -30,14 +29,7 @@ const galleryImage = entry
 					<p style="padding: 1rem; color: var(--mantine-color-red-6);">Gallery entry not found for id: {GALLERY_IMAGE_ID}</p>
 				)
 			}
-			{
-				galleryImage && (
-					<div style="display:flex;flex-wrap:wrap;gap:1rem;padding:1rem;">
-						<img src={galleryImage.url} alt={GALLERY_IMAGE_ID} style="max-width:min(100%,32rem);height:auto;" />
-						<img src={galleryImage.traceUrl} alt={`${GALLERY_IMAGE_ID} trace`} style="max-width:min(100%,32rem);height:auto;" />
-					</div>
-				)
-			}
+			<ParticleHero galleryImage={galleryImage} />
 			<Footer slug={"hero-gallery"} />
 		</MantineMain>
 	</section>

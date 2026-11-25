@@ -1,0 +1,23 @@
+---
+// /umap/: noindex scatter plot of every post's UMAP coordinates (ported from src/pages/umap.astro).
+// The island fetches /api/posts/umap.json (static copy of the legacy JSON, see scripts/legacy-data.mjs).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import UmapComponent from "../umap/Umap";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+export const prerender = true;
+---
+
+<Global title={SITE_TITLE} description={SITE_DESCRIPTION} noindex>
+	<Header />
+
+	<section>
+		<MantineMain>
+			<UmapComponent client:load />
+			<Footer slug={"umap"} />
+		</MantineMain>
+	</section>
+</Global>

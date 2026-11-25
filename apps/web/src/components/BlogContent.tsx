@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Paper, Title, Text, Group, Avatar, Badge, Divider, Stack, Anchor, Card } from "@mantine/core";
 import { Calendar, Clock, List, Tag, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import { useStore } from "@nanostores/react";
+import { useMediaQuery } from "@mantine/hooks";
+import { Carousel } from "../carousel/BlogCarousel";
+import { $isLoading, $relates, request } from "@/src/stores/relates";
 import classes from "./BlogContent.module.css";
 
 export interface ILink {
@@ -195,6 +199,41 @@ export function BlogMenu({
 					</Group>
 				</Card>
 			</Stack>
+		</CustomMantineProvider>
+	);
+}
+
+export function RelatePosts({ id }: { id: string }) {
+	const relates = useStore($relates);
+	const isLoading = useStore($isLoading);
+	const isDesktop = useMediaQuery("(min-width: 75em)") ?? false;
+
+	useEffect(() => {
+		request(id);
+	}, [id]);
+
+	// TODO PORT-7: track("related_post_clicked", { from_slug, to_slug, rank }) via a delegated click handler.
+	return (
+		<CustomMantineProvider>
+			<Paper
+				shadow="md"
+				className={classes.relates}
+				radius="lg"
+				p="lg"
+				mt={isDesktop ? 0 : "xl"}
+				style={isLoading ? { opacity: 0 } : {}}
+			>
+				<Stack gap="md">
+					<Title order={2} size="h3">
+						More to discover
+					</Title>
+					<Carousel
+						posts={relates}
+						vertical={isDesktop}
+						height={isDesktop ? "calc(100dvh - 90px - 2 * var(--mantine-spacing-lg) - 2.5rem - var(--mantine-spacing-md))" : 560}
+					/>
+				</Stack>
+			</Paper>
 		</CustomMantineProvider>
 	);
 }

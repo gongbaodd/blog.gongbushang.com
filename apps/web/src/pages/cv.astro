@@ -1,16 +1,18 @@
 ---
-// /cv/: noindex Bento demo page in the legacy site. The Bento component belongs to PORT-4 (home bento);
-// until it lands this page keeps the URL, the noindex flag and the legacy "About" link.
-// TODO PORT-4: render <BentoDemo /> here once src/components/Bento.tsx is ported.
+// /cv/: noindex Bento demo page (ported from src/pages/cv.astro).
 import Global from "../layouts/Global.astro";
 import MantineMain from "../components/MantineMain";
+import { BentoDemo } from "../components/Bento";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
 
 export const prerender = true;
 ---
 
-<Global noindex>
+<Global title={SITE_TITLE} description={SITE_DESCRIPTION} noindex>
 	<section>
 		<MantineMain>
+			<BentoDemo />
+
 			<a href="/about">About</a>
 		</MantineMain>
 	</section>

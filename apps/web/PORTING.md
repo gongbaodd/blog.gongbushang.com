@@ -95,3 +95,24 @@ Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6).
 | `src/pages/sitemap.xml.ts` | (none; FIX-1 stub) | alias of the index so EmDash's SSR `/sitemap.xml` is not injected |
 | e2e `@analytics-on` / `@analytics-off` (`e2e/features/analytics.feature`) | legacy `e2e/` | not ported; PORT-9 (needs `SITE_ENV=production PUBLIC_MIXPANEL_TOKEN=e2e-test-token PUBLIC_MIXPANEL_API_HOST=...` build) |
 | `src/components/NewsLetter.tsx` | (legacy file is unused) | not ported |
+
+| `src/pages/{about,contact,privacy,gemini,lab}.astro`, `src/follow/Follow.astro` | same names | `lab` = `portfolio` tag list. `privacy`: consent script **TODO PORT-7** (analytics forced off until `packages/analytics` is ported) |
+| `src/pages/cv.astro`, `hero-gallery.astro` | same names | **placeholders (replaced in PORT-6)**: `Bento` and `ParticleHero` belong to PORT-4. URLs and noindex are kept; hero-gallery renders the gallery image + trace statically. **TODO PORT-4** |
+| `src/lib/gallery.ts` | `packages/utils/gallery.ts` (entry + trace URL part) | reads the legacy snapshot; **TODO MIG-3** |
+| `public/*` (see TEMPLATE_DIFF) | `public/*` | duplicates |
+
+Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6), `/rss.xml`, `/sitemap-0.xml`, `/sitemap-index.xml` (PORT-7).
+
+## PORT-6 (search, related posts, /umap/, /sitemap/, /cv/, /hero-gallery/) - copied, originals stay until CUT-2
+
+| New (`apps/web/`) | Legacy original | Notes |
+|---|---|---|
+| `src/search/Search.tsx`, `src/stores/search.ts` | `packages/search/Search.tsx`, `src/stores/search.ts` | header `Search` island (`client:idle`) and the `/year/` `SearchBanner`; index = client-side minisearch over `/api/posts/all.json` (static copy of the legacy search index, **TODO MIG-3/DATA-1** swap the source to EmDash). `track()` calls are a no-op stub (**TODO PORT-7**). `IPost` typed locally |
+| `src/bits/Backgrounds/LetterGlitch/LetterGlitch.tsx` | `src/bits/Backgrounds/LetterGlitch/LetterGlitch.tsx` | unchanged (used by `SearchBanner`) |
+| `RelatePosts` in `src/components/BlogContent.tsx`, `src/stores/relates.ts` | `packages/content/BlogContent.tsx`, `src/stores/relates.ts` | fetches the prerendered `/api/relates/<id>.json` (PORT-3; ids from the legacy embedding snapshot); `related_post_clicked` tracking **TODO PORT-7** |
+| `src/pages/umap.astro`, `src/umap/Umap.tsx`, `src/stores/umap.ts`(+test) | `src/pages/umap.astro`, `src/components/Umap.tsx`, `src/stores/umap.ts` | `Umap.test.tsx` (jsdom) not ported |
+| `src/pages/sitemap.astro`, `src/sitemap/*` | `src/pages/sitemap.astro`, `packages/sitemap/*` | tree built from EmDash posts (`getPostEntries`, year in the legacy build TZ); same count guard |
+| `src/pages/cv.astro`, `src/components/Bento.tsx`, `src/shadcn/{utils,button,bento-grid}.tsx` | `src/pages/cv.astro`, `src/components/Bento.tsx`, `packages/shadcn/{lib,components}/*` | placeholder replaced; `@radix-ui/react-icons` import dropped (it was only used by commented-out code) |
+| `src/pages/hero-gallery.astro` | `src/pages/hero-gallery.astro` | now mounts the real `ParticleHero` |
+| View count | `src/components/ViewCount.tsx`, `src/stores/pv.ts` (PORT-1) | unchanged: still `https://pv.growgen.xyz/pv` |
+| `public/llm/` (28 MB, copied in PORT-5) | `public/llm/` | **not used by search** (search is minisearch over `/api/posts/all.json`). Only legacy `src/stores/gemini.ts` (`/gemini/`) reads it, and `apps/web/src/pages/gemini.astro` is static text, so nothing in apps/web uses it today; PORT-9 / the owner can decide to drop it (28 MB, 6 static files) |
