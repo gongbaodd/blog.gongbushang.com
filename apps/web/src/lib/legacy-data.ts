@@ -1,4 +1,4 @@
-// Typed access to the compact legacy generated data written by scripts/legacy-data.mjs
+// Typed access to the compact legacy generated data written by scripts/derive/index.ts
 // (cover colors, UMAP, nearest-neighbour relates, podcast episodes, gallery).
 // Missing file (no legacy submodule at build time) -> empty data; APIs degrade instead of failing.
 // TODO DATA-1: replace with EmDash-backed data and delete this module.
@@ -72,5 +72,5 @@ const mods = import.meta.glob("../generated/legacy-data.json", { eager: true, im
 
 export const legacy: LegacyData = (Object.values(mods)[0] as LegacyData | undefined) ?? EMPTY;
 
-/** Legacy post record by legacy id (records are keyed dash-less, see scripts/legacy-data.mjs). */
+/** Legacy post record by legacy id (records are keyed dash-less, see scripts/derive/index.ts). */
 export const postRecord = (id: string): LegacyPostRecord | undefined => legacy.posts[id.replaceAll("-", "")];

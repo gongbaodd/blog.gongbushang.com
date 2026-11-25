@@ -1,5 +1,5 @@
 // /rss.xml, same shape as the legacy feed: channel title/description, one item per post, newest first.
-// Items come from the legacy metadata snapshot (scripts/legacy-data.mjs -> src/generated/rss-items.json: title,
+// Items come from the legacy metadata snapshot (scripts/derive/index.ts -> src/generated/rss-items.json: title,
 // path, date, first 200 characters + "..."). TODO DATA-1: build from EmDash once body text is the source.
 // Without a snapshot (no legacy content submodule) it falls back to the EmDash posts.
 import rss from "@astrojs/rss";

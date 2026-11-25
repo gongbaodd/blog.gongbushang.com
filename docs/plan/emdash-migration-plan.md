@@ -320,7 +320,7 @@ gantt
   PORT-5 podcast/gallery/cv   :done, bc13, 2027-01-18, 1d
   PORT-6 search/map/umap      :done, bc14, after bc13, 2d
   PORT-7 analytics/ads/rss    :done, bc15, after bc14, 1d
-  PORT-8 pipelines            :bc16, after bc15, 1d
+  PORT-8 pipelines            :active, bc16, after bc15, 1d
   Fix buffer                  :bc17, 2027-01-25, 4d
 
   section Migrator (Haiku 5.5)
