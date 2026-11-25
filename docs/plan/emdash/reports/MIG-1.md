@@ -316,3 +316,51 @@ node apps/web/scripts/dev/parity-api.mjs <legacy>/dist apps/web/dist/client --ex
 ```
 
 Testing command (not run; Lead runs it through the local admin, per section 11): `node apps/web/scripts/import/mig1/import.mjs --url <testing-local-admin> --dry-run`, then the real run with `--concurrency 4 --rewrite=none`. Expect `terms-relabeled` ≈ the count of tag terms whose label is not lowercase on that DB, and 0 post updates.
+
+## 13. MIG-1d: Cloudinary image rewrite on testing (2026-11-25)
+
+Target: **testing** DB only, via the local admin (`pnpm admin:testing`, http://127.0.0.1:4322). Probe: `PROBE OK … TESTING`. The local DB and production were not touched. No Cloudinary uploads were made; the rewrite used the existing `mig2/upload-result.json` (934 `uploaded`).
+
+Commands run:
+```
+pnpm admin:stop
+pnpm admin:testing                                   # PROBE OK, TESTING
+node apps/web/scripts/import/mig1/import.mjs --url http://127.0.0.1:4322 --rewrite=map --dry-run
+node apps/web/scripts/import/mig1/import.mjs --url http://127.0.0.1:4322 --rewrite=map --concurrency 4
+node apps/web/scripts/import/mig1/verify.mjs --url http://127.0.0.1:4322 --manifest <map.manifest.json> --expect body_sha256
+node apps/web/scripts/import/mig1/verify.mjs --url http://127.0.0.1:4322 --manifest <map.manifest.json>    # default legacy expectation, for comparison
+pnpm admin:stop
+pnpm deploy:testing:build                            # exit 0, not deployed
+```
+
+### 13.1 Import result (testing)
+
+| Processed | Created | Updated | Unchanged | Failed | skipped-edited | Time |
+|---|---|---|---|---|---|---|
+| 995 | 0 | 184 | 811 | 0 (0 %) | 0 | 4758 s (~79 min) |
+
+- Terms: 0 created; 149 tag labels relabelled to the original casing (MIG-1c fix). Category 9, city 155, tag 432, series 26 were already present.
+- Updated rows by field: `body_md` + `legacy_frontmatter_extra` 106; `body_md` + `legacy_frontmatter_extra` + `featured_image` 36; `legacy_frontmatter_extra` + `featured_image` 42. Total body rewrites 142 posts (916 body refs), cover set on 78 posts (`featured_image`).
+- Dry run: the dry run does not read the DB (every manifest row is `planned`), so the "would change" counts above come from the real run's log, not from the dry run. Dry-run totals: 995 posts, 916 body refs rewritable, covers: none 626, cloudinary-direct 290, rewritten 78, no-map-entry 1.
+- Pace: ~10 s per changed post early on, ~3–4 s per post on average; unchanged posts are cheaper.
+
+### 13.2 verify.mjs
+
+- `--expect body_sha256` (the manifest's rewritten hash): **995 checked, 995 bodyByteIdentical, 0 missing, 0 notPublished, 0 duplicateLegacyIds, 0 bodyMismatch.**
+- Default expectation (`legacy_body_sha256`): 853 identical, **142 bodyMismatch**, 0 missing, 0 notPublished, 0 duplicate. These 142 are the rewritten bodies, as expected. The only changes are the Cloudinary URLs for rehosted refs (sampled in the manifest: changed `body_md` only in rewritten refs). verify flags them because it compares against the legacy hash by default; use `--expect body_sha256` for this mode.
+
+Observation for Lead: `legacy_frontmatter_extra` was written on all 184 updated rows, not only on the 142 body rewrites. Probably the earlier testing rows lacked that key, but I did not confirm it against the DB. Checked on the 184 rows of the manifest; no field other than body_md, featured_image, legacy_frontmatter_extra changed.
+
+### 13.3 Built HTML (`apps/web/dist/client`, `pnpm deploy:testing:build`, exit 0)
+
+- 1,812 HTML files. 4,827 `<img>` tags in total.
+- Relative image refs (`./`, `../`, or bare filename): **0**.
+- Root-relative refs: 1,145 `/profile.jpg` (site avatar) and **1** `/2025/08/18/record.gif` (in `fe/2025/08/18/blog-cards/index.html`; file exists in dist, it is a page-URL image, left as-is per MIG-2).
+- Cloudinary image refs in the built HTML: 5,260 (3,385 unique URLs, including the non-`<img>` preload/OG references).
+- Non-Cloudinary external `<img>` tags in **post sections** (fe 33, plan 19, tech 9, movie 4, life 3 = 68): the dead or page-URL refs MIG-2 kept as-is (expected ~70 dead, 5 page-URL). Examples: `http://commons.wikimedia.org/wiki/Special:FilePath/Caraco%20MET%20DT4670.jpg`, `https://img3.doubanio.com/view/photo/l/public/p2564556863.webp`, `https://developer.getpebble.com/assets/images/getting-started/pebble-js-tutorial/1-fetching.png`.
+- Outside post content (not in scope of this import): podcast 301 (CloudFront, from a separate podcast source), resume 4 (itch.zone, PDF page).
+- `curl -I` on 5 sampled rewritten Cloudinary URLs: all **200** (`image/jpeg` / `image/png`).
+
+Open item for Lead: post `moon-rider` (2025/06/27) cover is still the external `roadtovrlive-5ea0.kxcdn.com` URL (`no-map-entry`, not uploaded). That is the one cover not rewritten.
+
+Build status: `apps/web/dist` is built from testing settings (`SITE_ENV=testing`, noindex `_headers`, disallow-all robots). Ready for Lead to deploy. Not deployed by Migrator.
