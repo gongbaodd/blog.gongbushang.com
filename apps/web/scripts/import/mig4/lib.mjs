@@ -21,6 +21,10 @@ const COUNT_SELECTORS = Object.freeze({
   table: "table",
 });
 
+/** Hosts that must never appear in a production page: preview/dev origins. */
+export const LEAKED_ORIGIN_RE =
+  /^https?:\/\/(?:next\.growgen\.xyz|localhost|127\.0\.0\.1|\[::1\]|[^/?#]*\.(?:workers|pages)\.dev)(?::\d+)?(?:[/?#]|$)/i;
+
 const ASTRO_IMG_RE = /^\/_astro\/(.+?)\.[A-Za-z0-9_-]{6,}(?:_[A-Za-z0-9_-]+)?\.[A-Za-z0-9]+$/;
 const CLOUDINARY_UPLOAD_RE =
   /^(https?:\/\/res\.cloudinary\.com\/[^/?#]+\/(?:image|video)\/upload\/)([^?#]*)([?#].*)?$/;
@@ -78,6 +82,11 @@ function hiddenSelectorsOfFile(file) {
  * mention `h1` are kept to count *visible* h1 elements (legacy hides the post title with
  * `.content > h1 {display:none}`; a wrapper such as `<astro-slot>` stops that rule matching).
  * `options.distDir` resolves `<link rel=stylesheet>` files.
+ *
+ * Limits of this static visibility heuristic (it is not a browser): `display:none` rules inside `@media`
+ * blocks are treated as unconditional; Tailwind utilities such as `hidden`/`md:hidden`, `visibility:hidden`,
+ * `opacity:0`, `height:0` and hidden ancestors are NOT modelled; only `hidden`, an inline `display:none` and
+ * stylesheet rules whose selector mentions `h1` (matched with `element.matches`) count as hidden.
  */
 export function extractPostDom(html, options = {}) {
   const source = typeof html === "string" ? html : "";
@@ -188,13 +197,35 @@ export function extractPostDom(html, options = {}) {
   }
 }
 
+/**
+ * Same per-segment slug as Astro's glob loader (github-slugger): lowercase, drop punctuation, spaces -> "-".
+ * rewrite-map keys are source file names ("2020/07/19/Study-surfing-in-Houhai,-Sanya.md") while the page URL
+ * uses the slug ("study-surfing-in-houhai-sanya"); normalising both sides with it makes them meet.
+ */
+export function slugSegment(seg) {
+  return String(seg)
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}\p{Pc}\- ]/gu, "")
+    .replace(/ /g, "-");
+}
+
 function normalizePostKey(key) {
   if (!key) return "";
   const cleaned = String(key)
     .trim()
     .replace(/^\/+|\/+$/g, "")
     .replace(/\.mdx?$/i, "")
-    .toLowerCase();
+    .split("/")
+    .map((seg) => {
+      let decoded = seg;
+      try {
+        decoded = decodeURIComponent(seg);
+      } catch {
+        // keep raw segment
+      }
+      return slugSegment(decoded);
+    })
+    .join("/");
   const parts = cleaned.split("/");
   // If key starts with a category prefix (/cat/yyyy/mm/dd/slug), drop category
   if (parts.length >= 5 && /^\d{4}$/.test(parts[1]) && /^\d{2}$/.test(parts[2])) {
@@ -538,6 +569,19 @@ function diffUrlList(legacyList, newList, normOptions, maxItems) {
   };
 }
 
+/** New-page URLs on a preview/dev origin that the legacy page (mapped) does not itself contain. */
+function diffLeakedOrigins(legacyDom, newDom, normOptions) {
+  const expected = new Set([
+    expectedNewUrl(legacyDom.canonical ?? "", normOptions).url,
+    ...(legacyDom.links ?? []).map((u) => expectedNewUrl(u, { ...normOptions, kind: "link" }).url),
+    ...(legacyDom.images ?? []).map((u) => expectedNewUrl(u, { ...normOptions, kind: "image" }).url),
+  ]);
+  const leaked = [newDom.canonical, ...(newDom.links ?? []), ...(newDom.images ?? [])].filter(
+    (u) => typeof u === "string" && LEAKED_ORIGIN_RE.test(u) && !expected.has(u),
+  );
+  return leaked.length === 0 ? { status: "match" } : { status: "flagged-diff", leaked: [...new Set(leaked)].slice(0, 10) };
+}
+
 function diffHeadings(legacyList, newList, maxItems) {
   const a = Array.isArray(legacyList) ? legacyList : [];
   const b = Array.isArray(newList) ? newList : [];
@@ -616,7 +660,8 @@ function diffText(legacyText, newText, snippetBefore = 40, snippetAfter = 100) {
  * Compares extracted legacy and new post DOM objects and classifies each field as
  * "match", "expected-diff", or "flagged-diff", along with an overall severity.
  *
- * Errors: a missing heading, an EXTRA heading (an extra h1 is the PORT-9 duplicate-title class), more
+ * Errors: a canonical or link that is not exactly what the new site should emit, a URL on a preview/dev
+ * origin (leaked origin), a missing heading, an EXTRA heading (an extra h1 is the PORT-9 duplicate-title class), more
  * visible h1 elements than legacy inside the content root (`visibleContentH1`; the page-wide `visibleH1`
  * count is only a warning, because cards and widgets legitimately differ), a missing image, a dropped element count, or a large text drop.
  */
@@ -664,6 +709,7 @@ export function diffPostDom(legacyDom, newDom, options = {}) {
     headings: diffHeadings(legacyDom.headings, newDom.headings, maxDiffItems),
     links: diffUrlList(legacyDom.links, newDom.links, { ...normOptions, kind: "link" }, maxDiffItems),
     images: diffUrlList(legacyDom.images, newDom.images, { ...normOptions, kind: "image" }, maxDiffItems),
+    leakedOrigins: diffLeakedOrigins(legacyDom, newDom, normOptions),
     counts: diffCounts(legacyDom.counts, newDom.counts),
     contentRoot: diffScalar(legacyDom.contentRoot ?? "", newDom.contentRoot ?? ""),
     text: diffText(legacyDom.text, newDom.text),
@@ -691,6 +737,9 @@ export function diffPostDom(legacyDom, newDom, options = {}) {
     if (fields.visibleContentH1.status === "flagged-diff" && newContentH1 > legacyContentH1) {
       errorReasons.push("extra-visible-h1");
     }
+    if (fields.canonical.status === "flagged-diff") errorReasons.push("canonical-mismatch");
+    if (fields.links.status === "flagged-diff") errorReasons.push("link-mismatch");
+    if (fields.leakedOrigins.status === "flagged-diff") errorReasons.push("leaked-origin");
     if (fields.images.status === "flagged-diff" && fields.images.missingTotal > 0) {
       errorReasons.push("image-missing-or-wrong");
     }
@@ -781,6 +830,7 @@ const FLAG_KEYS = [
   "headings",
   "links",
   "images",
+  "leakedOrigins",
   "counts",
   "contentRoot",
   "text",
@@ -947,7 +997,10 @@ export function runBulkDiff(config) {
  * (`diff-worker.mjs`), so memory is returned to the OS after every batch and the run needs no
  * `--max-old-space-size`.
  */
-export async function runBulkDiffIsolated(config, { batchSize = 40, concurrency = 3 } = {}) {
+export async function runBulkDiffIsolated(
+  config,
+  { batchSize = 40, concurrency = 3, batchTimeoutMs = 180_000, workerPath = join(HERE, "diff-worker.mjs") } = {},
+) {
   const startedAt = Date.now();
   const { fork } = await import("node:child_process");
   const { urls, rewriteMap = null, meta = {}, newPosts = [] } = config;
@@ -962,17 +1015,32 @@ export async function runBulkDiffIsolated(config, { batchSize = 40, concurrency 
   let next = 0;
   const runBatch = (batch) =>
     new Promise((resolveBatch, reject) => {
-      const child = fork(join(HERE, "diff-worker.mjs"), [], { serialization: "advanced" });
+      const child = fork(workerPath, [], { serialization: "advanced" });
       let done = false;
-      child.on("message", (msg) => {
+      const timer = setTimeout(() => {
+        if (done) return;
         done = true;
+        child.kill("SIGKILL");
+        reject(new Error(`diff worker timed out after ${batchTimeoutMs} ms (batch of ${batch.length}, first: ${batch[0]})`));
+      }, batchTimeoutMs);
+      child.on("message", (msg) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
         if (msg.error) reject(new Error(msg.error));
         else resolveBatch(msg.results);
         child.disconnect();
       });
-      child.on("error", reject);
+      child.on("error", (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
       child.on("exit", (code) => {
-        if (!done) reject(new Error(`diff worker exited with code ${code}`));
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          reject(new Error(`diff worker exited with code ${code}`));
+        }
       });
       child.send({ config: workerConfig, urls: batch });
     });

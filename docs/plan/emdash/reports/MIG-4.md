@@ -31,3 +31,12 @@ Branch `fix/MIG-4` (from `emdash/MIG-4-diff` + `feat/emdash`; the story branch i
 ## Verification
 - `pnpm --filter web exec vitest run scripts/import/mig4`: 30 tests pass. Whole apps/web run: 304 pass, 1 fail (`src/lib/route-parity.test.ts` "no built HTML page is outside the legacy URL list": the new local post `/fe/2026/11/25/gameplay-atlas/`; fixed by the QA-1 fixes, not by this branch).
 - `pnpm --filter web typecheck`: 0 errors; root `pnpm exec astro check`: 0 errors.
+
+## Re-review fixes (second round)
+- Merged the current `feat/emdash` (clean).
+- CLI e2e tests: file-wide 60 s test timeout (`vi.setConfig`), and the fixture CLI tests use `--in-process` (the child-process runner has its own tests).
+- Gate: `--fail-on-warn` is the documented gate (exit 1 on warn, error or missing files); `--fail-on-error` is the weaker one. Canonical mismatch, link mismatch and URLs on preview/dev origins (`next.growgen.xyz`, localhost, `*.workers.dev`, `*.pages.dev`) are now errors (`canonical-mismatch`, `link-mismatch`, `leaked-origin`).
+- Per-batch timeout: `--batch-timeout <ms>` (default 180000). A hung worker is killed and the run fails with exit 2 (test with a worker that never answers).
+- Documented limits of the static visibility heuristic (in `lib.mjs` and here): `display:none` inside `@media` is treated as unconditional; Tailwind `hidden`/`md:hidden`, `visibility:hidden`, `opacity:0`, zero height and hidden ancestors are not modelled.
+- rewrite-map keys are now normalised with the site's per-segment slug (lowercase, drop punctuation, space to `-`, same as Astro's glob loader); all 184 keys, including the 20 that did not match before (e.g. `2020/07/19/Study-surfing-in-Houhai,-Sanya.md`), now meet their page URL. Test for the study-surfing case.
+- Checks: mig4 tests 35 pass; apps/web vitest 361 pass, 1 fail (`route-parity` extra-path test on the new local post, fixed by `fix/QA-1`, unrelated to this branch); `fmt:check` clean; apps/web and root `astro check` 0 errors. Full diff on the same build: exit 1 under `--fail-on-warn` as expected (19 warn, 976 error: 974 PORT-9 h1, 141 image data, 2 link-mismatch from the unrewritten images), 27 s at default heap.

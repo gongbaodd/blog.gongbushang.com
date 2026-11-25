@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildRewriteLookup,
   diffPostDom,
@@ -13,11 +13,15 @@ import {
   findNewPosts,
   hiddenH1Selectors,
   levenshteinDistance,
+  slugSegment,
   optimizeCloudinaryUrl,
   runBulkDiff,
   runBulkDiffIsolated,
 } from "./lib.mjs";
 import { optimizeCloudinaryUrl as siteOptimizeCloudinaryUrl } from "../../../src/lib/cloudinary";
+
+// CLI end-to-end tests spawn node (and child workers); the 5 s default is flaky on a loaded CI runner.
+vi.setConfig({ testTimeout: 60_000 });
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = join(HERE, "diff.mjs");
@@ -559,6 +563,7 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
         urlsFile,
         "--rewrite-map",
         mapFile,
+        "--in-process",
         "--out",
         reportFile,
       ],
@@ -606,6 +611,7 @@ describe("MIG-4 CLI & fixture end-to-end comparison", () => {
           urlsFile,
           "--rewrite-map",
           mapFile,
+          "--in-process",
           "--fail-on-error",
         ],
         { encoding: "utf8" },
@@ -694,4 +700,79 @@ describe("MIG-4 runner: isolated batches, new posts, --fail-on-warn", () => {
     }
     expect(code).toBe(1);
   }, 60_000);
+});
+
+describe("MIG-4 review: canonical/link mismatches and leaked origins are errors; timeouts; key slugs", () => {
+  const legacy = extractPostDom(
+    renderHtml({
+      canonical: "https://growgen.xyz/fe/2025/01/02/sample/",
+      body: `<h2 id="s">S</h2><a href="/tag/rust">Rust</a><p>Text body.</p>`,
+    }),
+  );
+
+  it("a wrong canonical is an error", () => {
+    const bad = structuredClone(legacy);
+    bad.canonical = "https://growgen.xyz/fe/2025/01/02/other/";
+    const diff = diffPostDom(legacy, bad);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("canonical-mismatch");
+  });
+
+  it("a changed or broken link is an error", () => {
+    const bad = structuredClone(legacy);
+    bad.links = ["/tag/c#"];
+    const diff = diffPostDom(legacy, bad);
+    expect(diff.severity).toBe("error");
+    expect(diff.errorReasons).toContain("link-mismatch");
+  });
+
+  it("a URL on a preview/dev origin is a leaked-origin error", () => {
+    for (const leaked of [
+      "https://next.growgen.xyz/tag/rust/",
+      "http://localhost:4321/tag/rust/",
+      "https://blog-abc.workers.dev/tag/rust/",
+      "https://x.pages.dev/",
+    ]) {
+      const bad = structuredClone(legacy);
+      bad.links = [leaked];
+      const diff = diffPostDom(legacy, bad);
+      expect(diff.errorReasons, leaked).toContain("leaked-origin");
+    }
+    const ok = structuredClone(legacy);
+    expect(diffPostDom(legacy, ok).errorReasons).toEqual([]);
+  });
+
+  it("a hung worker fails the run with a timeout (no hang)", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "mig4-hang-"));
+    try {
+      const hang = join(dir, "hang-worker.mjs");
+      writeFileSync(hang, "process.once('message', () => setInterval(() => {}, 1000));\n");
+      await expect(
+        runBulkDiffIsolated(
+          { legacyDir: dir, newDir: dir, urls: ["/fe/2020/01/01/a/"] },
+          { batchTimeoutMs: 400, workerPath: hang },
+        ),
+      ).rejects.toThrow(/timed out/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rewrite-map keys that are source file names meet the page slug (study-surfing)", () => {
+    expect(slugSegment("Study-surfing-in-Houhai,-Sanya")).toBe("study-surfing-in-houhai-sanya");
+    expect(slugSegment("Typescript sucks but long live the types")).toBe("typescript-sucks-but-long-live-the-types");
+    const map = {
+      posts: {
+        "2020/07/19/Study-surfing-in-Houhai,-Sanya.md": {
+          "../17/2020-07-17.jpg": "https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/x/e22",
+        },
+      },
+    };
+    const out = expectedNewUrl("/_astro/2020-07-17.DroK_MKJ_1fCVHd.webp", {
+      kind: "image",
+      rewriteMap: map,
+      postPath: "/life/2020/07/19/study-surfing-in-houhai-sanya/",
+    });
+    expect(out.url).toBe("https://res.cloudinary.com/dmq8ipket/image/upload/f_auto,q_auto/growgen/legacy/x/e22");
+  });
 });

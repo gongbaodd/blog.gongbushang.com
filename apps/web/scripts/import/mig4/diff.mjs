@@ -49,8 +49,10 @@ Options:
                           run in short-lived child processes, so the full run fits the default heap.
   --batch-size <n>        Posts per child process (default: 40)
   --concurrency <n>       Parallel child processes (default: 3)
-  --fail-on-error         Exit with code 1 if any error diffs (or missing files) are found
-  --fail-on-warn          Exit with code 1 if any warn or error diffs (or missing files) are found
+  --batch-timeout <ms>    Fail the run (exit 2) when a child process does not answer in time (default: 180000)
+  --fail-on-warn          THE GATE: exit 1 if any warn or error diffs (or missing files) are found
+  --fail-on-error         Weaker gate: exit 1 only for error diffs (or missing files)
+  Exit codes: 0 pass, 1 gate tripped, 2 usage/IO error or a hung/crashed worker.
   -h, --help              Show this help message
 `;
 }
@@ -72,6 +74,7 @@ export function parseArgs(argv) {
     inProcess: false,
     batchSize: 40,
     concurrency: 3,
+    batchTimeoutMs: 180_000,
     help: false,
   };
 
@@ -134,11 +137,13 @@ export function parseArgs(argv) {
         opts.inProcess = true;
         break;
       case "--batch-size":
+      case "--batch-timeout":
       case "--concurrency": {
         const raw = nextVal();
         const n = Number(raw);
         if (!Number.isInteger(n) || n < 1) throw new Error(`${key} must be a positive integer (got ${raw})`);
         if (key === "--batch-size") opts.batchSize = n;
+        else if (key === "--batch-timeout") opts.batchTimeoutMs = n;
         else opts.concurrency = n;
         break;
       }
@@ -235,7 +240,7 @@ export async function main(argv = process.argv.slice(2)) {
   const newPosts = findNewPosts(opts.newDir, new Set(allPostUrls(urlsText)));
   const runner = opts.inProcess
     ? async (config) => runBulkDiff(config)
-    : (config) => runBulkDiffIsolated(config, { batchSize: opts.batchSize, concurrency: opts.concurrency });
+    : (config) => runBulkDiffIsolated(config, { batchSize: opts.batchSize, concurrency: opts.concurrency, batchTimeoutMs: opts.batchTimeoutMs });
   const report = await runner({
     newPosts,
     legacyDir: opts.legacyDir,
