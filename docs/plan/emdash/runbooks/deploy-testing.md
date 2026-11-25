@@ -2,6 +2,8 @@
 
 Worker `growgen-web-testing` (workers.dev, no routes). Production is a placeholder until CUT-1.
 
+**D12 (INF-7): the deployed Worker serves static pages only.** `/_emdash/*` and `/.well-known/oauth*` return a bare 404 (`src/worker.ts` + `src/lib/lockdown.ts`); the admin runs locally, see `admin.md`. Verified 2026-11-25 on the deployed testing Worker: `/` 200, a post URL 200, and `/_emdash/admin`, `/_emdash/api/auth/me`, `/_emdash/api/setup/status`, `/_EMDASH/admin`, `/%5Femdash/api/auth/me`, `/.well-known/oauth-authorization-server` all 404. Asset misses still invoke the Worker (seen with `wrangler tail`, about 1 ms CPU each), so config alone cannot lock the paths.
+
 ## Resources (account 2c1ea12e37cd89d9a6f6a62c6798d3a0)
 | What | Name | Id |
 |---|---|---|
@@ -21,13 +23,15 @@ Fallback if Hyperdrive cannot reach the direct host at runtime (IPv6-only on Fre
 
 ## Build and deploy
 ```
-pnpm deploy:testing:build        # CLOUDFLARE_ENV=testing bakes env.testing into dist/server/wrangler.json, then post-build writes noindex
+pnpm deploy:testing:build        # first runs scripts/admin/check-build-env.mjs (needs apps/web/.dev.vars.testing when .dev.vars sets the Hyperdrive var, see admin.md); CLOUDFLARE_ENV=testing bakes env.testing into dist/server/wrangler.json, then post-build writes noindex
 pnpm deploy:testing:dry-run
 cd apps/web && pnpm exec wrangler deploy -c dist/server/wrangler.json     # needs Lead go-ahead
 ```
 Env selection is by `CLOUDFLARE_ENV` at build time; the generated config has no `env` block, so do not pass `--env`. `pnpm --filter web build` now runs the static-route guard, `astro build` and `post-build.mjs` (idempotent, so the root script running it again is harmless). Note the build applies EmDash migrations/seed to the testing DB.
 
-## First-deploy claim procedure (D11)
+## First-deploy claim procedure (D11), historical after D12
+The setup wizard is no longer reachable on the deployed Worker (404). The testing admin user already exists; a fresh DB would be claimed through `pnpm admin:testing` on the owner's Mac (the wizard then runs on the local server, so the SETUP_TOKEN gate and secret are unneeded; the gate code stays, harmless). The original procedure follows for reference.
+
 Anyone who reaches `/_emdash/admin/setup` first becomes admin. The Worker gates it (src/middleware.ts): 404 unless `SETUP_TOKEN` matches.
 1. Deploy. Do not share the URL.
 2. Open `https://<worker>.workers.dev/_emdash/admin/setup?setup_token=<GROWGEN_TESTING_SETUP_TOKEN>` (sets an httpOnly 1 h cookie, redirects to the clean URL).
@@ -39,5 +43,5 @@ Anyone who reaches `/_emdash/admin/setup` first becomes admin. The Worker gates 
 `SITE_ENV` (wrangler var, `testing` here, `production` at top level): non-production gets `X-Robots-Tag: noindex, nofollow` on SSR responses (middleware) and on assets (`dist/client/_headers`), plus a disallow-all `robots.txt`, both written by `apps/web/scripts/post-build.mjs`. Production builds run with `SITE_ENV=production` and write nothing.
 
 ## After deploy
-- `wrangler tail --env testing` while loading `/_emdash/admin`; record CPU time per invocation against the 10 ms Free limit.
+- `wrangler tail growgen-web-testing --format json` while loading `/`, a post and `/_emdash/api/auth/me`: static pages must not appear; `/_emdash/*` shows cpuTime 1 to 2 ms (404). Admin CPU is no longer a Worker concern (D12).
 - Cron: testing `*/15`, production `*/5`. The handler runs `runScheduledTasks` (publishes scheduled posts, housekeeping) and its DB query also keeps Supabase from pausing.

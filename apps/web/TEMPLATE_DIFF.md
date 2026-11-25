@@ -109,3 +109,14 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 - `astro.config.mjs`: `vite.ssr.noExternal: ["react-plock"]` (masonry).
 - `package.json`: build runs `scripts/legacy-data.mjs` first; new deps `ascii-reveal`, `react-plock`, `dayjs`, `@mantine/charts`, `recharts`, `remark-smartypants`.
 - `.gitignore`: `src/generated/`, `public/api/`.
+
+## INF-7 (local admin, Worker lockdown; D12)
+
+| File | Change | Why |
+|---|---|---|
+| `wrangler.jsonc` | `assets.run_worker_first: false` (the `/_emdash/*` and `/.well-known/*` rules removed); `env.admin-local`, `env.admin-testing`, `env.admin-production` (dev-only blocks, placeholder bindings) | Admin no longer served by the Worker. wrangler reads `.dev.vars.<CLOUDFLARE_ENV>` instead of `.dev.vars`, so the admin envs make env values win over `.dev.vars` |
+| `src/worker.ts` | `fetch` wrapper: 404 for locked paths unless `import.meta.env.DEV` | Asset misses still invoke the Worker even with `not_found_handling: "404-page"`, so config alone does not lock `/_emdash/*` |
+| `src/lib/lockdown.ts` (+ test) | Added | Pure path matcher (decode, lowercase, collapse slashes) |
+| `scripts/admin/{start,lib,check-build-env}.mjs`, `scripts/admin/*.test.ts` | Added | `pnpm admin:<env>` launcher with DB probe; build guard; tests |
+| `vitest.config.ts` | `include` also `scripts/admin/*.test.ts` | Run the new tests |
+| `src/middleware.ts` | Unchanged (the setup gate is now unreachable on the Worker, kept harmless) | D11 |

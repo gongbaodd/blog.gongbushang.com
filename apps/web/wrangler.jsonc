@@ -7,8 +7,12 @@
 	"main": "./src/worker.ts",
 	"compatibility_date": "2026-02-24",
 	"compatibility_flags": ["nodejs_compat"],
-	// Static pages never invoke the Worker; only the EmDash admin/API does. Unknown paths get the static 404 page (D8, §10).
-	"assets": { "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": ["/_emdash/*", "/.well-known/*"] },
+	// Pages that exist as static files never invoke the Worker. D12 (INF-7): the admin runs locally (`pnpm admin:<env>`), so the
+	// deployed Worker serves no `/_emdash/*` or OAuth discovery. NOTE: asset MISSES still invoke the Worker even with
+	// `not_found_handling: "404-page"` (verified with `wrangler tail`), so src/worker.ts 404s those paths (src/lib/lockdown.ts).
+	// `run_worker_first` stays explicitly false: kept explicit so no `/_emdash/*` rule can come back unnoticed.
+	// scripts/admin/wrangler-lockdown.test.ts guards this. The Worker otherwise only runs for cron (`scheduled`).
+	"assets": { "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": false },
 	"hyperdrive": [
 		{
 			"binding": "HYPERDRIVE",
@@ -57,6 +61,31 @@
 				"bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }],
 			},
 			"triggers": { "crons": ["*/15 * * * *"] },
+		},
+
+		// Local-admin envs (D12, INF-7). Never deployed: scripts/admin/start.mjs sets CLOUDFLARE_ENV=admin-<env> so wrangler reads a
+		// generated `.dev.vars.admin-<env>` INSTEAD of `.dev.vars` (the only way an env var is guaranteed to win over `.dev.vars`).
+		// Bindings are placeholders; only `astro dev` uses these blocks.
+		"admin-local": {
+			"name": "growgen-web-admin-local",
+			"vars": { "SITE_ENV": "local" },
+			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres" }],
+			"kv_namespaces": [{ "binding": "SESSION", "id": "00000000000000000000000000000000" }],
+			"durable_objects": { "bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }] },
+		},
+		"admin-testing": {
+			"name": "growgen-web-admin-testing",
+			"vars": { "SITE_ENV": "testing" },
+			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres" }],
+			"kv_namespaces": [{ "binding": "SESSION", "id": "00000000000000000000000000000000" }],
+			"durable_objects": { "bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }] },
+		},
+		"admin-production": {
+			"name": "growgen-web-admin-production",
+			"vars": { "SITE_ENV": "production" },
+			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres" }],
+			"kv_namespaces": [{ "binding": "SESSION", "id": "00000000000000000000000000000000" }],
+			"durable_objects": { "bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }] },
 		},
 	},
 }
