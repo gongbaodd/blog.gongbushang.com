@@ -19,6 +19,7 @@
     "resume:pdfs": "node scripts/generate-pdfs.mjs",
     "preview": "astro preview",
     "types": "wrangler types",
+    "types:emdash": "node scripts/gen-types.mjs",
     "deploy": "pnpm build && wrangler deploy -c dist/server/wrangler.json",
     "typecheck": "astro check",
     "test": "vitest run",

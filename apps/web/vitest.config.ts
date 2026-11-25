@@ -8,6 +8,7 @@ export default defineConfig({
 			"scripts/derive/*.test.ts",
 			"scripts/guards/*.test.ts",
 			"scripts/import/**/*.test.ts",
+			"scripts/perf/*.test.ts",
 			"tests/*.test.ts",
 		],
 		environment: "node",
