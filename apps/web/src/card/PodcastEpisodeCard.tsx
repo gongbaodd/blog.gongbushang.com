@@ -28,11 +28,7 @@ interface IPodcastEpisodeCardProps {
   fill?: boolean;
 }
 
-export function PodcastEpisodeCard({
-  episode,
-  hideExcerpt,
-  fill,
-}: IPodcastEpisodeCardProps) {
+export function PodcastEpisodeCard({ episode, hideExcerpt, fill }: IPodcastEpisodeCardProps) {
   const excerpt = stripHtml(episode.summary || episode.description || "");
   const [coverOpacity, setCoverOpacity] = useState(0);
   const hasCover = !!episode.image;
@@ -68,24 +64,14 @@ export function PodcastEpisodeCard({
 
   const badgeRow = (
     <Flex justify="space-between" align="center">
-      <Badge
-        color="gray"
-        variant="default"
-        size="sm"
-        className={classes.category}
-      >
+      <Badge color="gray" variant="default" size="sm" className={classes.category}>
         <Group gap={6}>
           <Calendar size={12} />
           <Text size="xs">{formatPubDate(episode.pubDate)}</Text>
         </Group>
       </Badge>
       {episode.duration && (
-        <Badge
-          color="gray"
-          variant="default"
-          size="sm"
-          className={classes.category}
-        >
+        <Badge color="gray" variant="default" size="sm" className={classes.category}>
           <Group gap={6}>
             <Headphones size={12} />
             <Text size="xs">{episode.duration}</Text>
@@ -131,21 +117,13 @@ export function PodcastEpisodeCard({
 
   return (
     <CustomMantineProvider>
-      <Stack
-        justify="center"
-        align={fill ? "stretch" : "center"}
-        w={fill ? "100%" : undefined}
-      >
+      <Stack justify="center" align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
         <Box
           maw={fill ? undefined : CARD_WIDTH}
           miw={fill ? CARD_MIN_WIDTH : undefined}
           w={fill ? "100%" : undefined}
         >
-          <AsciiReveal
-            loading={loading}
-            revealOnMount={false}
-            style={{ width: "100%" }}
-          >
+          <AsciiReveal loading={loading} revealOnMount={false} style={{ width: "100%" }}>
             <Card
               key={episode.id}
               shadow="sm"
@@ -159,9 +137,7 @@ export function PodcastEpisodeCard({
                 ...(hasCover
                   ? {}
                   : {
-                      backgroundColor:
-                        episode.colorSet?.bgColor ||
-                        "var(--mantine-color-gray-2)",
+                      backgroundColor: episode.colorSet?.bgColor || "var(--mantine-color-gray-2)",
                     }),
               }}
             >
@@ -208,11 +184,7 @@ export function PodcastEpisodeCard({
           </AsciiReveal>
           {!hideExcerpt && excerpt && (
             <Flex pl={5} pr={10} pt={5}>
-              <Avatar
-                size="xs"
-                variant="transparent"
-                style={{ transform: "rotateZ(180deg)" }}
-              >
+              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
                 <Quote />
               </Avatar>
               <Text size="sm" lineClamp={2} className={classes.excerpt}>

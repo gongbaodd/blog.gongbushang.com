@@ -75,7 +75,6 @@ jobs:
       PUBLIC_BUILD_SHA: ${{ github.sha }}
       WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
       WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
-      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
       # Public build-time values (baked into the static HTML): environment *variables*, not secrets. They only take effect
       # when SITE_ENV=production; define them on the `production` environment only so testing builds never carry analytics or ads.
       PUBLIC_MIXPANEL_TOKEN: ${{ vars.PUBLIC_MIXPANEL_TOKEN }}
@@ -110,11 +109,16 @@ jobs:
       - name: Migrations are up to date (read-only)
         if: ${{ !inputs.apply_migrations }}
         working-directory: apps/web
+        env:
+          # Step-scoped so pnpm install and non-DB steps never receive DATABASE_POOLER_URL.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: pnpm exec emdash migrate --from-config --check
 
       - name: Apply migrations
         if: ${{ inputs.apply_migrations }}
         working-directory: apps/web
+        env:
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: |
           # Non-interactive apply requires the target fingerprint printed by --status.
           fp=$(pnpm exec emdash migrate --from-config --status 2>&1 | grep -i 'target fingerprint' | head -1 | grep -oE '[A-Za-z0-9:_-]{16,}' | tail -1)
@@ -122,6 +126,8 @@ jobs:
           pnpm exec emdash migrate --from-config --expected-target-fingerprint "$fp"
 
       - name: Build
+        env:
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
         run: |
           set -o pipefail
           pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
@@ -142,11 +148,7 @@ jobs:
         working-directory: apps/web
         run: |
           pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json
-          bytes=$(find "$RUNNER_TEMP/wrangler-dry" -type f \( -name '*.js' -o -name '*.mjs' -o -name '*.wasm' \) -print0 | xargs -0 cat | wc -c)
-          assets=$(find dist/client -type f | wc -l)
-          echo "worker uncompressed=$((bytes/1048576)) MiB (limit 64), static assets=$assets (limit 20000)"
-          if [ "$bytes" -gt $((60*1048576)) ]; then echo "::error::Worker above 60 MiB"; exit 1; fi
-          if [ "$assets" -gt 18000 ]; then echo "::error::more than 18000 static assets"; exit 1; fi
+          node scripts/guards/worker-budget.mjs --worker-dir "$RUNNER_TEMP/wrangler-dry" --assets-dir dist/client --max-mib 60 --max-assets 18000
 
       - name: Deploy
         working-directory: apps/web

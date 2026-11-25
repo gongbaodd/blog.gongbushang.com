@@ -1,21 +1,25 @@
 import handler, {
-	createScheduledHandler,
-	EmDashRoom,
-	EmDashRoomSite,
-	PluginBridge,
+  createScheduledHandler,
+  EmDashRoom,
+  EmDashRoomSite,
+  PluginBridge,
 } from "@emdash-cms/cloudflare/worker";
-import { isLockedPath } from "./lib/lockdown";
+import { createWorkerFetch, type StaticWorkerEnv } from "./lib/lockdown";
 
 export { EmDashRoom, EmDashRoomSite, PluginBridge };
 
+const workerFetch = createWorkerFetch({
+  isDev: import.meta.env.DEV,
+  fallbackFetch: (request, env, ctx) =>
+    handler.fetch!(request as never, env as never, ctx as never),
+});
+
 export default {
-	...handler,
-	// D12 (INF-7): the admin runs locally; a deployed Worker serves static pages only. `astro dev` (DEV) is unaffected.
-	async fetch(request, env, ctx) {
-		if (!import.meta.env.DEV && isLockedPath(new URL(request.url).pathname)) {
-			return new Response("Not found", { status: 404, headers: { "cache-control": "no-store" } });
-		}
-		return handler.fetch!(request as never, env as never, ctx);
-	},
-	scheduled: createScheduledHandler(),
+  ...handler,
+  // D12 (INF-7) & SEC-04: deployed Workers are fail-closed static-only; EmDash `handler.fetch`
+  // only runs in local `astro dev` (`pnpm admin:*`). Cron (`scheduled`) stays active.
+  fetch(request, env, ctx) {
+    return workerFetch(request, env as StaticWorkerEnv, ctx);
+  },
+  scheduled: createScheduledHandler(),
 } satisfies ExportedHandler;

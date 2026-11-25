@@ -9,17 +9,26 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "content:pull": "node scripts/sync/pull.mjs",
     "derive": "tsx scripts/derive/index.ts",
     "derive:migrate": "tsx scripts/derive/migrate.ts",
     "derive:seed": "tsx scripts/derive/seed-from-legacy.ts",
     "derive:seed:media": "tsx scripts/derive/seed-media.ts",
     "import:media": "node scripts/import/mig3/import.mjs",
+    "content:catchup": "node scripts/import/mig6/catchup.mjs",
     "build": "tsx scripts/derive/index.ts && node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs && node scripts/generate-pdfs.mjs",
     "resume:pdfs": "node scripts/generate-pdfs.mjs",
     "preview": "astro preview",
     "types": "wrangler types",
+    "types:emdash": "node scripts/gen-types.mjs",
     "deploy": "pnpm build && wrangler deploy -c dist/server/wrangler.json",
-    "typecheck": "astro check"
+    "typecheck": "astro check",
+    "test": "vitest run",
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:analytics-on": "node scripts/e2e.mjs --analytics-on",
+    "check:hydration": "node scripts/e2e.mjs --hydration",
+    "fmt": "oxfmt src",
+    "fmt:check": "oxfmt --check src"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",

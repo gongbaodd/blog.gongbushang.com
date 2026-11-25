@@ -39,6 +39,7 @@
     "db:start": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,studio,edge-runtime,logflare,vector,supavisor,postgres-meta",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
+    "content:pull": "node apps/web/scripts/sync/pull.mjs",
     "deploy:testing:build": "node apps/web/scripts/admin/check-build-env.mjs testing && set -a && . ./.env && set +a && cd apps/web && CLOUDFLARE_ENV=testing SITE_ENV=testing CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=\"$SUPABASE_TESTING_POOLER_URL\" pnpm build && SITE_ENV=testing node scripts/post-build.mjs",
     "admin:local": "node apps/web/scripts/admin/start.mjs local",
     "admin:testing": "node apps/web/scripts/admin/start.mjs testing",

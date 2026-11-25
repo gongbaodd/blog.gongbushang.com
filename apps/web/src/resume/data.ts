@@ -690,7 +690,11 @@ export const variants: Record<ResumeRole, ResumeVariant> = {
         "Hand tracking with MediaPipe and JavaScript-to-Unity integration",
         "MediaPipe 手势追踪与 JavaScript 到 Unity 的集成",
       ),
-      skill("Simulation", "PID control, ML-Agents and interactive prototyping", "PID 控制、ML-Agents 与交互原型开发"),
+      skill(
+        "Simulation",
+        "PID control, ML-Agents and interactive prototyping",
+        "PID 控制、ML-Agents 与交互原型开发",
+      ),
     ],
     education: ["tlu", "bat", "ul", "sut"],
     experience: ["kickstart", "lecturer", "aftership", "trip"],

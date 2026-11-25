@@ -1,4 +1,3 @@
-
 This site is my space to share:
 
 - 🛠️ [Tech journals](/tech)

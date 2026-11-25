@@ -4,4 +4,5 @@ import { INITIAL_SSR_POSTS, historyCards } from "../../../lib/listing";
 
 export const prerender = true;
 
-export const GET: APIRoute = async () => new Response(JSON.stringify({ posts: await historyCards(INITIAL_SSR_POSTS) }));
+export const GET: APIRoute = async () =>
+  new Response(JSON.stringify({ posts: await historyCards(INITIAL_SSR_POSTS) }));
