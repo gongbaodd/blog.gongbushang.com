@@ -24,8 +24,8 @@
     "test:e2e": "node scripts/e2e.mjs",
     "test:e2e:analytics-on": "node scripts/e2e.mjs --analytics-on",
     "check:hydration": "node scripts/e2e.mjs --hydration",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check"
+    "fmt": "oxfmt src",
+    "fmt:check": "oxfmt --check src"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.1",
