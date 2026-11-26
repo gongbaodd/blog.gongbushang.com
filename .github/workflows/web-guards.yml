@@ -25,37 +25,89 @@ jobs:
     environment: production
     steps:
       - name: Install pg_dump 17 and age
+        env:
+          # SEC-10: PGDG signing key (https://wiki.postgresql.org/wiki/Apt). The file hash pins the exact download; the OpenPGP
+          # fingerprint is the long-lived identity. If upstream re-publishes the key (e.g. an expiry extension) the hash check
+          # fails closed: confirm the fingerprint is unchanged, then update PGDG_KEY_SHA256 (runbooks/backups.md).
+          PGDG_KEY_SHA256: 0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76
+          PGDG_KEY_FPR: B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
         run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/apt.postgresql.org.asc"
+          curl -fsSL -o "$key" https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "$PGDG_KEY_SHA256  $key" | sha256sum -c - || { echo "::error::PGDG key SHA-256 mismatch"; exit 1; }
+          fpr=$(gpg --show-keys --with-colons "$key" | awk -F: '/^fpr:/ { print $10; exit }')
+          [ "$fpr" = "$PGDG_KEY_FPR" ] || { echo "::error::PGDG key fingerprint mismatch ($fpr)"; exit 1; }
           sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          sudo install -m 0644 "$key" /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release; echo "$VERSION_CODENAME")-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17 age
 
       - name: Dump and encrypt
         env:
+          # SEC-11: least-privilege read-only role (supabase/roles/growgen_backup.sql, runbooks/backups.md). Falls back to the
+          # owner URL with a warning until the owner creates BACKUP_DATABASE_URL on the production environment.
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
           DATABASE_POOLER_URL: ${{ secrets.DATABASE_POOLER_URL }} # production session pooler (IPv4)
           BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }} # age public key (age1...)
         run: |
           set -euo pipefail
-          [ -n "${DATABASE_POOLER_URL:-}" ] || { echo "::error::secret DATABASE_POOLER_URL is not set"; exit 1; }
-          [ -n "${BACKUP_AGE_RECIPIENT:-}" ] || { echo "::error::secret BACKUP_AGE_RECIPIENT is not set"; exit 1; }
+          if [ -n "${BACKUP_DATABASE_URL:-}" ]; then
+            db_url="$BACKUP_DATABASE_URL"
+          else
+            [ -n "${DATABASE_POOLER_URL:-}" ] || { echo "::error::neither BACKUP_DATABASE_URL nor DATABASE_POOLER_URL is set"; exit 1; }
+            echo "::warning::BACKUP_DATABASE_URL is not set; dumping as the owner role (SEC-11: create the growgen_backup role)"
+            db_url="$DATABASE_POOLER_URL"
+          fi
+          unset BACKUP_DATABASE_URL DATABASE_POOLER_URL
+          # SEC-10: fail closed unless the recipient is a well-formed age X25519 public key.
+          [[ "${BACKUP_AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] || { echo "::error::secret BACKUP_AGE_RECIPIENT is missing or not an age1... public key"; exit 1; }
+          # SEC-14: credentials reach libpq through PG* environment variables (PGPASSWORD), never argv (visible in the process
+          # list). node reads the URL from the environment and writes a 0600 env file that is sourced, then deleted.
+          pgenv="$RUNNER_TEMP/pgenv"
+          (umask 077; DB_URL="$db_url" node --input-type=module -e '
+            const u = new URL(process.env.DB_URL);
+            const q = (v) => "\x27" + String(v).split("\x27").join("\x27\\\x27\x27") + "\x27";
+            const vars = {
+              PGHOST: u.hostname,
+              PGPORT: u.port || "5432",
+              PGUSER: decodeURIComponent(u.username),
+              PGPASSWORD: decodeURIComponent(u.password),
+              PGDATABASE: decodeURIComponent(u.pathname.slice(1)) || "postgres",
+              PGSSLMODE: "require",
+            };
+            for (const [k, v] of Object.entries(vars)) console.log("export " + k + "=" + q(v));
+          ' > "$pgenv")
+          # shellcheck disable=SC1090
+          . "$pgenv"
+          rm -f "$pgenv"
+          unset db_url
+          echo "::add-mask::$PGPASSWORD"
+          pg_bin=/usr/lib/postgresql/17/bin
           schemas=(--schema=public)
-          has_derived=$(/usr/lib/postgresql/17/bin/psql "$DATABASE_POOLER_URL" -v ON_ERROR_STOP=1 -tAc "select 1 from information_schema.schemata where schema_name = 'derived'")
+          has_derived=$("$pg_bin/psql" -v ON_ERROR_STOP=1 -tAc "select 1 from information_schema.schemata where schema_name = 'derived'")
           if [ "$has_derived" = "1" ]; then
             schemas+=(--schema=derived)
           else
             echo "::notice::schema 'derived' does not exist on production yet; backing up public schema only"
           fi
-          echo "Dumping schemas: ${schemas[*]}"
+          # SEC-10: the artifact lives on a public repo, so keep the DATA of volatile token/log tables out of it (their schema is
+          # still dumped; a restore starts with empty sessions, challenges, OAuth codes/tokens, rate limits and 404 log).
+          # Keep in sync with runbooks/backups.md "Excluded table data".
+          excludes=()
+          for t in auth_tokens auth_challenges _emdash_authorization_codes _emdash_device_codes _emdash_oauth_tokens _emdash_rate_limits _emdash_404_log; do
+            excludes+=("--exclude-table-data=public.$t")
+          done
+          echo "Dumping schemas: ${schemas[*]} (excluding the data of ${#excludes[@]} volatile tables)"
           out="growgen-production-$(date -u +%Y%m%dT%H%M%SZ).dump.age"
-          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_POOLER_URL" --format=custom "${schemas[@]}" --no-owner --no-privileges \
+          "$pg_bin/pg_dump" --format=custom "${schemas[@]}" "${excludes[@]}" --no-owner --no-privileges \
             | age -r "$BACKUP_AGE_RECIPIENT" -o "$out"
           ls -l "$out"
           [ "$(stat -c %s "$out")" -gt 1024 ] || { echo "::error::backup is suspiciously small"; exit 1; }
           echo "BACKUP_FILE=$out" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: production-db-backup
           path: ${{ env.BACKUP_FILE }}
@@ -67,9 +119,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.15.0
 

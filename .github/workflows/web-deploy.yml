@@ -23,6 +23,11 @@ on:
         description: "Apply pending EmDash migrations before building (needs the target fingerprint check to pass)"
         type: boolean
         default: false
+      target_fingerprint:
+        description: "Expected EmDash target fingerprint for apply_migrations (overrides the production environment variable EMDASH_TARGET_FINGERPRINT)"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -86,13 +91,13 @@ jobs:
       PUBLIC_ADSENSE_CONSENT_READY: ${{ vars.PUBLIC_ADSENSE_CONSENT_READY }}
       PUBLIC_ADSENSE_SLOT_ID: ${{ vars.PUBLIC_ADSENSE_SLOT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           submodules: recursive
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24.15.0
           cache: pnpm
@@ -112,10 +117,18 @@ jobs:
         working-directory: apps/web
         env:
           CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+          # SEC-11: the expected fingerprint comes from OUTSIDE the target database (manual input, else the environment variable),
+          # never from `--status` output, so a mispointed DATABASE_POOLER_URL halts instead of being migrated.
+          INPUT_FINGERPRINT: ${{ inputs.target_fingerprint }}
+          ENV_FINGERPRINT: ${{ vars.EMDASH_TARGET_FINGERPRINT }}
         run: |
-          # Non-interactive apply requires the target fingerprint printed by --status.
-          fp=$(pnpm exec emdash migrate --from-config --status 2>&1 | grep -i 'target fingerprint' | head -1 | grep -oE '[A-Za-z0-9:_-]{16,}' | tail -1)
-          [ -n "$fp" ] || { echo "::error::could not read target fingerprint"; exit 1; }
+          set -euo pipefail
+          fp="${INPUT_FINGERPRINT:-$ENV_FINGERPRINT}"
+          if [ -z "$fp" ]; then
+            echo "::error::no expected target fingerprint: pass the target_fingerprint input or set the EMDASH_TARGET_FINGERPRINT variable on the production environment (runbooks/ci.md)"
+            exit 1
+          fi
+          [[ "$fp" =~ ^[A-Za-z0-9:_-]{16,128}$ ]] || { echo "::error::target fingerprint has an unexpected format"; exit 1; }
           pnpm exec emdash migrate --from-config --expected-target-fingerprint "$fp"
 
       - name: Build
