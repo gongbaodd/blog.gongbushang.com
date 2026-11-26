@@ -148,7 +148,7 @@ export class WorkersAiError extends Error {
 	}
 }
 
-const CONTEXT_RE = /context (length|window)|too (long|large|many tokens)|token limit|max(imum)? (input )?(length|tokens)/i;
+const CONTEXT_RE = /context (length|window)|too (long|large|big|many tokens)|token limit|max(imum)? (input )?(length|tokens)/i;
 const QUOTA_CODES = new Set([4006]); // "daily free allocation of 10,000 neurons"
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
