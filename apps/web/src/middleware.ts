@@ -13,14 +13,16 @@ import { defineMiddleware } from "astro:middleware";
 import { normalizePath } from "./lib/lockdown";
 import {
   SETUP_GATE_COOKIE,
-  deriveSetupGateToken,
+  SETUP_GATE_TTL_SECONDS,
   hardenSetupRedirect,
+  issueSetupGateCookie,
   matches,
   shouldUseSecureCookie,
+  verifySetupGateCookie,
 } from "./lib/setup-gate";
 import { isSiteLive } from "./lib/site-live";
 
-export { SETUP_GATE_COOKIE, deriveSetupGateToken, matches, shouldUseSecureCookie };
+export { SETUP_GATE_COOKIE, issueSetupGateCookie, matches, shouldUseSecureCookie, verifySetupGateCookie };
 /** EmDash's dev-mode login without a passkey (SEC-07): refused whenever the dev server points at production. */
 export const DEV_BYPASS_PATH = /^\/_emdash\/api\/auth\/dev-bypass(\/|$)/;
 const GATED = [/^\/_emdash\/admin\/setup(\/|$)/, /^\/_emdash\/api\/setup(\/|$)/];
@@ -77,13 +79,13 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
 
     const queryToken = context.url.searchParams.get("setup_token");
     if (queryToken && (await matches(queryToken, secret))) {
-      const cookieToken = await deriveSetupGateToken(secret);
+      const cookieToken = await issueSetupGateCookie(secret);
       context.cookies.set(SETUP_GATE_COOKIE, cookieToken, {
         path: "/_emdash/",
         httpOnly: true,
         secure: shouldUseSecureCookie(context.url),
         sameSite: "strict",
-        maxAge: 3600,
+        maxAge: SETUP_GATE_TTL_SECONDS,
       });
       const clean = new URL(context.url);
       clean.searchParams.delete("setup_token");
@@ -93,8 +95,7 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
       );
     }
 
-    const expectedCookie = await deriveSetupGateToken(secret);
-    if (await matches(context.cookies.get(SETUP_GATE_COOKIE)?.value, expectedCookie)) {
+    if (await verifySetupGateCookie(context.cookies.get(SETUP_GATE_COOKIE)?.value, secret)) {
       return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
     }
     return new Response("Not found", { status: 404 });

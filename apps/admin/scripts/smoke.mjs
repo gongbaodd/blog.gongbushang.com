@@ -91,7 +91,7 @@ if (!gated.failed) {
 	const res = await fetch(`${gated.base}/_emdash/admin/setup?setup_token=${SMOKE_SETUP_TOKEN}`, { redirect: "manual" });
 	const cookie = res.headers.get("set-cookie") ?? "";
 	check("setup redirect 302", res.status === 302, `HTTP ${res.status}`);
-	check("setup cookie set and holds no raw SETUP_TOKEN", /growgen_setup_gate=[0-9a-f]{64}/.test(cookie) && !cookie.includes(SMOKE_SETUP_TOKEN));
+	check("setup cookie set and holds no raw SETUP_TOKEN", /growgen_setup_gate=\d+\.[0-9a-f]{64}/.test(cookie) && /Max-Age=3600/i.test(cookie) && !cookie.includes(SMOKE_SETUP_TOKEN));
 	check("setup cookie not Secure on http://127.0.0.1 (local Docker bootstrap)", !/;\s*secure/i.test(cookie));
 	check("setup redirect is no-store + no-referrer", res.headers.get("cache-control") === "no-store" && res.headers.get("referrer-policy") === "no-referrer");
 	const pair = cookie.split(";")[0];

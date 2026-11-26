@@ -7,8 +7,9 @@ import {
 import {
 	SETUP_GATE_COOKIE,
 	createAdminMiddleware,
-	deriveSetupGateToken,
+	issueSetupGateCookie,
 	matches,
+	verifySetupGateCookie,
 	normalize,
 	onRequest,
 } from "./middleware.ts";
@@ -142,12 +143,13 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
 		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 		// SEC-15: the cookie holds an HMAC-derived token, never the raw SETUP_TOKEN.
-		expect(setCalls[0]?.value).not.toBe("valid-token");
-		expect(setCalls[0]?.value).toMatch(/^[0-9a-f]{64}$/);
+		expect(setCalls[0]?.value).not.toContain("valid-token");
+		expect(setCalls[0]?.value).toMatch(/^\d+\.[0-9a-f]{64}$/);
+		expect(await verifySetupGateCookie(setCalls[0]?.value, "valid-token")).toBe(true);
 		expect(setCalls).toEqual([
 			{
 				name: SETUP_GATE_COOKIE,
-				value: await deriveSetupGateToken("valid-token"),
+				value: setCalls[0]?.value,
 				options: {
 					path: "/_emdash/",
 					httpOnly: true,
@@ -192,6 +194,11 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 			[SETUP_GATE_COOKIE]: "valid-token",
 		});
 		expect((await runMw(mw, rawCookie.context, next)).status).toBe(404);
+		// expired (signed exp in the past) is rejected server-side, even though the browser still sent it
+		const expired = createMockContext("http://localhost:4322/_emdash/api/setup/status", {
+			[SETUP_GATE_COOKIE]: await issueSetupGateCookie("valid-token", { now: Date.now() - 2 * 3600_000 }),
+		});
+		expect((await runMw(mw, expired.context, next)).status).toBe(404);
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -202,7 +209,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		});
 		const next = vi.fn(async () => new Response("setup ok", { status: 200 }));
 		const { context } = createMockContext("http://localhost:4322/_emdash/admin/setup", {
-			[SETUP_GATE_COOKIE]: await deriveSetupGateToken("valid-token"),
+			[SETUP_GATE_COOKIE]: await issueSetupGateCookie("valid-token"),
 		});
 
 		const res = await runMw(mw, context, next);
@@ -263,7 +270,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 		process.env.SETUP_TOKEN = "env-secret";
 		const authed = createMockContext("http://localhost:4322/_emdash/admin/setup", {
-			[SETUP_GATE_COOKIE]: await deriveSetupGateToken("env-secret"),
+			[SETUP_GATE_COOKIE]: await issueSetupGateCookie("env-secret"),
 		});
 		const resAuthed = await runMw(onRequest, authed.context, async () => new Response("setup"));
 		expect(resAuthed.status).toBe(200);

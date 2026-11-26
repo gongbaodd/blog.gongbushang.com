@@ -8,8 +8,12 @@ async function digest(value: string): Promise<Uint8Array> {
   return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
 }
 
-/** Derive the cookie value via HMAC-SHA256 so the raw `SETUP_TOKEN` is never stored in cookies. */
-export async function deriveSetupGateToken(secret: string): Promise<string> {
+/** Lifetime of a setup-gate cookie, enforced server-side by the signed expiry (the cookie's maxAge is only a browser hint). */
+export const SETUP_GATE_TTL_SECONDS = 3600;
+
+const VALUE_RE = /^(\d{1,12})\.([0-9a-f]{64})$/;
+
+async function hmacHex(secret: string, message: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
@@ -18,10 +22,43 @@ export async function deriveSetupGateToken(secret: string): Promise<string> {
     false,
     ["sign"],
   );
-  const sig = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encoder.encode(SETUP_GATE_COOKIE)),
-  );
+  const sig = new Uint8Array(await crypto.subtle.sign("HMAC", key, encoder.encode(message)));
   return Array.from(sig, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export interface SetupGateCookieOptions {
+  /** Current time in ms (test seam). */
+  now?: number;
+  /** Cookie name bound into the MAC, so a value minted for another cookie never verifies. */
+  name?: string;
+  ttlSeconds?: number;
+}
+
+/**
+ * Cookie value `<exp>.<hex HMAC-SHA256(SETUP_TOKEN, "<name>|<exp>")>` (SEC-15). The raw SETUP_TOKEN is never stored, and the
+ * value stops working at `exp` (unix seconds) whatever the browser does with maxAge.
+ */
+export async function issueSetupGateCookie(secret: string, opts: SetupGateCookieOptions = {}): Promise<string> {
+  const now = opts.now ?? Date.now();
+  const exp = Math.floor(now / 1000) + (opts.ttlSeconds ?? SETUP_GATE_TTL_SECONDS);
+  return `${exp}.${await hmacHex(secret, `${opts.name ?? SETUP_GATE_COOKIE}|${exp}`)}`;
+}
+
+/** True only for a well-formed, unexpired value whose MAC matches (timing-safe). Expired, tampered or foreign values are false. */
+export async function verifySetupGateCookie(
+  value: string | null | undefined,
+  secret: string,
+  opts: SetupGateCookieOptions = {},
+): Promise<boolean> {
+  if (!value || !secret) return false;
+  const m = VALUE_RE.exec(value);
+  if (!m) return false;
+  const exp = Number(m[1]);
+  const nowSec = Math.floor((opts.now ?? Date.now()) / 1000);
+  if (!Number.isSafeInteger(exp) || exp <= nowSec) return false;
+  // A signed exp further out than one TTL was not minted by issueSetupGateCookie (e.g. a stolen secret used offline): refuse.
+  if (exp > nowSec + (opts.ttlSeconds ?? SETUP_GATE_TTL_SECONDS) + 60) return false;
+  return matches(m[2], await hmacHex(secret, `${opts.name ?? SETUP_GATE_COOKIE}|${exp}`));
 }
 
 /** Constant-time comparison (both sides hashed first, so lengths never leak). */

@@ -11,9 +11,10 @@ vi.mock("astro:middleware", () => ({
 import {
   SETUP_GATE_COOKIE,
   createWebMiddleware,
-  deriveSetupGateToken,
+  issueSetupGateCookie,
   matches,
   shouldUseSecureCookie,
+  verifySetupGateCookie,
 } from "./middleware";
 
 type CookieOptions = Record<string, unknown>;
@@ -117,9 +118,6 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
 
   it("stores HMAC-SHA256 derived token (not raw SETUP_TOKEN) and sets no-store + no-referrer on 302", async () => {
     const secret = "super-secret-setup-token";
-    const expectedDerived = await deriveSetupGateToken(secret);
-    expect(expectedDerived).toMatch(/^[0-9a-f]{64}$/);
-    expect(expectedDerived).not.toBe(secret);
 
     const mw = createWebMiddleware({
       getEnv: () => ({ SETUP_TOKEN: secret, PUBLIC_SITE_LIVE: "false" }),
@@ -136,10 +134,13 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+    expect(setCalls[0]?.value).toMatch(/^\d+\.[0-9a-f]{64}$/);
+    expect(setCalls[0]?.value).not.toContain(secret);
+    expect(await verifySetupGateCookie(setCalls[0]?.value, secret)).toBe(true);
     expect(setCalls).toEqual([
       {
         name: SETUP_GATE_COOKIE,
-        value: expectedDerived,
+        value: setCalls[0]?.value,
         options: {
           path: "/_emdash/",
           httpOnly: true,
@@ -180,7 +181,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
 
   it("accepts the derived cookie token and rejects the raw SETUP_TOKEN in the cookie", async () => {
     const secret = "my-setup-secret";
-    const derived = await deriveSetupGateToken(secret);
+    const derived = await issueSetupGateCookie(secret);
     const mw = createWebMiddleware({
       getEnv: () => ({ SETUP_TOKEN: secret, PUBLIC_SITE_LIVE: "false" }),
       isDev: false,
