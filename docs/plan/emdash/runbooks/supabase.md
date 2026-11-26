@@ -49,7 +49,14 @@ Local `supabase/config.toml` mirrors this posture (`[api] enabled = false`, `sch
 
 `supabase/migrations/20261125020000_lockdown_public_rls.sql` enables Row Level Security (with no permissive policies) on every table in `public` (and `derived`), revokes all schema/table/sequence/function privileges from `anon` and `authenticated`, and revokes `postgres` default privileges for those roles. Because `postgres` is the table owner and bypasses RLS, EmDash (`apps/admin`, `apps/web` build/cron) and `derive` continue working untouched.
 
-The script is **fully idempotent** and is **not** run by `derive:migrate` (which only applies `*_derived_*.sql`). Run it once on each existing environment and **re-run it after every future `emdash migrate`** (since new EmDash migrations may create new `public.*` tables without RLS).
+The script is **fully idempotent** and is **not** run by `derive:migrate` (which only applies `*_derived_*.sql`). Run it once on each existing environment and **re-run it after every future `emdash migrate`** (since new EmDash migrations may create new `public.*` tables without RLS). Order after a migrate: `emdash migrate` → this lockdown → `supabase/roles/growgen_ci_readonly.sql` (it needs RLS enabled and grants per table).
+
+What it does **not** cover (acceptable only because layer 1, the Data API, is off; GON-193 review):
+- Default privileges whose grantor is `supabase_admin` (extensions and Supabase internals in `public`, `graphql_public`, `graphql`, `supabase_functions`). Only `supabase_admin` can change them. Tables created by `emdash migrate` are owned by `postgres` and are covered.
+- `anon`'s USAGE on the `graphql_public` and `storage` schemas.
+- A table created after the last run has RLS off until the script is re-run. No grant reaches `anon` for it, so it is still blocked, but the second layer is missing until then. Run the first verification query below after each migrate.
+
+Functions: the script also revokes EXECUTE from `PUBLIC` on every function in `public` and `derived` (today all are trigger functions, which fire regardless).
 
 Using Node `pg` (no `psql` needed; substitute `SUPABASE_PRODUCTION_POOLER_URL` for production, or `postgresql://postgres:postgres@127.0.0.1:54322/postgres` for local):
 ```sh

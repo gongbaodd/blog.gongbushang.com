@@ -76,4 +76,19 @@ begin
       end loop;
     end if;
   end loop;
+
+  -- 3. Functions get EXECUTE for PUBLIC by default, which `revoke ... from anon` cannot remove (GON-193 review).
+  --    Only the owner (`postgres`) needs to call them: trigger functions fire regardless of EXECUTE, and the
+  --    growgen_backup / growgen_ci_readonly roles (supabase/roles/) only read tables.
+  foreach schema_name in array array['public', 'derived'] loop
+    if exists (select 1 from pg_namespace where nspname = schema_name) then
+      execute format('revoke execute on all functions in schema %I from public', schema_name);
+      if can_alter_postgres_defaults then
+        execute format(
+          'alter default privileges for role postgres in schema %I revoke execute on functions from public',
+          schema_name
+        );
+      end if;
+    end if;
+  end loop;
 end $$;
