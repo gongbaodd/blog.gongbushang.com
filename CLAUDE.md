@@ -6,12 +6,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The import above pulls in this repo's `AGENTS.md`, which is the primary source of coding guidelines (project skills in `.agents/skills/`, code style, naming conventions, directory structure). Read it. Everything below is Claude-specific: commands and architecture context not covered there.
 
-## Commands
+## EmDash apps (current migration target)
+
+`pnpm-workspace.yaml` lists `packages/*` **and** `apps/*`. The apps are `web` (`apps/web`, public site) and `admin` (`apps/admin`, Docker admin). Use `pnpm --filter web <script>` or `pnpm --filter admin <script>`. Full guide: `.agents/skills/emdash/SKILL.md`.
+
+```bash
+pnpm --filter web dev
+pnpm --filter web build           # runs derive first (writes Supabase derived.* unless DERIVE_READONLY=1)
+pnpm --filter web parity          # URL parity with apps/web/tests/legacy-urls.txt
+pnpm --filter web test
+pnpm --filter admin dev           # host only, never inside a container
+pnpm --filter admin check:secrets
+pnpm --filter admin smoke         # local Supabase only
+pnpm db:start                     # local Supabase
+pnpm admin:local                  # host-native admin on local DB (production edits use apps/admin, SEC-07)
+```
+
+Environments are `local` and `production` only. The public site stays noindex until `PUBLIC_SITE_LIVE=true` (CUT-1).
+
+## Commands (legacy `src/` site, until CUT-2)
 
 Package manager is **pnpm** (`packageManager: pnpm@10.33.2` in package.json); use `pnpm`, not `npm`/`yarn`.
 
 ```bash
-pnpm install          # install deps (workspaces: packages/*)
+pnpm install          # install deps (workspaces: packages/*, apps/*)
 pnpm dev              # astro dev server at localhost:4321
 pnpm build            # astro check && astro build -> ./dist
 pnpm preview           # preview production build locally
@@ -23,7 +41,7 @@ pnpm test:watch       # vitest watch mode
 
 Run a single test file or case with vitest directly, e.g. `pnpm vitest run packages/utils/foo.test.ts` or `pnpm vitest run -t "test name"`. See `.agents/skills/vitest-testing/SKILL.md` for the testing API/config.
 
-Content and data-pipeline scripts (see `.agents/skills/generated-content/SKILL.md`):
+Content and data-pipeline scripts, legacy (see `.agents/skills/generated-content/SKILL.md`):
 
 ```bash
 pnpm content:prepare   # regenerate post metadata/covers (content-prepare package)
@@ -37,7 +55,7 @@ pnpm depth:sync        # uv sync (Python depth-estimation package)
 
 `pnpm clone` re-pulls the blog content submodule source into `src/content/_docs` via `packages/scripts/clone.sh`.
 
-## Architecture
+## Architecture (legacy `src/` site, until CUT-2)
 
 **Polyglot monorepo.** pnpm workspaces (`packages/*`) hold JS/TS packages; a Cargo workspace (`Cargo.toml`, members `packages/rag-umap`, `packages/umap`) holds Rust UMAP code; a uv workspace (`pyproject.toml`, members `packages/embedding`, `packages/depth-estimation`) holds Python. The Astro app in `src/` is the consumer of all three — generated JSON/artifacts from the Rust/Python/content-prepare pipelines land under `src/content/generated/` and are read by TS helpers in `packages/utils/` (paths centralized in `packages/consts/config.js`).
 
