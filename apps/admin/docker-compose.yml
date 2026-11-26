@@ -1,0 +1,63 @@
+# EmDash Node Admin — Docker Compose (D12, INF-9)
+#
+# Supports local (Supabase on host) and production databases via .env files (INF-10: no testing environment):
+#   cp .env.example .env
+#   docker compose up --build -d
+#   docker compose --env-file .env.production up -d
+
+services:
+  admin:
+    build:
+      context: ../..
+      dockerfile: apps/admin/Dockerfile
+    image: growgen-emdash-admin:latest
+    # "no" by default so a production admin is only ever started deliberately; set ADMIN_RESTART=unless-stopped for local.
+    restart: "${ADMIN_RESTART:-no}"
+    ports:
+      - "${BIND_HOST:-127.0.0.1}:${PORT:-4322}:4322"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      NODE_ENV: production
+      HOST: "0.0.0.0"
+      PORT: "4322"
+      SITE_ENV: "${SITE_ENV:-local}"
+      # SITE_ENV=production refuses to start without ADMIN_CONFIRM_PRODUCTION=yes and requires Cloudflare Access below.
+      ADMIN_CONFIRM_PRODUCTION: "${ADMIN_CONFIRM_PRODUCTION:-}"
+      CF_ACCESS_TEAM_DOMAIN: "${CF_ACCESS_TEAM_DOMAIN:-}"
+      CF_ACCESS_AUD: "${CF_ACCESS_AUD:-}"
+      CF_TUNNEL_TOKEN: "${CF_TUNNEL_TOKEN:-}"
+      SUPABASE_PRODUCTION_REF: "${SUPABASE_PRODUCTION_REF:-}"
+      ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL: "${ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL:-}"
+      DATABASE_CA_CERT: "${DATABASE_CA_CERT:-}"
+      DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in apps/admin/.env (local, or the production pooler URL)}"
+      EMDASH_ENCRYPTION_KEY: "${EMDASH_ENCRYPTION_KEY:-}"
+      EMDASH_SITE_URL: "${EMDASH_SITE_URL:-http://localhost:4322}"
+      EMDASH_ALLOWED_ORIGINS: "${EMDASH_ALLOWED_ORIGINS:-}"
+      SETUP_TOKEN: "${SETUP_TOKEN:-}"
+      SESSION_DRIVER: "${SESSION_DRIVER:-fs-lite}"
+      SESSION_DIR: "/app/.astro/sessions"
+      CLOUDINARY_CLOUD_NAME: "${CLOUDINARY_CLOUD_NAME:-}"
+      CLOUDINARY_API_KEY: "${CLOUDINARY_API_KEY:-}"
+      CLOUDINARY_API_SECRET: "${CLOUDINARY_API_SECRET:-}"
+      GITHUB_DISPATCH_TOKEN: "${GITHUB_DISPATCH_TOKEN:-}"
+      GITHUB_DISPATCH_TOKEN_EXPIRES_AT: "${GITHUB_DISPATCH_TOKEN_EXPIRES_AT:-}"
+      GITHUB_DISPATCH_REPO: "${GITHUB_DISPATCH_REPO:-gongbaodd/blog.gongbushang.com}"
+      GITHUB_API_URL: "${GITHUB_API_URL:-}" # honoured only when SITE_ENV=local
+    volumes:
+      - admin_sessions:/app/.astro/sessions
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4322/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  admin_sessions:

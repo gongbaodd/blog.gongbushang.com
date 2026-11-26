@@ -1,0 +1,124 @@
+# EmDash site (apps/web) CI: verify only, never deploy (INF-4, INF-10). Deploys are web-deploy.yml.
+# Environments are local and production (INF-10), so PR builds read the production database. They must never WRITE to it:
+#   - DERIVE_READONLY=1 makes `derive` read-only (read-only DB session, no cache writes, no embeddings, colours, traces or geocoding,
+#     no AI or geocoding credentials used), see apps/web/scripts/derive/index.ts and docs/plan/emdash/runbooks/ci.md.
+#   - DATABASE_POOLER_URL comes from the separate `ci-readonly` environment and is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
+#   - `emdash migrate --check` is read-only; migrations are applied only by web-deploy.yml (manual, apply_migrations).
+# Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
+# Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
+name: web-ci
+
+on:
+  pull_request:
+    branches: [feat/emdash, master]
+    # Legacy-only changes (src/, packages/* except the plantuml submodule, e2e/) do not trigger this.
+    paths:
+      - "apps/web/**"
+      - "supabase/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "packages/shiki-plantuml"
+      - ".github/workflows/web-*.yml"
+      # `web` is a required check on feat/emdash, so it must report on admin-only PRs too, or they stay blocked forever
+      # (a workflow_dispatch run does not count for the PR). The admin also imports apps/web/src/lib and plugins.
+      - "apps/admin/**"
+      - ".github/workflows/admin-*.yml"
+      - ".dockerignore"
+  workflow_dispatch:
+
+concurrency:
+  # One verification per ref at a time; a newer push supersedes an older one.
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
+  # PR builds never write to the production DB and never spend Workers AI quota (INF-10). Keep this at job level.
+  DERIVE_READONLY: "1"
+  PUBLIC_BUILD_SHA: ${{ github.sha }}
+  # Empty-build guard thresholds (repository variables, optional). Raise WEB_MIN_POSTS to ~990 once MIG-1 is imported.
+  WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
+  WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
+
+jobs:
+  web:
+    # Forks get no secrets; skip them rather than fail.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Dedicated environment holding ONLY DATABASE_POOLER_URL, ideally the SEC-11 SELECT-only role. Not `production`: that environment
+    # may get branch restrictions or required reviewers (it gates real deploys), which would stall every PR run, and it holds the
+    # Cloudflare deploy token that a PR build must never see. Owner step: docs/plan/emdash/runbooks/ci.md.
+    environment: ci-readonly
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive # packages/shiki-plantuml (and the legacy content submodule, which apps/web does not read)
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm --filter web exec vitest run
+
+      - name: Type check
+        run: pnpm --filter web typecheck
+
+      - name: Migrations are up to date (read-only)
+        working-directory: apps/web
+        env:
+          # Production session pooler (IPv4). Step-scoped so install/test/typecheck steps never receive DB credentials.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+        run: pnpm exec emdash migrate --from-config --check
+
+      - name: Build
+        env:
+          # Production session pooler (IPv4). Used by the build's prerender (Hyperdrive local connection string).
+          # READ-ONLY use: DERIVE_READONLY=1 (job env) makes derive read-only; EmDash's prerender only reads.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+        run: |
+          set -o pipefail
+          pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Empty-build guard
+        # If the DB is unreachable the build still exits 0 and emits an empty site (S0-3).
+        run: |
+          if grep -q 'runtime init failed' "$RUNNER_TEMP/build.log"; then
+            echo "::error::build log contains 'runtime init failed': the site was built without CMS data"; exit 1
+          fi
+          cd apps/web/dist/client
+          pages=$(find . -name index.html | wc -l)
+          # Posts live at /<category>/YYYY/MM/DD/<slug>/ (find's -path `*` also matches `/`).
+          posts=$(find . -path './*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*' -name index.html -not -path './api/*' | wc -l)
+          echo "prerendered pages=$pages posts=$posts (min pages=$WEB_MIN_PAGES, min posts=$WEB_MIN_POSTS)"
+          if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
+          if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
+
+      - name: URL parity (every legacy URL is built)
+        # Exact comparison of dist/client against apps/web/tests/legacy-route-groups.json + legacy-urls.txt.
+        # Deliberately WITHOUT --fail-on-extra: the production DB is mutable (new tags, years, series, cities add pages),
+        # so extras would fail unrelated PRs. Run `pnpm --filter web parity --fail-on-extra --allow-extra
+        # tests/parity-allow-extra.txt` locally and at cutover.
+        # In read-only mode derive lists posts that have no cached vector or UMAP point (brand-new posts, cold cache) in
+        # .derive/readonly-missing.txt and warns; only their /api/cards and /api/relates pages are tolerated as missing.
+        run: pnpm --filter web parity --allow-missing .derive/readonly-missing.txt
+
+      - name: Free-tier size guard (Worker 60 MiB, 18k assets)
+        working-directory: apps/web
+        run: |
+          set -o pipefail
+          pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json 2>&1 | tee "$RUNNER_TEMP/dry.log"
+          node scripts/guards/worker-budget.mjs --worker-dir "$RUNNER_TEMP/wrangler-dry" --assets-dir dist/client --max-mib 60 --max-assets 18000

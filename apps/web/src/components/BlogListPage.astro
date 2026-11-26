@@ -1,0 +1,47 @@
+---
+// Ported from src/components/BlogListPage.astro. The page passes list entries; the first
+// INITIAL_SSR_POSTS cards are rendered into the HTML, the rest stream from /api/<key>/<n>.ndjson.
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "./MantineMain";
+import { GridWithMenu } from "./GridWithMenu";
+import { BlogListMenu } from "../menu/BlogListMenu";
+import BlogPlock from "../masonry/BlogPlock";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { FILTER_ENTRY, INITIAL_SSR_POSTS } from "../consts-list";
+import { toClients, type ListEntry } from "../lib/listing";
+
+interface Props {
+	subTitle: string;
+	totalCount: number;
+	filter: string;
+	entryType?: FILTER_ENTRY;
+	/** Sorted entries of this list; the first few are rendered into the HTML. */
+	posts?: ListEntry[];
+}
+
+const { subTitle, filter, entryType, totalCount, posts = [] } = Astro.props;
+
+const initialPosts = await toClients(posts.slice(0, INITIAL_SSR_POSTS));
+---
+
+<Global title={`${SITE_TITLE} | ${subTitle}`} description={SITE_DESCRIPTION}>
+	<Header />
+	<section id="blog-page" class="main">
+		<MantineMain client:load>
+			<GridWithMenu menuCol={{ base: 12, md: 1.2 }} contentCol={{ base: 12, md: 10.8 }}>
+				<BlogListMenu slot="menuNode" client:load />
+				<BlogPlock
+					totalCount={totalCount}
+					initialPosts={initialPosts}
+					entryType={entryType}
+					filter={filter}
+					slot="gridContent"
+					client:load
+				/>
+			</GridWithMenu>
+			<Footer slug={filter} />
+		</MantineMain>
+	</section>
+</Global>

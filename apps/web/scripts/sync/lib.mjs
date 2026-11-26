@@ -1,0 +1,808 @@
+// Pure ESM helpers for INF-5 environment content sync (D4, D11).
+// No side effects and zero external dependencies so everything is cleanly unit-testable.
+import { parseEnv } from "node:util";
+
+export const LOCAL_DB_URL = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+export const DERIVED_SCHEMA = "derived";
+
+/**
+ * Target environment definitions.
+ * Variable names match apps/web/scripts/admin/lib.mjs so repo-root `.env` is the single source of truth.
+ */
+export const ENVS = Object.freeze({
+	local: Object.freeze({
+		name: "local",
+		urlVar: "SUPABASE_LOCAL_DB_URL",
+		refVar: undefined,
+		defaultUrl: LOCAL_DB_URL,
+		isRemote: false,
+		requiresProductionFlag: false,
+	}),
+	production: Object.freeze({
+		name: "production",
+		urlVar: "SUPABASE_PRODUCTION_POOLER_URL",
+		refVar: "SUPABASE_PRODUCTION_REF",
+		defaultUrl: undefined,
+		isRemote: true,
+		requiresProductionFlag: true,
+	}),
+});
+
+/**
+ * Exact auth / user / passkey / session / OAuth / token tables from EmDash 1.6.0 Postgres migrations
+ * (`node_modules/emdash/src/database/migrations/001..098` & `src/transfer/format/columns.ts`).
+ *
+ * Passkeys (`credentials`), sessions/tokens (`auth_tokens`), and OAuth credentials are domain- and
+ * environment-bound (D4, D11) and must NEVER be copied across environments.
+ */
+export const EXCLUDED_AUTH_TABLES = Object.freeze([
+	"users", // 001_initial, 008_auth, 098_user_last_login
+	"credentials", // 008_auth, 037_credential_algorithm (WebAuthn passkeys)
+	"auth_tokens", // 008_auth (sessions, magic/verification/invite tokens)
+	"auth_challenges", // 008_auth (WebAuthn passkey challenges)
+	"oauth_accounts", // 008_auth (external OAuth account links)
+	"allowed_domains", // 008_auth (auth allowed email domains)
+	"_emdash_api_tokens", // 016_api_tokens
+	"_emdash_oauth_tokens", // 016_api_tokens
+	"_emdash_oauth_clients", // 025_oauth_clients
+	"_emdash_authorization_codes", // 017_authorization_codes
+	"_emdash_device_codes", // 016_api_tokens
+]);
+
+/**
+ * Environment-bound security, setup, encrypted plugin storage, audit, and schema-migration tables.
+ *
+ * - `options` holds `setup_completed`, `site:domain`, `emdash:passkey_pending:*`, and `plugin:*`
+ *   settings encrypted with each environment's own `EMDASH_ENCRYPTION_KEY`.
+ * - `_plugin_*` holds plugin secrets/state encrypted with the source env's `EMDASH_ENCRYPTION_KEY`.
+ * - `_emdash_migrations*` belongs to the target database's own schema migration ledger.
+ */
+export const EXCLUDED_ENV_STATE_TABLES = Object.freeze([
+	"audit_logs", // 001_initial (references env-local users)
+	"options", // 001_initial (setup state, domain, passkey pending, encrypted plugin KV)
+	"_emdash_migrations", // database/migrations/runner.ts
+	"_emdash_migrations_lock", // database/migration-lock.ts
+	"_plugin_storage", // 004_plugins
+	"_plugin_state", // 004_plugins
+	"_plugin_indexes", // 004_plugins
+]);
+
+/**
+ * Ephemeral runtime / lock / queue / log / site-transfer staging tables (env-local operational state, not content).
+ */
+export const EXCLUDED_RUNTIME_TABLES = Object.freeze([
+	"_emdash_rate_limits", // 032_rate_limits
+	"_emdash_entry_locks", // 075_entry_edit_locks
+	"_emdash_rooms", // 097_room_storage
+	"_emdash_room_updates", // 097_room_storage
+	"_emdash_cron_tasks", // 026_cron_tasks
+	"_emdash_redirect_write_lock", // 081_redirect_write_guards
+	"_emdash_404_log", // 029_redirects (also used by scripts/admin/start.mjs DB probe)
+	"_emdash_revision_prune_queue", // 059_revision_prune_queue
+	"_emdash_media_upload_attempts", // 054_media_upload_attempts
+	"_emdash_transfer_operations", // 084_site_transfer
+	"_emdash_transfer_identity_map", // 084_site_transfer
+	"_emdash_transfer_staged_files", // 084_site_transfer
+	"_emdash_transfer_package_index", // 084_site_transfer
+	"_emdash_transfer_media_blobs", // 084_site_transfer
+	"_emdash_transfer_approvals", // 084_site_transfer
+]);
+
+/**
+ * Operational indexes and artifacts that EmDash rebuilds per environment (media usage index and its
+ * work/fence/reconciliation bookkeeping, redirect generation state). Copying them between environments
+ * would desynchronise them from the target's own media and redirect state.
+ */
+export const EXCLUDED_OPERATIONAL_TABLES = Object.freeze([
+	"_emdash_media_usage",
+	"_emdash_media_usage_activation",
+	"_emdash_media_usage_cleanup",
+	"_emdash_media_usage_cleanup_fence",
+	"_emdash_media_usage_collection_deletions",
+	"_emdash_media_usage_generation_writes",
+	"_emdash_media_usage_index_status",
+	"_emdash_media_usage_reconciliations",
+	"_emdash_media_usage_sources",
+	"_emdash_media_usage_work",
+	"_emdash_redirect_state",
+	"_emdash_redirect_artifacts",
+	"_emdash_redirect_generation_artifacts",
+]);
+
+/**
+ * Visitor comments carry PII (author name, email, IP, user agent). Excluded by default; opt in with
+ * `--include-comments`. Reactions reference comments, so they travel together.
+ */
+export const COMMENT_TABLES = Object.freeze(["_emdash_comments", "_emdash_comment_reactions"]);
+
+/** Always-excluded `public.*` tables (comments are handled separately, see `getExcludedTables`). */
+export const BASE_EXCLUDED_TABLES = Object.freeze([
+	...EXCLUDED_AUTH_TABLES,
+	...EXCLUDED_ENV_STATE_TABLES,
+	...EXCLUDED_RUNTIME_TABLES,
+	...EXCLUDED_OPERATIONAL_TABLES,
+]);
+
+/** Default complete list of `public.*` tables excluded from content sync (comments excluded). */
+export const EXCLUDED_TABLES = Object.freeze([...BASE_EXCLUDED_TABLES, ...COMMENT_TABLES]);
+
+/** Excluded list for a run: comments are synced only when `includeComments` is true. */
+export function getExcludedTables({ includeComments = false } = {}) {
+	return includeComments ? BASE_EXCLUDED_TABLES : EXCLUDED_TABLES;
+}
+
+/**
+ * Tables that ARE synced as content (besides any `ec_<collection>` content table). A `public` table that
+ * is neither excluded nor listed here fails the schema-drift test, forcing a conscious decision when
+ * EmDash adds a table. Note `ec_posts.author_id` (and similar owner columns) reference `users`, which is
+ * never synced, so those ids dangle in the target; they are not enforced (replica role) and harmless
+ * because EmDash resolves bylines through `_emdash_bylines`.
+ */
+export const KNOWN_CONTENT_TABLES = Object.freeze([
+	"_emdash_block_type_versions",
+	"_emdash_block_types",
+	"_emdash_byline_field_group_values",
+	"_emdash_byline_field_values",
+	"_emdash_byline_fields",
+	"_emdash_bylines",
+	"_emdash_collections",
+	"_emdash_content_bylines",
+	"_emdash_content_references",
+	"_emdash_fields",
+	"_emdash_menu_items",
+	"_emdash_menus",
+	"_emdash_redirects",
+	"_emdash_relations",
+	"_emdash_sections",
+	"_emdash_seo",
+	"_emdash_taxonomy_def_groups",
+	"_emdash_taxonomy_defs",
+	"_emdash_widget_areas",
+	"_emdash_widgets",
+	"content_taxonomies",
+	"media",
+	"media_folders",
+	"revisions",
+	"taxonomies",
+]);
+
+const KNOWN_CONTENT_SET = new Set(KNOWN_CONTENT_TABLES);
+const EXCLUDED_TABLE_SET = new Set(EXCLUDED_TABLES);
+
+/** Classify a bare `public` table name: "excluded", "content" or "unknown" (needs a human decision). */
+export function classifyPublicTable(name) {
+	if (EXCLUDED_TABLE_SET.has(name)) return "excluded";
+	if (KNOWN_CONTENT_SET.has(name) || /^ec_[a-z0-9_]+$/.test(name)) return "content";
+	return "unknown";
+}
+
+/** Sorted, de-duplicated `public` table names that are neither excluded nor known content (SEC-11 fail-closed guard). */
+export function findUnknownPublicTables(tableNames) {
+	return [...new Set(tableNames.map((t) => String(t).trim()).filter(Boolean))]
+		.filter((name) => classifyPublicTable(name) === "unknown")
+		.sort();
+}
+
+/** Read-only SQL listing every `public` table (the preflight in pull.mjs runs it on source and target). */
+export const LIST_PUBLIC_TABLES_SQL = "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1";
+
+/** Exact `psql` argv for the preflight. `url` must be password-free (see splitUrlCredentials); the password goes in PGPASSWORD. */
+export function buildListPublicTablesArgs(url) {
+	return ["--no-psqlrc", "-v", "ON_ERROR_STOP=1", "-At", "-c", LIST_PUBLIC_TABLES_SQL, url];
+}
+
+/** Build-time derived cache tables in schema `derived` (supabase/migrations/20261125000000_derived_schema.sql). */
+export const DERIVED_TABLES = Object.freeze([
+	"post_embeddings",
+	"cover_colors",
+	"geocodes",
+	"post_hints",
+	"umap_state",
+	"gallery_traces",
+	"podcast_embeddings",
+]);
+
+const SAFE_IDENT_RE = /^[a-z_][a-z0-9_]*$/;
+
+export function validateIdentifier(name, kind = "identifier") {
+	if (typeof name !== "string" || !SAFE_IDENT_RE.test(name)) {
+		throw new Error(`Invalid SQL ${kind}: "${String(name)}"`);
+	}
+	return name;
+}
+
+/** Check whether a table name (bare `users` or schema-qualified `public.users`) is excluded from sync. */
+export function isExcludedTable(tableName) {
+	if (typeof tableName !== "string") return false;
+	const bare = tableName.startsWith("public.") ? tableName.slice("public.".length) : tableName;
+	return EXCLUDED_TABLE_SET.has(bare);
+}
+
+export function parseEnvText(text) {
+	return text ? parseEnv(text) : {};
+}
+
+export function looksLikePostgresUrl(url) {
+	return /^postgres(ql)?:\/\/[^\s]+$/.test(url ?? "");
+}
+
+/** Host + port + database name only (never credentials), for safe logging. */
+export function dbHost(url) {
+	try {
+		const u = new URL(url);
+		return `${u.hostname}:${u.port || "5432"}${u.pathname}`;
+	} catch {
+		return "<unparseable url>";
+	}
+}
+
+/** Mask the password in a postgres:// URL while keeping protocol, username, host, port, and path readable. */
+export function maskPostgresUrl(url) {
+	try {
+		const u = new URL(url);
+		if (u.protocol !== "postgres:" && u.protocol !== "postgresql:") {
+			return "postgres://<redacted>";
+		}
+		const userPart = u.username ? `${u.username}:${u.password ? "<redacted>" : ""}@` : "";
+		return `${u.protocol}//${userPart}${u.host}${u.pathname}${u.search}`;
+	} catch {
+		return "postgres://<redacted>";
+	}
+}
+
+/** Mask passwords in every postgres URL and replace any explicit secret values (>= 8 chars) in arbitrary text. */
+export function redactText(text, secrets = []) {
+	let out = String(text).replace(/postgres(?:ql)?:\/\/[^\s"'<>]+/g, (match) => maskPostgresUrl(match));
+	for (const s of secrets) {
+		if (typeof s === "string" && s.length >= 8) {
+			out = out.split(s).join("<redacted>");
+		}
+	}
+	return out;
+}
+
+/** Return a copy of a command argument array with credentials and secrets redacted. */
+export function redactArgs(args, secrets = []) {
+	return args.map((arg) => redactText(arg, secrets));
+}
+
+const GENERIC_NON_SECRET_WORDS = new Set(["postgres", "postgresql", "password", "localhost"]);
+
+/** Extract the password (if any) from a postgres URL so it can also be passed into `secrets` for redaction. */
+export function extractUrlPassword(url) {
+	try {
+		const u = new URL(url);
+		const raw = u.password;
+		if (!raw || GENERIC_NON_SECRET_WORDS.has(raw.toLowerCase())) return [];
+		const decoded = decodeURIComponent(raw);
+		const out = [];
+		if (!GENERIC_NON_SECRET_WORDS.has(raw.toLowerCase())) out.push(raw);
+		if (decoded !== raw && !GENERIC_NON_SECRET_WORDS.has(decoded.toLowerCase())) out.push(decoded);
+		return out;
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Resolve the Postgres connection URL for an environment.
+ * Precedence: `processEnv[urlVar]` -> `dotEnv[urlVar]` -> `cfg.defaultUrl` (local only).
+ */
+export function resolveEnvUrl(envName, dotEnv = {}, processEnv = {}) {
+	const cfg = ENVS[envName];
+	if (!cfg) {
+		return {
+			ok: false,
+			missing: [],
+			error: `unknown env "${envName}" (expected local or production)`,
+		};
+	}
+	const url = processEnv[cfg.urlVar] || dotEnv[cfg.urlVar] || cfg.defaultUrl;
+	if (!url) {
+		return { ok: false, missing: [cfg.urlVar] };
+	}
+	if (!looksLikePostgresUrl(url)) {
+		return { ok: false, missing: [], error: `${cfg.urlVar} is not a valid postgres:// URL` };
+	}
+	const paramError = disallowedUrlParams(url);
+	if (paramError) {
+		return { ok: false, missing: [], error: `${cfg.urlVar}: ${paramError}` };
+	}
+	return { ok: true, env: envName, url, varName: cfg.urlVar };
+}
+
+const DIRECT_SUPABASE_HOST_RE = /^db\.[a-z0-9-]+\.supabase\.co$/i;
+const POOLER_SUPABASE_HOST_RE = /\.pooler\.supabase\.com$/i;
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/**
+ * libpq lets URL query parameters (`user`, `host`, `hostaddr`, `port`, `dbname`, `service`, `options`,
+ * `password`, ...) override the userinfo/host the guards inspect. Only `sslmode` is allowed, so what the
+ * checks see is exactly what libpq will connect to.
+ */
+const ALLOWED_URL_PARAMS = new Set(["sslmode"]);
+
+/** Returns an error string if the URL has any query parameter outside the allowlist, else undefined. */
+export function disallowedUrlParams(url) {
+	try {
+		const bad = [...new Set([...new URL(url).searchParams.keys()])].filter(
+			(k) => !ALLOWED_URL_PARAMS.has(k.toLowerCase()),
+		);
+		if (bad.length > 0) {
+			return `connection URL has unsupported query parameter(s) ${bad.map((k) => `"${k}"`).join(", ")}; libpq would let them override the user/host/port the safety checks verified. Only ?sslmode= is allowed.`;
+		}
+	} catch {
+		// unparseable URLs are rejected elsewhere
+	}
+	return undefined;
+}
+
+/**
+ * Verify that remote Supabase environments use the IPv4 session pooler (`*.pooler.supabase.com:5432`),
+ * never the IPv6-only direct host (`db.<ref>.supabase.co`) or transaction pooler (`:6543`).
+ */
+export function validatePoolerUrl(envName, url) {
+	const cfg = ENVS[envName];
+	if (!cfg) {
+		return { ok: false, error: `unknown env "${envName}"` };
+	}
+	let parsed;
+	try {
+		parsed = new URL(url);
+	} catch {
+		return { ok: false, error: `${envName} URL could not be parsed` };
+	}
+	const paramError = disallowedUrlParams(url);
+	if (paramError) {
+		return { ok: false, error: `${envName} ${paramError}` };
+	}
+	const host = parsed.hostname;
+	const port = parsed.port || "5432";
+	const warnings = [];
+
+	if (!cfg.isRemote) {
+		if (!LOCAL_HOSTS.has(host)) {
+			return {
+				ok: false,
+				error:
+					`"local" points to non-loopback host ${host}:${port}. "local" must be 127.0.0.1/localhost; ` +
+					`a remote database cannot be labelled local (it would bypass the production gate).`,
+			};
+		}
+		return { ok: true, host, port, warnings };
+	}
+
+	if (DIRECT_SUPABASE_HOST_RE.test(host)) {
+		return {
+			ok: false,
+			error:
+				`${envName} uses direct host ${host}, which is IPv6-only on Supabase Free. ` +
+				`Use the IPv4 session pooler (*.pooler.supabase.com:5432) in ${cfg.urlVar}.`,
+		};
+	}
+
+	if (POOLER_SUPABASE_HOST_RE.test(host) && port === "6543") {
+		return {
+			ok: false,
+			error:
+				`${envName} uses transaction pooler port 6543 on ${host}. ` +
+				`pg_dump and psql require the session pooler on port 5432.`,
+		};
+	}
+
+	if (!POOLER_SUPABASE_HOST_RE.test(host) && !LOCAL_HOSTS.has(host)) {
+		warnings.push(
+			`${envName} host ${host}:${port} is not a *.pooler.supabase.com session pooler — confirm it is IPv4-reachable`,
+		);
+	}
+
+	return { ok: true, host, port, warnings };
+}
+
+/** Normalize a postgres URL (protocol + host + port + pathname) to detect accidental self-sync of local DBs. */
+function canonicalDbEndpoint(url) {
+	try {
+		const u = new URL(url);
+		return `${u.hostname.toLowerCase()}:${u.port || "5432"}${u.pathname}`;
+	} catch {
+		return url;
+	}
+}
+
+/**
+ * Supabase project ref from a pooler URL username (`postgres.<ref>`). Returns undefined for anything else
+ * (plain `postgres` user, unparseable URL), which callers must treat as "cannot verify".
+ */
+export function parseProjectRef(url) {
+	try {
+		const user = decodeURIComponent(new URL(url).username);
+		const m = /^postgres\.([a-z0-9]{10,40})$/i.exec(user);
+		return m ? m[1].toLowerCase() : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** Expected project refs per env from `.env` / process.env (names only: SUPABASE_PRODUCTION_REF). */
+export function resolveExpectedRefs(dotEnv = {}, processEnv = {}) {
+	const out = {};
+	for (const cfg of Object.values(ENVS)) {
+		if (!cfg.refVar) continue;
+		const v = (processEnv[cfg.refVar] || dotEnv[cfg.refVar] || "").trim().toLowerCase();
+		if (v) out[cfg.name] = v;
+	}
+	return out;
+}
+
+/**
+ * Run all safety checks before dumping or restoring.
+ *
+ * Remote targets are identified by Supabase project ref (parsed from the pooler username), never by the
+ * env label alone: the ref must equal the ref configured for the labelled env, and ANY target whose ref is
+ * production's requires `--yes-production`.
+ * `expectedRefs` = { production?: string } (see `resolveExpectedRefs`).
+ */
+export function validateSyncPlan({
+	source,
+	target,
+	yesProduction = false,
+	sourceUrl,
+	targetUrl,
+	expectedRefs = {},
+}) {
+	if (!ENVS[source]) {
+		return { ok: false, error: `unknown source env "${source}" (expected local or production)` };
+	}
+	if (!ENVS[target]) {
+		return { ok: false, error: `unknown target env "${target}" (expected local or production)` };
+	}
+	if (source === target) {
+		return {
+			ok: false,
+			error: `source and target environments are identical ("${source}"); refusing to overwrite an environment with itself`,
+		};
+	}
+
+	const srcCheck = validatePoolerUrl(source, sourceUrl);
+	if (!srcCheck.ok) return { ok: false, error: srcCheck.error };
+	const dstCheck = validatePoolerUrl(target, targetUrl);
+	if (!dstCheck.ok) return { ok: false, error: dstCheck.error };
+
+	const sides = [
+		{ role: "source", env: source, url: sourceUrl },
+		{ role: "target", env: target, url: targetUrl },
+	];
+	const refs = {};
+	const anyRemote = sides.some((s) => ENVS[s.env].isRemote);
+	if (anyRemote && !expectedRefs.production) {
+		return {
+			ok: false,
+			error: `${ENVS.production.refVar} is not set; it is required whenever a remote environment is involved so a mislabelled URL cannot reach production`,
+		};
+	}
+	for (const side of sides) {
+		const cfg = ENVS[side.env];
+		if (!cfg.isRemote) continue;
+		const expected = expectedRefs[side.env];
+		if (!expected) {
+			return { ok: false, error: `${cfg.refVar} is not set; cannot verify the ${side.role} URL belongs to ${side.env}` };
+		}
+		const actual = parseProjectRef(side.url);
+		if (!actual) {
+			return {
+				ok: false,
+				error: `${side.role} (${side.env}) URL username is not "postgres.<project-ref>"; cannot verify which Supabase project it targets`,
+			};
+		}
+		if (actual !== expected) {
+			return {
+				ok: false,
+				error:
+					`${side.role} is labelled "${side.env}" but its URL points at project ref ${actual}, ` +
+					`not the ${cfg.refVar} ref ${expected}. Refusing: fix ${cfg.urlVar}.`,
+			};
+		}
+		refs[side.role] = actual;
+	}
+
+	if (refs.source && refs.target && refs.source === refs.target) {
+		return {
+			ok: false,
+			error: `source (${source}) and target (${target}) are the same Supabase project (ref ${refs.source}); refusing self-sync`,
+		};
+	}
+	if (!refs.source && !refs.target && canonicalDbEndpoint(sourceUrl) === canonicalDbEndpoint(targetUrl)) {
+		return {
+			ok: false,
+			error: `source (${source}) and target (${target}) resolve to the same database endpoint (${dbHost(sourceUrl)}); refusing self-sync`,
+		};
+	}
+
+	const targetIsProduction =
+		ENVS[target].requiresProductionFlag || (refs.target && refs.target === expectedRefs.production);
+	if (targetIsProduction && !yesProduction) {
+		return {
+			ok: false,
+			error:
+				`targeting "${target}" overwrites LIVE production content.\n` +
+				`Re-run with --yes-production if you really intend to restore into production.`,
+		};
+	}
+
+	return { ok: true, targetIsProduction: Boolean(targetIsProduction), warnings: [...srcCheck.warnings, ...dstCheck.warnings] };
+}
+
+/**
+ * Split a postgres URL into a password-free URL (safe for argv / `ps`) and the child-process env carrying
+ * the password as `PGPASSWORD` (honoured by pg_dump, psql and the Supabase CLI).
+ */
+export function splitUrlCredentials(url) {
+	try {
+		const u = new URL(url);
+		const password = decodeURIComponent(u.password);
+		u.password = "";
+		return { url: u.toString(), env: password ? { PGPASSWORD: password } : {} };
+	} catch {
+		return { url, env: {} };
+	}
+}
+
+/**
+ * Build exact `pg_dump` argument array (no shell interpolation).
+ * Dumps data-only from `public` (and optionally `derived`), excluding every auth/session/passkey/env-state table.
+ */
+export function buildPgDumpArgs({
+	sourceUrl,
+	excludedTables = EXCLUDED_TABLES,
+	includeDerived = false,
+	outputFile,
+}) {
+	const args = [
+		"--data-only",
+		"--no-owner",
+		"--no-privileges",
+		"--column-inserts",
+		"--schema=public",
+	];
+	if (includeDerived) {
+		args.push(`--schema=${DERIVED_SCHEMA}`);
+	}
+	for (const table of excludedTables) {
+		validateIdentifier(table, "excluded table");
+		args.push(`--exclude-table=public.${table}`);
+	}
+	if (outputFile) {
+		args.push("--file", outputFile);
+	}
+	args.push(sourceUrl);
+	return args;
+}
+
+/**
+ * Build exact `supabase db dump` argument array (Supabase CLI v3+, no shell interpolation).
+ * Useful when `pg_dump` is not installed locally (Supabase CLI runs pg_dump in Docker).
+ */
+export function buildSupabaseDumpArgs({
+	source,
+	sourceUrl,
+	excludedTables = EXCLUDED_TABLES,
+	includeDerived = false,
+	outputFile,
+}) {
+	const schemas = includeDerived ? `public,${DERIVED_SCHEMA}` : "public";
+	const excludeList = excludedTables.map((table) => {
+		validateIdentifier(table, "excluded table");
+		return `public.${table}`;
+	});
+	const args = ["db", "dump", "--data-only", "--schema", schemas];
+	if (excludeList.length > 0) {
+		args.push("--exclude", excludeList.join(","));
+	}
+	if (source !== "local" || splitUrlCredentials(sourceUrl).url !== splitUrlCredentials(LOCAL_DB_URL).url) {
+		args.push(`--remote=${sourceUrl}`);
+	}
+	if (outputFile) {
+		args.push("--file", outputFile);
+	}
+	return args;
+}
+
+/**
+ * Build a dynamic, FK-safe SQL block that truncates ONLY synced tables in `public`
+ * (and `derived` if `includeDerived` is true) without ever touching excluded auth/env tables.
+ *
+ * Deliberately omits `CASCADE` on `TRUNCATE TABLE` so Postgres would abort the transaction
+ * rather than ever cascading into an excluded table.
+ */
+export function buildTruncateSql({ excludedTables = EXCLUDED_TABLES, includeDerived = false } = {}) {
+	const quotedExcluded = excludedTables.map((table) => {
+		validateIdentifier(table, "excluded table");
+		return `'${table}'`;
+	});
+	const quoted = (tables, kind) =>
+		tables.map((table) => {
+			validateIdentifier(table, kind);
+			return `'${table}'`;
+		});
+	// SEC-11: every public table on the target must be classified (excluded or known content); otherwise abort the transaction
+	// before anything is truncated. And TRUNCATE only an explicit allowlist (known content, comments, ^ec_), never "all but excluded".
+	const knownPublic = quoted([...new Set([...EXCLUDED_TABLES, ...KNOWN_CONTENT_TABLES])], "known public table");
+	const allowlisted = quoted([...new Set([...KNOWN_CONTENT_TABLES, ...COMMENT_TABLES])], "content table");
+	const allowClause = `(tablename IN (${allowlisted.join(", ")}) OR tablename ~ '^ec_[a-z0-9_]+$')`;
+	const publicPredicate =
+		quotedExcluded.length > 0
+			? `(schemaname = 'public' AND ${allowClause} AND tablename NOT IN (${quotedExcluded.join(", ")}))`
+			: `(schemaname = 'public' AND ${allowClause})`;
+	const whereClause = includeDerived
+		? `${publicPredicate}\n     OR (schemaname = '${DERIVED_SCHEMA}')`
+		: publicPredicate;
+
+	return [
+		"DO $$",
+		"DECLARE",
+		"  unknown_list text;",
+		"  tbl_list text;",
+		"BEGIN",
+		"  SELECT string_agg(tablename, ', ' ORDER BY tablename)",
+		"  INTO unknown_list",
+		"  FROM pg_tables",
+		`  WHERE schemaname = 'public' AND tablename NOT IN (${knownPublic.join(", ")}) AND tablename !~ '^ec_[a-z0-9_]+$';`,
+		"  IF unknown_list IS NOT NULL THEN",
+		"    RAISE EXCEPTION 'INF-5 sync halted (SEC-11): unclassified public table(s) on target: %. Classify them in apps/web/scripts/sync/lib.mjs first.', unknown_list;",
+		"  END IF;",
+		"  SELECT string_agg(format('%I.%I', schemaname, tablename), ', ' ORDER BY schemaname, tablename)",
+		"  INTO tbl_list",
+		"  FROM pg_tables",
+		`  WHERE ${whereClause};`,
+		"  IF tbl_list IS NOT NULL THEN",
+		"    EXECUTE 'TRUNCATE TABLE ' || tbl_list || ' RESTART IDENTITY';",
+		"  END IF;",
+		"END $$;",
+	].join("\n");
+}
+
+/**
+ * Wrap a `--data-only` SQL dump with `session_replication_role = 'replica'` and atomic truncation
+ * of synced content tables. Intended to be executed by `psql --single-transaction --set ON_ERROR_STOP=1`.
+ */
+export function buildRestoreSql({ dumpSql, excludedTables = EXCLUDED_TABLES, includeDerived = false }) {
+	const cleanedDump = String(dumpSql)
+		.replace(/^\s*SET\s+session_replication_role\s*=\s*['"]?(?:replica|origin)['"]?\s*;\s*$/gim, "")
+		.replace(/^\s*RESET\s+ALL\s*;\s*$/gim, "")
+		.trim();
+
+	return [
+		"-- Generated by apps/web/scripts/sync/pull.mjs (INF-5)",
+		"SET session_replication_role = 'replica';",
+		"",
+		buildTruncateSql({ excludedTables, includeDerived }),
+		"",
+		cleanedDump,
+		"",
+		"SET session_replication_role = 'origin';",
+		"",
+	].join("\n");
+}
+
+/**
+ * Build exact `psql` argument array for transactional restore (no shell interpolation).
+ */
+export function buildPsqlRestoreArgs({ targetUrl, sqlFile }) {
+	return [
+		"--single-transaction",
+		"--set",
+		"ON_ERROR_STOP=1",
+		"--no-psqlrc",
+		"--file",
+		sqlFile,
+		targetUrl,
+	];
+}
+
+const VALID_TOOLS = new Set(["auto", "pg_dump", "supabase"]);
+
+/**
+ * Parse CLI arguments for `apps/web/scripts/sync/pull.mjs`.
+ * Usage:
+ *   pull.mjs <source> [--to <target>] [--dry-run] [--include-derived] [--include-comments] [--yes] [--yes-production] [--dump-file <path>] [--tool <auto|pg_dump|supabase>]
+ */
+export function parseCliArgs(argv) {
+	const opts = {
+		source: undefined,
+		target: "local",
+		dryRun: false,
+		includeDerived: false,
+		yesProduction: false,
+		includeComments: false,
+		yes: false,
+		dumpFile: undefined,
+		tool: "auto",
+		help: false,
+	};
+
+	for (let i = 0; i < argv.length; i++) {
+		const arg = argv[i];
+		if (arg === "--help" || arg === "-h") {
+			opts.help = true;
+			continue;
+		}
+		if (arg === "--dry-run") {
+			opts.dryRun = true;
+			continue;
+		}
+		if (arg === "--include-derived") {
+			opts.includeDerived = true;
+			continue;
+		}
+		if (arg === "--include-comments") {
+			opts.includeComments = true;
+			continue;
+		}
+		if (arg === "--yes") {
+			opts.yes = true;
+			continue;
+		}
+		if (arg === "--yes-production") {
+			opts.yesProduction = true;
+			continue;
+		}
+		if (arg === "--to") {
+			const val = argv[++i];
+			if (!val || val.startsWith("-")) {
+				return { ok: false, error: "--to requires an environment name (local or production)" };
+			}
+			opts.target = val;
+			continue;
+		}
+		if (arg.startsWith("--to=")) {
+			const val = arg.slice("--to=".length);
+			if (!val) return { ok: false, error: "--to requires an environment name" };
+			opts.target = val;
+			continue;
+		}
+		if (arg === "--dump-file") {
+			const val = argv[++i];
+			if (!val || val.startsWith("-")) {
+				return { ok: false, error: "--dump-file requires a file path" };
+			}
+			opts.dumpFile = val;
+			continue;
+		}
+		if (arg.startsWith("--dump-file=")) {
+			const val = arg.slice("--dump-file=".length);
+			if (!val) return { ok: false, error: "--dump-file requires a file path" };
+			opts.dumpFile = val;
+			continue;
+		}
+		if (arg === "--tool") {
+			const val = argv[++i];
+			if (!val || !VALID_TOOLS.has(val)) {
+				return { ok: false, error: `--tool must be one of: auto, pg_dump, supabase` };
+			}
+			opts.tool = val;
+			continue;
+		}
+		if (arg.startsWith("--tool=")) {
+			const val = arg.slice("--tool=".length);
+			if (!VALID_TOOLS.has(val)) {
+				return { ok: false, error: `--tool must be one of: auto, pg_dump, supabase` };
+			}
+			opts.tool = val;
+			continue;
+		}
+		if (arg.startsWith("-")) {
+			return { ok: false, error: `unknown option "${arg}"` };
+		}
+		if (!opts.source) {
+			opts.source = arg;
+		} else {
+			return { ok: false, error: `unexpected extra argument "${arg}"` };
+		}
+	}
+
+	if (!opts.help && !opts.source) {
+		return { ok: false, error: "missing <source> environment (expected local or production)" };
+	}
+
+	return { ok: true, opts };
+}

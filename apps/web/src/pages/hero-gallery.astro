@@ -1,0 +1,34 @@
+---
+// /hero-gallery/: noindex test page that mounts the home hero with one fixed gallery image (ported from src/pages/hero-gallery.astro).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import ParticleHero from "../particle-hero/ParticleHero.astro";
+import { SITE_TITLE } from "../consts";
+import { getGalleryEntry, toHeroGalleryImage } from "../lib/gallery";
+
+/** Change this to test a different gallery image (see the gallery snapshot in src/generated/legacy-data.json). */
+const GALLERY_IMAGE_ID = "08/26/jinghong";
+
+export const prerender = true;
+
+const entry = getGalleryEntry(GALLERY_IMAGE_ID);
+const galleryImage = entry ? toHeroGalleryImage(entry) : undefined;
+---
+
+<Global title={`${SITE_TITLE} · Hero gallery test`} description="ParticleHero gallery image test page" noindex>
+	<Header />
+
+	<section>
+		<MantineMain>
+			{
+				!entry && (
+					<p style="padding: 1rem; color: var(--mantine-color-red-6);">Gallery entry not found for id: {GALLERY_IMAGE_ID}</p>
+				)
+			}
+			<ParticleHero galleryImage={galleryImage} />
+			<Footer slug={"hero-gallery"} />
+		</MantineMain>
+	</section>
+</Global>

@@ -1,0 +1,190 @@
+import ViewCount from "@/src/components/ViewCount";
+import { Avatar, Flex, Card, Text, Anchor, Box, Badge, Group, Title, Stack } from "@mantine/core";
+import dayjs from "dayjs";
+import { Calendar, Quote } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { TClientPost } from "@/src/lib/listing-core";
+import classes from "./PostCard.module.css";
+import { AsciiReveal } from "ascii-reveal";
+import CustomMantineProvider from "@/src/stores/CustomMantineProvider";
+import { optimizeCoverUrl } from "@/src/lib/cloudinary";
+
+export interface IPost extends TClientPost {}
+
+const CARD_WIDTH = 360;
+const CARD_MIN_WIDTH = 0;
+
+interface ICardProp {
+  post: IPost;
+  hideExcerpt?: boolean;
+  fill?: boolean;
+}
+
+export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
+  const title = post.title;
+  const hasCover = !!post.data.cover;
+
+  const className = [
+    classes.item,
+    hasCover ? classes.with_bg : classes[post.data.bgClass!],
+    classes[post.data.layout],
+  ].join(" ");
+
+  const [coverImage, setCoverImage] = useState("");
+
+  useEffect(() => {
+    setCoverImage((c) => {
+      const { cover } = post.data;
+      if (cover) {
+        if (typeof cover.url === "string") {
+          return optimizeCoverUrl(cover.url);
+        }
+        return optimizeCoverUrl(cover.url).src;
+      }
+      return c;
+    });
+  }, [post]);
+
+  const [coverOpacity, setCoverOpacity] = useState(0);
+
+  useEffect(() => {
+    if (!coverImage) return;
+
+    const img = new Image();
+    img.src = coverImage;
+    img.onload = () => setCoverOpacity(1);
+    img.onerror = () => setCoverOpacity(1);
+  }, [coverImage]);
+
+  const loading = hasCover && coverOpacity === 0;
+
+  const cardStyle = {
+    ...(hasCover ? {} : { backgroundColor: post.data.bgColor }),
+    "--underline-color": `var(${post.data.titleColor})`,
+    "--transition-name": "p-" + post.id.replaceAll("/", "-"),
+  } as React.CSSProperties;
+
+  const coverAreaStyle = {
+    backgroundColor: post.data.bgColor,
+    "--cover-opacity": coverOpacity,
+    "--cover-image": `url(${coverImage})`,
+  } as React.CSSProperties;
+
+  const badgeRow = (
+    <Flex justify={"space-between"} align={"center"}>
+      <Badge color="gray" variant="default" size="sm" className={classes.category}>
+        <Group gap={6}>
+          <Calendar size={12} />
+          <Text size="xs">{post.dateText ?? dayjs(post.date).format("YYYY-MM-DD")}</Text>
+        </Group>
+      </Badge>
+      <Avatar color="gray" variant="default" size="sm" className={classes.category} p={0}>
+        <ViewCount path={post.href} />
+      </Avatar>
+    </Flex>
+  );
+
+  const metaRow = (
+    <Flex gap="xs" justify={"space-between"} align={"end"}>
+      <Group flex={1}>
+        <Badge color="gray" variant="default" size="sm" className={classes.category}>
+          {post.data.category}
+        </Badge>
+      </Group>
+
+      <Group gap="xs" flex={0} miw="5em">
+        {post.data.series && (
+          <Badge
+            key={post.data.series.slug}
+            color="gray"
+            variant="default"
+            size="xs"
+            className={classes.category}
+          >
+            {post.data.series.name ?? post.data.series.slug}
+          </Badge>
+        )}
+
+        {post.data.tag?.map((tag: string) => (
+          <Badge key={tag} color="gray" variant="default" size="xs" className={classes.category}>
+            #{tag}
+          </Badge>
+        ))}
+      </Group>
+    </Flex>
+  );
+
+  const titleBlock = (
+    <Title className={classes.title}>
+      <span>{title}</span>
+    </Title>
+  );
+
+  const cardBody = hasCover ? (
+    <>
+      <Box className={classes.cover_area} style={coverAreaStyle}>
+        <Flex
+          direction="column"
+          justify="space-between"
+          p="lg"
+          flex={1}
+          className={classes.cover_content}
+        >
+          {badgeRow}
+          {metaRow}
+        </Flex>
+      </Box>
+      <Box className={classes.cover_footer}>{titleBlock}</Box>
+    </>
+  ) : (
+    <Flex direction={"column"} justify={"space-between"} flex={1} className={classes.content}>
+      {badgeRow}
+      {titleBlock}
+      {metaRow}
+    </Flex>
+  );
+
+  return (
+    <CustomMantineProvider>
+      <Stack justify={"center"} align={fill ? "stretch" : "center"} w={fill ? "100%" : undefined}>
+        <Box
+          maw={fill ? undefined : CARD_WIDTH}
+          miw={fill ? CARD_MIN_WIDTH : undefined}
+          w={fill ? "100%" : undefined}
+        >
+          <Anchor
+            underline="never"
+            href={post.href}
+            display={fill ? "block" : undefined}
+            w={fill ? "100%" : undefined}
+          >
+            <AsciiReveal loading={loading} revealOnMount={false} style={{ width: "100%" }}>
+              <Card
+                key={post.id}
+                shadow="sm"
+                padding={hasCover ? 0 : "lg"}
+                radius="lg"
+                withBorder
+                w={fill ? "100%" : undefined}
+                className={className}
+                style={cardStyle}
+              >
+                {cardBody}
+              </Card>
+            </AsciiReveal>
+          </Anchor>
+          {!hideExcerpt && (
+            <Flex pl={5} pr={10} pt={5}>
+              <Avatar size="xs" variant="transparent" style={{ transform: "rotateZ(180deg)" }}>
+                <Quote />
+              </Avatar>
+              <Text size="sm" lineClamp={2} className={classes.excerpt}>
+                {post.excerpt}
+              </Text>
+            </Flex>
+          )}
+        </Box>
+      </Stack>
+    </CustomMantineProvider>
+  );
+}

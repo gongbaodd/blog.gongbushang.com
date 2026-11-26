@@ -1,0 +1,73 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	// INF-10: two environments only, `local` and `production`. The top level IS production (promoted from the former testing
+	// resources: Supabase ckpozotzgubrjbjstvjg via Hyperdrive 319cee5e..., KV SESSION 55d3e3f7...). No env.testing, no CLOUDFLARE_ENV for builds.
+	// Local dev uses the localConnectionString below; the `admin-*` env blocks further down are `astro dev` only (never deployed).
+	"name": "growgen-web",
+	"main": "./src/worker.ts",
+	"compatibility_date": "2026-02-24",
+	"compatibility_flags": ["nodejs_compat"],
+	// SEC-12: no *.workers.dev URL and no per-version preview URLs. The Worker is reachable only through the custom domain below.
+	"workers_dev": false,
+	"preview_urls": false,
+	// Config only: the custom-domain route is created by the first `wrangler deploy`, which also creates the DNS record in the
+	// growgen.xyz zone. Owner step (GON-199): confirm the zone is on this Cloudflare account and next.growgen.xyz is free.
+	"routes": [{ "pattern": "next.growgen.xyz", "custom_domain": true }],
+	// Pages that exist as static files never invoke the Worker. D12 (INF-7): the admin runs locally (`pnpm admin:<env>`), so the
+	// deployed Worker serves no `/_emdash/*` or OAuth discovery. NOTE: asset MISSES still invoke the Worker even with
+	// `not_found_handling: "404-page"` (verified with `wrangler tail`), so src/worker.ts 404s those paths (src/lib/lockdown.ts).
+	// `run_worker_first` stays explicitly false: kept explicit so no `/_emdash/*` rule can come back unnoticed.
+	// scripts/admin/wrangler-lockdown.test.ts guards this. The Worker otherwise only runs for cron (`scheduled`).
+	"assets": { "binding": "ASSETS", "not_found_handling": "404-page", "run_worker_first": false },
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			// Hyperdrive config growgen-testing-db (caching disabled), promoted to production by INF-10; points at Supabase ckpozotzgubrjbjstvjg.
+			"id": "319cee5eca8a4c47a00b2091cff565f3",
+			"localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+		},
+	],
+	// Admin sessions (passkey sign-in); promoted from the former testing namespace by INF-10.
+	"kv_namespaces": [{ "binding": "SESSION", "id": "55d3e3f70475477a9eef931679726407" }],
+	// Co-editing rooms, one Durable Object per entry being edited
+	"durable_objects": {
+		"bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }],
+	},
+	"exports": {
+		"EmDashRoom": { "type": "durable-object", "storage": "sqlite" },
+	},
+	// Sandboxed plugins require Worker Loader, available on Workers paid plans. Uncomment to enable:
+	// "worker_loaders": [{ "binding": "LOADER" }],
+	// Runs EmDash runScheduledTasks (publishes scheduled posts, housekeeping) and keeps Supabase from pausing.
+	"triggers": {
+		"crons": ["*/5 * * * *"],
+	},
+	"vars": {
+		// SITE_ENV only selects the rebuild-on-publish target ("production" dispatches, "local"/unset does not) and the admin gates.
+		"SITE_ENV": "production",
+		// Fail-closed live flag (src/lib/site-live.ts): only the exact value "true" lifts X-Robots-Tag noindex on dynamic and 404
+		// responses. "false" is the safe default for any manual deploy; web-deploy.yml overrides it with `--var` from the GitHub
+		// `production` environment variable PUBLIC_SITE_LIVE, the same variable that makes the build emit indexable static pages
+		// (scripts/post-build.mjs, astro.config.mjs). Flip that one variable at CUT-1.
+		"PUBLIC_SITE_LIVE": "false",
+	},
+	"env": {
+		// Local-admin envs (D12, INF-7). Never deployed: scripts/admin/start.mjs sets CLOUDFLARE_ENV=admin-<env> so wrangler reads a
+		// generated `.dev.vars.admin-<env>` INSTEAD of `.dev.vars` (the only way an env var is guaranteed to win over `.dev.vars`).
+		// Bindings are placeholders; only `astro dev` uses these blocks.
+		"admin-local": {
+			"name": "growgen-web-admin-local",
+			"vars": { "SITE_ENV": "local" },
+			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres" }],
+			"kv_namespaces": [{ "binding": "SESSION", "id": "00000000000000000000000000000000" }],
+			"durable_objects": { "bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }] },
+		},
+		"admin-production": {
+			"name": "growgen-web-admin-production",
+			"vars": { "SITE_ENV": "production" },
+			"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgresql://postgres:postgres@127.0.0.1:54322/postgres" }],
+			"kv_namespaces": [{ "binding": "SESSION", "id": "00000000000000000000000000000000" }],
+			"durable_objects": { "bindings": [{ "name": "EMDASH_ROOMS", "class_name": "EmDashRoom" }] },
+		},
+	},
+}

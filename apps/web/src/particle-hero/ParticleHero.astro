@@ -1,0 +1,31 @@
+---
+// Legacy: the title/description slots were MDX fragments (`packages/hero/fragments/*.mdx`).
+// apps/web has no MDX runtime, so the same Markdown (`src/hero/fragments/*.md`) is rendered at build time
+// with the shared Markdown pipeline and passed through as HTML.
+import ParticleHeroReact from "./ParticleHero.tsx";
+import titleSource from "@/src/hero/fragments/title.md?raw";
+import descriptionSource from "@/src/hero/fragments/description.md?raw";
+import { renderMarkdown } from "@/src/lib/markdown";
+
+interface IGalleryImageProp {
+	url: string;
+	traceUrl?: string;
+	lqipUrl?: string;
+	colorSet?: {
+		bgColor: string;
+		titleColor: string;
+	};
+}
+
+interface Props {
+	galleryImage?: IGalleryImageProp;
+}
+
+const { galleryImage } = Astro.props;
+const [title, description] = await Promise.all([renderMarkdown(titleSource), renderMarkdown(descriptionSource)]);
+---
+
+<ParticleHeroReact galleryImage={galleryImage} client:load>
+	<Fragment slot="title" set:html={title.html} />
+	<Fragment slot="description" set:html={description.html} />
+</ParticleHeroReact>

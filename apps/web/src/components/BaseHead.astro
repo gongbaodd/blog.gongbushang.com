@@ -1,0 +1,47 @@
+---
+// Ported from packages/components/BaseHead.astro.
+// GON-203: no <meta name="robots"> here. Robots comes from <EmDashHead> only (Global passes it as `page.seo.robots`), so a page
+// can never carry two robots tags (the 404 used to emit both `noindex,follow` and EmDash's staging `noindex, nofollow`).
+// Differences: canonical / OG / Twitter / description tags are emitted by EmDash's
+// <EmDashHead> (in layouts/Global.astro) so editor SEO-panel overrides apply; they are not duplicated here.
+// Page-specific styles (KaTeX for posts, Mantine charts for /lab & /umap)
+// are imported by the components that use them to keep this sheet small.
+import { ColorSchemeScript } from "@mantine/core";
+import { mantineGlobalClasses } from "../utils/mantine-classes";
+import "@fontsource/noto-sans-sc/latin-400.css";
+import "@fontsource/noto-sans-sc/latin-700.css";
+import "../styles/globals.css";
+import "@mantine/core/styles.css";
+import "@mantine/carousel/styles.css";
+import "@mantine/spotlight/styles.css";
+import "./view-transition.css";
+import MixpanelHead from "../analytics/MixpanelHead.astro";
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!-- Global Metadata -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<meta name="generator" content={Astro.generator} />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
+<meta name="msapplication-TileColor" content="#da532c" />
+<meta name="theme-color" content="#ffffff" />
+
+<title>{title}</title>
+
+<!-- Mantine responsive helper classes, emitted once (providers use withGlobalClasses={false}) -->
+<style is:inline set:html={mantineGlobalClasses()} />
+<ColorSchemeScript defaultColorScheme="dark" color="auto" />
+<MixpanelHead />
+<slot />

@@ -1,0 +1,166 @@
+# Free-tier guards (INF-6): nightly encrypted backup of production and Cloudinary credit usage monitoring.
+# INF-10: there is one remote Supabase project (production). The nightly backup connects to it every night, which is what keeps a
+# Free project from pausing after 7 idle days, so there is no separate keep-alive job any more.
+# The repo is public, so dumps are age-encrypted with a PUBLIC recipient key before upload; the private key stays offline.
+name: web-guards
+
+on:
+  schedule:
+    - cron: "41 3 * * *" # backup (also keeps production active)
+    - cron: "11 6 * * *" # Cloudinary credit usage check
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  backup-production:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '41 3 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      # SEC-09: only the committed Supabase root CA is needed from the repo (verify-full below). No credentials persisted.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: apps/web/scripts/certs
+          sparse-checkout-cone-mode: false
+
+      - name: Install pg_dump 17 and age
+        env:
+          # SEC-10: PGDG signing key (https://wiki.postgresql.org/wiki/Apt). The file hash pins the exact download; the OpenPGP
+          # fingerprint is the long-lived identity. If upstream re-publishes the key (e.g. an expiry extension) the hash check
+          # fails closed: confirm the fingerprint is unchanged, then update PGDG_KEY_SHA256 (runbooks/backups.md).
+          PGDG_KEY_SHA256: 0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76
+          PGDG_KEY_FPR: B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8
+        run: |
+          set -euo pipefail
+          key="$RUNNER_TEMP/apt.postgresql.org.asc"
+          curl -fsSL -o "$key" https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "$PGDG_KEY_SHA256  $key" | sha256sum -c - || { echo "::error::PGDG key SHA-256 mismatch"; exit 1; }
+          fpr=$(gpg --show-keys --with-colons "$key" | awk -F: '/^fpr:/ { print $10; exit }')
+          [ "$fpr" = "$PGDG_KEY_FPR" ] || { echo "::error::PGDG key fingerprint mismatch ($fpr)"; exit 1; }
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo install -m 0644 "$key" /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release; echo "$VERSION_CODENAME")-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 age
+
+      - name: Dump and encrypt
+        env:
+          # SEC-11: least-privilege read-only role (supabase/roles/growgen_backup.sql, runbooks/backups.md). Falls back to the
+          # owner URL with a warning until the owner creates BACKUP_DATABASE_URL on the production environment.
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          DATABASE_POOLER_URL: ${{ secrets.DATABASE_POOLER_URL }} # production session pooler (IPv4)
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }} # age public key (age1...)
+        run: |
+          set -euo pipefail
+          if [ -n "${BACKUP_DATABASE_URL:-}" ]; then
+            db_url="$BACKUP_DATABASE_URL"
+          else
+            [ -n "${DATABASE_POOLER_URL:-}" ] || { echo "::error::neither BACKUP_DATABASE_URL nor DATABASE_POOLER_URL is set"; exit 1; }
+            echo "::warning::BACKUP_DATABASE_URL is not set; dumping as the owner role (SEC-11: create the growgen_backup role)"
+            db_url="$DATABASE_POOLER_URL"
+          fi
+          unset BACKUP_DATABASE_URL DATABASE_POOLER_URL
+          # SEC-10: fail closed unless the recipient is a well-formed age X25519 public key.
+          [[ "${BACKUP_AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] || { echo "::error::secret BACKUP_AGE_RECIPIENT is missing or not an age1... public key"; exit 1; }
+          # SEC-14: credentials reach libpq through PG* environment variables (PGPASSWORD), never argv (visible in the process
+          # list). node reads the URL from the environment and writes a 0600 env file that is sourced, then deleted.
+          pgenv="$RUNNER_TEMP/pgenv"
+          (umask 077; DB_URL="$db_url" node --input-type=module -e '
+            const u = new URL(process.env.DB_URL);
+            const q = (v) => "\x27" + String(v).split("\x27").join("\x27\\\x27\x27") + "\x27";
+            const vars = {
+              PGHOST: u.hostname,
+              PGPORT: u.port || "5432",
+              PGUSER: decodeURIComponent(u.username),
+              PGPASSWORD: decodeURIComponent(u.password),
+              PGDATABASE: decodeURIComponent(u.pathname.slice(1)) || "postgres",
+              PGSSLMODE: "verify-full",
+              PGSSLROOTCERT: process.env.GITHUB_WORKSPACE + "/apps/web/scripts/certs/prod-ca-2021.crt",
+            };
+            for (const [k, v] of Object.entries(vars)) console.log("export " + k + "=" + q(v));
+          ' > "$pgenv")
+          # shellcheck disable=SC1090
+          . "$pgenv"
+          rm -f "$pgenv"
+          unset db_url
+          echo "::add-mask::$PGPASSWORD"
+          # SEC-09: the CA must be the pinned Supabase Root 2021 CA (same fingerprint as apps/web/scripts/admin/pg-tls.mjs).
+          ca_fpr=$(openssl x509 -in "$PGSSLROOTCERT" -noout -fingerprint -sha256 | cut -d= -f2)
+          [ "$ca_fpr" = "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA" ] \
+            || { echo "::error::unexpected Supabase CA fingerprint ($ca_fpr)"; exit 1; }
+          pg_bin=/usr/lib/postgresql/17/bin
+          schemas=(--schema=public)
+          has_derived=$("$pg_bin/psql" -v ON_ERROR_STOP=1 -tAc "select 1 from information_schema.schemata where schema_name = 'derived'")
+          if [ "$has_derived" = "1" ]; then
+            schemas+=(--schema=derived)
+          else
+            echo "::notice::schema 'derived' does not exist on production yet; backing up public schema only"
+          fi
+          # SEC-10: the artifact lives on a public repo, so the DATA of every table holding a bearer token, session or short-lived
+          # secret stays out of it (schemas are still dumped). After a restore: everyone signs in again and API tokens, OAuth
+          # grants and device codes must be re-issued. Keep in sync with runbooks/backups.md "Excluded table data".
+          excludes=()
+          # `options` is listed too: its rows go into options.csv below, filtered by an allow-list.
+          for t in auth_tokens auth_challenges _emdash_api_tokens _emdash_authorization_codes _emdash_device_codes _emdash_oauth_tokens \
+            _emdash_entry_locks _emdash_transfer_approvals _emdash_rate_limits _emdash_404_log options; do
+            excludes+=("--exclude-table-data=public.$t")
+          done
+          # SEC-10: `options` also holds secrets (emdash:preview_secret, emdash:ip_salt, emdash:passkey_pending:*, plugin:*
+          # settings). Only allow-listed keys are kept, like EmDash's own backup (BACKUP_OPTION_PREFIXES = ["site:"]) plus the
+          # setup/seed/locale/plugin-state keys a restored site needs. preview_secret and ip_salt are regenerated by EmDash on
+          # first use; plugin settings are re-entered after a restore. Keep in sync with runbooks/backups.md.
+          options_allow="starts_with(name, 'site:') or starts_with(name, 'system:') or starts_with(name, 'emdash:exclusive_hook:')
+            or name in ('byline_fields_version', 'emdash:site_title', 'emdash:site_tagline', 'emdash:site_url', 'emdash:site_id',
+                        'emdash:locale', 'emdash:setup_complete', 'emdash:seed_complete', 'emdash:plugins:generation',
+                        'emdash:repair_locale_casing', 'emdash:backups', 'emdash:backups_last_run')"
+          options_allow="${options_allow//$'\n'/ }"   # \copy is a one-line psql meta-command
+          work="$(mktemp -d "$RUNNER_TEMP/backup.XXXXXX")"   # 0700; plaintext never leaves the runner and is removed below
+          trap 'rm -rf "$work"' EXIT
+          echo "Dumping schemas: ${schemas[*]} (excluding the data of ${#excludes[@]} tables; options filtered)"
+          (umask 077
+           "$pg_bin/pg_dump" --format=custom "${schemas[@]}" "${excludes[@]}" --no-owner --no-privileges -f "$work/db.dump"
+           "$pg_bin/psql" -v ON_ERROR_STOP=1 -c "\copy (select * from public.options where $options_allow order by name) to '$work/options.csv' with (format csv, header)")
+          kept=$(($(wc -l < "$work/options.csv") - 1))
+          echo "options rows kept: $kept"
+          # An empty export means the dump role cannot read options (RLS): fail instead of shipping a backup that restores no site settings.
+          if [ "$kept" -lt 1 ]; then echo "::error::options.csv is empty"; exit 1; fi
+          out="growgen-production-$(date -u +%Y%m%dT%H%M%SZ).tar.age"
+          tar -C "$work" -cf - db.dump options.csv | age -r "$BACKUP_AGE_RECIPIENT" -o "$out"
+          ls -l "$out"
+          [ "$(stat -c %s "$out")" -gt 1024 ] || { echo "::error::backup is suspiciously small"; exit 1; }
+          echo "BACKUP_FILE=$out" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: production-db-backup
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 14
+          if-no-files-found: error
+
+  cloudinary-usage:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '11 6 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+
+      - name: Check Cloudinary credit usage
+        env:
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          CLOUDINARY_WARN_PCT: ${{ vars.CLOUDINARY_WARN_PCT || '75' }}
+          CLOUDINARY_FAIL_PCT: ${{ vars.CLOUDINARY_FAIL_PCT || '90' }}
+        run: node apps/web/scripts/guards/cloudinary-usage.mjs

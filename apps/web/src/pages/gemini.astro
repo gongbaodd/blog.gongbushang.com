@@ -1,0 +1,18 @@
+---
+// /gemini/ (noindex placeholder page, ported from src/pages/gemini.astro).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+
+export const prerender = true;
+---
+
+<Global noindex>
+	<Header />
+	<section id="gemini" class="main">
+		<MantineMain client:load>
+			<Footer slug={"gemini"} />
+		</MantineMain>
+	</section>
+</Global>

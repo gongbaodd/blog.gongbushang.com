@@ -1,0 +1,21 @@
+---
+// Legacy `src/components/WorldMap.astro`; the city count is passed in by the page (legacy computed it here).
+import GLMap from "@/src/map/GLMap";
+
+interface Props {
+	cityCount: number;
+}
+const { cityCount } = Astro.props;
+---
+
+<!-- Below the fold: skip layout/paint until near the viewport -->
+<div class="cv-deferred">
+	<GLMap cityCount={cityCount} client:idle />
+</div>
+
+<style>
+	.cv-deferred {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 700px;
+	}
+</style>

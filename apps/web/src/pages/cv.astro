@@ -1,0 +1,19 @@
+---
+// /cv/: noindex Bento demo page (ported from src/pages/cv.astro).
+import Global from "../layouts/Global.astro";
+import MantineMain from "../components/MantineMain";
+import { BentoDemo } from "../components/Bento";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+export const prerender = true;
+---
+
+<Global title={SITE_TITLE} description={SITE_DESCRIPTION} noindex>
+	<section>
+		<MantineMain>
+			<BentoDemo />
+
+			<a href="/about">About</a>
+		</MantineMain>
+	</section>
+</Global>

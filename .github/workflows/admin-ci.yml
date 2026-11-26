@@ -1,0 +1,87 @@
+# Admin (apps/admin, the Dockerized Node EmDash admin) CI: verify only (SEC-02). Holds no secrets and never reaches a database
+# other than the throwaway Postgres service container below. Deploys are not done here.
+# Actions are pinned by commit SHA. Re-resolve with:
+#   gh api repos/<owner>/<repo>/git/ref/tags/<tag>   (dereference annotated tags with git/tags/<sha>)
+name: admin-ci
+
+on:
+  pull_request:
+    paths:
+      - "apps/admin/**"
+      - "apps/web/src/lib/**"
+      - "apps/web/src/plugins/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".dockerignore"
+      - ".github/workflows/admin-ci.yml"
+  push:
+    branches: [feat/emdash, master]
+    paths:
+      - "apps/admin/**"
+      - "apps/web/src/lib/**"
+      - "apps/web/src/plugins/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".dockerignore"
+      - ".github/workflows/admin-ci.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: admin-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  admin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      # Throwaway database for smoke only (the smoke script's default SMOKE_DATABASE_URL is postgres:postgres on 127.0.0.1:54322).
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 54322:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive # packages/shiki-plantuml is a workspace member; the install needs it
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter admin typecheck
+
+      - name: Unit tests
+        run: pnpm --filter admin test
+
+      - name: Build
+        run: pnpm --filter admin build
+
+      - name: Canary build and static guards
+        run: pnpm --filter admin check:secrets
+
+      - name: Smoke (against the service container)
+        run: pnpm --filter admin smoke

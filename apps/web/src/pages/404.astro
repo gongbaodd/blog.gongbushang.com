@@ -1,0 +1,18 @@
+---
+// Prerendered so dist/client/404.html exists: wrangler `not_found_handling: "404-page"` serves it without waking the Worker.
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+
+export const prerender = true;
+---
+
+<Global title="Not Found" noindex>
+	<Header />
+	<section class="main" style="max-width:60rem;margin:0 auto;padding:5rem 1rem 1rem;">
+		<h1>Page not found</h1>
+		<p>The page you're looking for doesn't exist.</p>
+		<a href="/">Go home</a>
+	</section>
+	<Footer slug="404" />
+</Global>

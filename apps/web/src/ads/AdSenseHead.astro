@@ -1,0 +1,24 @@
+---
+// Ported from packages/ads/AdSenseHead.astro. Renders only on a live build (PUBLIC_SITE_LIVE=true) (or `astro dev`):
+// every non-live build never loads ad scripts (PORT-7, same PUBLIC_SITE_LIVE switch as noindex).
+import { isLiveBuild } from "../analytics/env";
+
+const enabled = isLiveBuild() || import.meta.env.DEV;
+---
+
+{
+  enabled && (
+    <>
+      <script is:inline>
+        window.googlefc = window.googlefc || {};
+        window.googlefc.callbackQueue = window.googlefc.callbackQueue || [];
+      </script>
+      <script
+        is:inline
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7617483459228974"
+        crossorigin="anonymous"
+      />
+    </>
+  )
+}

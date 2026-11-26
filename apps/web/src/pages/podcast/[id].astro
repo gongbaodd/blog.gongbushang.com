@@ -1,0 +1,68 @@
+---
+// /podcast/<id>/ (ported from src/pages/podcast/[id].astro). Episodes + "More to discover" from src/lib/podcast.ts.
+import Global from "../../layouts/Global.astro";
+import Header from "../../header/Header.astro";
+import Footer from "../../footer/Footer.astro";
+import MantineMain from "../../components/MantineMain";
+import { GridWithMenu } from "../../components/GridWithMenu";
+import PodcastEpisodeMenu from "../../components/PodcastEpisodeMenu";
+import PodcastEpisodeContent from "../../components/PodcastEpisodeContent";
+import PodcastDiscover from "../../components/PodcastDiscover";
+import { SITE_TITLE } from "../../consts";
+import { stripHtml } from "../../card/stripHtml";
+import { getPodcastChannel, getPodcastEpisodes, getPodcastRelated, slimEpisode } from "../../lib/podcast";
+
+export const prerender = true;
+
+export function getStaticPaths() {
+	return getPodcastEpisodes().map((episode) => ({
+		params: { id: episode.id },
+		props: { episode: slimEpisode(episode), related: getPodcastRelated(episode.id).map(slimEpisode) },
+	}));
+}
+
+const { episode, related } = Astro.props;
+const channel = getPodcastChannel();
+const description = stripHtml(episode.description || episode.summary || "");
+const metaDescription = stripHtml(episode.summary || description).slice(0, 200);
+const publishedDate = new Date(episode.pubDate);
+---
+
+<Global title={`${episode.title} | ${SITE_TITLE}`} description={metaDescription} image={episode.image}>
+	<Header />
+	<MantineMain client:load>
+		<GridWithMenu menuCol={{ base: 12, lg: 2 }} contentCol={{ base: 12, lg: 10 }}>
+			<PodcastEpisodeMenu
+				slot="menuNode"
+				client:load
+				title={channel.title}
+				description={channel.description}
+				link={channel.link}
+				image={channel.image}
+			/>
+			<section slot="gridContent">
+				<PodcastEpisodeContent
+					title={episode.title}
+					date={publishedDate.toISOString()}
+					duration={episode.duration}
+					image={episode.image}
+					description={description}
+					link={episode.link}
+				/>
+			</section>
+			<aside slot="sidebarNode" class="relates-sidebar">
+				<PodcastDiscover episodes={related} client:idle />
+			</aside>
+		</GridWithMenu>
+		<Footer slug="podcast" />
+	</MantineMain>
+</Global>
+
+<style>
+	@media (min-width: 75em) {
+		.relates-sidebar {
+			position: sticky;
+			top: 90px;
+		}
+	}
+</style>

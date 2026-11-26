@@ -1,0 +1,23 @@
+---
+// /year/: archive folders per year (ported from src/pages/year.astro).
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import YearFolders from "../components/YearFolders.astro";
+import { SearchBanner } from "../search/Search";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+export const prerender = true;
+---
+
+<Global title={`${SITE_TITLE} | Archive`} description={SITE_DESCRIPTION}>
+	<Header />
+	<section id="year-page" class="main">
+		<MantineMain client:load>
+			<SearchBanner client:idle />
+			<YearFolders />
+			<Footer />
+		</MantineMain>
+	</section>
+</Global>

@@ -1,0 +1,63 @@
+# VCS & agent state
+.git
+.github
+.claude
+.agents
+
+# Dependencies & build outputs
+node_modules
+**/node_modules
+dist
+**/dist
+.astro
+**/.astro
+**/.wrangler
+.pnpm-store
+.venv
+**/__pycache__
+target
+tmp
+e2e-results
+
+# Secrets, env files, backup keys & database dumps (SEC-02)
+.env
+**/.env
+.env.*
+**/.env.*
+!.env.example
+!**/.env.example
+.dev.vars*
+**/.dev.vars*
+!.dev.vars.example
+!**/.dev.vars.example
+*.agekey
+**/*.agekey
+*.dump
+**/*.dump
+*.dump.age
+**/*.dump.age
+**/*.pem
+**/*.crt
+# The one public certificate the image needs: Supabase root CA for verified TLS (SEC-09, apps/admin/Dockerfile).
+!apps/web/scripts/certs/prod-ca-2021.crt
+**/*.key
+**/*.p12
+**/.npmrc
+**/.envrc
+**/.emdash
+**/uploads
+**/*.sql
+**/*.sql.gz
+
+# Unrelated directories not needed by apps/admin/Dockerfile
+src/content
+public
+e2e
+docs
+supabase
+future
+
+# OS noise
+.DS_Store
+**/.DS_Store
+**/*.log

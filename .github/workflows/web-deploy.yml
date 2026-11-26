@@ -1,0 +1,169 @@
+# Publish pipeline for the EmDash site (INF-4): rebuild static pages from the CMS and deploy.
+# Triggers: CMS publish (repository_dispatch `emdash-publish`), nightly rebuild, manual.
+# Scheduled and dispatch events always use the default branch's workflow. The only target is `production` (INF-10: environments
+# are local and production): manually, by the nightly schedule, or by a dispatch whose client_payload.environment is `production`
+# (sent by the rebuild-on-publish plugin from the Worker's SITE_ENV), always through the `production` GitHub environment.
+# Indexing, analytics and ads stay OFF until the `PUBLIC_SITE_LIVE` environment variable is exactly `true` (set at CUT-1).
+name: web-deploy
+
+on:
+  repository_dispatch:
+    types: [emdash-publish]
+  schedule:
+    # Nightly rebuild (also touches the production DB, which keeps Supabase from pausing).
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (production is the only remote environment)"
+        type: choice
+        options: [production]
+        default: production
+      apply_migrations:
+        description: "Apply pending EmDash migrations before building (needs the target fingerprint check to pass)"
+        type: boolean
+        default: false
+      target_fingerprint:
+        description: "Expected EmDash target fingerprint for apply_migrations (overrides the production environment variable EMDASH_TARGET_FINGERPRINT)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Resolves and validates the target environment. Needs no secrets and no environment.
+  # manual -> inputs.environment; nightly -> production; repository_dispatch -> client_payload.environment.
+  # The payload only reaches a script through env: and is matched against literals; anything else is refused (never guessed).
+  target:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      environment: ${{ steps.pick.outputs.environment }}
+    steps:
+      - id: pick
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_ENV: ${{ inputs.environment }}
+          PAYLOAD_ENV: ${{ github.event.client_payload.environment }}
+        run: |
+          case "$EVENT_NAME" in
+            workflow_dispatch) want="$INPUT_ENV" ;;
+            schedule) want=production ;;
+            repository_dispatch) want="$PAYLOAD_ENV" ;;
+            *) want="" ;;
+          esac
+          case "$want" in
+            production) env_name="$want" ;;
+            *) echo "::error::unrecognised environment '$want' (only production exists since INF-10; a stale testing dispatch lands here)"; exit 1 ;;
+          esac
+          echo "environment=$env_name" >> "$GITHUB_OUTPUT"
+          echo "target environment: $env_name"
+
+  deploy:
+    needs: target
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Target resolution (allowlist, no fallback): see the `target` job. This job uses the `production` environment
+    # (add required reviewers there for manual approval; that also gates the nightly and CMS-triggered production rebuilds).
+    environment: ${{ needs.target.outputs.environment }}
+    concurrency:
+      group: web-deploy-${{ needs.target.outputs.environment }}
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
+      PUBLIC_BUILD_SHA: ${{ github.sha }}
+      WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
+      WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
+      # Public build-time values (baked into the static HTML): environment *variables*, not secrets. They only take effect
+      # when PUBLIC_SITE_LIVE=true (fail closed, exact value). Leave PUBLIC_SITE_LIVE unset/false until CUT-1: next.growgen.xyz
+      # then stays noindex with disallow-all robots.txt and no analytics/ads, whatever the other variables hold.
+      PUBLIC_SITE_LIVE: ${{ vars.PUBLIC_SITE_LIVE }}
+      SITE_ENV: production
+      PUBLIC_MIXPANEL_TOKEN: ${{ vars.PUBLIC_MIXPANEL_TOKEN }}
+      PUBLIC_MIXPANEL_API_HOST: ${{ vars.PUBLIC_MIXPANEL_API_HOST }}
+      PUBLIC_ADSENSE_ENABLED: ${{ vars.PUBLIC_ADSENSE_ENABLED }}
+      PUBLIC_ADSENSE_CONSENT_READY: ${{ vars.PUBLIC_ADSENSE_CONSENT_READY }}
+      PUBLIC_ADSENSE_SLOT_ID: ${{ vars.PUBLIC_ADSENSE_SLOT_ID }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Migrations are up to date (read-only)
+        if: ${{ !inputs.apply_migrations }}
+        working-directory: apps/web
+        env:
+          # Step-scoped so pnpm install and non-DB steps never receive DATABASE_POOLER_URL.
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+        run: pnpm exec emdash migrate --from-config --check
+
+      - name: Apply migrations
+        if: ${{ inputs.apply_migrations }}
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+          # SEC-11: the expected fingerprint comes from OUTSIDE the target database (manual input, else the environment variable),
+          # never from `--status` output, so a mispointed DATABASE_POOLER_URL halts instead of being migrated.
+          INPUT_FINGERPRINT: ${{ inputs.target_fingerprint }}
+          ENV_FINGERPRINT: ${{ vars.EMDASH_TARGET_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          fp="${INPUT_FINGERPRINT:-$ENV_FINGERPRINT}"
+          if [ -z "$fp" ]; then
+            echo "::error::no expected target fingerprint: pass the target_fingerprint input or set the EMDASH_TARGET_FINGERPRINT variable on the production environment (runbooks/ci.md)"
+            exit 1
+          fi
+          [[ "$fp" =~ ^[A-Za-z0-9:_-]{16,128}$ ]] || { echo "::error::target fingerprint has an unexpected format"; exit 1; }
+          pnpm exec emdash migrate --from-config --expected-target-fingerprint "$fp"
+
+      - name: Build
+        env:
+          CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+        run: |
+          set -o pipefail
+          pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      - name: Empty-build guard
+        run: |
+          if grep -q 'runtime init failed' "$RUNNER_TEMP/build.log"; then
+            echo "::error::build log contains 'runtime init failed': refusing to deploy an empty site"; exit 1
+          fi
+          cd apps/web/dist/client
+          pages=$(find . -name index.html | wc -l)
+          # Posts live at /<category>/YYYY/MM/DD/<slug>/ (find's -path `*` also matches `/`).
+          posts=$(find . -path './*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*' -name index.html -not -path './api/*' | wc -l)
+          echo "prerendered pages=$pages posts=$posts (min pages=$WEB_MIN_PAGES, min posts=$WEB_MIN_POSTS)"
+          if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
+          if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
+
+      - name: Free-tier size guard
+        working-directory: apps/web
+        run: |
+          pnpm exec wrangler deploy --dry-run --outdir "$RUNNER_TEMP/wrangler-dry" -c dist/server/wrangler.json
+          node scripts/guards/worker-budget.mjs --worker-dir "$RUNNER_TEMP/wrangler-dry" --assets-dir dist/client --max-mib 60 --max-assets 18000
+
+      - name: Deploy
+        working-directory: apps/web
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # One switch: the PUBLIC_SITE_LIVE environment variable also sets the Worker var (X-Robots-Tag on dynamic and 404
+          # responses). Only the exact value "true" goes live; anything else deploys "false" (the wrangler.jsonc default).
+          live=false
+          [ "$PUBLIC_SITE_LIVE" = "true" ] && live=true
+          pnpm exec wrangler deploy -c dist/server/wrangler.json --var "PUBLIC_SITE_LIVE:$live"

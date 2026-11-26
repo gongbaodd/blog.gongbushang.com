@@ -1,0 +1,25 @@
+node_modules
+dist
+dist-e2e
+.astro
+.emdash/migrations.json
+uploads
+data.db
+data.db-*
+.wrangler
+
+# Environment / Wrangler secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# PORT-3: generated from legacy data by scripts/derive/index.ts (TODO DATA-1)
+src/generated/
+public/api/
+dist-e2e
+
+# derive read-only runs (INF-10): paths parity may miss
+.derive/

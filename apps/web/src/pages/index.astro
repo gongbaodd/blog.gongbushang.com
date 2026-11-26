@@ -1,0 +1,33 @@
+---
+// Home (legacy `src/pages/index.astro`): particle hero, heatmap, latest/history carousels, world map, tag cloud.
+import Global from "../layouts/Global.astro";
+import Header from "../header/Header.astro";
+import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import BlogSections from "../components/BlogSections.astro";
+import WorldMap from "../components/WorldMap.astro";
+import Tags from "../tags/Tags.astro";
+import MantineHeatWrapper from "../heat/MantineHeatWrapper.astro";
+import ParticleHero from "../particle-hero/ParticleHero.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { cityPages, getBadges, homeGalleryImage } from "../lib/listing";
+
+export const prerender = true;
+
+const [badges, cityCount] = await Promise.all([getBadges(), cityPages().then((c) => c.length)]);
+const galleryImage = homeGalleryImage();
+---
+
+<Global title={SITE_TITLE} description={SITE_DESCRIPTION}>
+	<Header />
+	<section id="home-page" class="main">
+		<MantineMain client:load>
+			<ParticleHero galleryImage={galleryImage} />
+			<MantineHeatWrapper />
+			<BlogSections />
+			<WorldMap cityCount={cityCount} />
+			<Tags tags={badges} />
+			<Footer slug={"index"} />
+		</MantineMain>
+	</section>
+</Global>

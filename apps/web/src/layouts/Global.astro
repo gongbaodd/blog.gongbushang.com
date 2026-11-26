@@ -1,0 +1,79 @@
+---
+// Site shell for public pages. Ported from packages/layouts/Global.astro, extended with
+// EmDash's head/body hooks (SEO metadata, plugin contributions, visual-edit toolbar).
+// Usage:
+//   <Global title="..." description="...">
+//     <Header />  <main>...</main>  <Footer />
+//   </Global>
+// Extra <head> content goes in `slot="head"`.
+import { EmDashHead, EmDashBodyStart, EmDashBodyEnd } from "emdash/ui";
+import { createPublicPageContext } from "emdash/page";
+import BaseHead from "../components/BaseHead.astro";
+import ConsentBanner from "../analytics/ConsentBanner.astro";
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+
+interface Props {
+	title?: string;
+	pageTitle?: string | null;
+	description?: string | null;
+	image?: string | null;
+	canonical?: string | null;
+	/** Utility page (404, /cv ...): legacy `noindex,follow`. Emitted once, through EmDash's `page.seo.robots`. */
+	noindex?: boolean;
+	/** Explicit robots value (a post's SEO-panel noindex); wins over `noindex`. */
+	robots?: string | null;
+	pageType?: "website" | "article";
+	/** Open Graph `article:*` tags and BlogPosting JSON-LD (only with `pageType="article"`). */
+	articleMeta?: { publishedTime?: string | null; modifiedTime?: string | null; author?: string | null };
+	/** Pass content reference for plugin page contributions on content pages */
+	content?: { collection: string; id: string; slug?: string | null };
+}
+
+const {
+	title = SITE_TITLE,
+	pageTitle,
+	description = SITE_DESCRIPTION,
+	image,
+	canonical: canonicalProp,
+	noindex = false,
+	robots: robotsProp,
+	pageType = "website",
+	articleMeta,
+	content,
+} = Astro.props;
+
+// Legacy parity: canonical = site + current pathname unless the page overrides it.
+const canonical = canonicalProp ?? (Astro.site ? new URL(Astro.url.pathname, Astro.site).href : null);
+
+const pageCtx = createPublicPageContext({
+	Astro,
+	kind: content ? "content" : "custom",
+	pageType,
+	articleMeta,
+	// The only robots source: EmDash dedupes it against its staging tag (first wins), so there is never a second tag.
+	// Per-entry `noIndex=false` emits nothing, so it can never lift the pre-cutover noindex (X-Robots-Tag/robots.txt, INF-10).
+	seo: robotsProp || noindex ? { robots: robotsProp || "noindex,follow" } : undefined,
+	title,
+	pageTitle: pageTitle ?? title,
+	description,
+	canonical,
+	image,
+	content,
+	siteName: SITE_TITLE,
+});
+---
+
+<!doctype html>
+<html lang="en" class="h-full relative">
+	<head>
+		<BaseHead title={title} />
+		<EmDashHead page={pageCtx} />
+		<slot name="head" />
+	</head>
+	<body>
+		<EmDashBodyStart page={pageCtx} />
+		<slot />
+		<ConsentBanner />
+		<EmDashBodyEnd page={pageCtx} />
+	</body>
+</html>

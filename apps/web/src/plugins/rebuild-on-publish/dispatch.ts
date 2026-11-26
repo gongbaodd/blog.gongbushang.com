@@ -1,0 +1,135 @@
+/** Pure request builder and sender for the GitHub repository_dispatch call (D9). */
+
+export interface DispatchEnv {
+  GITHUB_DISPATCH_TOKEN?: string;
+  GITHUB_DISPATCH_REPO?: string; // "owner/repo"
+  GITHUB_API_URL?: string; // default https://api.github.com
+  SITE_ENV?: string; // wrangler var: production (anything else, incl. local/unset: no dispatch)
+}
+
+export type DeployEnvironment = "production";
+
+/**
+ * Only an exact "production" is dispatched (INF-10: the environments are local and production). Anything else (unset, "local",
+ * the retired "testing", typos) returns null and no rebuild is triggered: a dev/admin session must never rebuild the real
+ * environment, and guessing "production" would hide a misconfigured Worker.
+ */
+export function resolveEnvironment(siteEnv: string | undefined): DeployEnvironment | null {
+  const v = siteEnv?.trim();
+  return v === "production" ? v : null;
+}
+
+export interface PublishInfo {
+  collection: string;
+  id: string;
+  slug?: string;
+}
+
+export const DEFAULT_GITHUB_API_URL = "https://api.github.com";
+
+export interface BuildDispatchOptions {
+  /** Test-only opt-in to allow a custom GITHUB_API_URL (e.g. a local mock server). */
+  allowCustomApiUrl?: boolean;
+}
+
+/**
+ * Validate and normalize the GitHub API base URL (SEC-13).
+ * In production, only `https://api.github.com` (with optional trailing slashes and no
+ * path, credentials, query, or hash) is allowed unless `allowCustomApiUrl` is explicitly set.
+ */
+export function resolveGitHubApiBase(
+  rawUrl: string | undefined,
+  options?: BuildDispatchOptions,
+): string | null {
+  const trimmed = rawUrl?.trim();
+  if (!trimmed) return DEFAULT_GITHUB_API_URL;
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) return null;
+  if (options?.allowCustomApiUrl) {
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return trimmed.replace(/\/+$/, "");
+  }
+  if (parsed.origin !== DEFAULT_GITHUB_API_URL) return null;
+  if (parsed.pathname.replace(/\/+$/, "") !== "") return null;
+  return DEFAULT_GITHUB_API_URL;
+}
+
+/** Returns null when the token, repo, GITHUB_API_URL or SITE_ENV (production) is not valid. */
+export function buildDispatchRequest(
+  env: DispatchEnv,
+  info: PublishInfo,
+  options?: BuildDispatchOptions,
+): { url: string; init: RequestInit } | null {
+  const token = env.GITHUB_DISPATCH_TOKEN;
+  const repo = env.GITHUB_DISPATCH_REPO;
+  if (!token || !repo || !/^[\w-][\w.-]*\/[\w-][\w.-]*$/.test(repo)) return null;
+  const environment = resolveEnvironment(env.SITE_ENV);
+  if (!environment) return null;
+  const base = resolveGitHubApiBase(env.GITHUB_API_URL, options);
+  if (!base) return null;
+  return {
+    url: `${base}/repos/${repo}/dispatches`,
+    init: {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "emdash-rebuild-on-publish",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      body: JSON.stringify({
+        event_type: "emdash-publish",
+        client_payload: { environment, collection: info.collection, id: info.id, slug: info.slug },
+      }),
+    },
+  };
+}
+
+export interface Logger {
+  info(message: string, data?: unknown): void;
+  warn(message: string, data?: unknown): void;
+  error(message: string, data?: unknown): void;
+}
+
+/** Never throws. Logs outcome; token is never logged. */
+export async function dispatchOnPublish(
+  env: DispatchEnv,
+  info: PublishInfo,
+  log: Logger,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  const req = buildDispatchRequest(env, info);
+  if (!req) {
+    if (env.GITHUB_API_URL?.trim() && !resolveGitHubApiBase(env.GITHUB_API_URL)) {
+      log.warn(
+        "rebuild-on-publish: disallowed GITHUB_API_URL (must be https://api.github.com), skipping",
+      );
+      return;
+    }
+    log.info(
+      "rebuild-on-publish: GITHUB_DISPATCH_TOKEN, GITHUB_DISPATCH_REPO or SITE_ENV (production) not set, skipping",
+    );
+    return;
+  }
+  try {
+    const res = await fetchImpl(req.url, req.init);
+    if (res.status === 204)
+      log.info(`rebuild-on-publish: dispatched for ${info.collection}/${info.slug ?? info.id}`);
+    else
+      log.error(
+        `rebuild-on-publish: GitHub responded ${res.status}`,
+        await res.text().catch(() => ""),
+      );
+  } catch (err) {
+    log.error(
+      "rebuild-on-publish: dispatch failed",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
