@@ -18,7 +18,11 @@ interface Props {
 	description?: string | null;
 	image?: string | null;
 	canonical?: string | null;
+	/** Page-level noindex (404, /cv). Emitted once, through EmDash's `page.seo.robots`. */
 	noindex?: boolean;
+	pageType?: "website" | "article";
+	/** Open Graph `article:*` tags and BlogPosting JSON-LD (only with `pageType="article"`). */
+	articleMeta?: { publishedTime?: string | null; modifiedTime?: string | null; author?: string | null };
 	/** Pass content reference for plugin page contributions on content pages */
 	content?: { collection: string; id: string; slug?: string | null };
 }
@@ -30,6 +34,8 @@ const {
 	image,
 	canonical: canonicalProp,
 	noindex = false,
+	pageType = "website",
+	articleMeta,
 	content,
 } = Astro.props;
 
@@ -39,7 +45,11 @@ const canonical = canonicalProp ?? (Astro.site ? new URL(Astro.url.pathname, Ast
 const pageCtx = createPublicPageContext({
 	Astro,
 	kind: content ? "content" : "custom",
-	pageType: "website",
+	pageType,
+	articleMeta,
+	// The only robots source: EmDash dedupes it against its staging tag (first wins), so there is never a second tag.
+	// Per-entry `noIndex=false` emits nothing, so it can never lift the pre-cutover noindex (X-Robots-Tag/robots.txt, INF-10).
+	seo: noindex ? { robots: "noindex, nofollow" } : undefined,
 	title,
 	pageTitle: pageTitle ?? title,
 	description,
@@ -53,7 +63,7 @@ const pageCtx = createPublicPageContext({
 <!doctype html>
 <html lang="en" class="h-full relative">
 	<head>
-		<BaseHead title={title} noindex={noindex} />
+		<BaseHead title={title} />
 		<EmDashHead page={pageCtx} />
 		<slot name="head" />
 	</head>

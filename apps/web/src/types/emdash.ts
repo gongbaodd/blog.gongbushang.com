@@ -48,6 +48,12 @@ export type EmDashPageEntry = ContentEntry<EmDashPageData>;
 export type PostEntryDataInput = Partial<Omit<EmDashPostData, "terms" | "featured_image">> & {
   featured_image?: Pick<EmDashFeaturedImage, "src" | "alt"> | EmDashFeaturedImage | null;
   terms?: PostTaxonomies | null;
+  /** Database ULID (`entry.id` is the slug); `_emdash_seo` is keyed by this. */
+  id?: string;
+  publishedAt?: Date | string | null;
+  updatedAt?: Date | string | null;
+  /** Primary byline (eagerly loaded by EmDash). */
+  byline?: { displayName?: string | null } | null;
 };
 
 export interface PostEntryInput {

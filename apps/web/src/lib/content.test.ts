@@ -5,6 +5,13 @@ import type { ContentEntry, TaxonomyTerm } from "emdash";
 const mockGetEmDashCollection = vi.fn();
 const mockGetEmDashEntry = vi.fn();
 
+const mockSeoRows = vi.fn();
+vi.mock("emdash/runtime", () => ({
+  getDb: async () => ({
+    selectFrom: () => ({ select: () => ({ where: () => ({ execute: () => mockSeoRows() }) }) }),
+  }),
+}));
+
 vi.mock("emdash", () => ({
   getEmDashCollection: (...args: unknown[]) => mockGetEmDashCollection(...args),
   getEmDashEntry: (...args: unknown[]) => mockGetEmDashEntry(...args),
@@ -514,6 +521,7 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
 
 describe("paginated EmDash collection fetchers", () => {
   it("paginates getAllPosts across cursors and skips non-legacy entries", async () => {
+    mockSeoRows.mockResolvedValue([]);
     mockGetEmDashCollection
       .mockResolvedValueOnce({
         entries: [
@@ -538,6 +546,27 @@ describe("paginated EmDash collection fetchers", () => {
       limit: 100,
       cursor: "cursor-2",
     });
+  });
+
+  it("attaches SEO-panel rows (one batched query) keyed by the database ULID, not the slug (GON-203)", async () => {
+    mockSeoRows.mockReset();
+    mockSeoRows.mockResolvedValue([
+      { content_id: "01ULIDA", seo_title: "T", seo_description: null, seo_image: null, seo_canonical: null, seo_no_index: 1 },
+    ]);
+    mockGetEmDashCollection.mockResolvedValueOnce({
+      entries: [
+        makeFullPostEntry({ legacy_id: "2025/01/01/a", id: "01ULIDA" } as never, "a"),
+        makeFullPostEntry({ legacy_id: "2025/01/02/b", id: "01ULIDB" } as never, "b"),
+      ],
+    });
+    // module-level memo: a fresh import so this test's rows are read
+    vi.resetModules();
+    const { getAllPosts: fresh } = await import("./content");
+    const posts = await fresh();
+    expect(posts[0]).toMatchObject({ entryId: "a", dbId: "01ULIDA", seo: { title: "T", noIndex: true } });
+    expect(posts[1]!.dbId).toBe("01ULIDB");
+    expect(posts[1]!.seo).toBeUndefined();
+    expect(mockSeoRows).toHaveBeenCalledTimes(1);
   });
 
   it("propagates EmDash errors from collection and single-entry queries", async () => {

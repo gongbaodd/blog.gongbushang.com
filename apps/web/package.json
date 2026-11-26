@@ -17,7 +17,7 @@
     "derive:seed:media": "tsx scripts/derive/seed-media.ts",
     "import:media": "node scripts/import/mig3/import.mjs",
     "content:catchup": "node scripts/import/mig6/catchup.mjs",
-    "build": "tsx scripts/derive/index.ts && node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs && node scripts/generate-pdfs.mjs",
+    "build": "tsx scripts/derive/index.ts && tsx scripts/seo/write-noindex.ts && node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs && node scripts/generate-pdfs.mjs",
     "resume:pdfs": "node scripts/generate-pdfs.mjs",
     "preview": "astro preview",
     "types": "wrangler types",

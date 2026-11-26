@@ -12,14 +12,21 @@ import MantineMain from "../components/MantineMain";
 import { GridWithMenu } from "../components/GridWithMenu";
 import BlogContent, { BlogMenu, RelatePosts, type IHeading, type ILink, type IMenuSeries } from "../components/BlogContent";
 import type { TClientPost } from "../lib/listing-core";
-import { SITE_TITLE } from "../consts";
+import type { ResolvedSeo } from "../lib/seo";
 
 interface Props {
 	/** Legacy post id `YYYY/MM/DD/slug` (Footer / view count / analytics key). */
 	id: string;
+	/** EmDash slug (`entry.id`). */
 	entryId: string;
+	/** Database ULID (`entry.data.id`): what `_emdash_seo` and plugin page contributions key on. */
+	dbId: string;
+	/** Visible heading. */
 	title: string;
-	description: string;
+	/** Head values resolved through `getSeoMeta()` (GON-203): SEO-panel overrides applied. */
+	seo: ResolvedSeo;
+	/** `article:*` / BlogPosting JSON-LD. */
+	articleMeta: { publishedTime?: string | null; modifiedTime?: string | null; author?: string | null };
 	/** `YYYY-MM-DD`. */
 	date: string;
 	category: string;
@@ -34,7 +41,7 @@ interface Props {
 	adsense: boolean;
 }
 
-const { id, entryId, title, description, date, category, tags, links, headings, series, clientPost, cover, readingMinutes, adsense } =
+const { id, entryId, dbId, title, seo, articleMeta, date, category, tags, links, headings, series, clientPost, cover, readingMinutes, adsense } =
 	Astro.props;
 
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
@@ -50,10 +57,15 @@ const adsenseSlotId =
 ---
 
 <Global
-	title={`${SITE_TITLE} | ${title}`}
-	description={description}
-	image={cover?.url}
-	content={{ collection: "posts", id: entryId }}
+	title={seo.title}
+	pageTitle={seo.pageTitle}
+	description={seo.description}
+	image={seo.image}
+	canonical={seo.canonical}
+	noindex={seo.noindex}
+	pageType="article"
+	articleMeta={articleMeta}
+	content={{ collection: "posts", id: dbId, slug: entryId }}
 >
 	{(adsenseEnabled || adsenseSlotId) && <AdSenseHead slot="head" />}
 	<!-- Post covers & content images are served from Cloudinary. -->
