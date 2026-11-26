@@ -5,7 +5,7 @@ import { optimizeCloudinaryUrl } from "./cloudinary";
  * markdown (plus its import line). Rather than add MDX, rewrite that component into plain HTML
  * (blank lines keep the inner markdown parsed) so `body_md` renders with the markdown pipeline.
  * MDX ignores the children's indentation, markdown would turn it into code blocks, so the children
- * are dedented. Any other JSX component is left alone and reported via `warnings`.
+ * are dedented. `mdx` flags a body from an `.mdx` source (no indented code blocks). Any other JSX component is left alone and reported via `warnings`.
  */
 const IMPORT_RE =
   /^import\s+\w+\s+from\s+['"]@\/packages\/image\/DescriptionImage['"];?[ \t]*\r?\n/gm;
@@ -25,9 +25,11 @@ function dedent(text: string): string {
   return lines.map((l) => l.slice(Math.min(min, /^[ \t]*/.exec(l)![0].length))).join("\n");
 }
 
-export function prepareBody(body: string): { body: string; warnings: string[] } {
-  if (!body.includes("DescriptionImage")) return { body, warnings: [] };
+export function prepareBody(body: string): { body: string; warnings: string[]; mdx: boolean } {
+  if (!body.includes("DescriptionImage")) return { body, warnings: [], mdx: false };
   let out = body.replace(IMPORT_RE, "");
+  // Only the import line marks a real .mdx source; prose/code mentioning the name must keep CommonMark.
+  const mdx = out !== body;
   out = out.replace(COMPONENT_RE, (_m, attrs: string, inner: string) => {
     const src = optimizeCloudinaryUrl(attr(attrs, "src") ?? "");
     const alt = attr(attrs, "alt") ?? "";
@@ -41,5 +43,5 @@ export function prepareBody(body: string): { body: string; warnings: string[] } 
   const warnings = /<\/?[A-Z][A-Za-z]*[\s/>]/.test(out)
     ? ["unhandled JSX component remains in body"]
     : [];
-  return { body: out, warnings };
+  return { body: out, warnings, mdx };
 }
