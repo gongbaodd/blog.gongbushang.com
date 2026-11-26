@@ -128,7 +128,10 @@ jobs:
           (umask 077
            "$pg_bin/pg_dump" --format=custom "${schemas[@]}" "${excludes[@]}" --no-owner --no-privileges -f "$work/db.dump"
            "$pg_bin/psql" -v ON_ERROR_STOP=1 -c "\copy (select * from public.options where $options_allow order by name) to '$work/options.csv' with (format csv, header)")
-          echo "options rows kept: $(($(wc -l < "$work/options.csv") - 1))"
+          kept=$(($(wc -l < "$work/options.csv") - 1))
+          echo "options rows kept: $kept"
+          # An empty export means the dump role cannot read options (RLS): fail instead of shipping a backup that restores no site settings.
+          if [ "$kept" -lt 1 ]; then echo "::error::options.csv is empty"; exit 1; fi
           out="growgen-production-$(date -u +%Y%m%dT%H%M%SZ).tar.age"
           tar -C "$work" -cf - db.dump options.csv | age -r "$BACKUP_AGE_RECIPIENT" -o "$out"
           ls -l "$out"
