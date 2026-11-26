@@ -7,6 +7,7 @@ import { localMedia } from "emdash/media";
 import { fileURLToPath } from "node:url";
 import { cloudinaryMedia } from "./src/cloudinary-media.ts";
 import { PLACEHOLDER_DATABASE_URL } from "./src/db-config.ts";
+import { serviceDashboards } from "./src/dashboards/plugin.ts";
 import { rebuildOnPublish } from "./src/rebuild-on-publish.ts";
 
 // Public origin for passkey RP ID & outbound links: resolved at runtime via EMDASH_SITE_URL / SITE_URL too.
@@ -41,7 +42,7 @@ export default defineConfig({
 			fonts: false,
 			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
 			middleware: { outer: "./src/outer.ts" },
-			plugins: [rebuildOnPublish()],
+			plugins: [rebuildOnPublish(), serviceDashboards()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],

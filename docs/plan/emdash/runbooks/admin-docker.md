@@ -27,6 +27,8 @@ Copy `apps/admin/.env.example` to `apps/admin/.env` (or separate `.env.local`, `
 | `GITHUB_DISPATCH_TOKEN` | For publish | Fine-grained GitHub PAT (`Contents: write` on the repo) for the `rebuild-on-publish` plugin (`emdash-publish` dispatch). |
 | `GITHUB_DISPATCH_REPO` | For publish | Defaults to `gongbaodd/blog.gongbushang.com`. |
 
+**Baked by design.** `PUBLIC_*` variables and `EMDASH_SITE_URL` are inlined into the build output by Astro, so they are public. Never put a secret behind a `PUBLIC_` prefix or in `EMDASH_SITE_URL`. Every other variable must come from the runtime environment only. `pnpm --filter admin check:secrets` (SEC-02) enforces this with a canary build, and fails if a runtime secret is inlined. It also rejects any bare or optional-chained `import.meta.env` in the admin sources.
+
 ---
 
 ## 2. Running locally with Docker Compose
@@ -148,3 +150,5 @@ At start `scripts/start.mjs` connects with the runtime `DATABASE_URL` and logs `
 Verify a build locally against local Supabase only (never the remote database): `pnpm --filter admin build && pnpm --filter admin smoke`. It checks that `dist/` holds no credential, `/healthz` is 200, `/_emdash/admin/setup` is 404 without `SETUP_TOKEN`, the DB identity is logged, Access enforce mode answers 403 (and misconfigured Access 503) for `/_emdash/admin`, `/_emdash/api/manifest` and `/_emdash/api/auth/me` on the real built server, and the startup refusals above.
 
 The image uses `pnpm --config.inject-workspace-packages=true --filter admin deploy --prod /out` (about 615 MB of `node_modules`, versus about 2.3 GB when the whole workspace was copied), and the root `.dockerignore` keeps `.env*`, `.dev.vars*`, `node_modules`, `.claude`, `src/content` and similar out of the build context.
+
+**Naming secrets:** Astro inlines any env var whose *name* appears as a substring in a file that uses bare `import.meta.env` (including Astro's own runtime). Give secret variables distinctive, prefixed names (never `KEY`, `TOKEN`, `HOST`), and add every new runtime variable to `apps/admin/.env.example` so `pnpm --filter admin check:secrets` canary-tests it.

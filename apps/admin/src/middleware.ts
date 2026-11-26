@@ -46,7 +46,7 @@ async function withRobots(next: () => Promise<Response>): Promise<Response> {
 export const normalize = normalizePath;
 
 const defaultIsDev = Boolean(
-	import.meta.env?.DEV && !import.meta.env?.VITEST && process.env.NODE_ENV !== "test",
+	import.meta.env.DEV && !import.meta.env.VITEST && process.env.NODE_ENV !== "test",
 );
 
 export function createAdminMiddleware(options: AdminMiddlewareOptions = {}) {
