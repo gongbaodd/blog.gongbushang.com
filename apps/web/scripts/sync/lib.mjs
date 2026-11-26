@@ -176,6 +176,21 @@ export function classifyPublicTable(name) {
 	return "unknown";
 }
 
+/** Sorted, de-duplicated `public` table names that are neither excluded nor known content (SEC-11 fail-closed guard). */
+export function findUnknownPublicTables(tableNames) {
+	return [...new Set(tableNames.map((t) => String(t).trim()).filter(Boolean))]
+		.filter((name) => classifyPublicTable(name) === "unknown")
+		.sort();
+}
+
+/** Read-only SQL listing every `public` table (the preflight in pull.mjs runs it on source and target). */
+export const LIST_PUBLIC_TABLES_SQL = "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1";
+
+/** Exact `psql` argv for the preflight. `url` must be password-free (see splitUrlCredentials); the password goes in PGPASSWORD. */
+export function buildListPublicTablesArgs(url) {
+	return ["--no-psqlrc", "-v", "ON_ERROR_STOP=1", "-At", "-c", LIST_PUBLIC_TABLES_SQL, url];
+}
+
 /** Build-time derived cache tables in schema `derived` (supabase/migrations/20261125000000_derived_schema.sql). */
 export const DERIVED_TABLES = Object.freeze([
 	"post_embeddings",
@@ -604,10 +619,20 @@ export function buildTruncateSql({ excludedTables = EXCLUDED_TABLES, includeDeri
 		validateIdentifier(table, "excluded table");
 		return `'${table}'`;
 	});
+	const quoted = (tables, kind) =>
+		tables.map((table) => {
+			validateIdentifier(table, kind);
+			return `'${table}'`;
+		});
+	// SEC-11: every public table on the target must be classified (excluded or known content); otherwise abort the transaction
+	// before anything is truncated. And TRUNCATE only an explicit allowlist (known content, comments, ^ec_), never "all but excluded".
+	const knownPublic = quoted([...new Set([...EXCLUDED_TABLES, ...KNOWN_CONTENT_TABLES])], "known public table");
+	const allowlisted = quoted([...new Set([...KNOWN_CONTENT_TABLES, ...COMMENT_TABLES])], "content table");
+	const allowClause = `(tablename IN (${allowlisted.join(", ")}) OR tablename ~ '^ec_[a-z0-9_]+$')`;
 	const publicPredicate =
 		quotedExcluded.length > 0
-			? `(schemaname = 'public' AND tablename NOT IN (${quotedExcluded.join(", ")}))`
-			: `(schemaname = 'public')`;
+			? `(schemaname = 'public' AND ${allowClause} AND tablename NOT IN (${quotedExcluded.join(", ")}))`
+			: `(schemaname = 'public' AND ${allowClause})`;
 	const whereClause = includeDerived
 		? `${publicPredicate}\n     OR (schemaname = '${DERIVED_SCHEMA}')`
 		: publicPredicate;
@@ -615,8 +640,16 @@ export function buildTruncateSql({ excludedTables = EXCLUDED_TABLES, includeDeri
 	return [
 		"DO $$",
 		"DECLARE",
+		"  unknown_list text;",
 		"  tbl_list text;",
 		"BEGIN",
+		"  SELECT string_agg(tablename, ', ' ORDER BY tablename)",
+		"  INTO unknown_list",
+		"  FROM pg_tables",
+		`  WHERE schemaname = 'public' AND tablename NOT IN (${knownPublic.join(", ")}) AND tablename !~ '^ec_[a-z0-9_]+$';`,
+		"  IF unknown_list IS NOT NULL THEN",
+		"    RAISE EXCEPTION 'INF-5 sync halted (SEC-11): unclassified public table(s) on target: %. Classify them in apps/web/scripts/sync/lib.mjs first.', unknown_list;",
+		"  END IF;",
 		"  SELECT string_agg(format('%I.%I', schemaname, tablename), ', ' ORDER BY schemaname, tablename)",
 		"  INTO tbl_list",
 		"  FROM pg_tables",
