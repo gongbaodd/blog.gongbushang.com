@@ -26,7 +26,7 @@ Read docs/plan/emdash-migration-plan.md (decisions D1–D10, §10 free-tier budg
 docs/plan/emdash/AGENT_RULES.md.
 
 Review story <STORY-ID>: <one-line goal>.
-Diff: run `git diff feat/emdash...emdash/<STORY-ID>` (read-only).
+Diff: run `git diff master...emdash/<STORY-ID>` (read-only).
 
 Report ONLY concrete problems, most severe first, each as:
 - [severity: blocker|major|minor] file:line — what is wrong — the concrete scenario where it breaks.
@@ -37,4 +37,4 @@ If you find nothing, say "No findings". Do not restate the diff. Do not suggest 
 ```
 
 ## Temporary: Claude reviewers while agy is rate-limited (owner, 2026-11-25)
-Stories waiting in Linear **In Review** are reviewed by Claude subagents using the prompt template above. A story is never reviewed by the model that built it: Gemini-built swarm branches get Sonnet or Opus, and Claude-Sonnet-built stories get Opus. Each reviewer does a trial merge onto `feat/emdash` in its own worktree, runs the story's checks, and reports findings in the template's format. Lead posts the findings to the Linear issue, gets fixes made, merges, and moves the issue to Done. Switch back to agy once its limit resets.
+Stories waiting in Linear **In Review** are reviewed by Claude subagents using the prompt template above. A story is never reviewed by the model that built it: Gemini-built swarm branches get Sonnet or Opus, and Claude-Sonnet-built stories get Opus. Each reviewer does a trial merge onto `master` in its own worktree, runs the story's checks, and reports findings in the template's format. Lead posts the findings to the Linear issue, gets fixes made, merges, and moves the issue to Done. Switch back to agy once its limit resets.

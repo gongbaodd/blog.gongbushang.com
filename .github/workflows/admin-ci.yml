@@ -16,7 +16,7 @@ on:
       - ".dockerignore"
       - ".github/workflows/admin-ci.yml"
   push:
-    branches: [feat/emdash, master]
+    branches: [master]
     paths:
       - "apps/admin/**"
       - "apps/web/src/lib/**"

@@ -10,7 +10,7 @@ name: web-ci
 
 on:
   pull_request:
-    branches: [feat/emdash, master]
+    branches: [master]
     # Legacy-only changes (src/, packages/* except the plantuml submodule, e2e/) do not trigger this.
     paths:
       - "apps/web/**"
@@ -19,7 +19,7 @@ on:
       - "pnpm-workspace.yaml"
       - "packages/shiki-plantuml"
       - ".github/workflows/web-*.yml"
-      # `web` is a required check on feat/emdash, so it must report on admin-only PRs too, or they stay blocked forever
+      # `web` is a required check on master, so it must report on admin-only PRs too, or they stay blocked forever
       # (a workflow_dispatch run does not count for the PR). The admin also imports apps/web/src/lib and plugins.
       - "apps/admin/**"
       - ".github/workflows/admin-*.yml"
