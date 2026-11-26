@@ -25,6 +25,9 @@
 //      DERIVE_READONLY=1      read-only run (pull-request CI against production, INF-10): no writes at all (read-only DB session, cache writes
 //                             are no-ops), cache hits only (DERIVE_EMBED=skip, DERIVE_SKIP_COLORS=1) and no AI/geocoding credentials used
 //      ALLOW_EMPTY_DATA=1     build without posts, podcast episodes and gallery images
+//      DERIVE_MEDIA_GUARD=warn  empty podcast/gallery data is a warning (GitHub annotation) instead of an error. Pull-request CI only
+//                             (GON-219): a data import running on production must not turn unrelated PRs red. Posts stay a hard error,
+//                             and web-deploy never sets this, so a deploy still refuses an empty podcast/gallery.
 //      GOOGLE_API_KEY         geocode city strings that are not cached yet
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -84,7 +87,9 @@ try {
 	t = Date.now();
 	const episodes = buildEpisodes(await readPodcastRows(client));
 	const galleryImages = buildGallery(await readGalleryRows(client));
-	if ((episodes.length === 0 || galleryImages.length === 0) && process.env.ALLOW_EMPTY_DATA !== "1") {
+	if ((episodes.length === 0 || galleryImages.length === 0) && process.env.ALLOW_EMPTY_DATA !== "1" && process.env.DERIVE_MEDIA_GUARD === "warn") {
+		console.warn(`::warning::[derive] ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)}: continuing because DERIVE_MEDIA_GUARD=warn (PR CI). web-deploy enforces this.`);
+	} else if ((episodes.length === 0 || galleryImages.length === 0) && process.env.ALLOW_EMPTY_DATA !== "1") {
 		console.error(`[derive] ERROR: ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)} (wrong database, or the MIG-3 import has not run: node apps/web/scripts/import/mig3/import.mjs). Set ALLOW_EMPTY_DATA=1 to build without them.`);
 		process.exit(1);
 	}

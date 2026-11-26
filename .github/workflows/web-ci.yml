@@ -42,6 +42,10 @@ env:
   CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
   # PR builds never write to the production DB and never spend Workers AI quota (INF-10). Keep this at job level.
   DERIVE_READONLY: "1"
+  # GON-219: PR CI reads the live production DB, so a data import in progress (e.g. podcasts written, gallery not yet) must not turn
+  # unrelated PRs red. Empty podcast/gallery data is only a warning here; empty posts, URL parity and the size guard still fail the check.
+  # web-deploy.yml does NOT set this: the deploy keeps the hard guard.
+  DERIVE_MEDIA_GUARD: warn
   PUBLIC_BUILD_SHA: ${{ github.sha }}
   # Empty-build guard thresholds (repository variables, optional). Raise WEB_MIN_POSTS to ~990 once MIG-1 is imported.
   WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
