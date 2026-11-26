@@ -12,7 +12,7 @@ Every agent on the migration reads this file first. The plan and story backlog l
 7. **Environments** are `local` (Supabase via `supabase start`) and `production` (INF-10 retired `testing`; the former testing resources were promoted). Never call production "public": `next.growgen.xyz` runs on the production Worker and stays noindex until the owner sets `PUBLIC_SITE_LIVE=true` at CUT-1. PR CI reads the production database read-only (`DERIVE_READONLY=1`) and never writes to it.
 
 ## Story workflow
-1. Lead assigns `<story-id>` (Linear issue `GON-*` in project `P-GON-6`). Work on branch `emdash/<story-id>`, cut from `feat/emdash`, in a git worktree if another builder is active.
+1. Lead assigns `<story-id>` (Linear issue `GON-*` in project `P-GON-6`). Work on branch `emdash/<story-id>`, cut from `master`, in a git worktree if another builder is active.
 2. Move the story's Linear issue to **In Progress**.
 3. Implement. Keep `apps/web/TEMPLATE_DIFF.md` updated whenever you change a file the EmDash template generated.
 4. Run the checks for the story (build, unit tests, plus whatever the story names). Tester re-runs them independently.

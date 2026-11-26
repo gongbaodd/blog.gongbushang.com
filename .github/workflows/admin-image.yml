@@ -8,7 +8,7 @@ name: admin-image
 
 on:
   push:
-    branches: [feat/emdash, master]
+    branches: [master]
     paths:
       - "apps/admin/**"
       - "apps/web/src/lib/**"
@@ -58,7 +58,7 @@ jobs:
           images: ${{ env.IMAGE }}
           tags: |
             type=sha,prefix=sha-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/feat/emdash' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
 
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
