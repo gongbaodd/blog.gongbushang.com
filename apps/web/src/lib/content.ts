@@ -493,7 +493,9 @@ export function quickTitle(post: Pick<BlogPost, "id" | "cmsTitle" | "body">): st
 
 /** Legacy excerpt rule (extract.ts): strip markdown, first 120 chars + "...". */
 export async function postExcerpt(body: string, words = 120): Promise<string> {
-  if (!body) return "";
+  // Legacy returns "" only for an empty body (frontmatter-only post; EmDash may store it as
+  // whitespace). A non-empty body that strips to nothing (image-only, heading-only) stays "...".
+  if (!body?.trim()) return "";
   const doc = await remark().use(strip).process(body.replace(/#.*/, ""));
   return String(doc).slice(0, words) + "...";
 }

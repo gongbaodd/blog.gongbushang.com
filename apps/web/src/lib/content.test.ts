@@ -442,6 +442,11 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
 
   it("generates stripped markdown excerpts and handles empty bodies", async () => {
     expect(await postExcerpt("")).toBe("");
+    // whitespace-only body (frontmatter-only legacy post): no description meta (legacy emits an empty one)
+    expect(await postExcerpt("\n")).toBe("");
+    expect(await postExcerpt("  \n\n ")).toBe("");
+    // non-empty body that strips to nothing keeps legacy's bare "..." (30-ish posts, e.g. image-only)
+    expect(await postExcerpt("# Only a title\n")).toBe("...");
     const ex = await postExcerpt("# Heading\n\nHello **world** from [EmDash](https://x.test).", 20);
     expect(ex.endsWith("...")).toBe(true);
     expect(ex).toContain("Hello world");

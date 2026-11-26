@@ -29,12 +29,27 @@ function remarkMermaid() {
   };
 }
 
-let processor: ReturnType<typeof createMarkdownProcessor> | undefined;
+/**
+ * MDX (legacy `.mdx` posts) has no indented code blocks: 4-space-indented lines after a blank line
+ * continue prose/lists instead. Disable the `codeIndented` construct to match (fenced code is unaffected).
+ */
+function remarkNoIndentedCode(this: any) {
+  const data = this.data();
+  (data.micromarkExtensions ??= []).push({ disable: { null: ["codeIndented"] } });
+}
 
-function getProcessor() {
-  processor ??= createMarkdownProcessor({
+const processors: Partial<Record<"md" | "mdx", ReturnType<typeof createMarkdownProcessor>>> = {};
+
+function getProcessor(mdx = false) {
+  const key = mdx ? "mdx" : "md";
+  processors[key] ??= createMarkdownProcessor({
     // remarkMermaid must run before Shiki sees the code node
-    remarkPlugins: [remarkMermaid, remarkAttributes, remarkMath],
+    remarkPlugins: [
+      remarkMermaid,
+      ...(mdx ? [remarkNoIndentedCode] : []),
+      remarkAttributes,
+      remarkMath,
+    ],
     rehypePlugins: [
       rehypeCloudinary,
       [rehypeKatex, { strict: false }],
@@ -46,7 +61,7 @@ function getProcessor() {
       langs: [...Object.values(bundledLanguages), plantumlGrammar as any],
     },
   } as any);
-  return processor;
+  return processors[key]!;
 }
 
 export interface RenderedMarkdown {
@@ -55,8 +70,11 @@ export interface RenderedMarkdown {
 }
 
 /** Build-time only: call from prerendered pages, never from a Worker request path. */
-export async function renderMarkdown(source: string): Promise<RenderedMarkdown> {
-  const p = await getProcessor();
+export async function renderMarkdown(
+  source: string,
+  opts: { mdx?: boolean } = {},
+): Promise<RenderedMarkdown> {
+  const p = await getProcessor(opts.mdx);
   const result = await p.render(source);
   return { html: result.code, headings: result.metadata.headings ?? [] };
 }
