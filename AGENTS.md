@@ -25,13 +25,19 @@ When adding or editing React islands that use WebGL, Three.js, Rapier physics, o
 
 - **WebGL components**: [.agents/skills/webgl-components/SKILL.md](.agents/skills/webgl-components/SKILL.md) — error boundaries around WebGL subtrees, Rapier WASM Vite config in `astro.config.mjs`, pnpm overrides, dev cache troubleshooting.
 
+When working on the EmDash apps (`apps/web`, `apps/admin`, `supabase/`, the derive pipeline, environments, or the Supabase RLS lockdown):
+
+- **EmDash apps**: [.agents/skills/emdash/SKILL.md](.agents/skills/emdash/SKILL.md) — `apps/web` on Cloudflare with Hyperdrive, `derive` writing the `derived` schema, `apps/admin` (Docker, Cloudflare Access), `local`/`production` environments, SEC-01 lockdown and role order, runbook index.
+
 ## Project Overview
 
-This is an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).
+The repo has two sites. The EmDash apps (`apps/web`, `apps/admin`) are the migration target. The `src/` Astro site is **legacy until CUT-2**; the notes below that refer to `src/` describe it.
+
+Legacy site (`src/`): an Astro-based blog with React components, using TypeScript, Tailwind CSS, and various UI libraries (Mantine, shadcn/ui).
 
 ## Code Style Guidelines
 
-### TypeScript
+### TypeScript (legacy `src/` notes until CUT-2; the EmDash apps follow `.agents/skills/emdash/SKILL.md`)
 
 - Uses `astro/tsconfigs/strict` with additional options in `tsconfig.json`
 - Path aliases: `@/*` maps to project root
@@ -87,17 +93,20 @@ export const $derived = computed($state, (v) => transform(v));
 ### Directory Structure
 
 ```
-src/
-├── components/     # React/Astro components
-├── pages/          # Astro pages and API routes
-├── stores/         # Nanostores state management
-├── content/        # Blog content submodule (_docs source + generated/ artifacts)
+apps/               # pnpm workspace apps (pnpm-workspace.yaml: packages/*, apps/*)
+├── web/            # EmDash public site (Astro on Cloudflare Workers, Hyperdrive); derive pipeline in scripts/derive/
+├── admin/          # Dockerized Node EmDash admin (Cloudflare Access)
+supabase/           # Supabase project: migrations, roles (SEC-01 lockdown, SEC-11 roles), local config
 packages/           # Workspace packages
 ├── shadcn/         # UI component library
 ├── react/          # Shared React utilities
 ├── utils/          # Shared utilities
-├── pv-counter/     # Cloudflare Worker for view counts
 └── ...
+src/                # LEGACY Astro site, until CUT-2
+├── components/     # React/Astro components
+├── pages/          # Astro pages and API routes
+├── stores/         # Nanostores state management
+├── content/        # Blog content submodule (_docs source + generated/ artifacts)
 ```
 
 ## Mixpanel analytics
