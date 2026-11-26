@@ -13,5 +13,8 @@ export default defineConfig({
 			"tests/*.test.ts",
 		],
 		environment: "node",
+		// web-ci sets DERIVE_READONLY=1 at job level for the build (INF-10). Tests must start from the default (writes on);
+		// readonly.test.ts opts in with vi.stubEnv.
+		env: { DERIVE_READONLY: "" },
 	},
 });

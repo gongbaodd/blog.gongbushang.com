@@ -5,7 +5,8 @@ import { renderMarkdown } from "./markdown";
 const SRC =
   "Opponent evil choices:\n    \n    - Move A → picks **A3 = 2**\n    - Move B → picks **B1 = 4**\n\nDone.\n";
 
-describe("renderMarkdown indented blocks", () => {
+// The first render cold-loads the unified/Shiki pipeline, which exceeds vitest's 5s default on CI runners.
+describe("renderMarkdown indented blocks", { timeout: 30_000 }, () => {
   it("keeps CommonMark indented code for .md bodies", async () => {
     const { html } = await renderMarkdown(SRC);
     expect(html).toContain("<pre");
