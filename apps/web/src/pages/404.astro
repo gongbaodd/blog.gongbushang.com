@@ -1,18 +1,20 @@
 ---
-// Prerendered so dist/client/404.html exists: wrangler `not_found_handling: "404-page"` serves it without waking the Worker.
+// Prerendered so dist/client/404.html exists: wrangler `not_found_handling: "404-page"` serves it without waking the Worker
+// (the asset handler answers it with status 404). Ported from the legacy src/pages/404.astro (GON-227).
+import { SITE_TITLE } from "../consts";
 import Global from "../layouts/Global.astro";
 import Header from "../header/Header.astro";
 import Footer from "../footer/Footer.astro";
+import MantineMain from "../components/MantineMain";
+import NotFoundPage from "../components/NotFoundPage";
 
 export const prerender = true;
 ---
 
-<Global title="Not Found" noindex>
+<Global title={SITE_TITLE} noindex>
 	<Header />
-	<section class="main" style="max-width:60rem;margin:0 auto;padding:5rem 1rem 1rem;">
-		<h1>Page not found</h1>
-		<p>The page you're looking for doesn't exist.</p>
-		<a href="/">Go home</a>
-	</section>
+	<MantineMain isStacked={false}>
+		<NotFoundPage client:load />
+	</MantineMain>
 	<Footer slug="404" />
 </Global>
