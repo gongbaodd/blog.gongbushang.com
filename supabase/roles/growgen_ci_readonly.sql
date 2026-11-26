@@ -22,6 +22,15 @@
 -- No BYPASSRLS: SEC-01 enabled RLS (no policies) on every public/derived table, so each granted table gets a SELECT-only
 -- policy for this role alone (`growgen_ci_readonly_select`). Auth, session, token, OAuth, plugin-storage and user tables get
 -- neither a grant nor a policy, so they are denied twice (no privilege; RLS would hide the rows anyway).
+--
+-- `options` is a key/value table that also holds secrets (`emdash:preview_secret` = preview-URL HMAC key, `emdash:ip_salt`,
+-- `emdash:passkey_pending:*`, `plugin:*` settings). Its policy is therefore NOT `using (true)`: the role sees only the rows
+-- whose `name` is in `ci_option_keys` or starts with `site:` (public site settings; EmDash's own BACKUP_OPTION_PREFIXES),
+-- the keys the build was measured to read (bind parameters in the log_statement=all log). Every other row is invisible.
+--
+-- Granted tables are not all public data: `ec_*` holds drafts and scheduled (unpublished) entries, `media` holds metadata
+-- of every upload, `_emdash_bylines` names authors. PR CI therefore can read unpublished content; that is accepted because
+-- PR builds run only for branches of this repo (no fork secrets) and never upload the build (runbooks/ci.md).
 
 \set ON_ERROR_STOP on
 
@@ -53,6 +62,12 @@ declare
     -- content joined by the prerender and derive
     '_emdash_bylines', '_emdash_content_bylines', 'taxonomies', 'content_taxonomies', 'media'
   ];
+  -- options keys the build reads (measured; see header). Prefix `site:` is allowed separately.
+  ci_option_keys text[] := array[
+    'byline_fields_version', 'emdash:plugins:generation', 'emdash:site_title', 'emdash:site_url', 'emdash:locale',
+    'emdash:repair_locale_casing', 'emdash:seed_complete', 'emdash:setup_complete',
+    'emdash:exclusive_hook:comment:moderate', 'emdash:exclusive_hook:email:deliver'
+  ];
   s text;
   t record;
 begin
@@ -78,7 +93,13 @@ begin
        or schemaname = 'derived'
   loop
     execute format('grant select on %I.%I to growgen_ci_readonly', t.schemaname, t.tablename);
-    execute format('create policy growgen_ci_readonly_select on %I.%I for select to growgen_ci_readonly using (true)', t.schemaname, t.tablename);
+    if t.schemaname = 'public' and t.tablename = 'options' then
+      execute format(
+        'create policy growgen_ci_readonly_select on public.options for select to growgen_ci_readonly '
+        'using (name = any(%L::text[]) or starts_with(name, %L))', ci_option_keys, 'site:');
+    else
+      execute format('create policy growgen_ci_readonly_select on %I.%I for select to growgen_ci_readonly using (true)', t.schemaname, t.tablename);
+    end if;
   end loop;
 end
 $$;
