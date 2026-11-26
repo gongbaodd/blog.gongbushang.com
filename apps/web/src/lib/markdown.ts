@@ -38,6 +38,15 @@ function remarkNoIndentedCode(this: any) {
   (data.micromarkExtensions ??= []).push({ disable: { null: ["codeIndented"] } });
 }
 
+/**
+ * The post page renders the title as its own <h1> (BlogContent), so a body `# Heading` would be a second h1.
+ * Astro collects `metadata.headings` after user rehype plugins, so a plugin would also drop the h1 from the
+ * headings that `postTitle` needs. Strip the rendered elements instead (code samples contain escaped `&lt;h1`).
+ */
+export function stripBodyH1(html: string): string {
+  return html.replace(/<h1(?:\s[^>]*)?>[\s\S]*?<\/h1>\n?/g, "");
+}
+
 const processors: Partial<Record<"md" | "mdx", ReturnType<typeof createMarkdownProcessor>>> = {};
 
 function getProcessor(mdx = false) {
@@ -66,7 +75,10 @@ function getProcessor(mdx = false) {
 
 export interface RenderedMarkdown {
   html: string;
+  /** All headings including a body h1. The title rule (`postTitle`) reads the first one. */
   headings: MarkdownHeading[];
+  /** Headings for the TOC / side menu: depth-1 entries removed (that h1 is not in `html`). */
+  menuHeadings: MarkdownHeading[];
 }
 
 /** Build-time only: call from prerendered pages, never from a Worker request path. */
@@ -76,5 +88,6 @@ export async function renderMarkdown(
 ): Promise<RenderedMarkdown> {
   const p = await getProcessor(opts.mdx);
   const result = await p.render(source);
-  return { html: result.code, headings: result.metadata.headings ?? [] };
+  const headings = result.metadata.headings ?? [];
+  return { html: stripBodyH1(result.code), headings, menuHeadings: headings.filter((h) => h.depth !== 1) };
 }
