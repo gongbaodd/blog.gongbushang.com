@@ -1,0 +1,19 @@
+.root {
+  width: 100%;
+}
+
+.chipsWrap {
+  width: 100%;
+}
+
+.facetCard {
+  border-left: 3px solid var(--facet-accent, var(--mantine-primary-color-filled));
+}
+
+.deckCard {
+  border-top: 3px solid var(--facet-accent, var(--mantine-primary-color-filled));
+}
+
+.srFallback {
+  position: relative;
+}
