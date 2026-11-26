@@ -160,9 +160,9 @@ describe("runtime database config", () => {
 	it("finds the committed CA in the image and repo layouts, and fails closed when it is missing", () => {
 		const c = defaultCaCandidates("/app");
 		expect(c).toContain("/app/certs/prod-ca-2021.crt");
-		expect(c.some((p) => p.endsWith("/apps/web/scripts/certs/prod-ca-2021.crt"))).toBe(true);
+		expect(c.some((p) => p?.endsWith("/apps/web/scripts/certs/prod-ca-2021.crt"))).toBe(true);
 		expect(() => loadDefaultCa(["/nope/a.crt"], () => false)).toThrow(/DATABASE_CA_CERT/);
-		expect(() => loadDefaultCa(["/x.crt"], () => true, () => "not a pem")).toThrow(/not found/);
+		expect(() => loadDefaultCa(["/x.crt"], () => true, (() => "not a pem") as never)).toThrow(/not found/);
 		expect(loadDefaultCa(c)).toContain("BEGIN CERTIFICATE");
 	});
 
