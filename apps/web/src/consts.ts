@@ -2,6 +2,8 @@
 // SITE_DESCRIPTION is inlined: the legacy file read it from an .mdx fragment (packages/hero/fragments/description.mdx).
 
 export const SITE_TITLE = "GrowGen | 给我整";
+/** Fallback article author (posts have no CMS byline; the site is single-author). */
+export const SITE_AUTHOR = "Gong";
 export const SITE_TITLE_NICK = "GrowGen | 整";
 export const SITE_DESCRIPTION =
   "Hi, I'm Gong. Web developer from China — coding since the jQuery era to the React era. Podcaster, tattoo artist, harmonica player. Traveler, surfer, language learner (Duolingo addict). This site is my space to share tech journals, daily life notes, travel stories, and study reflections. The name Grow Gen comes from continuous learning across generations and sounds like my name in Mandarin. Currently studying Digital Learning Games in Tallinn, Estonia. I believe the future of human–computer interaction lies in gamification.";

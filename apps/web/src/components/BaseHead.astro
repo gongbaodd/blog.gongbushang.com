@@ -1,5 +1,7 @@
 ---
 // Ported from packages/components/BaseHead.astro.
+// GON-203: no <meta name="robots"> here. Robots comes from <EmDashHead> only (Global passes it as `page.seo.robots`), so a page
+// can never carry two robots tags (the 404 used to emit both `noindex,follow` and EmDash's staging `noindex, nofollow`).
 // Differences: canonical / OG / Twitter / description tags are emitted by EmDash's
 // <EmDashHead> (in layouts/Global.astro) so editor SEO-panel overrides apply; they are not duplicated here.
 // Page-specific styles (KaTeX for posts, Mantine charts for /lab & /umap)
@@ -17,10 +19,9 @@ import MixpanelHead from "../analytics/MixpanelHead.astro";
 
 interface Props {
 	title: string;
-	noindex?: boolean;
 }
 
-const { title, noindex = false } = Astro.props;
+const { title } = Astro.props;
 ---
 
 <!-- Global Metadata -->
@@ -36,8 +37,6 @@ const { title, noindex = false } = Astro.props;
 <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
 <meta name="msapplication-TileColor" content="#da532c" />
 <meta name="theme-color" content="#ffffff" />
-
-{noindex && <meta name="robots" content="noindex,follow" />}
 
 <title>{title}</title>
 

@@ -25,4 +25,8 @@ Top-level `apps/web/wrangler.jsonc` is the production config. The former `testin
 5. Only after step 4 passes, delete `growgen-web-testing` (then the old Supabase project and GitHub `testing` environment, GON-199).
 **Rollback** (any failure after step 2): detach the domain from `growgen-web` if attached and re-attach it to `growgen-web-testing`; its last deployment (2027c095) is untouched until step 5.
 
+## CUT-1 (go live, OWNER)
+Before setting `PUBLIC_SITE_LIVE=true`: in the EmDash admin, Settings, **turn off "staging"** (the `site:staging` option; sites created through the setup wizard start with it on). While it is on, `<EmDashHead>` adds `noindex, nofollow` to every page. A build with `PUBLIC_SITE_LIVE=true` fails in `post-build` (`EmDash "staging" is on`) if the home page still says noindex, so a forgotten switch is caught before deploy. Then set the GitHub variable `PUBLIC_SITE_LIVE=true` and re-run `web-deploy`.
+
+
 Build and deploy: `pnpm --filter web build` (add `PUBLIC_SITE_LIVE=true` only at CUT-1) then `pnpm --filter web exec wrangler deploy -c dist/server/wrangler.json` (`pnpm --filter web run deploy` does both; `run` is required, bare `deploy` is pnpm's built-in). `build` runs `scripts/check-static-routes.mjs` first (fails if any `src/pages` route lacks `prerender = true`).

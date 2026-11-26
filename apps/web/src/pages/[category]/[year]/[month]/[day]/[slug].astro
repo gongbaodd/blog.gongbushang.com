@@ -5,6 +5,8 @@ import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, 
 import { getPostEntries, toClient } from "../../../../../lib/listing";
 import { renderMarkdown } from "../../../../../lib/markdown";
 import { prepareBody } from "../../../../../lib/mdx-lite";
+import { articleModifiedTime, resolvePostSeo } from "../../../../../lib/seo";
+import { SITE_AUTHOR } from "../../../../../consts";
 import { getReadingTime } from "../../../../../utils/reading-time";
 
 export const prerender = true;
@@ -35,13 +37,31 @@ const clientPost = await toClient(entry);
 const title = postTitle(post, headings);
 const description = await postExcerpt(post.body);
 const { minutes } = getReadingTime(post.body);
+
+// GON-203: SEO-panel overrides (loaded once for the whole collection by getAllPosts) resolved through getSeoMeta().
+const seo = resolvePostSeo({
+	title,
+	description,
+	image: post.data.cover?.url,
+	seo: post.seo,
+	siteUrl: Astro.site?.origin,
+	path: post.href,
+});
+// Legacy `YYYY-MM-DD` is the real publish date (the CMS published_at is the import time).
+const articleMeta = {
+	publishedTime: post.date,
+	modifiedTime: articleModifiedTime(post),
+	author: post.author ?? SITE_AUTHOR,
+};
 ---
 
 <BlogPost
 	id={post.id}
 	entryId={post.entryId}
+	dbId={post.dbId}
 	title={title}
-	description={description}
+	seo={seo}
+	articleMeta={articleMeta}
 	date={post.date}
 	category={post.data.category}
 	tags={post.data.tag ?? []}
@@ -49,7 +69,6 @@ const { minutes } = getReadingTime(post.body);
 	headings={headings}
 	series={series}
 	clientPost={clientPost}
-	cover={post.data.cover}
 	readingMinutes={minutes}
 	adsense={post.data.adsense}
 >

@@ -9,6 +9,7 @@ import {
 } from "emdash";
 import { remark } from "remark";
 import strip from "strip-markdown";
+import { loadSeoByContentId, type ContentSeo } from "./seo";
 import { optimizeCloudinaryUrl, optimizeCoverUrl } from "./cloudinary";
 import {
   categoryHref,
@@ -96,8 +97,17 @@ export type PostMetadata = BlogPostData;
 export interface BlogPost {
   /** Legacy id `YYYY/MM/DD/<slug>` (legacy: Astro glob id). */
   id: string;
-  /** EmDash entry id (slug), for `content` references. */
+  /** EmDash entry id (slug). */
   entryId: string;
+  /** Database ULID (`entry.data.id`): the key of `_emdash_seo` and of `content` references. */
+  dbId: string;
+  /** ISO timestamps of the CMS record (article:published_time / modified_time). */
+  publishedAt?: string;
+  updatedAt?: string;
+  /** Primary byline display name. */
+  author?: string;
+  /** Editor SEO-panel overrides (`_emdash_seo`), attached by `getAllPosts()`. */
+  seo?: ContentSeo;
   href: string;
   /** `YYYY-MM-DD`, timezone-free (`legacy_date`, falling back to the id). */
   date: string;
@@ -291,6 +301,12 @@ export function extractCities(terms: PostTaxonomies | null | undefined): PostCit
 // Collection mappers
 // -----------------------------------------------------------------------------
 
+function isoOrUndefined(v: Date | string | null | undefined): string | undefined {
+  if (!v) return undefined;
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
 /** Map one EmDash `posts` entry; returns undefined for entries that are not migrated legacy posts. */
 export function mapPost(entry: PostEntryInput): BlogPost | undefined {
   const d = entry.data;
@@ -310,9 +326,16 @@ export function mapPost(entry: PostEntryInput): BlogPost | undefined {
   const cover = extractCover(d.featured_image);
   const city = extractCities(terms);
 
+  const publishedAt = isoOrUndefined(d.publishedAt);
+  const updatedAt = isoOrUndefined(d.updatedAt);
+
   return {
     id: legacyId,
     entryId: entry.id,
+    dbId: typeof d.id === "string" ? d.id : "",
+    publishedAt,
+    updatedAt,
+    ...(d.byline?.displayName ? { author: d.byline.displayName } : {}),
     href: postPath(legacyId, category),
     date: parsePostDate(d.legacy_date, legacyId),
     body: typeof d.body_md === "string" ? d.body_md : "",
@@ -419,10 +442,15 @@ async function fetchAllCollection<K extends EmDashCollectionName>(
 /** All published, migrated posts (paginated fetch). */
 export async function getAllPosts(): Promise<BlogPost[]> {
   const entries = await fetchAllCollection("posts");
+  // `getEmDashCollection()` does not fold `_emdash_seo` in: one batched query for the SEO panel (GON-203).
+  const seoById = await loadSeoByContentId("posts");
   const out: BlogPost[] = [];
   for (const e of entries) {
     const p = mapPost(e);
-    if (p) out.push(p);
+    if (!p) continue;
+    const seo = seoById.get(p.dbId);
+    if (seo) p.seo = seo;
+    out.push(p);
   }
   return out;
 }

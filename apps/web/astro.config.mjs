@@ -9,6 +9,7 @@ import { localMedia } from "emdash/media";
 import mermaid from "astro-mermaid";
 import glsl from "vite-plugin-glsl";
 import { rebuildOnPublish } from "./src/plugins/rebuild-on-publish/index.ts";
+import { isNoindexedPage, readNoindexIds } from "./scripts/seo/noindex-list.mjs";
 import { cloudinaryMedia } from "./src/lib/cloudinary-media/index.ts";
 
 // Public origin: env-driven (EMDASH_SITE_URL / SITE_URL), default production domain.
@@ -20,6 +21,9 @@ const siteLive = process.env.PUBLIC_SITE_LIVE === "true" ? "true" : "false";
 
 // Build output dir (default dist). scripts/e2e.mjs sets ASTRO_OUT_DIR=dist-e2e so a fake-token production build never lands in dist/.
 const outDir = process.env.ASTRO_OUT_DIR || "./dist";
+
+// Posts the SEO panel marks noindex (written by scripts/seo/write-noindex.ts before the build); read lazily, at sitemap time.
+let noindexIds;
 
 export default defineConfig({
 	site,
@@ -42,7 +46,8 @@ export default defineConfig({
 				!/\/hero\//.test(page) &&
 				!/\/tag\//.test(page) &&
 				!/\/world\//.test(page) &&
-				!/\/series\//.test(page),
+				!/\/series\//.test(page) &&
+				!isNoindexedPage(page, (noindexIds ??= readNoindexIds())),
 		}),
 		// client script only: renders <pre class="mermaid"> (our remark plugin is in src/lib/markdown.ts)
 		mermaid({ theme: "default", autoTheme: true }),
