@@ -50,6 +50,7 @@ export default defineConfig({
 			database: hyperdrive({ binding: "HYPERDRIVE" }),
 			// Media lives on Cloudinary (D6): no R2 storage; media provider only.
 			plugins: [rebuildOnPublish()],
+			admin: { locales: ["en"] },
 			// Built-in "local" (Library) provider is on by default; disable it so Cloudinary is the only provider.
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
