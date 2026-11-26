@@ -42,7 +42,7 @@ export function hasSeoOverride(seo: ContentSeo | undefined): seo is ContentSeo {
 export function isMissingTableError(error: unknown): boolean {
   const e = error as { code?: unknown; message?: unknown } | null;
   if (e?.code === "42P01") return true;
-  const m = typeof e?.message === "string" ? e.message : "";
+  const m = typeof e?.message === "string" ? e.message.toLowerCase() : "";
   if (m.includes("no such table")) return true;
   return (m.includes("does not exist") || m.includes("doesn't exist")) && (m.includes("relation") || m.includes("table"));
 }

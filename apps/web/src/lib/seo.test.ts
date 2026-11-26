@@ -1,7 +1,7 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, test, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, test, vi } from "vitest";
 import {
   articleModifiedTime,
   clearSeoCache,
@@ -131,7 +131,7 @@ describe("loadSeoByContentId", () => {
   test("a missing _emdash_seo table (Postgres 42P01 / message) is an empty map", async () => {
     mockExecute.mockRejectedValueOnce(Object.assign(new Error("boom"), { code: "42P01" }));
     expect((await loadSeoByContentId("posts")).size).toBe(0);
-    mockExecute.mockRejectedValueOnce(new Error('relation "_emdash_seo" does not exist'));
+    mockExecute.mockRejectedValueOnce(new Error('Relation "_emdash_seo" Does Not Exist'));
     expect((await loadSeoByContentId("posts")).size).toBe(0);
     expect(isMissingTableError(new Error("no such table: _emdash_seo"))).toBe(true);
     expect(isMissingTableError(new Error("connection refused"))).toBe(false);
@@ -162,6 +162,7 @@ describe("loadSeoByContentId", () => {
 
 describe("readNoindexIds", () => {
   const dir = mkdtempSync(join(tmpdir(), "noindex-"));
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
   test("reads the list into a Set", () => {
     const f = join(dir, "ok.json");
     writeFileSync(f, JSON.stringify({ legacyIds: ["2025/02/21/hello", 3] }));
