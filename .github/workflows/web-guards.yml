@@ -69,7 +69,14 @@ jobs:
           fi
           unset BACKUP_DATABASE_URL DATABASE_POOLER_URL
           # SEC-10: fail closed unless the recipient is a well-formed age X25519 public key.
-          [[ "${BACKUP_AGE_RECIPIENT:-}" =~ ^age1[0-9a-z]{58}$ ]] || { echo "::error::secret BACKUP_AGE_RECIPIENT is missing or not an age1... public key"; exit 1; }
+          # Surrounding whitespace (a trailing newline from `gh secret set < file`) is stripped; nothing else is accepted.
+          BACKUP_AGE_RECIPIENT="$(printf '%s' "${BACKUP_AGE_RECIPIENT:-}" | tr -d '[:space:]')"
+          if ! [[ "$BACKUP_AGE_RECIPIENT" =~ ^age1[0-9a-z]{58}$ ]]; then
+            # Diagnose without printing the value: the public key line alone (62 chars, age1...) is expected.
+            case "$BACKUP_AGE_RECIPIENT" in *AGE-SECRET-KEY*) echo "::error::BACKUP_AGE_RECIPIENT contains an age PRIVATE key: rotate it (new age-keygen) and store only the public 'age1...' line" ;; esac
+            echo "::error::secret BACKUP_AGE_RECIPIENT is missing or not an age1... public key (length ${#BACKUP_AGE_RECIPIENT} after trimming, expected 62; set only the line printed by 'age-keygen -y')"
+            exit 1
+          fi
           # SEC-14: credentials reach libpq through PG* environment variables (PGPASSWORD), never argv (visible in the process
           # list). node reads the URL from the environment and writes a 0600 env file that is sourced, then deleted.
           pgenv="$RUNNER_TEMP/pgenv"

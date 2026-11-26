@@ -150,6 +150,27 @@ describe("cloudinary-usage", () => {
 			return true;
 		});
 
+		const forbiddenFetch = vi.fn(
+			async () =>
+				new Response(
+					JSON.stringify({ error: { message: "Key key-secret-value with secret api-secret-value is not allowed" } }),
+					{ status: 403, headers: { "content-type": "application/json" } },
+				),
+		);
+		await expect(
+			fetchCloudinaryUsage({
+				cloudName: "my-cloud",
+				apiKey: "key-secret-value",
+				apiSecret: "api-secret-value",
+				fetchImpl: forbiddenFetch as unknown as typeof fetch,
+			}),
+		).rejects.toSatisfy((err: Error) => {
+			expect(err.message).toContain("HTTP 403: Key <api_key> with secret <api_secret> is not allowed");
+			expect(err.message).not.toContain("key-secret-value");
+			expect(err.message).not.toContain("api-secret-value");
+			return true;
+		});
+
 		const networkFailFetch = vi.fn(async () => {
 			throw new Error("connect ECONNREFUSED");
 		});
