@@ -96,13 +96,40 @@ describe("rendered output", () => {
 		expect(renderAdminRoute(undefined, env).blocks.length).toBeGreaterThan(0);
 	});
 
-	it("never leaks other environment values", () => {
-		const out = JSON.stringify(renderAdminRoute({ page: "/dashboards" }, secretEnv));
-		const out2 = JSON.stringify(renderAdminRoute({ page: "widget:dashboards" }, secretEnv));
-		for (const s of [out, out2]) {
-			expect(s).not.toContain(SECRET);
-			expect(s).not.toMatch(/postgres(ql)?:\/\//);
-			expect(s.replaceAll("GITHUB_DISPATCH_TOKEN", "").replaceAll("Rotate token", "")).not.toMatch(/token|password|secret|api[_-]?key/i);
+	it("never leaks other environment values, including when the expiry blocks render", () => {
+		const CANARY = "canary-7f3a9c-do-not-render";
+		const now = new Date("2027-10-27T12:00:00Z");
+		const states = {
+			"unset-production": { SITE_ENV: "production" },
+			healthy: { SITE_ENV: "production", GITHUB_DISPATCH_TOKEN_EXPIRES_AT: "2028-06-01" },
+			warning: { SITE_ENV: "production", GITHUB_DISPATCH_TOKEN_EXPIRES_AT: "2027-11-10" },
+			expired: { SITE_ENV: "production", GITHUB_DISPATCH_TOKEN_EXPIRES_AT: "2027-10-01" },
+		};
+		// Exact strings the expiry blocks may legitimately contain; removed longest-first before the generic check.
+		const allowed = [TOKEN_ROTATE_URL, "GITHUB_DISPATCH_TOKEN_EXPIRES_AT", "GITHUB_DISPATCH_TOKEN", "Rotate token"];
+		const scrub = (s: string) => allowed.reduce((acc, a) => acc.replaceAll(a, ""), s);
+		const generic = /token|password|secret|api[_-]?key/i;
+
+		for (const [name, state] of Object.entries(states)) {
+			const e = { ...state, GITHUB_DISPATCH_TOKEN: CANARY, DATABASE_URL: `postgres://u:${CANARY}@h/db` };
+			for (const page of ["/dashboards", "widget:dashboards"]) {
+				const out = JSON.stringify(renderAdminRoute({ page }, e, now));
+				const ctx = `${name} ${page}`;
+				expect(out, ctx).not.toContain(CANARY);
+				expect(out, ctx).not.toMatch(/postgres(ql)?:\/\//);
+				expect(scrub(out), ctx).not.toMatch(generic);
+				// The expiry blocks really rendered (so this test is not vacuous), except the page-only states on the widget.
+				if (name === "warning" || name === "expired") expect(out, ctx).toContain("GITHUB_DISPATCH_TOKEN");
+				if (page === "/dashboards") expect(out, ctx).toMatch(/GITHUB_DISPATCH_TOKEN/);
+			}
+		}
+	});
+
+	it("the generic leak regex still fires on anything outside the allowlist", () => {
+		const allowed = [TOKEN_ROTATE_URL, "GITHUB_DISPATCH_TOKEN_EXPIRES_AT", "GITHUB_DISPATCH_TOKEN", "Rotate token"];
+		const scrub = (s: string) => allowed.reduce((acc, a) => acc.replaceAll(a, ""), s);
+		for (const leak of ["your token is abc", "SECRET", "password=1", "api_key", "access-tokens"]) {
+			expect(scrub(`x ${leak} y`)).toMatch(/token|password|secret|api[_-]?key/i);
 		}
 	});
 });

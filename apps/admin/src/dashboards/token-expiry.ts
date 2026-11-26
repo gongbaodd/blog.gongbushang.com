@@ -26,7 +26,7 @@ function dayNumber(value: string): number | undefined {
 	return ms / DAY_MS;
 }
 
-/** Whole UTC calendar days from `now` to the expiry date; 0 means it expires today and counts as expired. `now` is injectable. */
+/** Whole UTC calendar days from `now` to the expiry date. The count rolls over at 00:00 UTC, not local time; 0 means it expires today and counts as expired. `now` is injectable. */
 export function getTokenExpiryState(expiresAt: string | undefined, now: Date = new Date()): TokenExpiryState {
 	const value = expiresAt?.trim();
 	if (!value) return { status: "unset" };
@@ -48,6 +48,6 @@ export function describeTokenExpiry(state: TokenExpiryState): string {
 		case "expired":
 			return `🚨 ${TOKEN_NAME} expired on ${state.expiresAt}. Publish-triggered rebuilds will fail until ${TOKEN_NAME} (and ${TOKEN_NAME}_EXPIRES_AT) is rotated.`;
 		case "unset":
-			return `${TOKEN_NAME}_EXPIRES_AT is missing or not a valid YYYY-MM-DD date, so the token expiry cannot be tracked.`;
+			return `${TOKEN_NAME}_EXPIRES_AT is missing or not a valid YYYY-MM-DD date, so its expiry cannot be tracked.`;
 	}
 }
