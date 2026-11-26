@@ -29,6 +29,10 @@ When working on the EmDash apps (`apps/web`, `apps/admin`, `supabase/`, the deri
 
 - **EmDash apps**: [.agents/skills/emdash/SKILL.md](.agents/skills/emdash/SKILL.md) — `apps/web` on Cloudflare with Hyperdrive, `derive` writing the `derived` schema, `apps/admin` (Docker, Cloudflare Access), `local`/`production` environments, SEC-01 lockdown and role order, runbook index.
 
+When reading or writing Linear issues (team `GON`):
+
+- **Linear**: [.agents/skills/linear/SKILL.md](.agents/skills/linear/SKILL.md) — every issue carries exactly one `Agent` label (`claude-opus-5.5`, `claude-sonnet-5.5`, `agy-neon-4`, `agy-hydrogen-4`, `human`) naming who handles it; work only your own label, hand off by relabelling with a comment.
+
 ## Project Overview
 
 The repo has two sites. The EmDash apps (`apps/web`, `apps/admin`) are the migration target. The `src/` Astro site is **legacy until CUT-2**; the notes below that refer to `src/` describe it.

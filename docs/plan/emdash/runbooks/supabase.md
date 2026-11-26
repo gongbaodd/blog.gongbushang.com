@@ -3,8 +3,7 @@
 | Env | Project | Ref | Region | Pooler host (session, :5432) |
 |---|---|---|---|---|
 | local | `supabase start` | n/a | n/a | `127.0.0.1:54322` |
-| production | growgen-testing, promoted by INF-10 (rename the display name to `growgen-production` in the Dashboard if wanted; the ref does not change) | `ckpozotzgubrjbjstvjg` | ap-southeast-1 | `aws-0-ap-southeast-1.pooler.supabase.com` |
-| ~~old production~~ | growgen-production (`epewqznhtgjirbfeqfrj`, `aws-1-ap-southeast-1`), unused, **to be deleted by the owner (GON-199)** to free a Free slot | | | |
+| production | `growgen-production` (promoted from `growgen-testing` by INF-10; old unused `epewqznhtgjirbfeqfrj` deleted in INF-10b / GON-208) | `ckpozotzgubrjbjstvjg` | ap-southeast-1 | `aws-0-ap-southeast-1.pooler.supabase.com` |
 
 Org `giwrismyariookakffxk`. The paused project `map` (eu-west-1) must stay paused: the Free plan allows 2 active projects.
 

@@ -11,6 +11,33 @@ metadata:
 
 This skill provides a structured workflow for managing issues, projects & team workflows in Linear. It ensures consistent integration with the Linear MCP server, which offers natural-language project management for issues, projects, documentation, and team collaboration.
 
+## Project rules (this repo)
+
+These rules apply to every agent that reads or writes Linear for this repo. Team key is `GON`; the EmDash migration lives in project `P-GON-6`.
+
+### Agent labels
+
+Every open issue carries **exactly one** label from the workspace label group `Agent`. Linear makes labels in a group mutually exclusive, so setting a new one replaces the old one.
+
+| Label | Who | Give it |
+| --- | --- | --- |
+| `claude-opus-5.5` | Claude Code, Opus 5.5 | Design, security (SEC-*), Supabase/RLS, infra, cutover, cross-cutting changes, anything unclear. **Default.** |
+| `claude-sonnet-5.5` | Claude Code, Sonnet 5.5 | Well-specified, mechanical or bulk work: content import, renames, test backfill, doc updates. |
+| `agy-neon-4` | Antigravity (`agy`), `gemini-4-neon-high`/`-xhigh` | Plan reviews, code reviews and second opinions on another agent's work. |
+| `agy-hydrogen-4` | Antigravity (`agy`), `gemini-4-hydrogen-high`/`-xhigh` | Research and analysis: free-tier limits, library comparisons, root-cause digging. |
+| `human` | The owner | Dashboard clicks, secrets and tokens, billing, DNS, OAuth logins, merges to protected branches, anything an agent must not do. |
+
+Rules:
+
+1. **Label on creation.** Pass the agent label in `labels` when calling `save_issue`. If unsure, use `claude-opus-5.5`.
+2. **Only work your own label.** When asked to "pick up the next issue", filter `list_issues` by your label. Don't start an issue labelled for another agent unless the user tells you to.
+3. **Hand off by relabelling.** To pass an issue on, switch the label in one `save_issue` call (`removeLabels` the old agent label, `addLabels` the new one) and add a comment saying why and what is left. Never leave an issue without an `Agent` label.
+4. **Split mixed work.** If an issue needs both an agent and the owner (for example code plus a dashboard setting), make a `human` sub-issue for the owner's part and mark it as blocking.
+5. **Reviews are their own issue.** A review of GON-123 is a new sub-issue labelled with the reviewer (usually `agy-neon-4`). The reviewer posts findings as a comment on it, not by editing the parent.
+6. **Keep type labels too.** `Agent` labels sit alongside `Bug` / `Feature` / `Improvement`. Use `addLabels`/`removeLabels`, never `labels`, when updating, so you don't drop the other labels.
+7. **Reference the issue.** Branch names, commit subjects and PR titles include the issue ID, for example `fix(web): ... (GON-204)`.
+8. **New agent or model.** Create the child label under `Agent` first (lowercase `<tool>-<model>-<version>`, such as `codex-gpt-6`), then add a row to the table above in the same change.
+
 ## Prerequisites
 - Linear MCP server must be connected and accessible via OAuth
 - Confirm access to the relevant Linear workspace, teams, and projects
