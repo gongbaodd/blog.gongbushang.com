@@ -17,7 +17,7 @@ Branch `emdash/SEC-02` from `feat/emdash` (06113427). INF-9 had already done mos
 - `docs/plan/emdash/runbooks/admin-docker.md`: states that `PUBLIC_*` and `EMDASH_SITE_URL` are baked by design, so a secret must never sit behind those names.
 
 ## Exemption
-- `PORT` is excluded from the canary set. A dependency references `import.meta.env.PORT`, so Astro inlines its build-time value. It is a listen port, not a credential. This is the only hit the canary build found, and it appeared once the `?.` fix was in place.
+- `PORT` is excluded from the canary set. Astro's own runtime chunk uses `import.meta.env?.PROD`, and Astro inlines every env var whose name appears as a substring in such a file (`PORT` is inside `IMPORT`/`EXPORT`); corrected by the Opus re-review. It is a listen port, not a credential. This is the only hit the canary build found, and it appeared once the `?.` fix was in place.
 
 ## Checks
 - `pnpm --filter admin build`: exit 0.

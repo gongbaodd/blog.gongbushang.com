@@ -6,8 +6,9 @@
 //
 // EMDASH_SITE_URL is excluded on purpose: it is baked by design (it is the public origin; see runbooks/admin-docker.md).
 // Anything named PUBLIC_* is baked by design too, so a secret must never use that prefix.
-// PORT is excluded because a dependency references `import.meta.env.PORT`, so Astro inlines its build-time value. It is a
-// listen port, not a credential. Every other name must stay out of the output.
+// PORT is excluded: Astro's own runtime uses `import.meta.env?.PROD`, and its inliner bakes every env var whose name is a
+// substring of that file ("PORT" is inside "IMPORT"/"EXPORT"). It is a listen port, not a credential; the image sets PORT at runtime.
+// Lesson: a short secret name (KEY, TOKEN, HOST...) could be baked the same way; give secrets distinctive names and list them in .env.example.
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
