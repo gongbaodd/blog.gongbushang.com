@@ -27,6 +27,8 @@ Copy `apps/admin/.env.example` to `apps/admin/.env` (or separate `.env.local`, `
 | `GITHUB_DISPATCH_TOKEN` | For publish | Fine-grained GitHub PAT (`Contents: write` on the repo) for the `rebuild-on-publish` plugin (`emdash-publish` dispatch). |
 | `GITHUB_DISPATCH_REPO` | For publish | Defaults to `gongbaodd/blog.gongbushang.com`. |
 
+**Baked by design.** `PUBLIC_*` variables and `EMDASH_SITE_URL` are inlined into the build output by Astro, so they are public. Never put a secret behind a `PUBLIC_` prefix or in `EMDASH_SITE_URL`. Every other variable must come from the runtime environment only. `pnpm --filter admin check:secrets` (SEC-02) enforces this with a canary build, and fails if a runtime secret is inlined. It also rejects any bare or optional-chained `import.meta.env` in the admin sources.
+
 ---
 
 ## 2. Running locally with Docker Compose

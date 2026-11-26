@@ -36,6 +36,16 @@ e2e-results
 **/*.dump
 *.dump.age
 **/*.dump.age
+**/*.pem
+**/*.crt
+**/*.key
+**/*.p12
+**/.npmrc
+**/.envrc
+**/.emdash
+**/uploads
+**/*.sql
+**/*.sql.gz
 
 # Unrelated directories not needed by apps/admin/Dockerfile
 src/content
