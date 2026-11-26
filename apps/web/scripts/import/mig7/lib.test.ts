@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain ESM helper
 import {
+  bumpPreconditions,
   checkGalleryImages,
+  describeTarget,
+  validateOptions,
   checkPostImages,
   galleryLegacyId,
   gallerySlug,
@@ -106,6 +109,95 @@ describe("checkPostImages (MIG-2 rewrite-map aware)", () => {
     );
     expect(res.unhosted.map((u: any) => u.url).sort()).toEqual(["./local.png", "https://example.com/a.jpg"]);
     expect(res.unhosted.every((u: any) => u.reason === "not-on-cloudinary")).toBe(true);
+  });
+});
+
+describe("describeTarget", () => {
+  it("treats localhost, 127.0.0.1 and [::1] as loopback", () => {
+    expect(describeTarget("http://127.0.0.1:4322")).toEqual({ ok: true, host: "127.0.0.1:4322", loopback: true });
+    expect(describeTarget("http://localhost:4333/").loopback).toBe(true);
+    expect(describeTarget("http://[::1]:4322").loopback).toBe(true);
+  });
+
+  it("treats every other host as remote, including look-alikes", () => {
+    expect(describeTarget("https://admin.growgen.xyz")).toEqual({ ok: true, host: "admin.growgen.xyz", loopback: false });
+    expect(describeTarget("http://127.0.0.1.nip.io:4322").loopback).toBe(false);
+    expect(describeTarget("http://localhost.evil.com").loopback).toBe(false);
+    expect(describeTarget("http://10.0.0.5:4322").loopback).toBe(false);
+  });
+
+  it("rejects userinfo, non-http schemes and garbage", () => {
+    expect(describeTarget("http://localhost:80@evil.com").ok).toBe(false);
+    expect(describeTarget("ftp://127.0.0.1").ok).toBe(false);
+    expect(describeTarget("not a url").ok).toBe(false);
+    expect(describeTarget(undefined).ok).toBe(false);
+  });
+});
+
+describe("validateOptions", () => {
+  const local = "http://127.0.0.1:4322";
+  const remote = "https://admin.growgen.xyz";
+
+  it("dry-run needs neither --rewrite nor --url", () => {
+    expect(validateOptions({ write: false })).toEqual([]);
+    expect(validateOptions({ write: false, rewrite: "map" })).toEqual([]);
+  });
+
+  it("rejects an unknown --rewrite value even in dry-run", () => {
+    expect(validateOptions({ write: false, rewrite: "all" })).toEqual(["--rewrite must be map or none (got all)"]);
+  });
+
+  it("--write requires an explicit --rewrite", () => {
+    const errs = validateOptions({ write: true, url: local });
+    expect(errs).toHaveLength(1);
+    expect(errs[0]).toMatch(/explicit --rewrite/);
+    expect(validateOptions({ write: true, url: local, rewrite: "none" })).toEqual([]);
+    expect(validateOptions({ write: true, url: local, rewrite: "map" })).toEqual([]);
+  });
+
+  it("--write requires a valid --url", () => {
+    expect(validateOptions({ write: true, rewrite: "none" })[0]).toMatch(/needs --url/);
+    expect(validateOptions({ write: true, rewrite: "none", url: "http://u:p@127.0.0.1" })[0]).toMatch(/userinfo/);
+  });
+
+  it("--write to a non-loopback admin refuses without --yes-production", () => {
+    expect(validateOptions({ write: true, rewrite: "map", url: remote })).toEqual([
+      "refusing to write to non-loopback admin admin.growgen.xyz without --yes-production",
+    ]);
+    expect(validateOptions({ write: true, rewrite: "map", url: remote, yesProduction: true })).toEqual([]);
+  });
+
+  it("--bump needs --write", () => {
+    expect(validateOptions({ write: false, bump: true })[0]).toMatch(/--bump needs --write/);
+  });
+});
+
+describe("bumpPreconditions", () => {
+  const base = "4893092b7beb40e7edf6b68205f8e649d18226a2";
+  const target = "697380543aa357574a7c430ed952adf4a1ed0bda";
+  const other = "b7d0c046ee9732791a4786ec24104e1e2367fe54";
+
+  it("passes when gitlink and checkout are at base and clean", () => {
+    expect(bumpPreconditions({ headGitlink: base, subHead: base, base, target })).toEqual({ errors: [], noop: false });
+  });
+
+  it("is a no-op when both are already at target", () => {
+    expect(bumpPreconditions({ headGitlink: target, subHead: target, base, target })).toEqual({ errors: [], noop: true });
+  });
+
+  it("refuses when the gitlink is not at base", () => {
+    const r = bumpPreconditions({ headGitlink: other, subHead: base, base, target });
+    expect(r.noop).toBe(false);
+    expect(r.errors).toEqual([expect.stringMatching(/^HEAD:src\/content is b7d0c046, not --base 4893092b/)]);
+  });
+
+  it("refuses when the checkout is elsewhere or dirty", () => {
+    const r = bumpPreconditions({ headGitlink: base, subHead: target, subDirty: true, base, target });
+    expect(r.errors).toEqual([
+      "src/content is checked out at 69738054, not --base 4893092b",
+      "src/content has uncommitted changes",
+    ]);
+    expect(bumpPreconditions({ headGitlink: target, subHead: target, subDirty: true, base, target }).noop).toBe(false);
   });
 });
 

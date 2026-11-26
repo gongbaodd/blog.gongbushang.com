@@ -173,4 +173,75 @@ export function checkGalleryImages(items) {
   return unhosted;
 }
 
+// ---------------------------------------------------------------------------------------------
+// CLI guards (MIG-7 review fixes): explicit --rewrite, production target guard, --bump preconditions.
+// ---------------------------------------------------------------------------------------------
+
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+/**
+ * Parse the EmDash admin URL the catch-up writes to.
+ * Returns `{ ok, host, loopback, error? }`. Userinfo and non-http(s) schemes are rejected.
+ * Loopback means `localhost`, `127.0.0.1` or `[::1]` only; any other host is treated as remote (production).
+ */
+export function describeTarget(url) {
+  if (!url) return { ok: false, host: "", loopback: false, error: "no admin URL" };
+  let u;
+  try {
+    u = new URL(url);
+  } catch {
+    return { ok: false, host: "", loopback: false, error: `invalid admin URL ${JSON.stringify(url)}` };
+  }
+  if (!/^https?:$/.test(u.protocol)) {
+    return { ok: false, host: u.host, loopback: false, error: `admin URL must be http(s) (got ${u.protocol})` };
+  }
+  if (u.username || u.password) {
+    return { ok: false, host: u.host, loopback: false, error: "admin URL must not contain userinfo (user:password@host)" };
+  }
+  return { ok: true, host: u.host, loopback: LOOPBACK_HOSTS.has(u.hostname.toLowerCase()) };
+}
+
+/**
+ * Validate the CLI options. Returns a list of error strings (empty = ok).
+ *   - `--rewrite` must be `map` or `none`; with `--write` it is REQUIRED (no silent default).
+ *   - `--write` needs a valid admin URL, and a non-loopback one needs `--yes-production`.
+ *   - `--bump` needs `--write`.
+ */
+export function validateOptions({ write, rewrite, url, yesProduction = false, bump = false }) {
+  const errors = [];
+  if (rewrite !== undefined && !["map", "none"].includes(rewrite)) {
+    errors.push(`--rewrite must be map or none (got ${rewrite})`);
+  }
+  if (bump && !write) errors.push("--bump needs --write (it only runs after a successful import)");
+  if (!write) return errors;
+  if (rewrite === undefined) {
+    errors.push(
+      "--write needs an explicit --rewrite <map|none> (map: MIG-2 hosted body images become Cloudinary URLs; none: body keeps the legacy URLs). See MIG-7.md: local uses none, production map after the read-only count check",
+    );
+  }
+  const t = describeTarget(url);
+  if (!t.ok) errors.push(`--write needs --url <emdash admin url> (or EMDASH_URL): ${t.error}`);
+  else if (!t.loopback && !yesProduction) {
+    errors.push(`refusing to write to non-loopback admin ${t.host} without --yes-production`);
+  }
+  return errors;
+}
+
+/**
+ * `--bump` preconditions: the gitlink in HEAD and the submodule checkout must both sit at `base`
+ * (or both already at `target`, which makes the bump a no-op), and the submodule worktree must be clean.
+ * Returns `{ errors, noop }`.
+ */
+export function bumpPreconditions({ headGitlink, subHead, subDirty = false, base, target }) {
+  const errors = [];
+  const short = (s) => String(s ?? "").slice(0, 8);
+  if (headGitlink === target && subHead === target && !subDirty) return { errors, noop: true };
+  if (headGitlink !== base) {
+    errors.push(`HEAD:src/content is ${short(headGitlink)}, not --base ${short(base)}; the gitlink would not move base -> target`);
+  }
+  if (subHead !== base) errors.push(`src/content is checked out at ${short(subHead)}, not --base ${short(base)}`);
+  if (subDirty) errors.push("src/content has uncommitted changes");
+  return { errors, noop: false };
+}
+
 export { imageRefs, isCloudinary };
