@@ -79,15 +79,23 @@ If you want to edit from any device without running Docker locally, deploy `apps
 - **Build context**: monorepo root (`.`)
 - **Command**: `node scripts/start.mjs` (runs as non-root `node` user; **never** run `astro dev` in a container)
 - **Port**: `4322` (`HOST=0.0.0.0`, `PORT=4322`)
-- **Healthcheck**: `GET /healthz` (expects HTTP `200` JSON; does not query Postgres so it won't prevent Supabase idle pause or fail before migrations)
+- **Healthcheck**: `GET /healthz` (HTTP `200`, body exactly `{"ok":true}`; it names no service or environment because it is unauthenticated (SEC-08), and it does not query Postgres, so it won't prevent Supabase idle pause or fail before migrations)
 - **Database connection**: Supabase direct hosts (`db.<ref>.supabase.co`) are IPv6-only; container platforms without IPv6 egress **must** use the Supabase **IPv4 session pooler** URL (port `5432`) as `DATABASE_URL`.
+
+### Mandatory: Cloudflare Tunnel, no public inbound port (SEC-08)
+
+An online admin **must** be reached only through **Cloudflare Tunnel (`cloudflared`)**: run `cloudflared` next to the container (same Docker network), publish **no** host port (remove the `ports:` mapping, or bind it to `127.0.0.1`), and pick a host that gives the container no public IP or default `*.provider` URL. If the platform always exposes a public URL, do not host the admin there (or use mTLS Authenticated Origin Pulls plus a firewall limited to Cloudflare's IP ranges, which is more work to get right). Cloudflare Access is a policy on the hostname; it does not protect an origin that can be reached directly.
+
+Defence in depth on the origin: set `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`, so every request except `/healthz` and `/robots.txt` must carry a valid `Cf-Access-Jwt-Assertion` (section 6, `src/outer.ts`). A production target turns this on automatically when the server listens beyond loopback.
+
+The admin is never indexable, in any environment (SEC-06): every response carries `X-Robots-Tag: noindex, nofollow` and `/robots.txt` is `Disallow: /`, whatever `SITE_ENV` says.
 
 ### Protect with Cloudflare Access
 
 1. Put the admin subdomain (e.g. `admin.growgen.xyz`) behind a **Cloudflare Access** self-hosted application policy allowing only the owner's email/GitHub identity before traffic reaches the container.
 2. Keep `SETUP_TOKEN` **unset/empty** in normal operation so `/_emdash/admin/setup` and `/_emdash/api/setup` fail closed with `404`.
 3. Only set `SETUP_TOKEN` temporarily when initializing a brand-new database:
-   - Visit `https://admin.growgen.xyz/_emdash/admin/setup?setup_token=<SETUP_TOKEN>` (which sets an `httpOnly`, `Secure`, `SameSite=Strict` cookie and redirects to the clean URL).
+   - Visit `https://admin.growgen.xyz/_emdash/admin/setup?setup_token=<SETUP_TOKEN>`. It sets an `httpOnly`, `SameSite=Strict` cookie holding an HMAC-SHA256 value derived from the token (never the token itself), `Secure` on every origin except plain-HTTP `localhost`/`127.0.0.1`, and redirects to the clean URL with `Cache-Control: no-store` and `Referrer-Policy: no-referrer` (SEC-15).
    - Register the admin passkey, then remove `SETUP_TOKEN` from the container environment and restart.
 
 ---
@@ -115,7 +123,7 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 
 ## 6. Safety rails and access control (INF-9 review fixes)
 
-**Recommended exposure: Cloudflare Tunnel only.** Run `cloudflared` next to the container, publish no host port (drop the `ports:` mapping or keep it on `127.0.0.1`), and put the hostname behind a Cloudflare Access application. The origin then verifies the Access JWT itself (below), so a leaked container URL or a misrouted port is not an open admin.
+**Required exposure: Cloudflare Tunnel only (SEC-08).** Run `cloudflared` next to the container, publish no host port (drop the `ports:` mapping or keep it on `127.0.0.1`), and put the hostname behind a Cloudflare Access application. The origin then verifies the Access JWT itself (below), so a leaked container URL or a misrouted port is not an open admin.
 
 | Variable | Effect |
 |---|---|
@@ -125,7 +133,7 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 | `SUPABASE_PRODUCTION_REF` | **Required for any remote database** (fail closed, as in INF-5), and the URL's ref must equal it: there is exactly one remote project (production, `ckpozotzgubrjbjstvjg`), so any other remote database is refused whatever `SITE_ENV` says. `SITE_ENV=testing` is refused outright (retired by INF-10). Production keeps its confirmation (`ADMIN_CONFIRM_PRODUCTION=yes`) and Cloudflare Access requirements. |
 | `SITE_ENV=local` with a remote DB | Refused unless `ADMIN_ALLOW_REMOTE_DB_WITH_LOCAL=yes`. `SITE_ENV=production` with a loopback DB is refused too. Only `?sslmode=` is accepted as a URL query parameter (libpq would let `user=`/`host=` override what was checked). `sslmode` itself is **stripped** before connecting, because pg would let it override our TLS settings; a remote URL with `disable`, `no-verify`, `allow` or `prefer` is refused (`require`, `verify-ca`, `verify-full` are accepted and mean "use our computed TLS"). |
 | `DATABASE_URL` | Required at runtime, **not** baked into the image (`astro build` only sees a placeholder; missing value fails closed). Pool size 3. |
-| `DATABASE_CA_CERT` | Optional. **Use a file path** (mounted into the container): a PEM passed through an env var often arrives with literal `\n` sequences, which is rejected. When set, TLS to the pooler is verified (verify-full); when unset the certificate is not verified. A blank (whitespace-only) value or an unreadable file is a startup error. Production should set it. |
+| `DATABASE_CA_CERT` | Optional. **Use a file path** (mounted into the container): a PEM passed through an env var often arrives with literal `\n` sequences, which is rejected. When set, TLS to the pooler is verified (verify-full); when unset the certificate is not verified. A blank (whitespace-only) value or an unreadable file is a startup error. Production should set it to the verified Supabase root CA committed at `apps/web/scripts/certs/prod-ca-2021.crt` (mount it read-only, e.g. `/run/certs/prod-ca-2021.crt`; provenance in supabase.md "Connect", SEC-09). |
 | `ADMIN_RESTART` | Compose restart policy, default `no`. Use `unless-stopped` only for local. |
 | `GITHUB_API_URL` | Honoured only when `SITE_ENV=local`; otherwise the real `api.github.com` is used. |
 

@@ -19,7 +19,7 @@ URL = `postgresql://postgres.<ref>:<URL-encoded password>@<host>:5432/postgres`.
 Local secrets in repo-root `.env` (gitignored): `SUPABASE_PRODUCTION_DB_PASSWORD`, `SUPABASE_PRODUCTION_REF` (`ckpozotzgubrjbjstvjg`), `SUPABASE_PRODUCTION_POOLER_URL`; the old `SUPABASE_TESTING_*` entries are removed (GON-199). GitHub environment secret `DATABASE_POOLER_URL` lives in the `production` environment only.
 
 ## Connect
-Use node `pg` with `ssl: { rejectUnauthorized: false }` (no psql installed) and run `select version()`. PostgreSQL 17.12.
+Verified TLS only (SEC-09). Repo scripts use `pgClientConfig(url)` from `apps/web/scripts/admin/pg-tls.mjs`: loopback hosts get no TLS, every other host is verified (`rejectUnauthorized: true`) against `apps/web/scripts/certs/prod-ca-2021.crt` ("Supabase Root 2021 CA", expires 2031-04-26, SHA-256 `80:70:25:AD:...:CA:FA`), or against `DATABASE_CA_CERT` (PEM text or a file path, the same variable and rules as `apps/admin`). `ssl*` URL parameters are stripped because node-postgres would let them replace the CA. The file is byte-identical to Supabase's published `https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/prod-ca-2021.crt` (Dashboard -> Database -> SSL Configuration -> Download certificate), and the production pooler's chain (`*.pooler.supabase.com` <- Supabase Intermediate 2021 CA <- this root) verifies against it with hostname checking (checked 2026-11-26, GON-198). For psql/libpq use `sslmode=verify-full sslrootcert=apps/web/scripts/certs/prod-ca-2021.crt`. Never use `rejectUnauthorized: false`. Run `select version()`: PostgreSQL 17.12.
 
 ## Migrate
 ```
@@ -57,9 +57,9 @@ set -a; . ./.env; set +a; cd apps/web
 node --input-type=module -e '
   import { readFileSync } from "node:fs";
   import pg from "pg";
+  import { pgClientConfig } from "./scripts/admin/pg-tls.mjs";
   const url = process.env.SUPABASE_PRODUCTION_POOLER_URL;
-  const local = /(localhost|127\.0\.0\.1)/.test(url);
-  const client = new pg.Client({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false } });
+  const client = new pg.Client(pgClientConfig(url));
   await client.connect();
   try {
     await client.query(readFileSync("../../supabase/migrations/20261125020000_lockdown_public_rls.sql", "utf8"));

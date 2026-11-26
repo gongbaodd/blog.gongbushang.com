@@ -2,11 +2,14 @@
 
 The deployed Worker serves **static pages only**. The EmDash admin cost 5–15 ms CPU per request on Workers Free (limit 10 ms, `term` lists hit 1102), so the owner runs the admin **on their own Mac** against the local or production database (INF-10: there is no testing environment). A deployed Worker answers `/_emdash/*` and `/.well-known/oauth*` with a bare 404.
 
+> **SEC-07: edit production with the Docker admin, not this launcher.** `pnpm admin:production` runs `astro dev`, and in dev mode EmDash serves `/_emdash/api/auth/dev-bypass` (an admin session with no passkey) and the `SETUP_TOKEN` gate is off, so any local process or a DNS-rebinding web page that reaches the port gets admin on the LIVE database. Use `apps/admin` ([`admin-docker.md`](./admin-docker.md)): a production Node build, no dev-bypass, setup gate and Cloudflare Access on. The launcher now refuses production unless you pass both `--yes-production` and `--unsafe-dev-server` (emergency only; it prints a warning, and `apps/web`'s middleware 404s dev-bypass whenever `SITE_ENV=production`). `pnpm admin:local` is unchanged.
+
 ## Edit and publish
 ```
 pnpm admin:local                                # local Supabase
-pnpm admin:production -- --yes-production       # edits the LIVE production database
-# open http://127.0.0.1:4322/_emdash/admin  (the script prints the URL once the probe passes)
+# production: Docker admin (admin-docker.md). Emergency only:
+#   pnpm admin:production -- --yes-production --unsafe-dev-server
+# open http://localhost:4322/_emdash/admin  (localhost, not 127.0.0.1: passkeys are bound to the hostname; the script prints it)
 pnpm admin:stop                                 # when done
 ```
 1. Edit in the admin; **Publish** fires the `rebuild-on-publish` plugin, which POSTs a GitHub `repository_dispatch` (`emdash-publish`).
@@ -38,7 +41,7 @@ The plugin reads them from the Worker `env` (dev: the generated `.dev.vars.admin
 Scheduled posts are published by the cron on the **deployed** Worker, which has no dispatch token, so they appear after the next nightly rebuild unless you set `GITHUB_DISPATCH_TOKEN` as a Worker secret (`wrangler secret put GITHUB_DISPATCH_TOKEN -c wrangler.jsonc`, run inside `apps/web`).
 
 ## Safety
-- Production is destructive: the script refuses without `--yes-production`. Take a `pg_dump` first for big edits (`web-guards` already keeps a daily encrypted dump for 14 days).
+- Production is destructive and deprecated here (SEC-07): the script refuses without `--yes-production --unsafe-dev-server`. Take a `pg_dump` first for big edits (`web-guards` already keeps a daily encrypted dump for 14 days).
 - First start against a fresh or old DB applies EmDash migrations automatically. Normal flow: migrate through CI (`web-deploy` with `apply_migrations`) before editing in production.
 - Cloudinary uploads from the admin need `CLOUDINARY_*` (copied from `.dev.vars` or `.env`).
 - The generated file stays until `admin:stop` so a wrangler restart never falls back to `.dev.vars` (which may point at the local DB).

@@ -67,6 +67,31 @@ chmod 600 ~/growgen-backup.agekey
 - Always includes `--schema=public` (all EmDash CMS tables, posts, terms, media, settings).
 - Checks `information_schema.schemata` via `psql` first and includes `--schema=derived` when `derived` exists on production (cached embeddings, UMAP coordinates, cover colors, geocodes, post hints from `PORT-8`). Before `derived` is migrated onto production, it logs a notice and backs up `public` cleanly without failing.
 - Uses `--format=custom --no-owner --no-privileges` and `set -euo pipefail`, then fails if the encrypted artifact is `<= 1024` bytes.
+- Fails closed unless `BACKUP_AGE_RECIPIENT` matches `^age1[0-9a-z]{58}$` (SEC-10).
+- Connects as the read-only `growgen_backup` role through `BACKUP_DATABASE_URL` when that secret exists; otherwise it falls back to the owner `DATABASE_POOLER_URL` and logs a `::warning::` (SEC-11, see below). Either way the URL is split into `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` (with `PGSSLMODE=require`) through a 0600 temp file, so the password never appears in a process's argv (SEC-14).
+- Installs `pg_dump` 17 from PGDG only after the downloaded signing key matches both the pinned SHA-256 (`PGDG_KEY_SHA256`) and the OpenPGP fingerprint `B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8` (SEC-10). If PGDG re-publishes the key file (e.g. an expiry extension), the hash check fails: confirm the fingerprint is unchanged (`gpg --show-keys --with-colons ACCC4CF8.asc`), then update `PGDG_KEY_SHA256` in `web-guards.yml`.
+
+### Excluded table data (SEC-10)
+
+The repo is public, so any GitHub account can download the encrypted artifact for 14 days ("harvest now, decrypt later" if the age key ever leaks). The dump keeps every table's **schema** but skips the **data** of volatile token/log tables:
+
+| Table | Why dropping it on restore is fine |
+|---|---|
+| `auth_tokens`, `auth_challenges` | sessions, magic links, WebAuthn challenges: users sign in again |
+| `_emdash_authorization_codes`, `_emdash_device_codes`, `_emdash_oauth_tokens` | short-lived OAuth codes and access/refresh tokens: clients re-authorize |
+| `_emdash_rate_limits`, `_emdash_404_log` | runtime counters and logs |
+
+Still included: `users`, `credentials` (passkey public keys, needed to sign in after a restore), `_emdash_api_tokens`, `_plugin_storage`, `audit_logs` and all content. Keep this list in sync with the `excludes` loop in `web-guards.yml`.
+
+### Least-privilege backup role (SEC-11, owner-only)
+
+`backup-production` only needs to read. Once, by the owner (never by agents or CI):
+
+1. Create the role (idempotent, no password inside): `psql "$SUPABASE_PRODUCTION_POOLER_URL" -v ON_ERROR_STOP=1 -f supabase/roles/growgen_backup.sql`. The last row must read `t | t | f | f | t | f` (login, bypassrls, not superuser, no CREATE on the database, TEMP from the default PUBLIC grant, no CREATE on `public`). The role is `LOGIN NOINHERIT BYPASSRLS`, `default_transaction_read_only = on`, with `CONNECT` plus `USAGE`/`SELECT` on `public` and `derived` and default privileges for future `postgres`-owned tables. BYPASSRLS is required because SEC-01 enables RLS on every `public.*` table and `pg_dump` refuses to dump through RLS. Tested on local Supabase (GON-198): applies twice cleanly as the non-superuser `postgres`, dumps all 83 tables' data through RLS, and both `DELETE` (read-only transaction) and, after `SET default_transaction_read_only = off`, writes and DDL (no privilege) are refused.
+2. Set its password client-side (hashed by psql, never in argv or logs): `psql "$SUPABASE_PRODUCTION_POOLER_URL" -c '\password growgen_backup'`, with a fresh random value (`openssl rand -hex 32`).
+3. Store the URL as the `production` environment secret `BACKUP_DATABASE_URL`: `postgresql://growgen_backup.<project-ref>:<password>@<pooler-host>:5432/postgres` (Supavisor user format `role.ref`, session pooler port 5432). `gh secret set BACKUP_DATABASE_URL --env production`, then paste at the prompt.
+4. `gh workflow run web-guards.yml`, and check that the log no longer shows the "dumping as the owner role" warning and the artifact has a normal size. Then run a restore drill (section 5).
+5. If the job ever logs `permission denied for table ...` (a new table not owned by `postgres`), re-run step 1.
 
 ## 3. Downloading, Decrypting, and Restoring a Backup
 
@@ -159,3 +184,31 @@ node apps/web/scripts/guards/worker-budget.mjs \
 # Guard unit tests
 pnpm --filter web exec vitest run scripts/guards/guards.test.ts
 ```
+
+## 5. Restore drill (SEC-10, owner-only)
+
+A backup is only proven once it has been restored. Run a drill after the first `backup-production` run with the SEC-10/11 settings, after any change to the backup job or role, and then quarterly. Restore into `local` only:
+
+```bash
+mkdir -p /tmp/growgen-restore && chmod 700 /tmp/growgen-restore
+gh run download <run-id> -n production-db-backup -D /tmp/growgen-restore
+age -d -i ~/growgen-backup.agekey -o /tmp/growgen-restore/restore.dump /tmp/growgen-restore/growgen-production-*.dump.age
+chmod 600 /tmp/growgen-restore/restore.dump
+pg_restore --version                                     # must be >= 17
+pg_restore --list /tmp/growgen-restore/restore.dump | wc -l
+pnpm db:start
+pg_restore --clean --if-exists --no-owner --no-privileges \
+  -d "postgresql://postgres:postgres@127.0.0.1:54322/postgres" /tmp/growgen-restore/restore.dump
+psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -tAc \
+  "select (select count(*) from public.ec_posts) as posts, (select count(*) from public.media) as media, (select count(*) from public.auth_tokens) as auth_tokens"
+# then start the Docker admin against local (admin-docker.md), open a few posts and sign in with a passkey
+rm -rf /tmp/growgen-restore
+```
+
+Expected: `auth_tokens` and the other excluded tables are empty; post and media counts match production; the admin opens and a passkey sign-in works (credentials are kept).
+
+### Drill log (owner fills in)
+
+| Date (UTC) | Run ID | Backup timestamp | Restored into | `pg_restore --list` entries | Posts / media | Admin + passkey OK? | Duration | Issues | By |
+|---|---|---|---|---|---|---|---|---|---|
+| _YYYY-MM-DD_ | | | `local` | | | | | | |
