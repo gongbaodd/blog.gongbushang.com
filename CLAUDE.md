@@ -22,7 +22,7 @@ pnpm db:start                     # local Supabase
 pnpm admin:local                  # host-native admin on local DB (production edits use apps/admin, SEC-07)
 ```
 
-Environments are `local` and `production` only. The public site stays noindex until `PUBLIC_SITE_LIVE=true` (CUT-1).
+Environments are `local` and `production` only. The public site stays noindex until `PUBLIC_SITE_LIVE=true`, exact lowercase only (CUT-1).
 
 ## Commands (legacy `src/` site, until CUT-2)
 

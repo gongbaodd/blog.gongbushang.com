@@ -29,7 +29,7 @@ Database: the one the build reads (`CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRIN
 ## Podcast and gallery in EmDash (MIG-3)
 Collections `podcasts` (150 episodes, slug = legacy_id = episode id, e.g. `--e2iv0jd`) and `gallery` (75 images, slug = legacy id with `/` -> `-`) hold the content; `derive` reads them with the same read-only SQL as posts and nothing under `apps/web` reads `src/content` any more (only the one-off importer and seed scripts, and `DERIVE_PARITY_LEGACY=1`). Gallery images are all Cloudinary URLs already; podcast covers/audio are Spotify/anchor CDN URLs: nothing is uploaded. The podcast show (channel) metadata is a constant in `src/lib/podcast.ts`. Colour sets imported from legacy live in the `color_set` field; derive fills it only for entries without one.
 ```
-pnpm admin:local                                                    # or admin:production -- --yes-production (needs the repo-root .env)
+pnpm admin:local                                                    # production: the Docker admin (admin-docker.md); admin:production is deprecated (SEC-07)
 node apps/web/scripts/import/mig3/import.mjs --url http://127.0.0.1:4322 [--only podcast|gallery] [--dry-run] [--update]
 ```
 Idempotent upsert on `legacy_id`; a re-run reports `unchanged`; entries that differ from the legacy files are only reported (`differs`) unless `--update` (never clobbers admin edits). Stops (exit 3) and lists images if any gallery image is not on res.cloudinary.com. Needs the content submodule (`git submodule update --init src/content`) as the source.
@@ -78,13 +78,13 @@ INF-10 removed the `testing` environment: the project that used to be `testing` 
 set -a; . ./.env; set +a
 export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_PRODUCTION_POOLER_URL"
 pnpm --filter web derive:migrate           # applies every supabase/migrations/*_derived_*.sql (PORT-8 + MIG-3 tables)
-# 1. content: needs an admin running against that DB (pnpm admin:production -- --yes-production) and the MIG-1 import done
+# 1. content: needs an admin running against that DB (production: the Docker admin, admin-docker.md) and the MIG-1 import done
 node apps/web/scripts/import/mig3/import.mjs --url http://127.0.0.1:4322        # 150 episodes + 75 gallery images
 # 2. cache seeds from the legacy data (content submodule present)
 pnpm --filter web derive:seed -- --write
 pnpm --filter web derive:seed:media -- --write
 ```
-Production: same with `SUPABASE_PRODUCTION_POOLER_URL` and `pnpm admin:production -- --yes-production`. Run the seeds once per environment (local and production), after the imports; without them the first build re-embeds 150 episodes and serves 75 placeholders instead of the legacy traces (see "Gallery traces: seed first"; the embeddings also need LM Studio or Workers AI). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
+Production: same with `SUPABASE_PRODUCTION_POOLER_URL` and the Docker admin (`admin-docker.md`; `admin:production` is deprecated, SEC-07). Run the seeds once per environment (local and production), after the imports; without them the first build re-embeds 150 episodes and serves 75 placeholders instead of the legacy traces (see "Gallery traces: seed first"; the embeddings also need LM Studio or Workers AI). The CI build needs the tables (`derive:migrate`) and the imported rows, else it fails with the fix in the message.
 Use the session pooler (IPv4, port 5432). The migrations are `supabase/migrations/20261125000000_derived_schema.sql` and `20261125010000_derived_podcast_gallery.sql` (`supabase db push` also works). Supabase Free supports pgvector (`create extension vector with schema extensions`); verified on the cloud project. The 1024-d vectors for 995 posts take about 6 MB (1.2 % of the 500 MB limit). Local and production each have their own cache; seed each once. Seeding is only valid when the DB holds the migrated legacy posts (it skips any post whose derived embedding text differs from the legacy one).
 
 ## Normal workflow

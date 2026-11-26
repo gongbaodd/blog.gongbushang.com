@@ -13,7 +13,7 @@ Top-level `apps/web/wrangler.jsonc` is the production config. The former `testin
 | `SITE_ENV` | var `production` | only selects the rebuild-on-publish target and the admin gates; it does **not** make the site indexable |
 | `PUBLIC_SITE_LIVE` | var `"false"` in `wrangler.jsonc`; GitHub `production` environment variable (unset) | the go-live switch. While not exactly `true`: `X-Robots-Tag: noindex, nofollow`, disallow-all `robots.txt`, no analytics or ads. Flip **only at CUT-1**, by setting the GitHub variable `PUBLIC_SITE_LIVE=true` and re-running `web-deploy` (it passes the value to the build and to the Worker with `--var`). A manual `wrangler deploy` keeps `false` |
 | `robots.txt` | `src/pages/robots.txt.ts` (prerendered): allow + `Sitemap:` only when live | none |
-| Admin / API / `/.well-known/oauth*` | D12: locked down. `src/worker.ts` returns 404 for `/_emdash/*` and `/.well-known/oauth*` (asset misses still reach the Worker, so config alone is not enough); `assets.run_worker_first` is explicitly `false` | Edit content with `pnpm admin:production -- --yes-production` (`admin.md`) |
+| Admin / API / `/.well-known/oauth*` | D12: locked down. `src/worker.ts` returns 404 for `/_emdash/*` and `/.well-known/oauth*` (asset misses still reach the Worker, so config alone is not enough); `assets.run_worker_first` is explicitly `false` | Edit production content with the Docker admin (`admin-docker.md`); `admin:production` is deprecated (SEC-07) |
 | Dispatch target | `web-deploy` accepts `production` only | publishing in `admin:production` rebuilds and deploys production |
 | Old resources | `growgen-web-testing` Worker, GitHub `testing` environment, Supabase `epewqznhtgjirbfeqfrj` | **OWNER: delete** after `growgen-web` is deployed and verified (GON-199) |
 
@@ -25,4 +25,4 @@ Top-level `apps/web/wrangler.jsonc` is the production config. The former `testin
 5. Only after step 4 passes, delete `growgen-web-testing` (then the old Supabase project and GitHub `testing` environment, GON-199).
 **Rollback** (any failure after step 2): detach the domain from `growgen-web` if attached and re-attach it to `growgen-web-testing`; its last deployment (2027c095) is untouched until step 5.
 
-Build and deploy: `pnpm --filter web build` (add `PUBLIC_SITE_LIVE=true` only at CUT-1) then `pnpm --filter web exec wrangler deploy -c dist/server/wrangler.json` (`pnpm --filter web deploy` does both). `build` runs `scripts/check-static-routes.mjs` first (fails if any `src/pages` route lacks `prerender = true`).
+Build and deploy: `pnpm --filter web build` (add `PUBLIC_SITE_LIVE=true` only at CUT-1) then `pnpm --filter web exec wrangler deploy -c dist/server/wrangler.json` (`pnpm --filter web run deploy` does both; `run` is required, bare `deploy` is pnpm's built-in). `build` runs `scripts/check-static-routes.mjs` first (fails if any `src/pages` route lacks `prerender = true`).

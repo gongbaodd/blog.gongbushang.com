@@ -1,9 +1,6 @@
 ---
 name: emdash
-description: >-
-  EmDash CMS migration apps: apps/web (public Astro site on Cloudflare Workers with Hyperdrive),
-  the derive pipeline that writes the Supabase derived schema, apps/admin (Dockerized Node admin
-  with Cloudflare Access), environments, the Supabase RLS lockdown (SEC-01) and roles.
+description: EmDash CMS migration apps: apps/web (public Astro site on Cloudflare Workers with Hyperdrive), the derive pipeline that writes the Supabase derived schema, apps/admin (Dockerized Node admin with Cloudflare Access), environments, the Supabase RLS lockdown (SEC-01) and roles.
   Use when editing apps/web, apps/admin, apps/web/scripts/derive, apps/web/scripts/schema,
   supabase/, or docs/plan/emdash/.
 ---
@@ -20,7 +17,7 @@ Before changing anything, read `docs/plan/emdash/AGENT_RULES.md`.
 - **URLs never change.** Public paths must match `apps/web/tests/legacy-urls.txt`. Check with `pnpm --filter web parity`.
 - **Secrets stay out of the bundle.** Read them from the repo-root `.env`, `apps/web/.dev.vars`, wrangler secrets or GitHub environment secrets. Refer to them by name only.
 - **Environments are `local` and `production` only** (INF-10 retired `testing`). `SITE_ENV=testing` is refused at startup.
-- **Production is not public** until the owner sets `PUBLIC_SITE_LIVE=true` (CUT-1). Until then the site is `noindex`, disallows all robots, and runs no analytics or ads.
+- **Production is not public** until the owner sets `PUBLIC_SITE_LIVE=true` (CUT-1); only the exact lowercase string `true` counts (`apps/web/src/lib/site-live.ts`). Until then the site is `noindex`, disallows all robots, and runs no analytics or ads.
 
 ## apps/web (public site)
 
@@ -76,7 +73,7 @@ Root `package.json`:
 
 ```bash
 pnpm admin:local             # host-native admin on local Supabase (apps/web launcher)
-pnpm admin:production        # same, against production (refuses without confirmation)
+pnpm admin:production        # DEPRECATED (SEC-07): refuses unless --yes-production --unsafe-dev-server; use the Docker admin
 pnpm admin:stop
 pnpm db:start                # supabase start (trimmed service list)
 pnpm db:stop
@@ -91,7 +88,7 @@ pnpm deploy:production:dry-run
 ```bash
 pnpm --filter web dev
 pnpm --filter web build                  # derive, check-static-routes, astro build, post-build, pdfs
-pnpm --filter web deploy                 # build, then wrangler deploy
+pnpm --filter web run deploy             # build, then wrangler deploy (`run` is required: bare `deploy` is pnpm's built-in)
 pnpm --filter web derive                 # what build runs first
 pnpm --filter web derive:migrate
 pnpm --filter web derive:seed            # dry run; add -- --write to apply
