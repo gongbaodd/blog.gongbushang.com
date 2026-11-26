@@ -10,6 +10,9 @@
 export interface DashboardEnv {
 	SUPABASE_PRODUCTION_REF?: string;
 	CLOUDFLARE_ACCOUNT_ID?: string;
+	/** GON-216: YYYY-MM-DD expiry of GITHUB_DISPATCH_TOKEN (config, not read from the token). */
+	GITHUB_DISPATCH_TOKEN_EXPIRES_AT?: string;
+	SITE_ENV?: string;
 }
 
 export interface DashboardLinkDef {
@@ -85,11 +88,6 @@ export const DASHBOARD_CATEGORIES: DashboardCategoryDef[] = [
 				label: "GitHub: Actions",
 				purpose: "web-ci, web-deploy and web-guards (backups, keep-alive) workflow runs.",
 				url: "https://github.com/gongbaodd/blog.gongbushang.com/actions",
-			},
-			{
-				label: "Vercel (legacy)",
-				purpose: "Legacy growgen.xyz deployment; remove after CUT-2.",
-				url: "https://vercel.com/dashboard",
 			},
 		],
 	},

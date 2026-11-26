@@ -75,7 +75,7 @@ docker compose down
 
 If you want to edit from any device without running Docker locally, deploy `apps/admin/Dockerfile` to a free-tier container host such as **Altare** (4 GB RAM free tier) or any OCI container platform.
 
-### Build & container settings
+### Build & container settings (for hosts that build from source; Altare pulls the GHCR image instead)
 
 - **Dockerfile path**: `apps/admin/Dockerfile`
 - **Build context**: monorepo root (`.`)
@@ -84,11 +84,21 @@ If you want to edit from any device without running Docker locally, deploy `apps
 - **Healthcheck**: `GET /healthz` (HTTP `200`, body exactly `{"ok":true}`; it names no service or environment because it is unauthenticated (SEC-08), and it does not query Postgres, so it won't prevent Supabase idle pause or fail before migrations)
 - **Database connection**: Supabase direct hosts (`db.<ref>.supabase.co`) are IPv6-only; container platforms without IPv6 egress **must** use the Supabase **IPv4 session pooler** URL (port `5432`) as `DATABASE_URL`.
 
-### Mandatory: Cloudflare Tunnel, no public inbound port (SEC-08)
+### Altare deployment (GON-212)
 
-An online admin **must** be reached only through **Cloudflare Tunnel (`cloudflared`)**: run `cloudflared` next to the container (same Docker network), publish **no** host port (remove the `ports:` mapping, or bind it to `127.0.0.1`), and pick a host that gives the container no public IP or default `*.provider` URL. If the platform always exposes a public URL, do not host the admin there (or use mTLS Authenticated Origin Pulls plus a firewall limited to Cloudflare's IP ranges, which is more work to get right). Cloudflare Access is a policy on the hostname; it does not protect an origin that can be reached directly.
+The target is a single container on Altare, managed from [console.altare.gg](https://console.altare.gg), served at `https://admin.growgen.xyz`.
 
-Defence in depth on the origin: set `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`, so every request except `/healthz` and `/robots.txt` must carry a valid `Cf-Access-Jwt-Assertion` (section 6, `src/outer.ts`). A production target turns this on automatically when the server listens beyond loopback.
+1. **Image.** `.github/workflows/admin-image.yml` publishes `ghcr.io/gongbaodd/growgen-admin` on every admin change to `feat/emdash` (tags `sha-<short>` and `latest`), or on demand with `gh workflow run admin-image.yml --ref feat/emdash`. After the first run, make the package **public** once (GitHub → Packages → growgen-admin → Package settings → Change visibility), so Altare can pull it without credentials. The image holds no secrets (`check:secrets` guards that).
+2. **Altare service.** Image `ghcr.io/gongbaodd/growgen-admin:latest` (or a `sha-` tag to pin), port `4322`, health check `GET /healthz`.
+3. **Secrets live only in Altare's environment variables**, typed by the owner in the console. They are never in the image, the repo or GitHub: `DATABASE_URL` (IPv4 session pooler), `EMDASH_ENCRYPTION_KEY` (= `EMDASH_PRODUCTION_ENCRYPTION_KEY`), `CLOUDINARY_*`, `GITHUB_DISPATCH_TOKEN`, plus `SITE_ENV=production`, `ADMIN_CONFIRM_PRODUCTION=yes`, `SUPABASE_PRODUCTION_REF`, `EMDASH_SITE_URL=https://admin.growgen.xyz`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `HOST=0.0.0.0`. Leave `SETUP_TOKEN` empty.
+4. **Hostname.** A proxied (orange-cloud) Cloudflare DNS record `admin.growgen.xyz` → the Altare URL, if Altare accepts a custom domain. If it does not, use a Cloudflare Tunnel instead (`cloudflared` routing `admin.growgen.xyz` to the container); that is the only reason to run one.
+5. **Cloudflare Access** self-hosted application on `admin.growgen.xyz` (below). Copy its team domain and AUD into step 3.
+
+### Origin protection (SEC-08)
+
+Cloudflare Access is a policy on the hostname, so it does not by itself stop someone opening the Altare URL directly. The origin closes that gap: with `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` set, every request except `/healthz` and `/robots.txt` must carry a valid `Cf-Access-Jwt-Assertion` signed for this application, or gets `403` (section 6, `src/outer.ts`). A production target listening beyond loopback refuses to serve anything (`503`) until both are set. A direct hit on the Altare URL therefore reaches no admin page, so a Cloudflare Tunnel is **not** required.
+
+Passkeys are bound to the hostname: enroll them on `https://admin.growgen.xyz` only, never on the Altare URL.
 
 The admin is never indexable, in any environment (SEC-06): every response carries `X-Robots-Tag: noindex, nofollow` and `/robots.txt` is `Disallow: /`, whatever `SITE_ENV` says.
 
@@ -125,7 +135,7 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 
 ## 6. Safety rails and access control (INF-9 review fixes)
 
-**Required exposure: Cloudflare Tunnel only (SEC-08).** Run `cloudflared` next to the container, publish no host port (drop the `ports:` mapping or keep it on `127.0.0.1`), and put the hostname behind a Cloudflare Access application. The origin then verifies the Access JWT itself (below), so a leaked container URL or a misrouted port is not an open admin.
+**Required exposure: Cloudflare Access with origin JWT verification (SEC-08).** Put the hostname behind a Cloudflare Access application and set `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`. The origin verifies the Access JWT itself (below), so the container's own provider URL or a misrouted port is not an open admin. A Cloudflare Tunnel is optional, needed only when the host cannot serve the custom hostname.
 
 | Variable | Effect |
 |---|---|

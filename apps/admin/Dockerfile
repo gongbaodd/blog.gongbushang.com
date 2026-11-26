@@ -16,10 +16,12 @@ COPY packages/shiki-plantuml/package.json ./packages/shiki-plantuml/package.json
 
 RUN pnpm install --filter admin --frozen-lockfile
 
-# Admin source plus the two shared pure modules it imports from apps/web.
+# Admin source plus the shared pure modules it imports from apps/web.
 COPY apps/admin ./apps/admin
 COPY apps/web/src/lib/cloudinary-media ./apps/web/src/lib/cloudinary-media
 COPY apps/web/src/lib/lockdown.ts ./apps/web/src/lib/lockdown.ts
+COPY apps/web/src/lib/setup-gate.ts ./apps/web/src/lib/setup-gate.ts
+COPY apps/web/src/lib/site-live.ts ./apps/web/src/lib/site-live.ts
 COPY apps/web/src/plugins/rebuild-on-publish ./apps/web/src/plugins/rebuild-on-publish
 
 RUN pnpm --filter admin build

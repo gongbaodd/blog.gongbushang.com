@@ -5,8 +5,9 @@
  */
 import { fileURLToPath } from "node:url";
 import { definePlugin, type PluginDescriptor } from "emdash";
-import { dashboardPage, dashboardWidget } from "./blocks.ts";
+import { dashboardPage, dashboardWidget, tokenExpiryBlocks } from "./blocks.ts";
 import { resolveDashboards, type DashboardEnv } from "./links.ts";
+import { getTokenExpiryState } from "./token-expiry.ts";
 
 export const PLUGIN_ID = "service-dashboards";
 const VERSION = "0.1.0";
@@ -14,14 +15,24 @@ const PAGES = [{ path: "/dashboards", label: "Service dashboards", icon: "link-e
 const WIDGETS = [{ id: "dashboards", title: "Service dashboards", size: "full" as const }];
 
 export function readDashboardEnv(env: NodeJS.ProcessEnv = process.env): DashboardEnv {
-	return { SUPABASE_PRODUCTION_REF: env.SUPABASE_PRODUCTION_REF, CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID };
+	return {
+		SUPABASE_PRODUCTION_REF: env.SUPABASE_PRODUCTION_REF,
+		CLOUDFLARE_ACCOUNT_ID: env.CLOUDFLARE_ACCOUNT_ID,
+		GITHUB_DISPATCH_TOKEN_EXPIRES_AT: env.GITHUB_DISPATCH_TOKEN_EXPIRES_AT,
+		SITE_ENV: env.SITE_ENV,
+	};
 }
 
 /** Pure route logic: the host sends `{ type: "page_load", page }`, where widgets use `page: "widget:<id>"`. */
-export function renderAdminRoute(input: unknown, env: NodeJS.ProcessEnv = process.env) {
-	const categories = resolveDashboards(readDashboardEnv(env));
+export function renderAdminRoute(input: unknown, env: NodeJS.ProcessEnv = process.env, now: Date = new Date()) {
+	const dashEnv = readDashboardEnv(env);
+	const categories = resolveDashboards(dashEnv);
+	const state = getTokenExpiryState(dashEnv.GITHUB_DISPATCH_TOKEN_EXPIRES_AT, now);
+	const production = dashEnv.SITE_ENV === "production";
 	const page = (input as { page?: unknown } | null)?.page;
-	return typeof page === "string" && page.startsWith("widget:") ? dashboardWidget(categories) : dashboardPage(categories);
+	return typeof page === "string" && page.startsWith("widget:")
+		? dashboardWidget(categories, tokenExpiryBlocks(state, "widget", production))
+		: dashboardPage(categories, tokenExpiryBlocks(state, "page", production));
 }
 
 export function createPlugin(options: { env?: NodeJS.ProcessEnv } = {}) {
