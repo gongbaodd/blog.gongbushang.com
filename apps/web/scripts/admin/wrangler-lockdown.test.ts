@@ -60,7 +60,7 @@ describe("Worker lockdown (D12)", () => {
 	it("disables workers.dev and preview URLs and serves only the custom domain (SEC-12, INF-10)", () => {
 		expect(cfg.workers_dev).toBe(false);
 		expect(cfg.preview_urls).toBe(false);
-		expect(cfg.routes).toEqual([{ pattern: "next.growgen.xyz", custom_domain: true }]);
+		expect(cfg.routes).toEqual([{ pattern: "growgen.xyz", custom_domain: true }]);
 	});
 
 	it("ships non-live: PUBLIC_SITE_LIVE must stay \"false\" until CUT-1, SITE_ENV is production", () => {

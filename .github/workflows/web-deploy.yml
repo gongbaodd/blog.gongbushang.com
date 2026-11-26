@@ -81,10 +81,14 @@ jobs:
       WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
       WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
       # Public build-time values (baked into the static HTML): environment *variables*, not secrets. They only take effect
-      # when PUBLIC_SITE_LIVE=true (fail closed, exact value). Leave PUBLIC_SITE_LIVE unset/false until CUT-1: next.growgen.xyz
+      # when PUBLIC_SITE_LIVE=true (fail closed, exact value). Leave PUBLIC_SITE_LIVE unset/false until CUT-1: the site
       # then stays noindex with disallow-all robots.txt and no analytics/ads, whatever the other variables hold.
       PUBLIC_SITE_LIVE: ${{ vars.PUBLIC_SITE_LIVE }}
       SITE_ENV: production
+      # CUT-1 (D11): growgen.xyz is the only public hostname (no www, no next.). astro.config.mjs reads this into `site`, which feeds
+      # canonical, og:url, sitemap, RSS, robots.txt `Sitemap:` and JSON-LD. Hardcoded on purpose: a repository variable must not
+      # be able to point the build at another host. Guarded by apps/web/scripts/cutover/cutover.test.ts.
+      EMDASH_SITE_URL: https://growgen.xyz
       PUBLIC_MIXPANEL_TOKEN: ${{ vars.PUBLIC_MIXPANEL_TOKEN }}
       PUBLIC_MIXPANEL_API_HOST: ${{ vars.PUBLIC_MIXPANEL_API_HOST }}
       PUBLIC_ADSENSE_ENABLED: ${{ vars.PUBLIC_ADSENSE_ENABLED }}

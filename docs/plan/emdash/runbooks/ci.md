@@ -39,7 +39,7 @@ Environment **variables** (Settings, Environments, Variables; public values, not
 
 | Variable | Meaning |
 |---|---|
-| `PUBLIC_SITE_LIVE` | **The one go-live switch (fail closed).** Leave unset (or `false`) until CUT-1: then `next.growgen.xyz` is noindex (`_headers` and `X-Robots-Tag`), serves a disallow-all `robots.txt`, and loads no analytics or ads, whatever the variables below hold. Only the exact value `true` makes the build indexable and lets the analytics/ads variables take effect; `web-deploy` also passes it to the Worker with `wrangler deploy --var`. `TRUE`, `1`, typos and unset all stay not live. `SITE_ENV` has nothing to do with it. |
+| `PUBLIC_SITE_LIVE` | **The one go-live switch (fail closed).** Leave unset (or `false`) until CUT-1: then the production Worker is noindex (`_headers` and `X-Robots-Tag`), serves a disallow-all `robots.txt`, and loads no analytics or ads, whatever the variables below hold. Only the exact value `true` makes the build indexable and lets the analytics/ads variables take effect; `web-deploy` also passes it to the Worker with `wrangler deploy --var`. `TRUE`, `1`, typos and unset all stay not live. `SITE_ENV` has nothing to do with it. |
 | `PUBLIC_MIXPANEL_TOKEN` | Mixpanel project token (empty: analytics never loads) |
 | `PUBLIC_MIXPANEL_API_HOST` | e.g. `https://api-eu.mixpanel.com` |
 | `PUBLIC_ADSENSE_ENABLED` | `true` to render AdSense |
@@ -54,7 +54,7 @@ Not secret, hardcoded in the workflows: `CLOUDFLARE_ACCOUNT_ID`.
 Separate from CI: the CMS publish hook (`GITHUB_DISPATCH_TOKEN`, a fine-grained token allowed to dispatch to this repo) is a Worker secret, not a GitHub secret.
 
 ## First runs from `master` (GON-151, 2026-11-26)
-- `web-deploy` manual (run 45900007049): green. 1813 pages and 996 posts prerendered, `growgen-web` uploaded, `next.growgen.xyz` still sends `x-robots-tag: noindex, nofollow` and a disallow-all `robots.txt`.
+- `web-deploy` manual (run 45900007049): green. 1813 pages and 996 posts prerendered, `growgen-web` uploaded, the production Worker still sends `x-robots-tag: noindex, nofollow` and a disallow-all `robots.txt`.
 - `web-deploy` dispatch (run 45900557524): green, target `production`, `growgen-web` uploaded. It was an `emdash-publish` event sent by hand (`gh api repos/{owner}/{repo}/dispatches -f event_type=emdash-publish -F 'client_payload[environment]=production'`) tests the workflow side. The plugin → GitHub hop is only tested by a real publish in the admin.
 - `web-guards` manual (run 45900010506): **both jobs failed on secrets**, not on code:
   - `backup-production`: `BACKUP_AGE_RECIPIENT` did not match `^age1[0-9a-z]{58}$`. The job now strips whitespace first (a trailing newline from `gh secret set < file`) and logs the length. Fix: `age-keygen -y ~/growgen-backup.agekey | gh secret set BACKUP_AGE_RECIPIENT --env production`. If the log says it holds a private key, rotate the key pair.

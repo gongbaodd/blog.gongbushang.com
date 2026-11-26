@@ -1122,7 +1122,7 @@ export function printHelp(write = console.log) {
 			"",
 			"Collect options:",
 			"  --collect                    Capture metrics from --url instead of comparing files",
-			"  --url <base-url>             Target origin (e.g. http://127.0.0.1:4321 or https://next.growgen.xyz)",
+			"  --url <base-url>             Target origin (e.g. http://127.0.0.1:4321 or https://growgen.xyz)",
 			"  --out <path>                 Write output to a .json bundle file or a directory of per-route files",
 			"  --collector <mode>           auto | lighthouse | playwright (default: auto)",
 			"  --runs <n>                   Runs per route for median aggregation (default: 1)",

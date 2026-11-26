@@ -155,7 +155,7 @@ Supersedes the `testing` rows of INF-3, INF-7 and PORT-7 above (the old rows are
 
 | File | Change | Why |
 |---|---|---|
-| `wrangler.jsonc` | `env.testing` and `env.admin-testing` removed; top level carries the promoted Hyperdrive `319cee5e...` and KV `SESSION` `55d3e3f7...`; `workers_dev: false`, `preview_urls: false` (SEC-12); `routes` custom domain `next.growgen.xyz` (config only); `vars.PUBLIC_SITE_LIVE: "false"` | Two environments only; the former testing resources are production |
+| `wrangler.jsonc` | `env.testing` and `env.admin-testing` removed; top level carries the promoted Hyperdrive `319cee5e...` and KV `SESSION` `55d3e3f7...`; `workers_dev: false`, `preview_urls: false` (SEC-12); `routes` custom domain `growgen.xyz` (config only); `vars.PUBLIC_SITE_LIVE: "false"` | Two environments only; the former testing resources are production |
 | `astro.config.mjs` | `vite.define` `PUBLIC_SITE_ENV` (from `SITE_ENV ?? CLOUDFLARE_ENV ?? "testing"`) replaced by `PUBLIC_SITE_LIVE` (exactly `true`, else `false`) | Indexing, analytics and ads no longer depend on SITE_ENV; unset or a typo fails closed |
 | `scripts/post-build.mjs`, `src/pages/robots.txt.ts`, `src/analytics/env.ts` (`isLiveBuild`), `src/ads/*`, `src/middleware.ts`, `src/lib/lockdown.ts` | Gate on `isSiteLive(PUBLIC_SITE_LIVE)` (`src/lib/site-live.ts`) instead of `SITE_ENV === "production"` | Same fail-closed flag everywhere |
 | `src/plugins/rebuild-on-publish/dispatch.ts` | Only `SITE_ENV=production` dispatches | `testing` was retired |

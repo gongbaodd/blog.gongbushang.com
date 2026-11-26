@@ -140,9 +140,9 @@ describe("MIG-4 lib: expectedNewUrl (one-sided: legacy URL -> what the new site 
   });
 
   it("maps legacy origin to the expected new origin and /tag/c# to /tag/c%23", () => {
-    const opts = { legacyOrigin: "https://growgen.xyz", newOrigin: "https://next.growgen.xyz" };
+    const opts = { legacyOrigin: "https://growgen.xyz", newOrigin: "https://new.example.test" };
     expect(expectedNewUrl("https://growgen.xyz/book/2020/01/01/post/", opts).url).toBe(
-      "https://next.growgen.xyz/book/2020/01/01/post/",
+      "https://new.example.test/book/2020/01/01/post/",
     );
     expect(expectedNewUrl("https://growgen.xyz.evil.example/x", opts).url).toBe("https://growgen.xyz.evil.example/x");
     expect(expectedNewUrl("/tag/c#").url).toBe("/tag/c%23");
@@ -203,7 +203,7 @@ describe("MIG-4 lib: one-sided URL comparison catches regressions (exact equalit
 
   it("flags a leaked preview origin and an unrewritten relative image", () => {
     const leaked = structuredClone(goodNew);
-    leaked.canonical = "https://next.growgen.xyz/fe/2025/01/02/sample/";
+    leaked.canonical = "https://new.example.test/fe/2025/01/02/sample/";
     expect(diffPostDom(legacy, leaked, { rewriteMap }).flaggedFields).toContain("canonical");
     const rel = structuredClone(goodNew);
     rel.images = ["../17/2020-07-17.jpg"];
@@ -339,7 +339,7 @@ describe("MIG-4 lib: diffPostDom", () => {
   it("classifies mapped Cloudinary rehost, origin change, and /tag/c# encoding as expected", () => {
     const newDom = extractPostDom(
       renderHtml({
-        canonical: "https://next.growgen.xyz/fe/2025/01/02/sample/",
+        canonical: "https://new.example.test/fe/2025/01/02/sample/",
         body: `
           <h2 id="s1">Section One</h2>
           <p>This is a sufficiently long body paragraph for parity testing across legacy and new builds.</p>
@@ -353,7 +353,7 @@ describe("MIG-4 lib: diffPostDom", () => {
     const legacyWithTag = structuredClone(baseDom);
     legacyWithTag.links = ["/tag/c#"];
     const diff = diffPostDom(legacyWithTag, newDom, {
-      newOrigin: "https://next.growgen.xyz",
+      newOrigin: "https://new.example.test",
       rewriteMap: {
         "http://ww1.sinaimg.cn/large/abc.jpg":
           "https://res.cloudinary.com/dmq8ipket/image/upload/growgen/legacy/abc",
@@ -728,7 +728,6 @@ describe("MIG-4 review: canonical/link mismatches and leaked origins are errors;
 
   it("a URL on a preview/dev origin is a leaked-origin error", () => {
     for (const leaked of [
-      "https://next.growgen.xyz/tag/rust/",
       "http://localhost:4321/tag/rust/",
       "https://blog-abc.workers.dev/tag/rust/",
       "https://x.pages.dev/",

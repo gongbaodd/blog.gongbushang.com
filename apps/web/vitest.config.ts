@@ -8,6 +8,7 @@ export default defineConfig({
 		include: [
 			"src/**/*.test.ts",
 			"scripts/admin/*.test.ts",
+			"scripts/cutover/*.test.ts",
 			"scripts/derive/*.test.ts",
 			"scripts/guards/*.test.ts",
 			"scripts/import/**/*.test.ts",

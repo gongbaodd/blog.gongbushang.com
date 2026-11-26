@@ -11,8 +11,8 @@
 	"workers_dev": false,
 	"preview_urls": false,
 	// Config only: the custom-domain route is created by the first `wrangler deploy`, which also creates the DNS record in the
-	// growgen.xyz zone. Owner step (GON-199): confirm the zone is on this Cloudflare account and next.growgen.xyz is free.
-	"routes": [{ "pattern": "next.growgen.xyz", "custom_domain": true }],
+	// growgen.xyz zone. Owner step (GON-199): confirm the zone is on this Cloudflare account and growgen.xyz is free (CUT-1: the legacy growgen Worker must release it first, see runbooks/deploy-production.md).
+	"routes": [{ "pattern": "growgen.xyz", "custom_domain": true }],
 	// Pages that exist as static files never invoke the Worker. D12 (INF-7): the admin runs locally (`pnpm admin:<env>`), so the
 	// deployed Worker serves no `/_emdash/*` or OAuth discovery. NOTE: asset MISSES still invoke the Worker even with
 	// `not_found_handling: "404-page"` (verified with `wrangler tail`), so src/worker.ts 404s those paths (src/lib/lockdown.ts).

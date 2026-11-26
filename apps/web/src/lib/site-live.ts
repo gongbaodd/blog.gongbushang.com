@@ -4,7 +4,7 @@
  * analytics and ads off.
  *
  * It is deliberately independent of SITE_ENV (which only picks the rebuild-on-publish target and the admin gates): the
- * production Worker serves next.growgen.xyz during the soak, before CUT-1, and must stay hidden from search engines.
+ * production Worker is deployed during the soak, before CUT-1, and must stay hidden from search engines.
  *
  * One switch, read in two places: the build (`PUBLIC_SITE_LIVE` in the build environment, from the GitHub `production` environment
  * variable; astro.config.mjs bakes it into the static HTML and robots.txt, scripts/post-build.mjs decides on the `_headers` noindex

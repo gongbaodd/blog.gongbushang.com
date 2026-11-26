@@ -227,7 +227,7 @@ describe("apps/web middleware (SEC-04 path normalization & SEC-15 cookie hardeni
 
     for (const live of ["TRUE", "ture", "production", ""]) {
       const mw = createWebMiddleware({ getEnv: () => ({ PUBLIC_SITE_LIVE: live }), isDev: false });
-      const ctx = createMockContext("https://next.growgen.xyz/");
+      const ctx = createMockContext("https://growgen.xyz/");
       const res = await runMw(mw, ctx.context, async () => new Response("home"));
       expect(res.headers.get("X-Robots-Tag"), live).toBe("noindex, nofollow");
     }
