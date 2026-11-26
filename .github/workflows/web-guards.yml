@@ -24,6 +24,13 @@ jobs:
     timeout-minutes: 20
     environment: production
     steps:
+      # SEC-09: only the committed Supabase root CA is needed from the repo (verify-full below). No credentials persisted.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+          sparse-checkout: apps/web/scripts/certs
+          sparse-checkout-cone-mode: false
+
       - name: Install pg_dump 17 and age
         env:
           # SEC-10: PGDG signing key (https://wiki.postgresql.org/wiki/Apt). The file hash pins the exact download; the OpenPGP
@@ -75,7 +82,8 @@ jobs:
               PGUSER: decodeURIComponent(u.username),
               PGPASSWORD: decodeURIComponent(u.password),
               PGDATABASE: decodeURIComponent(u.pathname.slice(1)) || "postgres",
-              PGSSLMODE: "require",
+              PGSSLMODE: "verify-full",
+              PGSSLROOTCERT: process.env.GITHUB_WORKSPACE + "/apps/web/scripts/certs/prod-ca-2021.crt",
             };
             for (const [k, v] of Object.entries(vars)) console.log("export " + k + "=" + q(v));
           ' > "$pgenv")
@@ -84,6 +92,10 @@ jobs:
           rm -f "$pgenv"
           unset db_url
           echo "::add-mask::$PGPASSWORD"
+          # SEC-09: the CA must be the pinned Supabase Root 2021 CA (same fingerprint as apps/web/scripts/admin/pg-tls.mjs).
+          ca_fpr=$(openssl x509 -in "$PGSSLROOTCERT" -noout -fingerprint -sha256 | cut -d= -f2)
+          [ "$ca_fpr" = "80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA" ] \
+            || { echo "::error::unexpected Supabase CA fingerprint ($ca_fpr)"; exit 1; }
           pg_bin=/usr/lib/postgresql/17/bin
           schemas=(--schema=public)
           has_derived=$("$pg_bin/psql" -v ON_ERROR_STOP=1 -tAc "select 1 from information_schema.schemata where schema_name = 'derived'")
@@ -92,11 +104,12 @@ jobs:
           else
             echo "::notice::schema 'derived' does not exist on production yet; backing up public schema only"
           fi
-          # SEC-10: the artifact lives on a public repo, so keep the DATA of volatile token/log tables out of it (their schema is
-          # still dumped; a restore starts with empty sessions, challenges, OAuth codes/tokens, rate limits and 404 log).
-          # Keep in sync with runbooks/backups.md "Excluded table data".
+          # SEC-10: the artifact lives on a public repo, so the DATA of every table holding a bearer token, session or short-lived
+          # secret stays out of it (schemas are still dumped). After a restore: everyone signs in again and API tokens, OAuth
+          # grants and device codes must be re-issued. Keep in sync with runbooks/backups.md "Excluded table data".
           excludes=()
-          for t in auth_tokens auth_challenges _emdash_authorization_codes _emdash_device_codes _emdash_oauth_tokens _emdash_rate_limits _emdash_404_log; do
+          for t in auth_tokens auth_challenges _emdash_api_tokens _emdash_authorization_codes _emdash_device_codes _emdash_oauth_tokens \
+            _emdash_entry_locks _emdash_transfer_approvals _emdash_rate_limits _emdash_404_log; do
             excludes+=("--exclude-table-data=public.$t")
           done
           echo "Dumping schemas: ${schemas[*]} (excluding the data of ${#excludes[@]} volatile tables)"

@@ -68,20 +68,28 @@ chmod 600 ~/growgen-backup.agekey
 - Checks `information_schema.schemata` via `psql` first and includes `--schema=derived` when `derived` exists on production (cached embeddings, UMAP coordinates, cover colors, geocodes, post hints from `PORT-8`). Before `derived` is migrated onto production, it logs a notice and backs up `public` cleanly without failing.
 - Uses `--format=custom --no-owner --no-privileges` and `set -euo pipefail`, then fails if the encrypted artifact is `<= 1024` bytes.
 - Fails closed unless `BACKUP_AGE_RECIPIENT` matches `^age1[0-9a-z]{58}$` (SEC-10).
-- Connects as the read-only `growgen_backup` role through `BACKUP_DATABASE_URL` when that secret exists; otherwise it falls back to the owner `DATABASE_POOLER_URL` and logs a `::warning::` (SEC-11, see below). Either way the URL is split into `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` (with `PGSSLMODE=require`) through a 0600 temp file, so the password never appears in a process's argv (SEC-14).
+- Connects as the read-only `growgen_backup` role through `BACKUP_DATABASE_URL` when that secret exists; otherwise it falls back to the owner `DATABASE_POOLER_URL` and logs a `::warning::` (SEC-11, see below). Either way the URL is split into `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` through a 0600 temp file, with `PGSSLMODE=verify-full` and `PGSSLROOTCERT` set to the committed Supabase root CA (sparse checkout of `apps/web/scripts/certs`, fingerprint checked in the job; SEC-09), so the password never appears in a process's argv (SEC-14).
 - Installs `pg_dump` 17 from PGDG only after the downloaded signing key matches both the pinned SHA-256 (`PGDG_KEY_SHA256`) and the OpenPGP fingerprint `B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8` (SEC-10). If PGDG re-publishes the key file (e.g. an expiry extension), the hash check fails: confirm the fingerprint is unchanged (`gpg --show-keys --with-colons ACCC4CF8.asc`), then update `PGDG_KEY_SHA256` in `web-guards.yml`.
 
 ### Excluded table data (SEC-10)
 
-The repo is public, so any GitHub account can download the encrypted artifact for 14 days ("harvest now, decrypt later" if the age key ever leaks). The dump keeps every table's **schema** but skips the **data** of volatile token/log tables:
+The repo is public, so any GitHub account can download the encrypted artifact for 14 days ("harvest now, decrypt later" if the age key ever leaks). The dump keeps every table's **schema** but skips the **data** of every table holding a bearer token, a session or a short-lived secret:
 
-| Table | Why dropping it on restore is fine |
+| Table | After a restore |
 |---|---|
-| `auth_tokens`, `auth_challenges` | sessions, magic links, WebAuthn challenges: users sign in again |
-| `_emdash_authorization_codes`, `_emdash_device_codes`, `_emdash_oauth_tokens` | short-lived OAuth codes and access/refresh tokens: clients re-authorize |
-| `_emdash_rate_limits`, `_emdash_404_log` | runtime counters and logs |
+| `auth_tokens`, `auth_challenges` | sessions, magic links, WebAuthn challenges are empty: everyone signs in again |
+| `_emdash_api_tokens` | **API tokens must be re-issued** (Settings -> API tokens) and updated wherever they are used (e.g. `EMDASH_TOKEN` for CLI imports) |
+| `_emdash_authorization_codes`, `_emdash_device_codes`, `_emdash_oauth_tokens` | **OAuth/MCP clients must re-authorize**; device-code logins start over |
+| `_emdash_entry_locks`, `_emdash_transfer_approvals` | edit locks (carry a lock token) and pending transfer approvals are gone; re-open the editor / re-request |
+| `_emdash_rate_limits`, `_emdash_404_log` | runtime counters and logs start empty |
 
-Still included: `users`, `credentials` (passkey public keys, needed to sign in after a restore), `_emdash_api_tokens`, `_plugin_storage`, `audit_logs` and all content. Keep this list in sync with the `excludes` loop in `web-guards.yml`.
+Deliberately still included:
+- `credentials`: WebAuthn public keys, credential IDs and counters. A public key cannot authenticate anyone, so it is not a secret; without it nobody could sign in to the restored admin (passkeys are the only login).
+- `users`, `oauth_accounts` (provider account ids only, no provider tokens), `_emdash_oauth_clients` (names, redirect URIs, scopes; no secrets).
+- `_plugin_storage`, `options`: plugin settings are encrypted with the EmDash encryption key, which is not in the backup.
+- `audit_logs` and all content.
+
+Keep this list in sync with the `excludes` loop in `web-guards.yml`.
 
 ### Least-privilege backup role (SEC-11, owner-only)
 
@@ -205,7 +213,7 @@ psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -tAc \
 rm -rf /tmp/growgen-restore
 ```
 
-Expected: `auth_tokens` and the other excluded tables are empty; post and media counts match production; the admin opens and a passkey sign-in works (credentials are kept).
+Expected: `auth_tokens`, `_emdash_api_tokens` and the other excluded tables are empty; post and media counts match production; the admin opens and a passkey sign-in works (credentials are kept). After a real production restore, re-issue API tokens and re-authorize OAuth/MCP clients.
 
 ### Drill log (owner fills in)
 

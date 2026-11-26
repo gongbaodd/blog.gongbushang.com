@@ -41,6 +41,9 @@ COPY --from=builder --chown=node:node /out/package.json ./package.json
 COPY --from=builder --chown=node:node /workspace/apps/admin/scripts/start.mjs ./scripts/start.mjs
 COPY --from=builder --chown=node:node /workspace/apps/admin/scripts/safety.mjs ./scripts/safety.mjs
 COPY --from=builder --chown=node:node /workspace/apps/admin/dist ./dist
+# SEC-09: the verified Supabase root CA (provenance: docs/plan/emdash/runbooks/supabase.md "Connect"). safety.mjs uses it for every
+# remote database unless DATABASE_CA_CERT names another CA; there is no unverified TLS mode.
+COPY --chown=node:node apps/web/scripts/certs/prod-ca-2021.crt ./certs/prod-ca-2021.crt
 
 RUN mkdir -p /app/.astro/sessions /app/.emdash/uploads && chown -R node:node /app
 
