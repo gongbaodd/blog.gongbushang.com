@@ -50,4 +50,22 @@ if (plan.effectiveProduction) {
 	);
 }
 
+// Optional Cloudflare Tunnel (GON-212). With CF_TUNNEL_TOKEN set, run `cloudflared` next to the server so a host that only gives
+// the container an IP:port can still serve admin.growgen.xyz. The tunnel's public hostname must point at http://localhost:<PORT>.
+// The token goes to the child via its environment (TUNNEL_TOKEN), never argv or logs, and is removed from this process's env.
+// HOST stays as configured (0.0.0.0 in the image), so the origin Access JWT check stays on for a production target.
+const tunnelToken = (process.env.CF_TUNNEL_TOKEN ?? "").trim();
+delete process.env.CF_TUNNEL_TOKEN;
+if (tunnelToken) {
+	const { spawn } = await import("node:child_process");
+	const childEnv = { ...process.env, TUNNEL_TOKEN: tunnelToken };
+	for (const k of ["DATABASE_URL", "EMDASH_ENCRYPTION_KEY", "CLOUDINARY_API_SECRET", "GITHUB_DISPATCH_TOKEN", "SETUP_TOKEN"]) delete childEnv[k];
+	const tunnel = spawn("cloudflared", ["tunnel", "--no-autoupdate", "run"], { env: childEnv, stdio: ["ignore", "inherit", "inherit"] });
+	tunnel.on("error", (e) => die(`cloudflared failed to start: ${e.message}`));
+	// Without the tunnel the admin is unreachable; exit so the host restarts the container.
+	tunnel.on("exit", (code, signal) => die(`cloudflared exited (code=${code}, signal=${signal})`));
+	for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { tunnel.kill(sig); process.exit(0); });
+	console.log("[admin] Cloudflare Tunnel: cloudflared started");
+}
+
 await import(entry);

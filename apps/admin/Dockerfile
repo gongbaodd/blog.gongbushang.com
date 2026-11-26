@@ -30,8 +30,15 @@ RUN pnpm --filter admin build
 # (Not --legacy: that variant also drags in the root importer's deps, ~1.9 GB. Verified locally: this gives ~615 MB.)
 RUN pnpm --config.inject-workspace-packages=true --filter admin deploy --prod /out
 
+# Cloudflare Tunnel client (GON-212): hosts like Altare give the container only an IP:port, so `admin.growgen.xyz` reaches it
+# through an outbound tunnel. Static Go binary, pinned by version and index digest. Started by scripts/start.mjs only when
+# CF_TUNNEL_TOKEN is set; otherwise unused.
+FROM cloudflare/cloudflared:2026.11.2@sha256:55c7e3e8d89d5e8d20b75a82f3602cbf98e06db406e73e282073cfdc5a9a3af6 AS cloudflared
+
 FROM node:22-alpine AS runner
 WORKDIR /app
+
+COPY --from=cloudflared /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
