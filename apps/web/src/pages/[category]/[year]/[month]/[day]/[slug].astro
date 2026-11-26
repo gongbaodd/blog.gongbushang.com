@@ -27,7 +27,7 @@ const { post, series } = Astro.props;
 
 const prepared = prepareBody(post.body);
 if (prepared.warnings.length) console.warn(`[post ${post.id}] ${prepared.warnings.join("; ")}`);
-const { html, headings } = await renderMarkdown(prepared.body, { mdx: prepared.mdx });
+const { html, headings, menuHeadings } = await renderMarkdown(prepared.body, { mdx: prepared.mdx });
 
 // Sidebar cover card: the same client post the listings and /api/cards use (legacy mapServerPostToClient).
 const entry = (await getPostEntries()).find((e) => e.id === post.id);
@@ -66,7 +66,7 @@ const articleMeta = {
 	category={post.data.category}
 	tags={post.data.tag ?? []}
 	links={postLinks(post)}
-	headings={headings}
+	headings={menuHeadings}
 	series={series}
 	clientPost={clientPost}
 	readingMinutes={minutes}

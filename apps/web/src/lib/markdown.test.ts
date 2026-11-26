@@ -24,3 +24,40 @@ describe("renderMarkdown indented blocks", { timeout: 30_000 }, () => {
     expect(html).toContain("<pre");
   });
 });
+
+describe("renderMarkdown body h1", { timeout: 30_000 }, () => {
+  const WITH_H1 = "# My Title\n\nIntro.\n\n## Section\n\nText.\n";
+  const NO_H1 = "Intro.\n\n## Section\n\nText.\n\n### Sub\n";
+
+  it("removes the body h1 from html and the menu headings", async () => {
+    const { html, menuHeadings } = await renderMarkdown(WITH_H1);
+    expect(html).not.toMatch(/<h1[\s>]/);
+    expect(html).toContain("<h2");
+    expect(menuHeadings.map((h) => h.text)).toEqual(["Section"]);
+  });
+
+  it("keeps the h1 in headings so the SEO title rule still works", async () => {
+    const { headings } = await renderMarkdown(WITH_H1);
+    expect(headings[0]).toMatchObject({ depth: 1, text: "My Title" });
+  });
+
+  it("removes every body h1 in mdx mode too", async () => {
+    const { html } = await renderMarkdown("# A\n\ntext\n\n# B\n", { mdx: true });
+    expect(html).not.toMatch(/<h1[\s>]/);
+  });
+
+  it("keeps h1 markup shown inside code blocks", async () => {
+    const { html } = await renderMarkdown("# T\n\n```html\n<h1>x</h1>\n```\n");
+    expect(html).toContain("<pre");
+    expect(html).toContain(">x&#x3C;/");
+    expect(html).not.toMatch(/<h1[\s>]/);
+  });
+
+  it("leaves posts without an h1 unchanged", async () => {
+    const { html, headings, menuHeadings } = await renderMarkdown(NO_H1);
+    expect(html).toContain("<h2");
+    expect(html).toContain("<h3");
+    expect(menuHeadings).toEqual(headings);
+    expect(menuHeadings.map((h) => h.text)).toEqual(["Section", "Sub"]);
+  });
+});
