@@ -28,6 +28,8 @@ function dedent(text: string): string {
 export function prepareBody(body: string): { body: string; warnings: string[]; mdx: boolean } {
   if (!body.includes("DescriptionImage")) return { body, warnings: [], mdx: false };
   let out = body.replace(IMPORT_RE, "");
+  // Only the import line marks a real .mdx source; prose/code mentioning the name must keep CommonMark.
+  const mdx = out !== body;
   out = out.replace(COMPONENT_RE, (_m, attrs: string, inner: string) => {
     const src = optimizeCloudinaryUrl(attr(attrs, "src") ?? "");
     const alt = attr(attrs, "alt") ?? "";
@@ -41,5 +43,5 @@ export function prepareBody(body: string): { body: string; warnings: string[]; m
   const warnings = /<\/?[A-Z][A-Za-z]*[\s/>]/.test(out)
     ? ["unhandled JSX component remains in body"]
     : [];
-  return { body: out, warnings, mdx: true };
+  return { body: out, warnings, mdx };
 }

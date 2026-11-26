@@ -10,7 +10,7 @@ no data change.
 
 Fix: `renderMarkdown(src, { mdx })` uses a second processor that disables the micromark `codeIndented`
 construct (what MDX does). `prepareBody` returns `mdx: true` for bodies with the `DescriptionImage`
-component (the marker of the legacy `.mdx` posts); the post page passes it through.
+import line (the marker of the legacy `.mdx` posts; prose or an import-less component do not count); the post page passes it through.
 
 Other posts: only 3 posts are `.mdx` (blog-cards, puzzle-game, tetris-ai). blog-cards has indented lines
 only inside fences/frontmatter, puzzle-game only frontmatter. Only tetris-ai was affected. puzzle-game
@@ -21,7 +21,7 @@ Legacy `excerpt()` returns `""` only when `post.body` is empty, and otherwise `<
 non-empty body that strips to nothing (image-only, heading-only) gives `"..."` in legacy, for 29 posts.
 The ticket's literal rule ("empty after stripping") would have broken those 29 (seen in the diff), so
 the rule is: whitespace-only body -> `""`, anything else -> text + `...`. The bank-card post body is
-whitespace in EmDash, now `content=""`. Tests added in `content.test.ts`.
+whitespace in EmDash, now gets an empty description (the meta tag is omitted, not `content=""`). Tests added in `content.test.ts`.
 
 ## Checks
 - `pnpm --filter web exec vitest run`: 38 files, 446 tests passed (new `markdown.test.ts`).

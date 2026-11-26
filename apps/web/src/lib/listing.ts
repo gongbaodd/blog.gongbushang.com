@@ -122,7 +122,7 @@ const clientCache = new WeakMap<ListEntry, Promise<TClientPost>>();
 export function toClient(entry: ListEntry): Promise<TClientPost> {
   let p = clientCache.get(entry);
   if (!p) {
-    p = postExcerpt(entry.body?.trim() ? entry.body : "").then((excerpt) =>
+    p = postExcerpt(entry.body ?? "").then((excerpt) =>
       toClientPost(entry, excerpt),
     );
     clientCache.set(entry, p);

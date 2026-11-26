@@ -92,12 +92,24 @@ describe("mapPost", () => {
 describe("prepareBody (MDX DescriptionImage)", () => {
   it("turns DescriptionImage into plain HTML and drops the import", () => {
     const src = `import DescriptionImage from '@/packages/image/DescriptionImage';\n\n# T\n\n<DescriptionImage src="/a.gif" alt="x" mah={1600}>\ntext **b**\n</DescriptionImage>\n`;
-    const { body, warnings } = prepareBody(src);
+    const { body, warnings, mdx } = prepareBody(src);
     expect(warnings).toEqual([]);
+    expect(mdx).toBe(true);
     expect(body).not.toMatch(/import /);
     expect(body).toContain('<img src="/a.gif" alt="x" style="max-height:1600px');
     expect(body).not.toContain("DescriptionImage");
-    expect(prepareBody(src).mdx).toBe(true);
+  });
+
+  it("does not flag mdx for prose that merely mentions DescriptionImage", () => {
+    const src = "# a\n\nUse the DescriptionImage component.\n\n    indented code\n";
+    const r = prepareBody(src);
+    expect(r.mdx).toBe(false);
+    expect(r.body).toBe(src);
+  });
+
+  it("does not flag mdx for <DescriptionImage> without the import", () => {
+    const r = prepareBody('# a\n\n<DescriptionImage src="/a.gif" alt="x">\ntext\n</DescriptionImage>\n');
+    expect(r.mdx).toBe(false);
   });
 
   it("leaves plain markdown untouched", () => {
