@@ -109,3 +109,53 @@ export function redact(text, secrets) {
 	}
 	return out;
 }
+
+/**
+ * Browser URL for the admin (SEC-07). Always `localhost`, never `127.0.0.1`: WebAuthn rejects IP literals as RP IDs and treats
+ * `localhost` and `127.0.0.1` as different origins, so a passkey registered on one never works on the other.
+ */
+export function adminBrowserUrl(port) {
+	return `http://localhost:${port}`;
+}
+
+export const DOCKER_ADMIN_HINT =
+	"Use the Docker admin instead (production Node build: no dev-bypass, SETUP_TOKEN gate, Cloudflare Access): " +
+	"docs/plan/emdash/runbooks/admin-docker.md (cd apps/admin && docker compose up).";
+
+/**
+ * SEC-07: `admin:production` runs `astro dev` against the LIVE database. In dev mode EmDash exposes
+ * `/_emdash/api/auth/dev-bypass` (an admin session with no passkey) and the SETUP_TOKEN gate is off, so any local process or a
+ * DNS-rebinding page reaching the port is an admin. The launcher is deprecated for production: it refuses unless BOTH
+ * `--yes-production` and `--unsafe-dev-server` are passed, and then returns a loud warning to print.
+ * Returns { ok: true, warning? } or { ok: false, message, code }.
+ */
+export function productionLaunchGate(envName, flags) {
+	if (envName !== "production") return { ok: true };
+	const has = (f) => flags.includes(f);
+	if (!has("yes-production")) {
+		return {
+			ok: false,
+			code: 2,
+			message:
+				"`pnpm admin:production` is DEPRECATED (SEC-07): it runs `astro dev` against the LIVE production database.\n" +
+				`         ${DOCKER_ADMIN_HINT}`,
+		};
+	}
+	if (!has("unsafe-dev-server")) {
+		return {
+			ok: false,
+			code: 2,
+			message:
+				"refusing to run `astro dev` against the LIVE production database (SEC-07): dev mode exposes " +
+				"/_emdash/api/auth/dev-bypass (an admin session without a passkey) and turns the SETUP_TOKEN gate off.\n" +
+				`         ${DOCKER_ADMIN_HINT}\n` +
+				"         Emergency only: pnpm admin:production -- --yes-production --unsafe-dev-server, then pnpm admin:stop as soon as you are done.",
+		};
+	}
+	return {
+		ok: true,
+		warning:
+			"WARNING (SEC-07): astro dev against PRODUCTION. /_emdash/api/auth/dev-bypass is reachable by anything that can reach this " +
+			"port. Do not browse untrusted sites meanwhile, and run `pnpm admin:stop` as soon as you are done.",
+	};
+}

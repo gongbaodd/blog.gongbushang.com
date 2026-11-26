@@ -2,7 +2,9 @@
 // src/outer.ts (request-time gate), so protection never depends on which entrypoint launched the server.
 // Plain JS so the production image needs no TypeScript. The project-ref gate mirrors INF-5
 // (apps/web/scripts/sync/lib.mjs: parseProjectRef, disallowedUrlParams); access.test.ts checks they stay in step.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export const LOOPBACK_DB_HOST_RE = /^(localhost|127\.0\.0\.1|\[?::1\]?|host\.docker\.internal)$/i;
 
@@ -50,22 +52,56 @@ export function splitSslMode(url) {
 }
 
 /**
- * pg `ssl` option. Loopback = false. Otherwise TLS: with DATABASE_CA_CERT (PEM text or a file path) the chain and hostname are
- * verified (verify-full); without it the certificate is not verified (Supabase's pooler CA is not in the system store).
- * Throws an Error with a clear message when DATABASE_CA_CERT is whitespace-only or unreadable.
+ * Where the committed Supabase root CA (apps/web/scripts/certs/prod-ca-2021.crt, provenance in docs/plan/emdash/runbooks/
+ * supabase.md "Connect") can be found, in order: the Docker image (`/app/certs`, next to `/app/scripts/safety.mjs`), the repo
+ * source layout, then relative to the working directory for the bundled dist/ (image cwd `/app`, repo cwd `apps/admin`).
+ */
+export function defaultCaCandidates(cwd = process.cwd()) {
+	const here = (rel) => {
+		try {
+			return fileURLToPath(new URL(rel, import.meta.url));
+		} catch {
+			return undefined;
+		}
+	};
+	return [
+		here("../certs/prod-ca-2021.crt"),
+		here("../../web/scripts/certs/prod-ca-2021.crt"),
+		resolve(cwd, "certs/prod-ca-2021.crt"),
+		resolve(cwd, "../web/scripts/certs/prod-ca-2021.crt"),
+	].filter(Boolean);
+}
+
+/** The committed Supabase root CA, or throws (fail closed: a remote database is never connected to unverified). */
+export function loadDefaultCa(candidates = defaultCaCandidates(), exists = existsSync, read = readFileSync) {
+	for (const p of candidates) {
+		if (!exists(p)) continue;
+		const pem = String(read(p, "utf8"));
+		if (pem.includes("-----BEGIN CERTIFICATE-----")) return pem;
+	}
+	throw new Error(
+		"Supabase root CA (prod-ca-2021.crt) not found next to the admin; set DATABASE_CA_CERT to its path (it is committed at " +
+			"apps/web/scripts/certs/prod-ca-2021.crt and copied to /app/certs in the Docker image)",
+	);
+}
+
+/**
+ * pg `ssl` option (SEC-09). Loopback = false. Otherwise TLS with chain and hostname verified (verify-full), against
+ * DATABASE_CA_CERT (PEM text or a file path) when set, else the committed Supabase root CA. There is no unverified mode.
+ * Throws an Error with a clear message when DATABASE_CA_CERT is whitespace-only or unreadable, or no CA can be found.
  */
 export function sslOptionsFor(url, env = process.env) {
 	let host = "";
 	try {
 		host = new URL(url).hostname;
 	} catch {
-		return { rejectUnauthorized: false };
+		throw new Error("DATABASE_URL is not a valid URL");
 	}
 	if (LOOPBACK_DB_HOST_RE.test(host)) return false;
 	const raw = env.DATABASE_CA_CERT;
 	if (raw && !raw.trim()) throw new Error("DATABASE_CA_CERT is set but blank; unset it or give a PEM / file path");
 	const ca = raw?.trim();
-	if (!ca) return { rejectUnauthorized: false };
+	if (!ca) return { ca: loadDefaultCa(), rejectUnauthorized: true };
 	if (ca.includes("-----BEGIN")) return { ca, rejectUnauthorized: true };
 	if (/\\n/.test(ca)) throw new Error("DATABASE_CA_CERT looks like a PEM with literal \\n sequences; use a file path or real newlines");
 	try {

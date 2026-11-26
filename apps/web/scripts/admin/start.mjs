@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Local EmDash admin against local / production (D12, INF-7).
-//   node scripts/admin/start.mjs <local|production> [--port 4322] [--yes-production] [--check]
+//   node scripts/admin/start.mjs <local|production> [--port 4322] [--yes-production --unsafe-dev-server] [--check]
 //   node scripts/admin/start.mjs stop
-// Wired as `pnpm admin:local`, `pnpm admin:production -- --yes-production`, `pnpm admin:stop`.
+// Wired as `pnpm admin:local`, `pnpm admin:stop`, and the DEPRECATED `pnpm admin:production` (SEC-07: `astro dev` exposes
+// EmDash's dev-bypass login, so production editing uses the Docker admin, docs/plan/emdash/runbooks/admin-docker.md; this
+// launcher refuses production unless `--yes-production --unsafe-dev-server` are both passed).
 //
 // Why a generated dev-vars file: the Astro Cloudflare adapter copies `.dev.vars` values into process.env, and wrangler then
 // prefers that over the real environment, so an exported CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE loses to a
@@ -23,13 +25,16 @@ import pg from "pg";
 import {
 	ENVS,
 	GENERATED_HEADER,
+	adminBrowserUrl,
 	buildDevVars,
 	dbHost,
 	parseEnvText,
+	productionLaunchGate,
 	redact,
 	resolveEnv,
 	serializeDevVars,
 } from "./lib.mjs";
+import { pgClientConfig } from "./pg-tls.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const webDir = resolve(here, "../..");
@@ -73,13 +78,11 @@ if (envName === "stop") {
 
 if (!envName || !ENVS[envName]) die("usage: start.mjs <local|production> [--port N] [--yes-production] [--check] | stop", 2);
 if (!Number.isInteger(port) || port < 1024) die("invalid --port");
-if (envName === "production" && !flag("yes-production")) {
-	die(
-		"production admin edits the LIVE production database.\n" +
-			"         Re-run with the explicit flag:  pnpm admin:production -- --yes-production",
-		2,
-	);
-}
+// SEC-07: production through `astro dev` is deprecated. `--check` starts no server, so it only needs --yes-production.
+const flagNames = args.filter((a) => a.startsWith("--")).map((a) => a.slice(2));
+const gate = productionLaunchGate(envName, flag("check") ? [...flagNames, "unsafe-dev-server"] : flagNames);
+if (!gate.ok) die(gate.message, gate.code);
+if (gate.warning && !flag("check")) console.warn(`[admin] ${gate.warning}`);
 const cfg = ENVS[envName];
 
 // ---- 1. load env (read only) -------------------------------------------------------------------------------------------
@@ -156,7 +159,14 @@ if (!(await probePort(port))) fail("dev server did not open its port within 120 
 // attributed from the DB side, and site content can coincide across envs. Instead use a nonce: request a path that cannot
 // exist, EmDash logs the 404 into `_emdash_404_log` of the database it is connected to, and we look for that exact path in
 // the INTENDED database. One harmless 404-log row is written to the target DB per start. Fails closed on any error.
-const sslFor = (url) => (/(localhost|127\.0\.0\.1)/.test(url) ? false : { rejectUnauthorized: false });
+// SEC-09: remote DBs are verified against the Supabase root CA (scripts/certs/prod-ca-2021.crt or DATABASE_CA_CERT); loopback: no TLS.
+let dbConfig;
+try {
+	dbConfig = pgClientConfig(resolved.url);
+	secretValues.push(dbConfig.connectionString);
+} catch (e) {
+	fail(`cannot set up TLS for the ${envName} database: ${safe(String(e.message))}`);
+}
 const nonce = `/zz-admin-probe-${randomBytes(6).toString("hex")}`;
 let problem = "";
 let status = "";
@@ -169,7 +179,7 @@ try {
 	problem = `could not reach the dev server (${safe(String(e.message))})`;
 }
 if (!problem) {
-	const db = new pg.Client({ connectionString: resolved.url, ssl: sslFor(resolved.url), connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
+	const db = new pg.Client({ ...dbConfig, connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
 	try {
 		await db.connect();
 		let found = 0;
@@ -188,8 +198,8 @@ if (problem) fail(`PROBE FAILED: ${problem}. The server was stopped.`);
 
 console.log(
 	`\n[admin] PROBE OK: this dev server wrote its probe 404 (${nonce}) into the ${envName.toUpperCase()} database ${dbHost(resolved.url)}\n` +
-		`[admin] admin:  ${base}/_emdash/admin\n` +
-		`[admin] site:   ${base}/\n` +
+		`[admin] admin:  ${adminBrowserUrl(port)}/_emdash/admin   (open localhost, not 127.0.0.1: passkeys are bound to the hostname)\n` +
+		`[admin] site:   ${adminBrowserUrl(port)}/\n` +
 		`[admin] publish dispatch: ${vars.GITHUB_DISPATCH_TOKEN ? "token present" : "NO GITHUB_DISPATCH_TOKEN (publish will not rebuild the site)"}, repo ${vars.GITHUB_DISPATCH_REPO ?? "unset"}\n` +
 		`[admin] running in the background. Stop with: pnpm admin:stop   (logs: pnpm --filter web exec astro dev logs)`,
 );

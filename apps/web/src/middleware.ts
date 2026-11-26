@@ -11,57 +11,33 @@
 import { env } from "cloudflare:workers";
 import { defineMiddleware } from "astro:middleware";
 import { normalizePath } from "./lib/lockdown";
+import {
+  SETUP_GATE_COOKIE,
+  SETUP_GATE_TTL_SECONDS,
+  hardenSetupRedirect,
+  issueSetupGateCookie,
+  matches,
+  shouldUseSecureCookie,
+  verifySetupGateCookie,
+} from "./lib/setup-gate";
 import { isSiteLive } from "./lib/site-live";
 
-export const SETUP_GATE_COOKIE = "growgen_setup_gate";
+export { SETUP_GATE_COOKIE, issueSetupGateCookie, matches, shouldUseSecureCookie, verifySetupGateCookie };
+/** EmDash's dev-mode login without a passkey (SEC-07): refused whenever the dev server points at production. */
+export const DEV_BYPASS_PATH = /^\/_emdash\/api\/auth\/dev-bypass(\/|$)/;
 const GATED = [/^\/_emdash\/admin\/setup(\/|$)/, /^\/_emdash\/api\/setup(\/|$)/];
 
 export interface WebMiddlewareEnv {
   SETUP_TOKEN?: string;
   /** Wrangler var; only the exact value "true" lifts noindex (INF-10). */
   PUBLIC_SITE_LIVE?: string;
+  /** `production` for the deployed Worker and the (deprecated) `admin:production` dev server. */
+  SITE_ENV?: string;
 }
 
 export interface WebMiddlewareOptions {
   getEnv?: () => WebMiddlewareEnv;
   isDev?: boolean;
-}
-
-async function digest(value: string): Promise<Uint8Array> {
-  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
-}
-
-/** Derive the cookie value via HMAC-SHA256 so the raw `SETUP_TOKEN` is never stored in cookies. */
-export async function deriveSetupGateToken(secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = new Uint8Array(
-    await crypto.subtle.sign("HMAC", key, encoder.encode(SETUP_GATE_COOKIE)),
-  );
-  return Array.from(sig, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-export async function matches(
-  candidate: string | null | undefined,
-  expected: string,
-): Promise<boolean> {
-  if (!candidate || !expected) return false;
-  const [a, b] = await Promise.all([digest(candidate), digest(expected)]);
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i]! ^ b[i]!;
-  return diff === 0;
-}
-
-/** Set `Secure` unless running over HTTP on loopback (`localhost` / `127.0.0.1`). */
-export function shouldUseSecureCookie(url: URL): boolean {
-  const isLoopback = url.hostname === "localhost" || url.hostname === "127.0.0.1";
-  return url.protocol === "https:" || !isLoopback;
 }
 
 /** Non-live sites (PUBLIC_SITE_LIVE != "true"): noindex on dynamic (SSR) responses too. Static assets get it from dist/client/_headers. */
@@ -91,6 +67,10 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
     if (pathname === null) return new Response("Bad request", { status: 400 });
 
     const runtimeEnv = getEnv();
+    // SEC-07: `astro dev` exposes EmDash's dev-bypass login; never against the production database.
+    if (DEV_BYPASS_PATH.test(pathname) && runtimeEnv.SITE_ENV?.trim() === "production") {
+      return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+    }
     if (!GATED.some((re) => re.test(pathname))) return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
     if (isDev) return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
 
@@ -99,32 +79,23 @@ export function createWebMiddleware(options: WebMiddlewareOptions = {}) {
 
     const queryToken = context.url.searchParams.get("setup_token");
     if (queryToken && (await matches(queryToken, secret))) {
-      const cookieToken = await deriveSetupGateToken(secret);
+      const cookieToken = await issueSetupGateCookie(secret);
       context.cookies.set(SETUP_GATE_COOKIE, cookieToken, {
         path: "/_emdash/",
         httpOnly: true,
         secure: shouldUseSecureCookie(context.url),
         sameSite: "strict",
-        maxAge: 3600,
+        maxAge: SETUP_GATE_TTL_SECONDS,
       });
       const clean = new URL(context.url);
       clean.searchParams.delete("setup_token");
-      const redirectRes = context.redirect(pathname + clean.search, 302);
-      const headers = new Headers(redirectRes.headers);
-      headers.set("Cache-Control", "no-store");
-      headers.set("Referrer-Policy", "no-referrer");
-      if (!isSiteLive(runtimeEnv.PUBLIC_SITE_LIVE)) {
-        headers.set("X-Robots-Tag", "noindex, nofollow");
-      }
-      return new Response(redirectRes.body, {
-        status: redirectRes.status,
-        statusText: redirectRes.statusText,
-        headers,
-      });
+      return hardenSetupRedirect(
+        context.redirect(pathname + clean.search, 302),
+        isSiteLive(runtimeEnv.PUBLIC_SITE_LIVE) ? {} : { "X-Robots-Tag": "noindex, nofollow" },
+      );
     }
 
-    const expectedCookie = await deriveSetupGateToken(secret);
-    if (await matches(context.cookies.get(SETUP_GATE_COOKIE)?.value, expectedCookie)) {
+    if (await verifySetupGateCookie(context.cookies.get(SETUP_GATE_COOKIE)?.value, secret)) {
       return withRobots(next, runtimeEnv.PUBLIC_SITE_LIVE);
     }
     return new Response("Not found", { status: 404 });

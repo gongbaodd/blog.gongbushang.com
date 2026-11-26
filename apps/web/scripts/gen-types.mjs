@@ -308,12 +308,11 @@ async function fetchCollectionsFromHttp(baseUrl, token) {
 async function fetchCollectionsFromPostgres(connectionString) {
   const pgMod = await import("pg");
   const Client = pgMod.default?.Client ?? pgMod.Client;
-  const host = new URL(connectionString).hostname;
-  const local = host === "127.0.0.1" || host === "localhost" || host === "::1";
+  // SEC-09: CA-verified TLS for remote hosts, none for loopback (scripts/admin/pg-tls.mjs).
+  const { pgClientConfig } = await import("./admin/pg-tls.mjs");
   const client = new Client({
-    connectionString,
+    ...pgClientConfig(connectionString),
     connectionTimeoutMillis: 3000,
-    ssl: local ? false : { rejectUnauthorized: false },
   });
   await client.connect();
   try {

@@ -3,29 +3,24 @@
  *
  * Also wired as EmDash's `middleware.outer` so health probes answer in <1 ms
  * without querying Postgres or failing on an unmigrated database.
+ *
+ * SEC-08: it is unauthenticated (exempt from the Cloudflare Access check), so the body is the minimum a probe needs,
+ * `{"ok":true}`: no service name, environment or version. SEC-06: always noindex.
  */
 import type { APIRoute } from "astro";
+import { NOINDEX } from "../robots.ts";
 
 export const prerender = false;
 
-export function buildHealthzResponse(env: NodeJS.ProcessEnv = process.env): Response {
-	const siteEnv = env?.SITE_ENV || "local";
-	const headers = new Headers({
-		"Content-Type": "application/json; charset=utf-8",
-		"Cache-Control": "no-store",
+export function buildHealthzResponse(): Response {
+	return new Response(JSON.stringify({ ok: true }), {
+		status: 200,
+		headers: {
+			"Content-Type": "application/json; charset=utf-8",
+			"Cache-Control": "no-store",
+			"X-Robots-Tag": NOINDEX,
+		},
 	});
-	if (siteEnv !== "production") {
-		headers.set("X-Robots-Tag", "noindex, nofollow");
-	}
-	return new Response(
-		JSON.stringify({
-			ok: true,
-			status: "ok",
-			service: "emdash-admin",
-			environment: siteEnv,
-		}),
-		{ status: 200, headers },
-	);
 }
 
 export const GET: APIRoute = () => buildHealthzResponse();

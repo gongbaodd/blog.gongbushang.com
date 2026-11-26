@@ -23,9 +23,11 @@ import {
 	buildPgDumpArgs,
 	buildPsqlRestoreArgs,
 	buildRestoreSql,
+	buildListPublicTablesArgs,
 	buildSupabaseDumpArgs,
 	dbHost,
 	extractUrlPassword,
+	findUnknownPublicTables,
 	getExcludedTables,
 	parseCliArgs,
 	parseEnvText,
@@ -260,6 +262,25 @@ for (const sig of ["SIGINT", "SIGTERM"]) {
 
 let exitCode = 0;
 try {
+	// SEC-11: fail closed BEFORE dumping or mutating anything if either side has an unclassified public.* table. A new EmDash
+	// auth/session/secret table would otherwise be copied (source) or truncated (target) without anyone deciding to.
+	// buildTruncateSql repeats the target check inside the restore transaction.
+	for (const side of [
+		{ label: `source (${opts.source})`, creds: srcCreds },
+		{ label: `target (${opts.target})`, creds: dstCreds },
+	]) {
+		const res = spawnSync("psql", buildListPublicTablesArgs(side.creds.url), { encoding: "utf8", env: childEnv(side.creds.env) });
+		if (res.error) fail(`failed to list public tables on ${side.label}: ${safe(res.error.message)}`);
+		if (res.status !== 0) fail(`psql table preflight failed on ${side.label} (code ${res.status}):\n${safe(res.stderr || res.stdout)}`);
+		const unknown = findUnknownPublicTables(res.stdout.split("\n"));
+		if (unknown.length > 0) {
+			fail(
+				`unclassified public table(s) on ${side.label}: ${unknown.join(", ")}. Refusing to sync (SEC-11): add each to an ` +
+					"EXCLUDED_* list or KNOWN_CONTENT_TABLES in apps/web/scripts/sync/lib.mjs first.",
+			);
+		}
+	}
+
 	console.log(`\n[sync] Dumping content from ${opts.source} (${dbHost(srcResolved.url)})...`);
 	const liveDump = buildDumpInvocation(rawDumpFile, srcCreds.url);
 	const dumpRes = spawnSync(liveDump.bin, liveDump.args, {
@@ -274,6 +295,8 @@ try {
 		fail(`${liveDump.bin} exited with code ${dumpRes.status}:\n${safe(dumpRes.stderr || dumpRes.stdout)}`);
 	}
 
+	// SEC-14: re-assert 0600 after the dump tool wrote it (a tool that replaces the file would otherwise apply the umask).
+	chmodSync(rawDumpFile, 0o600);
 	const rawSql = readFileSync(rawDumpFile, "utf8");
 	const wrappedSql = buildRestoreSql({
 		dumpSql: rawSql,

@@ -38,6 +38,8 @@ e2e-results
 **/*.dump.age
 **/*.pem
 **/*.crt
+# The one public certificate the image needs: Supabase root CA for verified TLS (SEC-09, apps/admin/Dockerfile).
+!apps/web/scripts/certs/prod-ca-2021.crt
 **/*.key
 **/*.p12
 **/.npmrc

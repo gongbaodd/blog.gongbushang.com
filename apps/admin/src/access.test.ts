@@ -1,7 +1,8 @@
+import { readFileSync } from "node:fs";
 import { exportJWK, generateKeyPair, SignJWT, createLocalJWKSet } from "jose";
 import { describe, expect, it, vi } from "vitest";
 import { parseProjectRef as webParseProjectRef, disallowedUrlParams as webDisallowedUrlParams } from "../../web/scripts/sync/lib.mjs";
-import { connectionConfig, evaluateStartup, parseProjectRef, disallowedUrlParams, sslOptionsFor } from "../scripts/safety.mjs";
+import { connectionConfig, defaultCaCandidates, evaluateStartup, loadDefaultCa, parseProjectRef, disallowedUrlParams, sslOptionsFor } from "../scripts/safety.mjs";
 import { accessMode, isLoopbackHost, teamOrigin, verifyAccessJwt } from "./access.ts";
 import { PLACEHOLDER_DATABASE_URL, POOL_MAX, runtimeDialectConfig, sslFor } from "./db-config.ts";
 import { createOuterMiddleware } from "./outer.ts";
@@ -96,9 +97,10 @@ describe("runtime database config", () => {
 	const poolerUrl = (qs = "") => `postgresql://postgres.${REF}:p@aws-0-eu.pooler.supabase.com:5432/postgres${qs}`;
 	const testingEnv = { SITE_ENV: "production", SUPABASE_PRODUCTION_REF: REF, ADMIN_CONFIRM_PRODUCTION: "yes", HOST: "0.0.0.0" };
 
-	it("uses TLS for the Supabase pooler and none for loopback, with a small pool", () => {
+	it("uses verified TLS (committed Supabase CA) for the pooler and none for loopback, with a small pool", () => {
 		const pooler = runtimeDialectConfig({ ...testingEnv, DATABASE_URL: poolerUrl() } as never);
-		expect(pooler.ssl).toEqual({ rejectUnauthorized: false });
+		const committedCa = readFileSync(new URL("../../web/scripts/certs/prod-ca-2021.crt", import.meta.url), "utf8");
+		expect(pooler.ssl).toEqual({ ca: committedCa, rejectUnauthorized: true });
 		expect(pooler.pool.max).toBe(POOL_MAX);
 		expect(POOL_MAX).toBeLessThanOrEqual(3);
 		expect(sslFor("postgresql://postgres:postgres@127.0.0.1:54322/postgres")).toBe(false);
@@ -131,7 +133,9 @@ describe("runtime database config", () => {
 		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "   " } as never)).toThrow(/blank/);
 		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "/nonexistent/ca.pem" } as never)).toThrow(/could not be read/);
 		expect(() => sslOptionsFor(url, { DATABASE_CA_CERT: "-x\\nabc" } as never)).toThrow(/literal/);
-		expect(sslOptionsFor(url, { DATABASE_CA_CERT: "" } as never)).toEqual({ rejectUnauthorized: false });
+		// empty means unset: the committed Supabase CA, still verified (SEC-09: no unverified fallback)
+		expect(sslOptionsFor(url, { DATABASE_CA_CERT: "" } as never)).toMatchObject({ rejectUnauthorized: true });
+		expect(sslOptionsFor(url, {} as never)).toMatchObject({ rejectUnauthorized: true });
 		expect(evaluateStartup({ ...testingEnv, DATABASE_URL: url, DATABASE_CA_CERT: "  " }).errors.join()).toMatch(/blank/);
 	});
 
@@ -151,6 +155,15 @@ describe("runtime database config", () => {
 		expect((await prodNoAccess(ctx("/_emdash/admin"), next))!.status).toBe(503);
 		expect((await prodNoAccess(ctx("/healthz"), next))!.status).toBe(200);
 		expect(next).not.toHaveBeenCalled();
+	});
+
+	it("finds the committed CA in the image and repo layouts, and fails closed when it is missing", () => {
+		const c = defaultCaCandidates("/app");
+		expect(c).toContain("/app/certs/prod-ca-2021.crt");
+		expect(c.some((p) => p?.endsWith("/apps/web/scripts/certs/prod-ca-2021.crt"))).toBe(true);
+		expect(() => loadDefaultCa(["/nope/a.crt"], () => false)).toThrow(/DATABASE_CA_CERT/);
+		expect(() => loadDefaultCa(["/x.crt"], () => true, (() => "not a pem") as never)).toThrow(/not found/);
+		expect(loadDefaultCa(c)).toContain("BEGIN CERTIFICATE");
 	});
 
 	it("verifies the chain when DATABASE_CA_CERT is set", () => {
