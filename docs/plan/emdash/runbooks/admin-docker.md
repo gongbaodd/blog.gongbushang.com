@@ -90,13 +90,13 @@ The target is a single container on Altare, managed from [console.altare.gg](htt
 
 1. **Image.** `.github/workflows/admin-image.yml` publishes `ghcr.io/gongbaodd/growgen-admin` on every admin change to `feat/emdash` (tags `sha-<short>` and `latest`), or on demand with `gh workflow run admin-image.yml --ref feat/emdash`. After the first run, make the package **public** once (GitHub → Packages → growgen-admin → Package settings → Change visibility), so Altare can pull it without credentials. The image holds no secrets (`check:secrets` guards that).
 2. **Altare service.** Image `ghcr.io/gongbaodd/growgen-admin:latest` (or a `sha-` tag to pin), port `4322`, health check `GET /healthz`.
-3. **Secrets live only in Altare's environment variables**, typed by the owner in the console. They are never in the image, the repo or GitHub: `DATABASE_URL` (IPv4 session pooler), `EMDASH_ENCRYPTION_KEY` (= `EMDASH_PRODUCTION_ENCRYPTION_KEY`), `CLOUDINARY_*`, `GITHUB_DISPATCH_TOKEN`, plus `SITE_ENV=production`, `ADMIN_CONFIRM_PRODUCTION=yes`, `SUPABASE_PRODUCTION_REF`, `EMDASH_SITE_URL=https://admin.growgen.xyz`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `HOST=0.0.0.0`. Leave `SETUP_TOKEN` empty.
-4. **Hostname.** A proxied (orange-cloud) Cloudflare DNS record `admin.growgen.xyz` → the Altare URL, if Altare accepts a custom domain. If it does not, use a Cloudflare Tunnel instead (`cloudflared` routing `admin.growgen.xyz` to the container); that is the only reason to run one.
+3. **Secrets live only in Altare's environment variables**, typed by the owner in the console. They are never in the image, the repo or GitHub: `DATABASE_URL` (IPv4 session pooler), `EMDASH_ENCRYPTION_KEY` (= `EMDASH_PRODUCTION_ENCRYPTION_KEY`), `CLOUDINARY_*`, `GITHUB_DISPATCH_TOKEN`, plus `SITE_ENV=production`, `ADMIN_CONFIRM_PRODUCTION=yes`, `SUPABASE_PRODUCTION_REF`, `EMDASH_SITE_URL=https://admin.growgen.xyz`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `CF_TUNNEL_TOKEN`, `HOST=0.0.0.0`. Leave `SETUP_TOKEN` empty.
+4. **Hostname: Cloudflare Tunnel inside the container (GON-230).** Altare gives the container only an IP:port and cannot serve a custom domain over HTTPS, and Cloudflare's proxy cannot forward to an arbitrary port. The image therefore ships `cloudflared`, and `scripts/start.mjs` starts it when `CF_TUNNEL_TOKEN` is set. In Zero Trust → **Networks → Tunnels → Create a tunnel → Cloudflared**, copy the token into Altare's `CF_TUNNEL_TOKEN`, and add the public hostname `admin.growgen.xyz` → `http://localhost:4322` (Cloudflare creates the DNS record). Altare's own port is then unused. The token reaches only the `cloudflared` child process (as `TUNNEL_TOKEN`); the database URL, encryption key and other secrets are stripped from its environment, and if `cloudflared` exits the container exits so Altare restarts it. On a host that does serve custom domains, a proxied DNS record to the host's URL works instead and `CF_TUNNEL_TOKEN` stays empty.
 5. **Cloudflare Access** self-hosted application on `admin.growgen.xyz` (below). Copy its team domain and AUD into step 3.
 
 ### Origin protection (SEC-08)
 
-Cloudflare Access is a policy on the hostname, so it does not by itself stop someone opening the Altare URL directly. The origin closes that gap: with `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` set, every request except `/healthz` and `/robots.txt` must carry a valid `Cf-Access-Jwt-Assertion` signed for this application, or gets `403` (section 6, `src/outer.ts`). A production target listening beyond loopback refuses to serve anything (`503`) until both are set. A direct hit on the Altare URL therefore reaches no admin page, so a Cloudflare Tunnel is **not** required.
+Cloudflare Access is a policy on the hostname, so it does not by itself stop someone opening the Altare URL directly. The origin closes that gap: with `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD` set, every request except `/healthz` and `/robots.txt` must carry a valid `Cf-Access-Jwt-Assertion` signed for this application, or gets `403` (section 6, `src/outer.ts`). A production target listening beyond loopback refuses to serve anything (`503`) until both are set. A direct hit on the Altare IP:port therefore reaches no admin page, whether or not the tunnel is used.
 
 Passkeys are bound to the hostname: enroll them on `https://admin.growgen.xyz` only, never on the Altare URL.
 
@@ -135,7 +135,7 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 
 ## 6. Safety rails and access control (INF-9 review fixes)
 
-**Required exposure: Cloudflare Access with origin JWT verification (SEC-08).** Put the hostname behind a Cloudflare Access application and set `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`. The origin verifies the Access JWT itself (below), so the container's own provider URL or a misrouted port is not an open admin. A Cloudflare Tunnel is optional, needed only when the host cannot serve the custom hostname.
+**Required exposure: Cloudflare Access with origin JWT verification (SEC-08).** Put the hostname behind a Cloudflare Access application and set `CF_ACCESS_TEAM_DOMAIN` + `CF_ACCESS_AUD`. The origin verifies the Access JWT itself (below), so the container's own provider URL or a misrouted port is not an open admin. A Cloudflare Tunnel (`CF_TUNNEL_TOKEN`, section 3) is needed when the host cannot serve the custom hostname, as on Altare.
 
 | Variable | Effect |
 |---|---|
@@ -153,7 +153,7 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 
 **Public assets.** `/_astro/*` build assets are served by the Node adapter before middleware and are not behind Access; they contain no content or secrets.
 
-**Sidecar caveat.** With `HOST=127.0.0.1` and a `cloudflared` sidecar in the same network namespace, every request arrives from loopback and the Access check is switched off for a production target. Keep the default container setup (`HOST=0.0.0.0`, port unpublished, `cloudflared` reaching it over the Docker network) so origin verification stays on.
+**Tunnel caveat.** Whether Access is enforced depends on `HOST`, not on where requests come from. The in-container `cloudflared` reaches the server on `localhost`, so keep `HOST=0.0.0.0` (the image default): with `HOST=127.0.0.1` a production target counts as loopback-only and the origin Access check is switched off.
 
 At start `scripts/start.mjs` connects with the runtime `DATABASE_URL` and logs `DB IDENTITY: SITE_ENV=... -> host:port/db (database, role)` (never the password) before the server listens. Check that line in `docker compose logs admin` before editing anything.
 
