@@ -1,0 +1,16 @@
+[
+  { "label": "Mail", "url": "mailto:gongbaodd@outlook.com", "icon": "mail", "sortOrder": 0 },
+  { "label": "GitHub", "url": "https://github.com/gongbaodd", "icon": "github", "sortOrder": 1 },
+  { "label": "Twitter", "url": "https://twitter.com/gongbaodd", "icon": "x", "sortOrder": 2 },
+  { "label": "Instagram", "url": "https://www.instagram.com/mia_takeshi", "icon": "instagram", "sortOrder": 3 },
+  { "label": "Facebook", "url": "https://www.facebook.com/gongbaodd", "icon": "facebook", "sortOrder": 4 },
+  { "label": "LinkedIn", "url": "https://www.linkedin.com/in/jian-gong-27762aa8/", "icon": "linkedin", "sortOrder": 5 },
+  { "label": "Itch.io", "url": "https://gongbaodd.itch.io", "icon": "itchio", "sortOrder": 6 },
+  { "label": "Threads", "url": "https://www.threads.com/@mia_takeshi", "icon": "threads", "sortOrder": 7 },
+  { "label": "Spotify", "url": "https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz", "icon": "spotify", "sortOrder": 8 },
+  { "label": "Youtube", "url": "https://www.youtube.com/@gongbaodd", "icon": "youtube", "sortOrder": 9 },
+  { "label": "Jike", "url": "https://m.okjike.com/users/a03ab857-dd35-44d3-8373-97e7a855db39", "icon": "jike", "sortOrder": 10 },
+  { "label": "小红书", "url": "https://www.xiaohongshu.com/user/profile/5b9aeeb2bc5acf0001cd8205", "icon": "xiaohongshu", "sortOrder": 11 },
+  { "label": "Bilibili", "url": "https://space.bilibili.com/3368538", "icon": "bilibili", "sortOrder": 12 },
+  { "label": "v2ex", "url": "https://www.v2ex.com/member/gongbaodd", "icon": "v2ex", "sortOrder": 13 }
+]

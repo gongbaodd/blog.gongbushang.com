@@ -3,18 +3,12 @@
  * "Follow me" list for the /contact page. Plain anchors so the text is in the
  * served HTML.
  */
-const links = [
-  { label: "GitHub", href: "https://github.com/gongbaodd" },
-  { label: "X / Twitter", href: "https://twitter.com/gongbaodd" },
-  { label: "LinkedIn", href: "https://www.linkedin.com/in/jian-gong-27762aa8/" },
-  { label: "YouTube", href: "https://www.youtube.com/@gongbaodd" },
-  { label: "Bilibili", href: "https://space.bilibili.com/3368538" },
-  { label: "Instagram", href: "https://www.instagram.com/mia_takeshi" },
-  { label: "Threads", href: "https://www.threads.com/@mia_takeshi" },
-  { label: "Spotify (podcast)", href: "https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz" },
-  { label: "itch.io (games)", href: "https://gongbaodd.itch.io" },
-  { label: "V2EX", href: "https://www.v2ex.com/member/gongbaodd" },
-];
+import { getSocialLinks } from "../lib/social-links";
+
+// Same EmDash "social" list as the footer; mail is shown separately below.
+const links = (await getSocialLinks())
+  .filter((l) => l.icon !== "mail" && !l.url.startsWith("mailto:"))
+  .map(({ label, url }) => ({ label, href: url }));
 ---
 
 <section id="follow" class="mx-auto my-12 max-w-5xl px-4">
