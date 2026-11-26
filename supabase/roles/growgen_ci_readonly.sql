@@ -60,7 +60,9 @@ declare
     '_emdash_collections', '_emdash_fields', '_emdash_migrations', '_emdash_migrations_lock', 'options', '_plugin_state',
     '_emdash_redirect_state', '_emdash_redirect_artifacts', '_emdash_redirect_generation_artifacts',
     -- content joined by the prerender and derive
-    '_emdash_bylines', '_emdash_content_bylines', 'taxonomies', 'content_taxonomies', 'media'
+    '_emdash_bylines', '_emdash_content_bylines', 'taxonomies', 'content_taxonomies', 'media',
+    -- SEO panel rows (title/description/image/canonical/noindex only): prerender and scripts/seo/write-noindex.ts (GON-203)
+    '_emdash_seo'
   ];
   -- options keys the build reads (measured; see header). Prefix `site:` is allowed separately.
   ci_option_keys text[] := array[
