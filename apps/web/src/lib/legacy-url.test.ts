@@ -97,9 +97,11 @@ describe("prepareBody (MDX DescriptionImage)", () => {
     expect(body).not.toMatch(/import /);
     expect(body).toContain('<img src="/a.gif" alt="x" style="max-height:1600px');
     expect(body).not.toContain("DescriptionImage");
+    expect(prepareBody(src).mdx).toBe(true);
   });
 
   it("leaves plain markdown untouched", () => {
     expect(prepareBody("# a\n").body).toBe("# a\n");
+    expect(prepareBody("# a\n").mdx).toBe(false);
   });
 });
