@@ -226,7 +226,17 @@ export async function fetchCloudinaryUsage({
 		throw new Error(`Cloudinary usage request failed: ${reason}`);
 	}
 	if (!res.ok) {
-		throw new Error(`Cloudinary usage API returned HTTP ${res.status}`);
+		// Cloudinary explains auth failures in { error: { message } } (e.g. a restricted key without Admin API access).
+		// Surface it for diagnosis, with the key and secret redacted in case the message echoes them.
+		let detail = "";
+		try {
+			const body = await res.json();
+			const msg = typeof body?.error?.message === "string" ? body.error.message : "";
+			detail = msg.split(apiKey).join("<api_key>").split(apiSecret).join("<api_secret>").slice(0, 300);
+		} catch {
+			// body not JSON: status alone
+		}
+		throw new Error(`Cloudinary usage API returned HTTP ${res.status}${detail ? `: ${detail}` : ""}`);
 	}
 	let data;
 	try {

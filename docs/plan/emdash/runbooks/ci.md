@@ -53,6 +53,13 @@ The `rebuild-on-publish` plugin sends `client_payload.environment` taken from `S
 Not secret, hardcoded in the workflows: `CLOUDFLARE_ACCOUNT_ID`.
 Separate from CI: the CMS publish hook (`GITHUB_DISPATCH_TOKEN`, a fine-grained token allowed to dispatch to this repo) is a Worker secret, not a GitHub secret.
 
+## First runs from `master` (GON-151, 2026-11-26)
+- `web-deploy` manual (run 45900007049): green. 1813 pages and 996 posts prerendered, `growgen-web` uploaded, `next.growgen.xyz` still sends `x-robots-tag: noindex, nofollow` and a disallow-all `robots.txt`.
+- `web-deploy` dispatch (run 45900557524): green, target `production`, `growgen-web` uploaded. It was an `emdash-publish` event sent by hand (`gh api repos/{owner}/{repo}/dispatches -f event_type=emdash-publish -F 'client_payload[environment]=production'`) tests the workflow side. The plugin → GitHub hop is only tested by a real publish in the admin.
+- `web-guards` manual (run 45900010506): **both jobs failed on secrets**, not on code:
+  - `backup-production`: `BACKUP_AGE_RECIPIENT` did not match `^age1[0-9a-z]{58}$`. The job now strips whitespace first (a trailing newline from `gh secret set < file`) and logs the length. Fix: `age-keygen -y ~/growgen-backup.agekey | gh secret set BACKUP_AGE_RECIPIENT --env production`. If the log says it holds a private key, rotate the key pair.
+  - `cloudinary-usage`: HTTP 403 from `GET /v1_1/<cloud>/usage`. The error now includes Cloudinary's message (key and secret redacted). A 403 usually means the API key has a restricted role without Admin API access, or it belongs to another product environment. Fix: in Cloudinary, Settings, API Keys, use a key with Admin API (usage) access for cloud `dmq8ipket` and reset the three `CLOUDINARY_*` repository secrets.
+
 ## One-time setup still needed
 1. `age-keygen -o ~/growgen-backup.agekey` on an offline machine; store the private key in a password manager; `gh secret set BACKUP_AGE_RECIPIENT --env production` with the `age1...` line (public).
 2. Optionally add required reviewers to the `production` environment. Note this also blocks the nightly production rebuild and backup until approved; if you want those unattended, leave the environment without reviewers and rely on manual dispatch for risky changes.
