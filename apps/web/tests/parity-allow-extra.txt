@@ -24,3 +24,5 @@
 /api/cards/2025/02/21/puzzle-game.json
 /api/cards/2025/08/18/blog-cards.json
 /api/cards/2025/09/09/tetris-ai.json
+# Gallery items added on master after the MIG-0 snapshot (MIG-7: _gallery/11/25/beijing.json, src/content 697380543).
+/api/gallery/trace/11-25-beijing.svg

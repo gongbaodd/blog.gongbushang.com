@@ -2,7 +2,7 @@
 
 - **Date**: 2026-11-25
 - **Branch**: `emdash/MIG-7-master-sync` (based on `feat/emdash` `71a0949`)
-- **Status**: Content fetched, inventoried, gaps fixed in `apps/web/scripts/import/mig7/`, `src/content` gitlink bumped to `697380543`; **no database writes performed** (local Supabase offline; testing/production require explicit owner execution).
+- **Status**: Content fetched, inventoried, gaps fixed in `apps/web/scripts/import/mig7/`, `src/content` gitlink bumped to `697380543`. **Local DB caught up** on `emdash/MIG-7-fixes` (see "Review fixes"). Production is not written by agents: the owner runs §5.
 
 ---
 
@@ -98,7 +98,7 @@ Running `node apps/web/scripts/import/mig6/catchup.mjs --dry-run` against `origi
 1. **Image guard false-positive on modified historical posts (exit 3)**:
    `mig6/catchup.mjs` checks raw `_docs/` markdown with `offCloudinary()` without consulting `apps/web/scripts/import/mig2/rewrite-map.json` + `upload-result.json`. Because MIG-2 rewrites legacy image URLs at import time rather than mutating `src/content`, editing *any* historical post that still contains `ww1.sinaimg.cn` (or local) URLs causes `mig6/catchup.mjs` to abort with exit 3 even though all 20 URLs are already uploaded on Cloudinary.
 2. **Silent image regression (`--rewrite=none`)**:
-   `mig6/catchup.mjs` invokes `mig1/import.mjs` without `--rewrite=map`. Even if the image guard passed, re-importing `It's-not-a-particularly-worthwhile-Qin-and-Han-show.md` with `--rewrite=none` would overwrite its Cloudinary-rewritten `body_md` in EmDash back to hotlink-gated `http://ww1.sinaimg.cn/...` URLs. Passing `--rewrite=map` preserves all 20 MIG-2 rewrites while remaining a no-op for brand-new Cloudinary-native posts like `gameplay-atlas.md`.
+   `mig6/catchup.mjs` invokes `mig1/import.mjs` without `--rewrite=map`. On a database that holds the MIG-2 body rewrite (production), re-importing `It's-not-a-particularly-worthwhile-Qin-and-Han-show.md` with `--rewrite=none` would put hotlink-gated `http://ww1.sinaimg.cn/...` URLs back into its `body_md`. The reverse holds on a database without the rewrite (local): `map` would rewrite this one post only. Hence `--rewrite` is now an explicit, required choice per target (Review fixes, item 2).
 3. **Silent no-op on mixed-case / punctuated filenames (`legacyIdOf` mismatch)**:
    `mig6/lib.mjs` computes `legacyIdOf()` as raw path minus extension (`2017/11/25/It's-not-a-particularly-worthwhile-Qin-and-Han-show`), whereas `mig1/import.mjs` computes `globId()` with `github-slugger` per path segment (`2017/11/25/its-not-a-particularly-worthwhile-qin-and-han-show`). Passing the unslugged ID to `mig1/import.mjs --match ... --match-exact` matches **0 posts** and exits 0 silently, dropping the update.
 4. **Gallery additions ignored**:
@@ -108,18 +108,17 @@ Running `node apps/web/scripts/import/mig6/catchup.mjs --dry-run` against `origi
 
 ### Solution Added (`apps/web/scripts/import/mig7/`)
 
-Without modifying `mig6/*`, `package.json`, or `vitest.config.ts`:
+Without modifying `mig6/*` or `package.json` (`apps/web/vitest.config.ts` already includes `scripts/import/**/*.test.ts`):
 - `apps/web/scripts/import/mig7/lib.mjs`: `parseContentDiff()` (both `_docs` and `_gallery`), `globLegacyId()` / `slugifySegment()` (matching `github-slugger@2.0.0`), `checkPostImages()` (MIG-2 `rewrite-map.json` + `upload-result.json` aware), and `checkGalleryImages()`.
-- `apps/web/scripts/import/mig7/catchup.mjs`: CLI supporting `--base`, `--target`, `--ref`, `--dry-run`, `--write`, `--url`, `--rewrite=map|none` (defaults to `map`), `--force`, `--update-gallery`, `--bump`, and `--help`. Archives `_docs`, `_gallery`, and `generated/gallery.json` at `target`, runs `mig1/import.mjs --match <globLegacyId> --match-exact --rewrite=map` for changed posts, and runs `mig3/import.mjs --only gallery` when gallery files changed.
-- `apps/web/scripts/import/mig7/lib.test.ts`: Vitest unit suite covering all helpers and edge cases. *(Post-merge wiring note: add `"scripts/import/mig7/*.test.ts"` to `apps/web/vitest.config.ts` `include`.)*
+- `apps/web/scripts/import/mig7/catchup.mjs`: CLI supporting `--base`, `--target`, `--ref`, `--dry-run`, `--write`, `--url`, `--rewrite map|none` (required with `--write`), `--yes-production`, `--force`, `--update-gallery`, `--bump`, and `--help`. Archives `_docs`, `_gallery`, and `generated/gallery.json` at `target`, runs `mig1/import.mjs --match <globLegacyId> --match-exact --rewrite=<mode>` for changed posts, and runs `mig3/import.mjs --only gallery` when gallery files changed.
+- `apps/web/scripts/import/mig7/lib.test.ts`: Vitest unit suite covering all helpers and edge cases.
 
 ---
 
 ## 4. Environment Check & Dry-Run Evidence
 
-- **Local Supabase (`127.0.0.1:54322`)**: unreachable (`LOCAL_DB_DOWN`).
-- **Local EmDash Admin (`127.0.0.1:4322` / `4332`)**: unreachable (`LOCAL_ADMIN_DOWN`).
-- **No database writes executed** on `local`, `testing`, or `production`.
+- The first MIG-7 pass wrote nothing to any database. The local catch-up was run in the review-fix pass; results are under "Review fixes". Production has not been written.
+- The dry-run outputs below are from the first pass (before `--rewrite` became required; the `rewrite` line now prints the explicit choice).
 
 ### Observed `mig6/catchup.mjs --dry-run` (reproducing the gap)
 
@@ -184,87 +183,116 @@ plan (gallery): import 1 gallery item(s):
 
 ---
 
-## 5. Exact Copy-Paste Execution Commands
 
-### Step 0: External Image Rehosting
+## 5. Production Steps (owner only)
 
-**No Cloudinary upload is needed for `b7d0c04 -> 6973805`.** All 48 direct Cloudinary URLs and all 20 MIG-2 rewritten URLs are already live on `res.cloudinary.com/dmq8ipket`.
+Agents never run these. Production is the single remote environment (INF-10 retired `testing`). The content delta is `4893092b -> 697380543` (one modified post, one new gallery item); `feat/emdash` already pins `src/content` at `697380543`, so no `--bump`.
 
-*(If future `master` commits add unhosted external/local images, `mig7/catchup.mjs` exits `3` with the list. Rehost them first via the MIG-2 pipeline before re-running catch-up: `node apps/web/scripts/import/mig2/inventory.mjs && node apps/web/scripts/import/mig2/download.mjs && node apps/web/scripts/import/mig2/plan.mjs && node apps/web/scripts/import/mig2/upload.mjs --execute`.)*
+No Cloudinary upload is needed: the cover and gallery image are already on `res.cloudinary.com/dmq8ipket`, and the 20 body images were uploaded by MIG-2.
 
-> **Choosing `--base`**:
-> - Use `--base 4893092` if that environment already imported `MIG-6` (`gameplay-atlas`).
-> - Use `--base b7d0c04` if that environment is still at the initial `MIG-1`/`MIG-3` import baseline (idempotent: re-importing `gameplay-atlas` if already present simply reports `unchanged`).
+### 5.1 Read-only checks: MIG-6 applied, and which `--rewrite`
 
-### Step 1: Local (`127.0.0.1:54322`)
+From the repo root. `psql` with verified TLS (supabase.md "Connect"); the transaction is read-only and rolled back.
 
 ```bash
-# Ensure submodule is at 6973805 and local Postgres + admin are running
-git submodule update --init src/content
-pnpm db:start
-pnpm admin:local
+set -a; . ./.env; set +a          # loads SUPABASE_PRODUCTION_POOLER_URL; never echo it
+PGSSLMODE=verify-full PGSSLROOTCERT=apps/web/scripts/certs/prod-ca-2021.crt \
+psql "$SUPABASE_PRODUCTION_POOLER_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+begin transaction read only;
+-- A. MIG-6 applied? expect one row: 2026-11-25-gameplay-atlas | published
+select slug, status from ec_posts where slug = '2026-11-25-gameplay-atlas' and deleted_at is null;
+-- B. rewrite mode: post bodies with legacy sinaimg URLs vs Cloudinary URLs
+select count(*) filter (where body_md like '%sinaimg%')           as sinaimg_bodies,
+       count(*) filter (where body_md like '%res.cloudinary.com%') as cloudinary_bodies,
+       count(*)                                                     as posts
+from ec_posts where deleted_at is null;
+-- C. the post this catch-up rewrites
+select featured_image is not null as has_cover,
+       body_md like '%sinaimg%' as body_sinaimg,
+       body_md like '%res.cloudinary.com%' as body_cloudinary
+from ec_posts where slug = '2017-11-25-its-not-a-particularly-worthwhile-qin-and-han-show' and deleted_at is null;
+-- D. gallery: expect 75 | 0 before the catch-up
+select count(*) as gallery, count(*) filter (where slug = '11-25-beijing') as beijing
+from ec_gallery where deleted_at is null;
+rollback;
+SQL
+```
 
-# 1. Dry-run first (use --base b7d0c04 to safely cover both MIG-6 and MIG-7)
-node apps/web/scripts/import/mig7/catchup.mjs --dry-run --base b7d0c04 --target 6973805
+Decide:
+- **A** returns the row: use `--base 4893092b`. No row: MIG-6 was not applied, use `--base b7d0c04` (also imports `gameplay-atlas`).
+- **B/C**: about `4 | 377` with C `body_sinaimg = f`, `body_cloudinary = t` means the MIG-2 rewrite is there: use **`--rewrite map`** (expected). `32 | 242` with C `body_sinaimg = t` means no rewrite: use `--rewrite none` (or apply the full rewrite first, see runbooks/data.md "Catch-up (MIG-7)"). Anything else: stop and ask. (Reference: the 996 source posts give 32 / 242 raw and about 4 / 377 with every uploaded MIG-2 rewrite applied; the local DB shows exactly 32 / 242.)
 
-# 2. Import posts (with --rewrite=map) + new gallery item (11/25/beijing)
-node apps/web/scripts/import/mig7/catchup.mjs --write --url http://127.0.0.1:4322 --base b7d0c04 --target 6973805
+### 5.2 Start the Docker admin against production
 
-# 3. Refresh derived caches (embeddings, UMAP, cover colors, gallery traces), build, and verify URL parity
-export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
-pnpm --filter web derive
-pnpm --filter web build
-node apps/web/tests/check-parity.mjs --dir apps/web/dist/client --all
+Not `pnpm admin:production`: SEC-07 refuses it without `--unsafe-dev-server` (dev bypass on the live DB). Follow [runbooks/admin-docker.md](../runbooks/admin-docker.md) §1, §3 and §6. `apps/admin/.env.production` (gitignored) needs `SITE_ENV=production`, `ADMIN_CONFIRM_PRODUCTION=yes`, `SUPABASE_PRODUCTION_REF=ckpozotzgubrjbjstvjg`, `DATABASE_URL` (production session pooler), `EMDASH_ENCRYPTION_KEY` (= `EMDASH_PRODUCTION_ENCRYPTION_KEY`), `EMDASH_SITE_URL=https://<admin host>`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, with `cloudflared` in front.
 
-# 4. Spot-check the two affected post pages and gallery count in the build output
-test -f apps/web/dist/client/fe/2026/11/25/gameplay-atlas/index.html
-test -f apps/web/dist/client/life/2017/11/25/its-not-a-particularly-worthwhile-qin-and-han-show/index.html
+```bash
+cd apps/admin
+docker compose --env-file .env.production up --build -d
+docker compose --env-file .env.production logs admin | grep "DB IDENTITY"   # must name the production pooler host
+cd ../..
+```
+
+**How the catch-up reaches it.** The container listens on `0.0.0.0` with a production target, so Cloudflare Access is enforced inside it: `http://127.0.0.1:4322` answers 403 for `/_emdash/*`. The Node build also has no dev bypass. So the catch-up goes through the Access hostname with two credentials, which `mig1/import.mjs` and `mig3/rest.mjs` read from the environment (sent over https only):
+- `EMDASH_HEADERS`: a Cloudflare Access **service token** (`CF-Access-Client-Id` / `CF-Access-Client-Secret`) allowed by a Service Auth rule on the admin's Access application.
+- `EMDASH_TOKEN`: an EmDash API token created in the admin (Settings -> API tokens). Revoke it afterwards.
+
+```bash
+read -rs CF_ID; read -rs CF_SECRET; read -rs EMDASH_TOKEN; export EMDASH_TOKEN
+export EMDASH_HEADERS="$(printf 'CF-Access-Client-Id: %s\nCF-Access-Client-Secret: %s' "$CF_ID" "$CF_SECRET")"
+ADMIN=https://<admin host>
+```
+
+### 5.3 Dry run, then write
+
+```bash
+git submodule update --init src/content          # 697380543
+node apps/web/scripts/import/mig7/catchup.mjs --dry-run --rewrite map --url "$ADMIN" --base 4893092b --target 6973805
+```
+Expect: `admin <admin host> (REMOTE: production guard)`, posts modified 1, gallery added 1, `image guard: ok (posts: 1 direct Cloudinary, 20 MIG-2 hosted; gallery: 1 direct Cloudinary)`, `rewrite map: 20 MIG-2 hosted body URL(s) will be written as Cloudinary URLs`.
+
+```bash
+node apps/web/scripts/import/mig7/catchup.mjs --write --rewrite map --yes-production --url "$ADMIN" --base 4893092b --target 6973805
+```
+Expect: post `updated=1 failed=0`, `created gallery 11/25/beijing`, exit 0. (Use the `--base` and `--rewrite` that 5.1 chose. Without `--yes-production` the write refuses with exit 2.) Re-run the 5.1 query: C `t | f | t`, D `76 | 1`.
+
+Then stop the admin and revoke the API token:
+```bash
+(cd apps/admin && docker compose --env-file .env.production down)
+unset EMDASH_TOKEN EMDASH_HEADERS CF_ID CF_SECRET
+```
+
+### 5.4 Build, parity, deploy
+
+```bash
+pnpm deploy:production:build      # check-build-env + .env + derive (writes production's derived cache, as intended) + astro build
+pnpm --filter web parity          # expect 0 missing
 test -f apps/web/dist/client/api/gallery/trace/11-25-beijing.svg
-
-# 5. Stop local admin
-pnpm admin:stop
+test -f apps/web/dist/client/life/2017/11/25/its-not-a-particularly-worthwhile-qin-and-han-show/index.html
+gh workflow run web-deploy.yml --ref feat/emdash -f environment=production
+gh run list --workflow web-deploy.yml --limit 1
 ```
+`deploy:production:build` refuses while `apps/web/.dev.vars` sets the Hyperdrive variable; move it aside for the build (admin.md "Safety"). The local build is verification only; CI deploys. `--ref feat/emdash` is needed because `web-deploy.yml` is not on `master` yet (checked 2026-11-26), so the nightly schedule and `repository_dispatch`, which use the default branch's workflows, do not run it.
 
-### Step 2: Testing (`SUPABASE_TESTING_POOLER_URL`)
+---
 
-```bash
-# Load repo-root .env into the current shell (never echo secret values)
-set -a; . ./.env; set +a
-pnpm admin:testing
+## Review fixes (branch `emdash/MIG-7-fixes`)
 
-# 1. Dry-run and write catch-up (covers both 4893092 gameplay-atlas and 6973805 beijing)
-node apps/web/scripts/import/mig7/catchup.mjs --dry-run --base b7d0c04 --target 6973805
-node apps/web/scripts/import/mig7/catchup.mjs --write --url http://127.0.0.1:4322 --base b7d0c04 --target 6973805
+1. **Local DB caught up.** Local admin (`pnpm admin:local -- --port 4333`, probe OK against `127.0.0.1:54322`), dry run then `catchup.mjs --write --rewrite none --url http://127.0.0.1:4333 --base 4893092b --target 6973805`: post `updated=1 failed=0`, `created gallery 11/25/beijing` (75 unchanged), exit 0.
 
-# 2. Refresh derived schema on testing DB, build for testing, and verify URL parity
-CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_TESTING_POOLER_URL" pnpm --filter web derive
-pnpm deploy:testing:build
-node apps/web/tests/check-parity.mjs --dir apps/web/dist/client --all
+   | Check (local) | Before | After |
+   |---|---|---|
+   | qin-han `featured_image` | NULL | `cloudinary`, id `growgen/legacy/2017/11/25/its-not-a-particularly-worthwhile-qin-and-han-show/4032ccf24796`, `f_auto,q_auto` src, alt `guanyin` |
+   | qin-han `body_md` | 1627 chars, md5 `38614c16...`, sinaimg | unchanged (same md5); sha256 `5f3ba9da...` equals the source body at `697380543` |
+   | `ec_gallery` (live) | 75, no `11-25-beijing` | 76; `11-25-beijing` published, doc `/2017/11/25/its-not-...`, hash `37619332...` |
+   | post bodies sinaimg / cloudinary / rows | 32 / 242 / 999 | 32 / 242 / 999 (rewrite `none` keeps local consistent) |
 
-# 3. Stop testing admin
-pnpm admin:stop
-```
+   `pnpm --filter web derive` (local): 996 posts, 150 episodes, 76 gallery images (75 cached traces, 1 placeholder: derive no longer traces, PORT-8b), 1 cover colour extracted. `pnpm --filter web build` with `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgresql://postgres:postgres@127.0.0.1:54322/postgres`: exit 0. `pnpm --filter web parity`: 4945 expected, **0 missing**; extras include `/api/gallery/trace/11-25-beijing.svg` (new since the MIG-0 snapshot, so not in `legacy-urls.txt`) and 24 pre-existing `/api/cards` files. The qin-han page has the Cloudinary cover as `og:image`.
+2. **`--rewrite` explicit.** No default any more: `--write` without `--rewrite map|none` exits 2, and the choice is printed. The image guard always consults the MIG-2 map, so `none` is accepted for MIG-2 hosted URLs (it prints how many stay legacy). Documented in runbooks/data.md "Catch-up (MIG-7)": local `none` (or the full `mig1 --rewrite=map` run), production `map` after the 5.1 count.
+3. **Production steps rewritten** (§5): no testing step, Docker admin with Access service token + EmDash API token, `pnpm deploy:production:build`, `--base 4893092b` with the read-only check, dry run first. `pnpm db:start` exists (root `package.json`) and is not needed for production; it is no longer in §5.
+4. **Production guard.** `catchup.mjs` prints `admin <host> (loopback|REMOTE: production guard)`; `--write` to any host other than `localhost`/`127.0.0.1`/`[::1]` exits 2 without `--yes-production` (userinfo URLs refused). Unit tests: `describeTarget`, `validateOptions`.
+5. **`--bump` preconditions.** Checked before any write and again before moving the gitlink: `HEAD:src/content` and the submodule checkout must both equal `--base` and the submodule must be clean, else exit 2; both already at `--target` is a no-op. Unit tests: `bumpPreconditions`.
+6. Stale "post-merge wiring note" and "local Supabase offline" claims removed.
+7. `apps/web/tests/parity-allow-extra.txt` allows `/api/gallery/trace/11-25-beijing.svg`: `route-parity.test.ts` runs with `--fail-on-extra` and failed on the caught-up build because the new gallery item is not in the MIG-0 snapshot.
 
-### Step 3: Production (`SUPABASE_PRODUCTION_POOLER_URL` — Owner Confirmation Required)
-
-> **WARNING**: Run ONLY after testing verification passes and the owner approves writing to production.
-
-```bash
-# Load repo-root .env into the current shell (never echo secret values)
-set -a; . ./.env; set +a
-pnpm admin:production -- --yes-production
-
-# 1. Dry-run and write catch-up against production admin
-node apps/web/scripts/import/mig7/catchup.mjs --dry-run --base b7d0c04 --target 6973805
-node apps/web/scripts/import/mig7/catchup.mjs --write --url http://127.0.0.1:4322 --base b7d0c04 --target 6973805
-
-# 2. Refresh derived schema on production DB, build, and verify URL parity
-CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_PRODUCTION_POOLER_URL" pnpm --filter web derive
-CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$SUPABASE_PRODUCTION_POOLER_URL" pnpm --filter web build
-node apps/web/tests/check-parity.mjs --dir apps/web/dist/client --all
-
-# 3. Stop production admin
-pnpm admin:stop
-```
-
-*(Note: If any post was manually edited in the EmDash admin since the last import, `mig1/import.mjs`'s overwrite guard will skip it (`skipped-edited`). Inspect the diff in admin before passing `--force`.)*
+Checks on this branch: `pnpm --filter web exec vitest run` 42 files / 486 tests pass; `pnpm --filter web exec astro check` 0 errors, 0 warnings; root `pnpm test:unit` 34 files passed, 1 skipped (221 tests passed, 3 skipped).

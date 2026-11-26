@@ -48,14 +48,29 @@ New gallery images are added in the EmDash admin (collection Gallery: title, leg
 Legacy posts keep being authored on `master`, which bumps the `src/content` submodule. `content:catchup` compares the submodule commit pinned by `HEAD` with the one pinned by `--ref` (default `origin/master`, run `git fetch` first), lists added / modified / renamed / deleted posts (`_docs/**/*.md(x)` only) and imports the first three with the MIG-1 importer (one run per post, `--match <legacy_id>`, source = `git archive` of the target commit in a temp dir, so the submodule need not be moved). Deleted posts are only reported, never removed from EmDash.
 ```
 pnpm --filter web content:catchup -- --dry-run                       # plan only, no admin, no writes (the default)
-pnpm admin:local                                                     # in another shell, or admin:production -- --yes-production
+pnpm admin:local                                                     # in another shell (production: Docker admin, see "Catch-up (MIG-7)")
 pnpm --filter web content:catchup -- --write --url http://127.0.0.1:4322 [--force] [--bump]
 ```
+MIG-6's tool only diffs `_docs`, cannot set `--base`, and fails on historical posts that still hold MIG-2 hosted URLs. Use the MIG-7 tool below for anything that touches gallery items or older posts.
 - Image guard: if any added/modified post (cover, `![](..)`, `<img>`) uses an image outside `res.cloudinary.com` (relative and local images included) the tool lists them and exits 3 without writing; rehost them first (MIG-2).
 - `--bump` checks the submodule out at the target commit and stages the pointer (no commit); do it once the import succeeded so the next catch-up starts from there. Run it from the main checkout.
 - Importer semantics apply: upsert on `legacy_id`, re-runs report `unchanged`, entries edited in the admin since the last import are skipped unless `--force`.
 - After importing, the next build derives embeddings, relates and UMAP for the new posts (see Normal workflow). Production: same command against `admin:production`, only when Lead says so.
 - Tests: `pnpm --filter web exec vitest run scripts/import/mig6`.
+
+## Catch-up (MIG-7)
+`node apps/web/scripts/import/mig7/catchup.mjs` does the same for posts **and** `_gallery/*.json` (via `mig3/import.mjs --only gallery`), takes `--base`/`--target` SHAs, slugs legacy ids with github-slugger, and its image guard accepts body URLs that MIG-2 already hosts (`mig2/rewrite-map.json` + `upload-result.json`). Report and production steps: `reports/MIG-7.md`.
+```
+node apps/web/scripts/import/mig7/catchup.mjs --dry-run --rewrite none --base <sha> --target <sha>
+node apps/web/scripts/import/mig7/catchup.mjs --write   --rewrite none --url http://127.0.0.1:4322 --base <sha> --target <sha>
+```
+- **`--rewrite` is required with `--write`** and printed at start. It decides only what is written into `body_md` for MIG-2 hosted images: `map` writes the Cloudinary URL, `none` keeps the legacy (`sinaimg`) URL. Match what the target database already holds, or the re-imported post will differ from its neighbours:
+  - **local: `none`.** The local DB never had the MIG-2 body rewrite (32 of 996 post bodies contain `sinaimg`, 242 contain `res.cloudinary.com`, exactly the raw source counts). To give local the full rewrite instead, run the MIG-1 importer over all posts once: `node apps/web/scripts/import/mig1/import.mjs --url http://127.0.0.1:4322 --rewrite=map` (idempotent; expected afterwards about 4 / 377), then use `map` from then on.
+  - **production: `map`**, which is expected to hold the MIG-2 rewrite. Confirm with the read-only count query in `reports/MIG-7.md` §5 before writing: about 4 `sinaimg` / 377 `res.cloudinary.com` means `map`; 32 / 242 means `none`; anything else, stop.
+- **Production guard:** the tool prints the admin host. `--write` to any host other than `localhost`, `127.0.0.1` or `[::1]` refuses without `--yes-production`. The guard is by URL only: a loopback admin that points at the production database is not detected, so check the admin's DB identity line first.
+- **Auth** is inherited by the importers: `EMDASH_TOKEN` (EmDash API token, Settings -> API tokens) and/or `EMDASH_HEADERS` (Cloudflare Access service-token headers). Without either, only a loopback `astro dev` admin works (dev bypass); the Docker admin has no dev bypass.
+- **`--bump`** refuses (exit 2, before any write) unless `HEAD:src/content` and the submodule checkout both sit at `--base` and the submodule is clean; when both are already at `--target` it is a no-op.
+- Tests: `pnpm --filter web exec vitest run scripts/import/mig7`.
 
 ## Apply to production (Lead decides and the OWNER must confirm first, never from an agent)
 INF-10 removed the `testing` environment: the project that used to be `testing` (`ckpozotzgubrjbjstvjg`) is production now, so every "apply MIG-3 to testing" step below writes to **production**. Before running anything, check whether MIG-3 is already there: `select to_regclass('derived.podcast_embeddings'), to_regclass('derived.gallery_traces')` and the row counts of `ec_podcasts` (150) and `ec_gallery` (75). If the tables or rows are missing, the PR CI build (read-only derive) and the deploy build both fail with the fix in their message, so this must be applied (with the owner's go-ahead) before the first deploy.
