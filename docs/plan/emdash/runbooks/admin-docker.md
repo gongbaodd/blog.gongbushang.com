@@ -121,6 +121,26 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 - **Registering a passkey for a second origin**: A passkey registered on `localhost` will not authenticate on `admin.growgen.xyz` (different RP ID). To sign in on a newly deployed online admin against an already-initialized database:
   1. Sign in locally at `http://localhost:4322/_emdash/admin` and create an invite link / recovery link (or register under the shared domain), **or**
   2. Temporarily access the local admin via a Cloudflare Tunnel on the same hostname (`admin.growgen.xyz`) to register a passkey for that RP ID.
+  3. **Preferred (GON-233): one-time sign-in link**, below.
+
+### Enroll a passkey on `admin.growgen.xyz` with a one-time sign-in link (owner only)
+
+`apps/web/scripts/admin/signin-link.mjs` inserts one EmDash `magic_link` token for your existing user and prints a link. Security properties:
+
+- **Single use.** Opening the link only shows a confirm page; confirming consumes (deletes) the token. A second use fails.
+- **3-minute expiry**, and any older unused sign-in or recovery links for that user are deleted first, so at most one is ever live.
+- **Not reachable over HTTP.** It is a host-side script that needs the production DB credential from your `.env`; nothing on the admin or the site serves it.
+- **Never logged.** Printed once, only to an interactive terminal (it refuses in CI or when stdout is piped/redirected). Only the SHA-256 hash is stored. The token is never a command argument or written to a file. Allowed origins are `https://admin.growgen.xyz` and `http://localhost:4322` only.
+
+Steps (on your own machine, from the repo root; the admin must already be reachable at `https://admin.growgen.xyz` behind Cloudflare Access):
+
+1. `set -a; . ./.env; set +a`
+2. `node apps/web/scripts/admin/signin-link.mjs --email <your-admin-email> --origin https://admin.growgen.xyz --yes-production`
+3. Within 3 minutes, open the printed link in the browser you will keep using (pass Cloudflare Access first), click confirm. You land on Settings > Security; add the passkey (add a second backup passkey too, GON-218).
+4. Do not paste the link anywhere else. If it expired or you pasted it somewhere, just run the command again (it replaces the previous link).
+5. Optional: clear the shell (`unset SUPABASE_PRODUCTION_POOLER_URL`) and `clear` the terminal scrollback.
+
+Residual risk: the token is in the URL query, so Cloudflare or browser history can see it, but it is already consumed after step 3 and dies after 3 minutes regardless.
 
 ---
 
