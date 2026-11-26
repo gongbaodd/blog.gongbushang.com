@@ -18,11 +18,16 @@ if (live) {
 	console.log(`[post-build] not live (PUBLIC_SITE_LIVE != true): wrote noindex _headers rule and disallow-all robots.txt`);
 }
 
-// GON-203 guard: every built HTML page carries at most ONE <meta name="robots"> (BaseHead and <EmDashHead> used to both emit one,
-// e.g. on the 404). Duplicate/conflicting robots directives make crawlers pick the most restrictive and hide bugs.
+// GON-203 guards on the built HTML.
+//  1. Every page carries at most ONE <meta name="robots"> in <head> (BaseHead and <EmDashHead> used to both emit one, e.g. on the
+//     404), and the 404 carries exactly one.
+//  2. No page that says noindex is listed in the sitemap.
 {
-	const ROBOTS_RE = /<meta\s[^>]*name=["']robots["']/gi;
+	const ROBOTS_RE = /<meta\b[^>]*\bname=(?:["']robots["']|robots\b)/gi;
+	const NOINDEX_RE = /<meta\b[^>]*\bname=["']?robots["']?[^>]*\bcontent=["'][^"']*noindex/i;
+	const robotsCount = (html) => (html.split(/<\/head>/i)[0].match(ROBOTS_RE) ?? []).length;
 	const dup = [];
+	const noindexPaths = [];
 	let pages = 0;
 	const walk = (dir) => {
 		for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -30,12 +35,23 @@ if (live) {
 			if (e.isDirectory()) walk(p);
 			else if (e.name.endsWith(".html")) {
 				pages++;
-				const n = (readFileSync(p, "utf8").match(ROBOTS_RE) ?? []).length;
+				const html = readFileSync(p, "utf8");
+				const n = robotsCount(html);
 				if (n > 1) dup.push(`${p.slice(client.length)} (${n})`);
+				if (NOINDEX_RE.test(html.split(/<\/head>/i)[0])) noindexPaths.push(p.slice(client.length).replace(/index\.html$/, "").replace(/\.html$/, "/"));
 			}
 		}
 	};
 	walk(client);
 	if (dup.length) throw new Error(`[post-build] ${dup.length} page(s) with more than one <meta name="robots">:\n  ${dup.slice(0, 20).join("\n  ")}`);
-	console.log(`[post-build] robots meta check: ${pages} HTML pages, none with more than one tag`);
+	const n404 = existsSync(resolve(client, "404.html")) ? robotsCount(readFileSync(resolve(client, "404.html"), "utf8")) : 0;
+	// Non-live builds also get the X-Robots-Tag header; the 404 meta tag is what the page itself says.
+	if (n404 !== 1) throw new Error(`[post-build] 404.html must carry exactly one <meta name="robots">, found ${n404}`);
+	const sitemap = resolve(client, "sitemap-0.xml");
+	if (existsSync(sitemap)) {
+		const locs = new Set([...readFileSync(sitemap, "utf8").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => new URL(m[1]).pathname));
+		const bad = noindexPaths.filter((p) => locs.has(p) || locs.has(p.replace(/\/$/, "")));
+		if (bad.length) throw new Error(`[post-build] ${bad.length} noindex page(s) listed in sitemap-0.xml:\n  ${bad.slice(0, 20).join("\n  ")}`);
+	}
+	console.log(`[post-build] robots meta check: ${pages} HTML pages, none with more than one tag; 404 has one; ${noindexPaths.length} noindex page(s), none in the sitemap`);
 }

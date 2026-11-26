@@ -6,14 +6,19 @@ import { resolve } from "node:path";
 
 export const NOINDEX_FILE = resolve(import.meta.dirname, "../../.astro/seo-noindex.json");
 
-/** Legacy ids (`YYYY/MM/DD/slug`) of noindex posts; empty when the pre-build step did not run. */
+/** Legacy ids (`YYYY/MM/DD/slug`) of noindex posts. Warns (and returns an empty set) when the pre-build step did not run. */
 export function readNoindexIds(file = NOINDEX_FILE) {
-	if (!existsSync(file)) return [];
+	if (!existsSync(file)) {
+		console.warn(`[seo] ${file} is missing (scripts/seo/write-noindex.ts did not run): no post is excluded from the sitemap`);
+		return new Set();
+	}
 	try {
 		const data = JSON.parse(readFileSync(file, "utf8"));
-		return Array.isArray(data.legacyIds) ? data.legacyIds.filter((x) => typeof x === "string") : [];
-	} catch {
-		return [];
+		if (!Array.isArray(data.legacyIds)) throw new Error("no legacyIds array");
+		return new Set(data.legacyIds.filter((x) => typeof x === "string"));
+	} catch (err) {
+		console.warn(`[seo] ${file} is corrupt (${err instanceof Error ? err.message : err}): no post is excluded from the sitemap`);
+		return new Set();
 	}
 }
 
@@ -33,5 +38,5 @@ export function isNoindexedPage(page, legacyIds) {
 	} catch {
 		/* keep raw */
 	}
-	return legacyIds.includes(id);
+	return legacyIds.has(id);
 }

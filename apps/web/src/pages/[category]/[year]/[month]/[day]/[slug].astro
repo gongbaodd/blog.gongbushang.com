@@ -5,7 +5,7 @@ import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, 
 import { getPostEntries, toClient } from "../../../../../lib/listing";
 import { renderMarkdown } from "../../../../../lib/markdown";
 import { prepareBody } from "../../../../../lib/mdx-lite";
-import { resolvePostSeo } from "../../../../../lib/seo";
+import { articleModifiedTime, resolvePostSeo } from "../../../../../lib/seo";
 import { SITE_AUTHOR } from "../../../../../consts";
 import { getReadingTime } from "../../../../../utils/reading-time";
 
@@ -50,7 +50,7 @@ const seo = resolvePostSeo({
 // Legacy `YYYY-MM-DD` is the real publish date (the CMS published_at is the import time).
 const articleMeta = {
 	publishedTime: post.date,
-	modifiedTime: post.updatedAt ?? post.date,
+	modifiedTime: articleModifiedTime(post),
 	author: post.author ?? SITE_AUTHOR,
 };
 ---
@@ -69,7 +69,6 @@ const articleMeta = {
 	headings={headings}
 	series={series}
 	clientPost={clientPost}
-	cover={post.data.cover}
 	readingMinutes={minutes}
 	adsense={post.data.adsense}
 >

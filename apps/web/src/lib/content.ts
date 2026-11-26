@@ -326,12 +326,15 @@ export function mapPost(entry: PostEntryInput): BlogPost | undefined {
   const cover = extractCover(d.featured_image);
   const city = extractCities(terms);
 
+  const publishedAt = isoOrUndefined(d.publishedAt);
+  const updatedAt = isoOrUndefined(d.updatedAt);
+
   return {
     id: legacyId,
     entryId: entry.id,
     dbId: typeof d.id === "string" ? d.id : "",
-    ...(isoOrUndefined(d.publishedAt) ? { publishedAt: isoOrUndefined(d.publishedAt) } : {}),
-    ...(isoOrUndefined(d.updatedAt) ? { updatedAt: isoOrUndefined(d.updatedAt) } : {}),
+    publishedAt,
+    updatedAt,
     ...(d.byline?.displayName ? { author: d.byline.displayName } : {}),
     href: postPath(legacyId, category),
     date: parsePostDate(d.legacy_date, legacyId),

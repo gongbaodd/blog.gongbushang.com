@@ -36,12 +36,11 @@ interface Props {
 	series?: IMenuSeries;
 	/** Client post (the same shape the listings use) for the sidebar cover card. */
 	clientPost: TClientPost;
-	cover?: { url: string; alt: string };
 	readingMinutes: number;
 	adsense: boolean;
 }
 
-const { id, entryId, dbId, title, seo, articleMeta, date, category, tags, links, headings, series, clientPost, cover, readingMinutes, adsense } =
+const { id, entryId, dbId, title, seo, articleMeta, date, category, tags, links, headings, series, clientPost, readingMinutes, adsense } =
 	Astro.props;
 
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
@@ -62,7 +61,7 @@ const adsenseSlotId =
 	description={seo.description}
 	image={seo.image}
 	canonical={seo.canonical}
-	noindex={seo.noindex}
+	robots={seo.robots}
 	pageType="article"
 	articleMeta={articleMeta}
 	content={{ collection: "posts", id: dbId, slug: entryId }}

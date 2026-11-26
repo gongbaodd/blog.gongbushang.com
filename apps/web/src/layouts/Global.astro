@@ -18,8 +18,10 @@ interface Props {
 	description?: string | null;
 	image?: string | null;
 	canonical?: string | null;
-	/** Page-level noindex (404, /cv). Emitted once, through EmDash's `page.seo.robots`. */
+	/** Utility page (404, /cv ...): legacy `noindex,follow`. Emitted once, through EmDash's `page.seo.robots`. */
 	noindex?: boolean;
+	/** Explicit robots value (a post's SEO-panel noindex); wins over `noindex`. */
+	robots?: string | null;
 	pageType?: "website" | "article";
 	/** Open Graph `article:*` tags and BlogPosting JSON-LD (only with `pageType="article"`). */
 	articleMeta?: { publishedTime?: string | null; modifiedTime?: string | null; author?: string | null };
@@ -34,6 +36,7 @@ const {
 	image,
 	canonical: canonicalProp,
 	noindex = false,
+	robots: robotsProp,
 	pageType = "website",
 	articleMeta,
 	content,
@@ -49,7 +52,7 @@ const pageCtx = createPublicPageContext({
 	articleMeta,
 	// The only robots source: EmDash dedupes it against its staging tag (first wins), so there is never a second tag.
 	// Per-entry `noIndex=false` emits nothing, so it can never lift the pre-cutover noindex (X-Robots-Tag/robots.txt, INF-10).
-	seo: noindex ? { robots: "noindex, nofollow" } : undefined,
+	seo: robotsProp || noindex ? { robots: robotsProp || "noindex,follow" } : undefined,
 	title,
 	pageTitle: pageTitle ?? title,
 	description,

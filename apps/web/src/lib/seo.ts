@@ -3,7 +3,8 @@
 // request-cache overlay only runs on SSR), so the prerendered post route reads the whole collection's rows in ONE query
 // and resolves them with EmDash's own `getSeoMeta()`.
 // Build-time only (prerendered pages); never import from a Worker request path.
-import { getSeoMeta, type ContentSeo } from "emdash";
+import type { ContentSeo } from "emdash";
+import { getSeoMeta } from "emdash/seo";
 import { getDb } from "emdash/runtime";
 import { SITE_TITLE } from "../consts";
 
@@ -37,32 +38,71 @@ export function hasSeoOverride(seo: ContentSeo | undefined): seo is ContentSeo {
   return Boolean(seo && (seo.title || seo.description || seo.image || seo.canonical || seo.noIndex));
 }
 
+/** Missing `_emdash_seo` table (SQLite "no such table", Postgres 42P01 / "relation ... does not exist"): no SEO rows. */
+export function isMissingTableError(error: unknown): boolean {
+  const e = error as { code?: unknown; message?: unknown } | null;
+  if (e?.code === "42P01") return true;
+  const m = typeof e?.message === "string" ? e.message : "";
+  if (m.includes("no such table")) return true;
+  return (m.includes("does not exist") || m.includes("doesn't exist")) && (m.includes("relation") || m.includes("table"));
+}
+
 const cache = new Map<string, Promise<Map<string, ContentSeo>>>();
+
+async function queryAll(collection: string): Promise<Map<string, ContentSeo>> {
+  const out = new Map<string, ContentSeo>();
+  try {
+    const db = await getDb();
+    const rows = (await db
+      .selectFrom("_emdash_seo")
+      .select(["content_id", "seo_title", "seo_description", "seo_image", "seo_canonical", "seo_no_index"])
+      .where("collection", "=", collection)
+      .execute()) as unknown as SeoRow[];
+    for (const r of rows) {
+      const seo = rowToSeo(r);
+      if (hasSeoOverride(seo)) out.set(r.content_id, seo);
+    }
+  } catch (err) {
+    if (!isMissingTableError(err)) throw err;
+  }
+  return out;
+}
 
 /**
  * One batched query: every `_emdash_seo` row of a collection, keyed by `entry.data.id` (the database ULID, NOT the slug).
- * Memoised per collection for the lifetime of the build process.
+ * A missing table counts as no rows. Memoised per collection for the build process, except in dev (editors change the
+ * panel while `astro dev` runs) and after a failure (a rejected promise is evicted so the next call retries).
  */
 export function loadSeoByContentId(collection: string): Promise<Map<string, ContentSeo>> {
+  if (import.meta.env?.DEV) return queryAll(collection);
   let p = cache.get(collection);
   if (!p) {
-    p = (async () => {
-      const db = await getDb();
-      const rows = (await db
-        .selectFrom("_emdash_seo")
-        .select(["content_id", "seo_title", "seo_description", "seo_image", "seo_canonical", "seo_no_index"])
-        .where("collection", "=", collection)
-        .execute()) as unknown as SeoRow[];
-      const out = new Map<string, ContentSeo>();
-      for (const r of rows) {
-        const seo = rowToSeo(r);
-        if (hasSeoOverride(seo)) out.set(r.content_id, seo);
-      }
-      return out;
-    })();
+    p = queryAll(collection);
     cache.set(collection, p);
+    p.catch(() => {
+      if (cache.get(collection) === p) cache.delete(collection);
+    });
   }
   return p;
+}
+
+/** Test hook: forget memoised results. */
+export function clearSeoCache(): void {
+  cache.clear();
+}
+
+const DAY_MS = 86_400_000;
+
+/**
+ * `article:modified_time` / JSON-LD `dateModified`. Imported posts all carry the import date as `updated_at`, so it only
+ * counts when it is more than a day after `published_at` (a real edit in the admin); otherwise the legacy date is used.
+ */
+export function articleModifiedTime(post: { date: string; publishedAt?: string; updatedAt?: string }): string {
+  if (post.updatedAt && post.publishedAt) {
+    const gap = Date.parse(post.updatedAt) - Date.parse(post.publishedAt);
+    if (Number.isFinite(gap) && gap > DAY_MS) return post.updatedAt;
+  }
+  return post.date;
 }
 
 export interface ResolveSeoInput {
@@ -88,6 +128,8 @@ export interface ResolvedSeo {
   description: string;
   image: string | null;
   canonical: string | null;
+  /** EmDash's robots value for a panel noindex (`noindex, nofollow`), else null. */
+  robots: string | null;
   /** True only when the editor ticked "noindex" in the panel. Never lifts the site-wide pre-cutover noindex. */
   noindex: boolean;
 }
@@ -114,6 +156,7 @@ export function resolvePostSeo(input: ResolveSeoInput): ResolvedSeo {
     description: meta.description ?? input.description,
     image: meta.ogImage,
     canonical: meta.canonical,
+    robots: meta.robots,
     noindex: Boolean(input.seo?.noIndex),
   };
 }
