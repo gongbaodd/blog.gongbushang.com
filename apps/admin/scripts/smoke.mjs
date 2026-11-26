@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Smoke test for the built admin (INF-9): boots `scripts/start.mjs` against LOCAL Supabase and checks
 //   1. dist/ does not contain DATABASE_URL (no credential baked at build time)
-//   2. /healthz answers 200
+//   2. /healthz answers 200 with exactly {"ok":true}; /robots.txt disallows all; admin responses carry X-Robots-Tag (SEC-06/08)
+//   2b. SETUP_TOKEN gate on the real server: hashed cookie, no-store / no-referrer redirect (SEC-15)
 //   3. a gated path (/_emdash/admin/setup, no SETUP_TOKEN) answers 404
 //   4. Cloudflare Access enforce mode: no JWT -> 403 on /_emdash/admin, /_emdash/api/manifest, /_emdash/api/auth/me (before EmDash
 //      runs: no redirects/401s); /healthz stays 200. Misconfigured Access -> 503 everywhere except /healthz.
@@ -70,12 +71,34 @@ const local = await boot({ DATABASE_URL: LOCAL, SITE_ENV: "local" });
 check("local boots", !local.failed, local.log().slice(-300));
 if (!local.failed) {
 	const h = await fetch(`${local.base}/healthz`);
-	check("/healthz 200", h.status === 200 && (await h.json()).ok === true);
+	const hBody = await h.text();
+	check("/healthz 200 with minimal body (SEC-08)", h.status === 200 && hBody === '{"ok":true}', hBody);
 	const g = await fetch(`${local.base}/_emdash/admin/setup`, { redirect: "manual" });
 	check("gated /_emdash/admin/setup is 404 without SETUP_TOKEN", g.status === 404, `HTTP ${g.status}`);
 	check("DB identity logged", /DB IDENTITY: SITE_ENV=LOCAL/.test(local.log()));
+	const r = await fetch(`${local.base}/robots.txt`);
+	check("/robots.txt disallows everything (SEC-06)", r.status === 200 && (await r.text()) === "User-agent: *\nDisallow: /\n");
+	const a = await fetch(`${local.base}/_emdash/admin`, { redirect: "manual" });
+	check("/_emdash/admin carries X-Robots-Tag noindex (SEC-06)", a.headers.get("x-robots-tag") === "noindex, nofollow", `HTTP ${a.status} ${a.headers.get("x-robots-tag")}`);
 }
 local.child.kill();
+
+// SEC-15: the real server's setup-gate redirect stores a derived token, never SETUP_TOKEN, and is no-store / no-referrer.
+const SMOKE_SETUP_TOKEN = "smoke-setup-token-0123456789";
+const gated = await boot({ DATABASE_URL: LOCAL, SITE_ENV: "local", SETUP_TOKEN: SMOKE_SETUP_TOKEN });
+check("setup-token server boots", !gated.failed, gated.log().slice(-200));
+if (!gated.failed) {
+	const res = await fetch(`${gated.base}/_emdash/admin/setup?setup_token=${SMOKE_SETUP_TOKEN}`, { redirect: "manual" });
+	const cookie = res.headers.get("set-cookie") ?? "";
+	check("setup redirect 302", res.status === 302, `HTTP ${res.status}`);
+	check("setup cookie set and holds no raw SETUP_TOKEN", /growgen_setup_gate=[0-9a-f]{64}/.test(cookie) && !cookie.includes(SMOKE_SETUP_TOKEN));
+	check("setup cookie not Secure on http://127.0.0.1 (local Docker bootstrap)", !/;\s*secure/i.test(cookie));
+	check("setup redirect is no-store + no-referrer", res.headers.get("cache-control") === "no-store" && res.headers.get("referrer-policy") === "no-referrer");
+	const pair = cookie.split(";")[0];
+	const follow = await fetch(`${gated.base}/_emdash/admin/setup`, { redirect: "manual", headers: { cookie: pair } });
+	check("derived cookie opens the setup gate", follow.status !== 404, `HTTP ${follow.status}`);
+}
+gated.child.kill();
 
 const GATED = ["/_emdash/admin", "/_emdash/api/manifest", "/_emdash/api/auth/me"];
 const probe = async (label, extraEnv, expected) => {

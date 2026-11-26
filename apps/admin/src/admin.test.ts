@@ -7,12 +7,14 @@ import {
 import {
 	SETUP_GATE_COOKIE,
 	createAdminMiddleware,
+	deriveSetupGateToken,
 	matches,
 	normalize,
 	onRequest,
 } from "./middleware.ts";
 import { createOuterMiddleware } from "./outer.ts";
 import { buildHealthzResponse, GET as getHealthz } from "./pages/healthz.ts";
+import { ROBOTS_TXT, withNoindex } from "./robots.ts";
 import {
 	createPlugin,
 	dispatchFromNodeEnv,
@@ -135,10 +137,17 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		const res = await runMw(mw, context, next);
 		expect(res.status).toBe(302);
 		expect(res.headers.get("Location")).toBe("/_emdash/admin/setup?next=1");
+		// SEC-15: the 302 that consumed ?setup_token= is never cached and never leaks the URL as a referrer.
+		expect(res.headers.get("Cache-Control")).toBe("no-store");
+		expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
+		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+		// SEC-15: the cookie holds an HMAC-derived token, never the raw SETUP_TOKEN.
+		expect(setCalls[0]?.value).not.toBe("valid-token");
+		expect(setCalls[0]?.value).toMatch(/^[0-9a-f]{64}$/);
 		expect(setCalls).toEqual([
 			{
 				name: SETUP_GATE_COOKIE,
-				value: "valid-token",
+				value: await deriveSetupGateToken("valid-token"),
 				options: {
 					path: "/_emdash/",
 					httpOnly: true,
@@ -178,6 +187,11 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 			[SETUP_GATE_COOKIE]: "wrong",
 		});
 		expect((await runMw(mw, wrongCookie.context, next)).status).toBe(404);
+		// SEC-15: a cookie carrying the RAW secret (the pre-SEC-15 format) no longer opens the gate.
+		const rawCookie = createMockContext("http://localhost:4322/_emdash/api/setup/status", {
+			[SETUP_GATE_COOKIE]: "valid-token",
+		});
+		expect((await runMw(mw, rawCookie.context, next)).status).toBe(404);
 		expect(next).not.toHaveBeenCalled();
 	});
 
@@ -188,7 +202,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		});
 		const next = vi.fn(async () => new Response("setup ok", { status: 200 }));
 		const { context } = createMockContext("http://localhost:4322/_emdash/admin/setup", {
-			[SETUP_GATE_COOKIE]: "valid-token",
+			[SETUP_GATE_COOKIE]: await deriveSetupGateToken("valid-token"),
 		});
 
 		const res = await runMw(mw, context, next);
@@ -211,8 +225,8 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 	});
 
-	it("sets X-Robots-Tag: noindex, nofollow for local, unknown and unset SITE_ENV, and omits it for production", async () => {
-		for (const siteEnv of [undefined, "", "local", "staging"]) {
+	it("sets X-Robots-Tag: noindex, nofollow for every SITE_ENV, production included (SEC-06)", async () => {
+		for (const siteEnv of [undefined, "", "local", "staging", "production"]) {
 			const mw = createAdminMiddleware({
 				getEnv: () => ({ SITE_ENV: siteEnv }),
 				isDev: false,
@@ -222,13 +236,21 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 			expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 		}
 
-		const prodMw = createAdminMiddleware({
-			getEnv: () => ({ SITE_ENV: "production" }),
-			isDev: false,
-		});
+		// immutable headers (Response.redirect) are copied, not skipped
+		const prodMw = createAdminMiddleware({ getEnv: () => ({ SITE_ENV: "production" }), isDev: false });
 		const { context } = createMockContext("http://localhost:4322/_emdash/admin");
-		const res = await runMw(prodMw, context, async () => new Response("admin"));
-		expect(res.headers.get("X-Robots-Tag")).toBeNull();
+		const res = await runMw(prodMw, context, async () => Response.redirect("http://localhost:4322/_emdash/admin/login", 302));
+		expect(res.status).toBe(302);
+		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+	});
+
+	it("withNoindex also covers 404s from the gate", async () => {
+		const mw = createAdminMiddleware({ getEnv: () => ({ SITE_ENV: "production" }), isDev: false });
+		const { context } = createMockContext("http://localhost:4322/_emdash/admin/setup");
+		const res = await runMw(mw, context, async () => new Response("x"));
+		expect(res.status).toBe(404);
+		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+		expect(withNoindex(new Response("y")).headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 	});
 
 	it("default exported onRequest reads process.env.SETUP_TOKEN and process.env.SITE_ENV", async () => {
@@ -241,7 +263,7 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 		process.env.SETUP_TOKEN = "env-secret";
 		const authed = createMockContext("http://localhost:4322/_emdash/admin/setup", {
-			[SETUP_GATE_COOKIE]: "env-secret",
+			[SETUP_GATE_COOKIE]: await deriveSetupGateToken("env-secret"),
 		});
 		const resAuthed = await runMw(onRequest, authed.context, async () => new Response("setup"));
 		expect(resAuthed.status).toBe(200);
@@ -251,17 +273,20 @@ describe("admin middleware (SETUP_TOKEN gate & X-Robots-Tag)", () => {
 
 describe("/healthz endpoint and outer middleware", () => {
 	it("returns 200 JSON from GET and buildHealthzResponse", async () => {
-		const res = buildHealthzResponse({ SITE_ENV: "local" } as unknown as NodeJS.ProcessEnv);
-		expect(res.status).toBe(200);
-		expect(res.headers.get("Content-Type")).toContain("application/json");
-		expect(res.headers.get("Cache-Control")).toBe("no-store");
-		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
-		expect(await res.json()).toEqual({
-			ok: true,
-			status: "ok",
-			service: "emdash-admin",
-			environment: "local",
-		});
+		const original = process.env.SITE_ENV;
+		process.env.SITE_ENV = "production";
+		try {
+			const res = buildHealthzResponse();
+			expect(res.status).toBe(200);
+			expect(res.headers.get("Content-Type")).toContain("application/json");
+			expect(res.headers.get("Cache-Control")).toBe("no-store");
+			// SEC-06: noindex even for production; SEC-08: the unauthenticated body names no service or environment.
+			expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+			expect(await res.text()).toBe('{"ok":true}');
+		} finally {
+			if (original === undefined) delete process.env.SITE_ENV;
+			else process.env.SITE_ENV = original;
+		}
 
 		const routeRes = await getHealthz({} as never);
 		expect(routeRes.status).toBe(200);
@@ -279,7 +304,33 @@ describe("/healthz endpoint and outer middleware", () => {
 		const passRes = await runMw(healthzOuterMiddleware, adminCtx, next);
 		expect(passRes.status).toBe(200);
 		expect(await passRes.text()).toBe("downstream");
+		// SEC-06: every response passing the outer middleware (EmDash's included) is noindex.
+		expect(passRes.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 		expect(next).toHaveBeenCalledTimes(1);
+	});
+
+	it("serves a disallow-all /robots.txt before the Access gate and EmDash (SEC-06)", async () => {
+		const next = vi.fn(async () => new Response("emdash robots"));
+		const verifyAccess = vi.fn(async () => false);
+		const outer = createOuterMiddleware({
+			getEnv: () => ({ CF_ACCESS_TEAM_DOMAIN: "team", CF_ACCESS_AUD: "aud" }),
+			checkStartup: false,
+			verifyAccess,
+		});
+		const { context } = createMockContext("http://localhost:4322/robots.txt");
+		const res = await runMw(outer, context, next);
+		expect(res.status).toBe(200);
+		expect(await res.text()).toBe(ROBOTS_TXT);
+		expect(ROBOTS_TXT).toBe("User-agent: *\nDisallow: /\n");
+		expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
+		expect(next).not.toHaveBeenCalled();
+		expect(verifyAccess).not.toHaveBeenCalled();
+
+		// a 403 from the Access gate is noindex too
+		const { context: adminCtx } = createMockContext("http://localhost:4322/_emdash/admin");
+		const denied = await runMw(outer, adminCtx, next);
+		expect(denied.status).toBe(403);
+		expect(denied.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 	});
 });
 

@@ -4,6 +4,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import pg from "pg";
+import { pgClientConfig } from "../admin/pg-tls.mjs";
 
 export const webRoot = resolve(import.meta.dirname, "../..");
 
@@ -51,10 +52,9 @@ export function resolveConnectionString(): string {
 }
 
 export async function connect(url = resolveConnectionString()): Promise<pg.Client> {
-	const host = new URL(url).hostname;
-	const local = host === "127.0.0.1" || host === "localhost" || host === "::1";
-	// Supabase poolers present a certificate chain Node does not trust by default (docs/plan/emdash/runbooks/supabase.md).
-	const client = new pg.Client({ connectionString: url, ssl: local ? false : { rejectUnauthorized: false } });
+	// SEC-09: Supabase poolers chain to "Supabase Root 2021 CA", which Node does not trust by default, so remote hosts are verified
+	// against the committed CA (scripts/certs/prod-ca-2021.crt, or DATABASE_CA_CERT) with rejectUnauthorized: true. Loopback: no TLS.
+	const client = new pg.Client(pgClientConfig(url));
 	await client.connect();
 	// Supabase defaults to 15 significant digits; geocodes must round-trip exactly.
 	await client.query("set extra_float_digits = 3");
