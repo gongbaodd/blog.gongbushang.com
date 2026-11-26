@@ -36,7 +36,8 @@ Rules:
 5. **Reviews are their own issue.** A review of GON-123 is a new sub-issue labelled with the reviewer (usually `agy-neon-4`). The reviewer posts findings as a comment on it, not by editing the parent.
 6. **Keep type labels too.** `Agent` labels sit alongside `Bug` / `Feature` / `Improvement`. Use `addLabels`/`removeLabels`, never `labels`, when updating, so you don't drop the other labels.
 7. **Reference the issue.** Branch names, commit subjects and PR titles include the issue ID, for example `fix(web): ... (GON-204)`.
-8. **New agent or model.** Create the child label under `Agent` first (lowercase `<tool>-<model>-<version>`, such as `codex-gpt-6`), then add a row to the table above in the same change.
+8. **Sign your comments.** All agents post through the owner's Linear account, so the author field doesn't say who wrote a comment. Start every comment you post (`save_comment`) with your own `Agent` label in bold, followed by a blank line. Example: `**[claude-opus-5.5]**`. Use the label of the agent that writes the comment, not the label on the issue. The owner's comments are not signed.
+9. **New agent or model.** Create the child label under `Agent` first (lowercase `<tool>-<model>-<version>`, such as `codex-gpt-6`), then add a row to the table above in the same change.
 
 ## Prerequisites
 - Linear MCP server must be connected and accessible via OAuth
