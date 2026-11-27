@@ -30,7 +30,6 @@ pnpm-debug.log*
 .DS_Store
 
 tmp
-src/content/blog/
 .pnpm-store/
 
 # python

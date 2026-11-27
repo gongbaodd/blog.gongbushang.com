@@ -275,7 +275,7 @@ export async function embedPosts(
 				const hint =
 					providerPref === "auto"
 						? `configure Cloudflare Workers AI (CF_ACCOUNT_ID / CF_AI_TOKEN) or start LM Studio with ${model}`
-						: `start LM Studio with ${model}, run "pnpm embedding:sync"`;
+						: `start LM Studio with ${model}`;
 				throw new Error(`${stale.length} ${noun}(s) need embeddings but no embedding provider is available (${hint}).`);
 			} else {
 				notAttempted = stale;
