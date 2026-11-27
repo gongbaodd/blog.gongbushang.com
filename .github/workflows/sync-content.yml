@@ -4,18 +4,15 @@ name: sync-content
 # 产生一次根仓提交 -> Cloudflare Pages 自动构建上线 (方案 A)。
 # Pages 只监听根仓,内容仓单独 push 不会触发构建,所以需要这一层粘合。
 
+# GON-166 (MIG-5): schedule and repository_dispatch triggers removed; EmDash is the only
+# authoring path. Manual workflow_dispatch stays until CUT-2 deletes this file.
 on:
-  repository_dispatch:
-    types: [content-updated]
   workflow_dispatch:
     inputs:
       sha:
         description: "content SHA to pin (default: origin/astro tip)"
         required: false
         default: ""
-  schedule:
-    # 每天兜底一次,防止 dispatch 丢失导致内容长期不同步
-    - cron: "17 3 * * *"
 
 concurrency:
   group: sync-content
