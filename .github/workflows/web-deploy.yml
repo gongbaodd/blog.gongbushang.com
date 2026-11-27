@@ -152,6 +152,9 @@ jobs:
       - name: Build
         env:
           CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: ${{ secrets.DATABASE_POOLER_URL }}
+          # GON-266: derive embeds new or edited posts and episodes with Workers AI. Step-scoped, Workers-AI-only token (never the
+          # deploy token); the account id comes from the job-level CLOUDFLARE_ACCOUNT_ID. Without it new items get no embedding.
+          CF_AI_TOKEN: ${{ secrets.CF_AI_TOKEN }}
         run: |
           set -o pipefail
           pnpm --filter web build 2>&1 | tee "$RUNNER_TEMP/build.log"
