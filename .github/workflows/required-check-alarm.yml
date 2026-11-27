@@ -1,0 +1,43 @@
+# GON-246: stuck-PR alarm. Hourly, flags open non-draft PRs to master whose required check (.github/required-checks.json)
+# never reported more than an hour after the head commit, and comments once per head SHA. Uses only GITHUB_TOKEN.
+# Scheduled workflows run from the default branch. Runbook: docs/plan/emdash/runbooks/ci.md ("Required checks that never report").
+name: required-check-alarm
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print, do not comment"
+        type: boolean
+        default: true
+
+concurrency:
+  group: required-check-alarm
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write # PR comments are issue comments
+  checks: read
+  statuses: read
+
+jobs:
+  alarm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+      - name: Node tests
+        run: node --test scripts/stuck-pr-alarm.test.mjs
+      - name: Flag stuck PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+        run: node scripts/stuck-pr-alarm.mjs
