@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cloudinaryMedia } from "./src/cloudinary-media.ts";
 import { PLACEHOLDER_DATABASE_URL } from "./src/db-config.ts";
 import { serviceDashboards } from "./src/dashboards/plugin.ts";
+import { podcastSync } from "./src/podcast-sync/plugin.ts";
 import { rebuildOnPublish } from "./src/rebuild-on-publish.ts";
 
 // Public origin for passkey RP ID & outbound links: resolved at runtime via EMDASH_SITE_URL / SITE_URL too.
@@ -42,7 +43,7 @@ export default defineConfig({
 			fonts: false,
 			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
 			middleware: { outer: "./src/outer.ts" },
-			plugins: [rebuildOnPublish(), serviceDashboards()],
+			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],
