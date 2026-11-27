@@ -1,6 +1,3 @@
-import { getEmbedding } from "post-embedding";
-import type { EmbeddingOptions } from "post-embedding";
-
 export interface PostEmbeddingSource {
   title: string;
   category: { label: string };
@@ -32,15 +29,4 @@ export function buildPostEmbeddingText(entry: PostEmbeddingSource): string {
 
 export function buildPodcastEmbeddingText(entry: { title: string; summary: string }): string {
   return `${entry.title}|podcast|${entry.summary}`;
-}
-
-export async function embedFromText(text: string, options?: EmbeddingOptions): Promise<number[]> {
-  return getEmbedding(text, options);
-}
-
-export async function embedPostMetadata(
-  entry: PostEmbeddingSource,
-  options?: EmbeddingOptions,
-): Promise<number[]> {
-  return embedFromText(buildPostEmbeddingText(entry), options);
 }

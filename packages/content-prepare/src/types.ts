@@ -1,5 +1,3 @@
-import type { EmbeddingOptions } from "post-embedding";
-
 export interface Location {
   latitude: number;
   longitude: number;
@@ -38,12 +36,4 @@ export interface MetadataEntry {
   embeddings?: number[];
   /** Body is shorter than `SHORT_POST_WORDS`; short posts relate to other short posts. */
   isShort?: boolean;
-}
-
-export interface CollectMetadataOptions {
-  repoRoot: string;
-  docsDir: string;
-  outputDir: string;
-  googleApiKey?: string;
-  embeddingOptions?: EmbeddingOptions;
 }

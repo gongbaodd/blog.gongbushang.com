@@ -54,7 +54,7 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 | `src/card/*`, `src/masonry/*`, `src/menu/BlogListMenu.tsx`, `src/folder/*`, `src/bits/Folder.tsx` | `packages/{card,masonry,menu,folder}`, `src/bits/Components/Folder` | tabler icons -> lucide; `track("tag_clicked", location "list-menu")` restored (PORT-7) |
 | `src/stores/{links,podcast,yearCovers,heatmap}.ts` | `src/stores/*`, `packages/heat/store/heatmap.ts` | import paths only |
 | `src/components/{BlogListPage,YearFolders,WorldMap}.astro` | `src/components/*` | `WorldMap` is a placeholder (TODO PORT-6); `/year/` search banner TODO (search story) |
-| `scripts/derive/index.ts`, `src/lib/legacy-data.ts` | `src/content/generated/**` | Done (PORT-8, MIG-3): covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order, all derived from EmDash + the `derived` cache; nothing reads `src/content` (the `legacy-data` name is historical). Output `src/generated/`, `public/api/` is git-ignored |
+| `scripts/derive/index.ts`, `src/lib/legacy-data.ts` | legacy `content/generated/**` (submodule, removed in CUT-2) | Done (PORT-8, MIG-3): covers fallback, card color sets, UMAP ids, relates (embeddings), podcast episodes, gallery, map locations, tag/city order, all derived from EmDash + the `derived` cache; nothing reads the legacy content (the `legacy-data` name is historical). Output `src/generated/`, `public/api/` is git-ignored |
 
 ## PORT-8 (build-time derived data) - reuses legacy pipeline code by relative import, nothing copied
 
@@ -123,7 +123,7 @@ Out of PORT-5 scope: `/umap/` and `/sitemap/` (PORT-6), `/rss.xml`, `/sitemap-0.
 
 ## MIG-3 (podcast + gallery in EmDash)
 
-- `scripts/import/mig3/{import,rest}.mjs`: new, read the content submodule once (importer). `rest.mjs` duplicates the REST helper of `mig1/import.mjs` and `schema/apply.mjs` (scripts, not a package).
+- The one-shot importers `scripts/import/mig0`..`mig7` and the seeds `derive/seed-*.ts` were deleted in CUT-2d (GON-259). Their REST helper survives as `scripts/lib/emdash-rest.mjs` (used by `packages/fetch-podcast --emdash`); it duplicates `schema/apply.mjs` (scripts, not a package).
 - `packages/fetch-podcast/src/emdash.ts` (`--emdash`): self-contained REST client; legacy JSON path untouched. CUT-2 keeps the package.
 - `scripts/derive/{embed,cache,enrich}.ts` were generalised (table parameter, extra cover URLs); `media.ts` is new. `packages/prepare-gallery` is no longer used by the new site (traces come from `derive`, which reuses `packages/image-metadata`); PORT-8b part 3 removed the tracing: traces are served from the frozen `derived.gallery_traces` cache, new images get a placeholder SVG, and colours come from `packages/image-metadata/src/get-palette.ts` (a colour-only copy of the `getColorSet` palette code; CUT-2 deletes the legacy trace code).
 | `src/components/NotFoundPage.tsx` | `src/components/NotFoundPage.tsx` | GON-227; tabler icons replaced by inline SVG (no tabler dep in apps/web) |

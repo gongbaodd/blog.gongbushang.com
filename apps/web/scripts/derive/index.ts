@@ -6,21 +6,19 @@
 //                                       ->  src/generated/*.json + public/api/posts/*.json (same shapes as before)
 //   EmDash podcasts (read-only) -> episode embeddings (derived.podcast_embeddings), nearest episodes, UMAP corpus
 //   EmDash gallery  (read-only) -> frozen trace cache + colours (derived.gallery_traces; placeholder SVG when uncached) -> public/api/gallery/trace/*.svg
-// Nothing is read from the legacy content submodule (MIG-3), except with DERIVE_PARITY_LEGACY=1 (parity checks only).
-// Nothing generated is committed. Runs locally or in GitHub Actions: uses Cloudflare Workers AI when configured,
-// falls back to local LM Studio if running, or cache hits only (new posts without embeddings are left out of
-// related posts and /umap, D10). A provider switch re-embeds everything in one run; if that cannot finish, the old-model
+// No legacy content is read: the content submodule was removed in CUT-2.
+// Nothing generated is committed. Runs locally or in GitHub Actions: embeds with Cloudflare Workers AI when
+// configured, else cache hits only (new posts without embeddings are left out of related posts and /umap, D10).
+// The local LM Studio / Python embedder was retired (GON-255). A provider switch re-embeds everything in one run; if that cannot finish, the old-model
 // vectors stay in use (never a smaller corpus).
 //
 // Env: CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE | DERIVE_DATABASE_URL  database (read-only for content)
-//      LEGACY_GENERATED_DIR   only for DERIVE_PARITY_LEGACY=1 (default ../../src/content/generated)
 //      DERIVE_EMBED           auto (default) | require | skip | fake (tests only)
-//      DERIVE_EMBED_PROVIDER  auto (default: workers-ai if configured, else local) | workers-ai | local
+//      DERIVE_EMBED_PROVIDER  auto (default) | workers-ai (both use Workers AI; "local" was retired)
 //      DERIVE_EMBED_MODEL     override embedding model key (validated charset; default @cf/qwen/qwen3-embedding-0.6b for workers-ai)
 //      CF_ACCOUNT_ID | CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID for Workers AI embeddings
 //      CF_AI_TOKEN | CLOUDFLARE_AI_API_TOKEN  Workers-AI-scoped API token (CLOUDFLARE_API_TOKEN is never used)
 //      DERIVE_SKIP_COLORS=1   do not extract cover colours (cache hits only)
-//      DERIVE_PARITY_LEGACY=1 only posts the legacy metadata knows (the 3 .mdx posts were never indexed); for parity comparisons
 //      DERIVE_SCHEMA          cache schema name (default derived)
 //      DERIVE_READONLY=1      read-only run (pull-request CI against production, INF-10): no writes at all (read-only DB session, cache writes
 //                             are no-ops), cache hits only (DERIVE_EMBED=skip, DERIVE_SKIP_COLORS=1) and no AI/geocoding credentials used
@@ -29,7 +27,7 @@
 //                             (GON-219): a data import running on production must not turn unrelated PRs red. Posts stay a hard error,
 //                             and web-deploy never sets this, so a deploy still refuses an empty podcast/gallery.
 //      GOOGLE_API_KEY         geocode city strings that are not cached yet
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Extras } from "./outputs.ts";
 if (process.env.DERIVE_READONLY === "1") {
@@ -62,12 +60,7 @@ try {
 	}
 
 	let t = Date.now();
-	let rows = await readPosts(client);
-	if (process.env.DERIVE_PARITY_LEGACY === "1") {
-		const md = resolve(webRoot, process.env.LEGACY_GENERATED_DIR || "../../src/content/generated", "metadata");
-		const known = new Set(readdirSync(md).filter((f) => f.endsWith(".json") && !f.startsWith(".")).map((f) => JSON.parse(readFileSync(resolve(md, f), "utf8")).file.replaceAll("-", "")));
-		rows = rows.filter((r) => known.has(r.legacy_id.replaceAll("-", "")));
-	}
+	const rows = await readPosts(client);
 	if (rows.length === 0 && process.env.ALLOW_EMPTY_DATA !== "1") {
 		console.error(`[derive] ERROR: no published posts with a legacy_id in ${describeTarget(url)} (wrong database, or the import has not run). Set ALLOW_EMPTY_DATA=1 to build without posts.`);
 		process.exit(1);
@@ -90,7 +83,7 @@ try {
 	if ((episodes.length === 0 || galleryImages.length === 0) && process.env.ALLOW_EMPTY_DATA !== "1" && process.env.DERIVE_MEDIA_GUARD === "warn") {
 		console.warn(`::warning::[derive] ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)}: continuing because DERIVE_MEDIA_GUARD=warn (PR CI). web-deploy enforces this.`);
 	} else if ((episodes.length === 0 || galleryImages.length === 0) && process.env.ALLOW_EMPTY_DATA !== "1") {
-		console.error(`[derive] ERROR: ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)} (wrong database, or the MIG-3 import has not run: node apps/web/scripts/import/mig3/import.mjs). Set ALLOW_EMPTY_DATA=1 to build without them.`);
+		console.error(`[derive] ERROR: ${episodes.length} podcast episode(s) and ${galleryImages.length} gallery image(s) in ${describeTarget(url)} (wrong database, or the podcast/gallery content is missing). Set ALLOW_EMPTY_DATA=1 to build without them.`);
 		process.exit(1);
 	}
 	const pemb = await embedPosts(client, episodes, mode, { session }, "podcast_embeddings");

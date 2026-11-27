@@ -59,8 +59,9 @@ jobs:
         run: node scripts/check-required-checks.mjs
 
   changes:
-    # Decides whether the PR touches anything the web build depends on. Legacy-only changes (packages/* except the
-    # plantuml submodule), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
+    # Decides whether the PR touches anything the web build depends on. Every packages/* member feeds the web
+    # build (derive imports them, shiki-plantuml is a dependency) and so does the Rust workspace (Cargo.toml/Cargo.lock build the
+    # umap binary), so those run it. Docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -78,7 +79,7 @@ jobs:
             echo "::warning::could not list PR files; running web anyway"; echo "web=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           printf '%s\n' "$files"
-          pattern='^(apps/web/|supabase/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|package\.json$|packages/shiki-plantuml|\.github/workflows/web-)'
+          pattern='^(apps/web/|supabase/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|package\.json$|packages/|Cargo\.(toml|lock)$|\.github/workflows/web-)'
           if printf '%s\n' "$files" | grep -qE "$pattern"; then web=true; else web=false; fi
           echo "web=$web" | tee -a "$GITHUB_OUTPUT"
 
@@ -97,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          submodules: recursive # packages/shiki-plantuml (and the legacy content submodule, which apps/web does not read)
+          submodules: recursive # packages/shiki-plantuml
 
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
 
