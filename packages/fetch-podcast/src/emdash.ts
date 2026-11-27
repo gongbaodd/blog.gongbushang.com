@@ -3,11 +3,11 @@
 // derives them (apps/web/scripts/derive). Only episodes missing from EmDash (by legacy_id = episode id) are created;
 // existing entries are never touched, so edits made in the admin survive. The legacy JSON path is unchanged.
 //
-// Transport: apps/web/scripts/import/mig3/rest.mjs (shared with the MIG-3 importers, not a copy). It refuses to send
+// Transport: apps/web/scripts/lib/emdash-rest.mjs (shared with `apps/web/scripts/schema`, not a copy). It refuses to send
 // credentials to a non-https URL unless the host is localhost/127.0.0.1. Auth: EMDASH_TOKEN bearer, EMDASH_HEADERS
 // ("Name: Value" lines, Cloudflare Access service tokens), or the localhost dev bypass (`pnpm admin:local`).
 import { PODCAST_CHANNEL } from "../../../apps/web/src/lib/podcast-channel.ts";
-import { createClient, type EmdashClient } from "../../../apps/web/scripts/import/mig3/rest.mjs";
+import { createClient, type EmdashClient } from "../../../apps/web/scripts/lib/emdash-rest.mjs";
 import type { ChannelData, Episode } from "./types.ts";
 
 export interface EmdashOptions {

@@ -79,7 +79,7 @@ export interface PostCity {
   label: string;
 }
 
-/** Mirrors the legacy collection entry `data` (src/content.config.ts) where practical. */
+/** Mirrors the legacy collection entry `data` (the removed legacy content config) where practical. */
 export interface BlogPostData {
   type: "post" | "draft";
   category: string;

@@ -105,7 +105,6 @@ Template key is `cloudflare:starter` (the creator offers `blog | starter | marke
 | `src/pages/[category]/[year]/[month]/[day]/[slug].astro`, `src/layouts/BlogPost.astro`, `src/components/{BlogContent,MantineMain,GridWithMenu}.*`, `src/lib/{content,legacy-url,mdx-lite}.ts`, `src/utils/reading-time.ts`, `public/profile.jpg` | Added | Post page (see PORTING.md) |
 | `src/pages/index.astro` | post links use `mapPost(post).href` instead of `/posts/<id>` | the starter route was deleted in FIX-1 |
 | `package.json` | Added `remark`, `strip-markdown` | legacy excerpt rule; build-time only (prerendered page), nothing lands in the Worker |
-| `scripts/dev/seed-sample-posts.mjs` | Added | Dev seeding of real legacy posts through the remote CLI/REST (idempotent, MIG-1 overwrites). (`parity-post.cjs`, the structural old-vs-new HTML diff, was superseded by `scripts/import/mig4/diff.mjs` and deleted) |
 
 ## PORT-3
 - `astro.config.mjs`: `vite.ssr.noExternal: ["react-plock"]` (masonry).

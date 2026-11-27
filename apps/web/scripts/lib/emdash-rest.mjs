@@ -1,6 +1,6 @@
 /**
- * Minimal EmDash REST client shared by the MIG-3 importers and `packages/fetch-podcast --emdash`.
- * Same transport as `scripts/import/mig1/import.mjs` and `scripts/schema/apply.mjs` (the three copies are
+ * Minimal EmDash REST client shared by `packages/fetch-podcast --emdash`.
+ * Same transport as `scripts/schema/apply.mjs` (the two copies are
  * deliberate: those files are scripts, not a package). Auth, in order: a bearer token, `EMDASH_HEADERS`
  * (newline-separated "Name: Value", Cloudflare Access service tokens), the localhost dev bypass.
  */

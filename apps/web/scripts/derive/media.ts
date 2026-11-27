@@ -205,7 +205,7 @@ export async function resolveTraces(c: pg.Client, gallery: DerivedGalleryImage[]
 					console.warn(`[derive] WARNING: gallery colours failed for ${u}: ${(err as Error).message}`);
 				}
 			}
-			// Never stored in gallery_traces: it would go stale and could shadow the real trace that `derive:seed:media` restores.
+			// Never stored in gallery_traces: it would go stale and could shadow the real trace restored from a `content:pull --include-derived` sync.
 			const row: TraceRow = { svg: placeholderSvg(colorSet?.bgColor), colorSet: colorSet ?? { bgColor: "", titleColor: "" } };
 			cache.set(u, row);
 			if (colorSet) console.log(`[derive] gallery placeholder ${u}`);

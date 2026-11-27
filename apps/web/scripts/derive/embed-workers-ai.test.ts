@@ -91,7 +91,7 @@ describe("Workers AI config & helpers", () => {
 		expect(isWorkersAiConfigured({ CLOUDFLARE_ACCOUNT_ID: "acc3", CLOUDFLARE_API_TOKEN: "tok3" })).toBe(false);
 	});
 
-	it("normalises newlines like legacy embed.py", () => {
+	it("normalises newlines like the former Python embedder", () => {
 		expect(normalizeEmbeddingInput("title: a\ncontent: b\n\nc")).toBe("title: a content: b  c");
 	});
 
