@@ -4,23 +4,22 @@ import { fileURLToPath } from "node:url";
 import { PODCAST_COVER_DIR, PODCAST_JSON } from "consts/config.js";
 import { fetchAndProcessPodcast } from "./fetch-podcast.ts";
 
+/** Walks up from `startDir` to the directory that holds `pnpm-workspace.yaml` (the monorepo root). */
 export async function findRepoRoot(startDir = process.cwd()): Promise<string> {
-  let dir = startDir;
+  let dir = path.resolve(startDir);
   while (true) {
     try {
-      const pkgPath = path.join(dir, "package.json");
-      const raw = await fs.readFile(pkgPath, "utf-8");
-      const pkg = JSON.parse(raw) as { name?: string };
-      if (pkg.name === "gongbaodd-blog") {
-        return dir;
-      }
+      await fs.access(path.join(dir, "pnpm-workspace.yaml"));
+      return dir;
     } catch {
       // keep walking up
     }
 
     const parent = path.dirname(dir);
     if (parent === dir) {
-      return startDir;
+      throw new Error(
+        `Could not find the repo root: no pnpm-workspace.yaml in ${startDir} or any parent directory.`,
+      );
     }
     dir = parent;
   }
