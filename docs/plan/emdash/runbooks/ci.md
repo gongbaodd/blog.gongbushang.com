@@ -30,7 +30,7 @@ Environment secrets (Settings, Environments). There is one environment, `product
 |---|---|---|
 | `DATABASE_POOLER_URL` (also in `ci-readonly`; session pooler, IPv4, port 5432; project `ckpozotzgubrjbjstvjg`, host `aws-0-ap-southeast-1.pooler.supabase.com`) | must point at the promoted project | web-ci (migrate check, read-only build), web-deploy (migrate check/apply, build prerender), web-guards (backup) |
 | `CLOUDFLARE_API_TOKEN` | exists | web-deploy (`wrangler deploy`) only; web-ci never uses it |
-| `CF_AI_TOKEN` (Workers-AI-only scope, never the deploy token) + `CF_ACCOUNT_ID` | not yet wired (PORT-8b) | build step running `derive` (embeddings) in web-deploy only; see data.md |
+| `CF_AI_TOKEN` (Workers-AI-only scope, never the deploy token) | exists; wired in GON-266 (account id is the hardcoded `CLOUDFLARE_ACCOUNT_ID`) | web-deploy build step only (`derive` embeddings); web-ci strips it via `DERIVE_READONLY=1`; see data.md |
 | `BACKUP_AGE_RECIPIENT` (age public key `age1...`) | **missing, must be created** | web-guards backup (must match `^age1[0-9a-z]{58}$`, else the job fails) |
 | `BACKUP_DATABASE_URL` (session pooler URL of the read-only `growgen_backup` role, SEC-11) | **to create** (until then the backup uses `DATABASE_POOLER_URL` with a warning) | web-guards backup |
 
