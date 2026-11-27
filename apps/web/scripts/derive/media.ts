@@ -7,8 +7,8 @@
 // so /api/podcast/*.ndjson stays byte-identical.
 import { createHash } from "node:crypto";
 import type pg from "pg";
-import { buildPodcastEmbeddingText } from "../../../../packages/metadata-embedding/src/embedding.ts";
-import { getPaletteColorSet } from "../../../../packages/image-metadata/src/get-palette.ts";
+import { buildPodcastEmbeddingText } from "./lib/embedding/embedding-text.ts";
+import { getPaletteColorSet } from "./lib/palette/get-palette.ts";
 import { loadTraces, PLACEHOLDER_MARK, pruneTraces, type ColorSet, type TraceRow } from "./cache.ts";
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");

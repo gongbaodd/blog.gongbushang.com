@@ -13,7 +13,7 @@
 // Also used for podcast episodes (`table = "podcast_embeddings"`).
 import { createHash } from "node:crypto";
 import type pg from "pg";
-import { EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
+import { EMBEDDING_DIMENSIONS } from "./lib/embedding/model.ts";
 import { embeddingIndex, loadEmbeddings, upsertEmbedding, type EmbeddingTable } from "./cache.ts";
 import {
 	DEFAULT_WORKERS_AI_BATCH_SIZE,

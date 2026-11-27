@@ -1,7 +1,7 @@
 /**
  * Zero-dependency RSS URL validation, safe fetching, and XML parser for the Spotify/Anchor podcast feed.
  *
- * Parity with `packages/fetch-podcast/src/fetch-podcast.ts`:
+ * Parity with `apps/web/scripts/podcast/fetch-podcast.ts`:
  * - Episode `id` (used as `legacy_id`): last pathname segment of `<link>` (or `<guid>`), else `ep-<index>`
  * - `<itunes:duration>`: converts ISO-8601 `PT...` to `"Xh Ym Zs"`, preserves `HH:MM:SS` / `MM:SS` / seconds verbatim
  * - `<description>` -> `summary`: strips HTML tags and takes the first 200 characters

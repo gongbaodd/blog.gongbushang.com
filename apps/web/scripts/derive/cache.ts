@@ -1,8 +1,8 @@
 // Reads and writes of the derived cache tables (supabase/migrations/20261125000000_derived_schema.sql).
 import { createHash } from "node:crypto";
 import type pg from "pg";
-import { computeUmapInputHash, type UmapCorpusEntry } from "../../../../packages/metadata-embedding/src/apply-umap.ts";
-import { computeUmapParamsHash } from "../../../../packages/metadata-embedding/src/umap-params.ts";
+import { computeUmapInputHash, type UmapCorpusEntry } from "./lib/embedding/umap-hash.ts";
+import { computeUmapParamsHash } from "./lib/embedding/umap-params.ts";
 import { READONLY, fromVector, q, toVector } from "./db.ts";
 import type { Hint } from "./posts.ts";
 

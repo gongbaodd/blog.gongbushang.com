@@ -1,7 +1,7 @@
 /**
  * Idempotent RSS -> EmDash `podcasts` sync logic.
  *
- * Semantics mirror `packages/fetch-podcast/src/emdash.ts`:
+ * Semantics mirror `apps/web/scripts/podcast/emdash.ts`:
  * - Matches existing entries across ALL non-deleted statuses (published, draft, scheduled) by `legacy_id`.
  * - Never overwrites existing entries so edits made in Admin survive.
  * - Skips episodes whose `pubDate` does not parse (never writes `pub_date: null`).

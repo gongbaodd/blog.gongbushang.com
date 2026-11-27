@@ -1,4 +1,4 @@
-// Types for emdash-rest.mjs (used by packages/fetch-podcast, which is type-checked by the root project).
+// Types for emdash-rest.mjs (used by scripts/podcast).
 export interface EmdashItem {
   id: string;
   slug?: string;

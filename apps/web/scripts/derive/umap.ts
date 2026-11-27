@@ -2,8 +2,8 @@
 // one layout for the whole corpus (posts + podcast episodes), reused while the sorted-key/embedding hash is unchanged,
 // recomputed with the Rust `umap` binary otherwise. The state lives in `derived.umap_state`, not in a file.
 import type pg from "pg";
-import type { UmapCorpusEntry } from "../../../../packages/metadata-embedding/src/apply-umap.ts";
-import { runUmapBinary } from "../../../../packages/metadata-embedding/src/run-umap-binary.ts";
+import type { UmapCorpusEntry } from "./lib/embedding/umap-hash.ts";
+import { runUmapBinary } from "./lib/embedding/run-umap-binary.ts";
 import { corpusHashes, loadUmapState, saveUmapState, type Xy } from "./cache.ts";
 
 export interface UmapResult {
