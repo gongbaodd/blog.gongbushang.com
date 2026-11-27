@@ -43,6 +43,52 @@ export interface RebuildOnPublishPluginOptions {
 	fetchImpl?: typeof fetch;
 }
 
+const DEFAULT_SUPPRESS_TTL_MS = 60_000;
+const suppressedDispatches = new Map<string, number>();
+
+function dispatchKey(collection: string, id: string): string {
+	return `${collection}:${id}`;
+}
+
+function pruneExpiredSuppressions(now: number): void {
+	for (const [key, expiresAt] of suppressedDispatches) {
+		if (expiresAt <= now) suppressedDispatches.delete(key);
+	}
+}
+
+/**
+ * Marks a single `(collection, id)` publish as handled by an explicit batch rebuild dispatch so
+ * its deferred `content:afterPublish` hook does not trigger a duplicate GitHub repository_dispatch.
+ */
+export function suppressPublishDispatch(
+	collection: string,
+	id: string,
+	ttlMs: number = DEFAULT_SUPPRESS_TTL_MS,
+	now: number = Date.now(),
+): void {
+	pruneExpiredSuppressions(now);
+	suppressedDispatches.set(dispatchKey(collection, id), now + ttlMs);
+}
+
+/** Returns true (and consumes the marker) if per-item dispatch was suppressed for `(collection, id)`. */
+export function consumeSuppressedPublishDispatch(
+	collection: string,
+	id: string,
+	now: number = Date.now(),
+): boolean {
+	pruneExpiredSuppressions(now);
+	const key = dispatchKey(collection, id);
+	const expiresAt = suppressedDispatches.get(key);
+	if (expiresAt === undefined) return false;
+	suppressedDispatches.delete(key);
+	return expiresAt > now;
+}
+
+/** Clears all suppression markers (intended for tests). */
+export function clearSuppressedPublishDispatches(): void {
+	suppressedDispatches.clear();
+}
+
 export function createPlugin(options: RebuildOnPublishPluginOptions = {}) {
 	return definePlugin({
 		id: "rebuild-on-publish",
@@ -51,11 +97,19 @@ export function createPlugin(options: RebuildOnPublishPluginOptions = {}) {
 		hooks: {
 			"content:afterPublish": async (event, ctx) => {
 				const content = event.content;
+				const id = String(content.id ?? "");
+				const slug = typeof content.slug === "string" ? content.slug : undefined;
+				if (id && consumeSuppressedPublishDispatch(event.collection, id)) {
+					ctx.log.info(
+						`rebuild-on-publish: suppressed per-item dispatch for ${event.collection}/${slug ?? id} (batch sync)`,
+					);
+					return;
+				}
 				await dispatchFromNodeEnv(
 					{
 						collection: event.collection,
-						id: String(content.id ?? ""),
-						slug: typeof content.slug === "string" ? content.slug : undefined,
+						id,
+						slug,
 					},
 					ctx.log,
 					options.env ?? process.env,

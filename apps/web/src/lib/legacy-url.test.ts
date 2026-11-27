@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parsePostPath, postParams, postPath, tagHref } from "./legacy-url";
+import { parsePostPath, postParams, postPath, tagHref, tagSlug } from "./legacy-url";
 import { prepareBody } from "./mdx-lite";
 import { mapPost, postTitle, quickTitle } from "./content";
 
@@ -46,7 +46,10 @@ describe("post URL mapping (legacy_id + category -> path)", () => {
   });
 
   it("encodes tag hrefs (c# stays a path, not a fragment)", () => {
-    expect(tagHref("c#")).toBe("/tag/c%23");
+    expect(tagHref("c#")).toBe("/tag/c-sharp");
+    expect(tagHref("C#")).toBe("/tag/c-sharp");
+    expect(tagHref("c-sharp")).toBe("/tag/c-sharp");
+    expect(tagSlug("F#")).toBe("f-sharp");
     expect(tagHref("aframe.js")).toBe("/tag/aframe.js");
   });
 });

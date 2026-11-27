@@ -1,0 +1,13 @@
+---
+// Draft preview target of the collection urlPattern `/podcast/{slug}` (GON-250). 403 unless a valid `_preview` token grants this entry.
+import PreviewPage from "../../components/PreviewPage.astro";
+import { loadPreview } from "../../preview.ts";
+
+export const prerender = false;
+
+const result = await loadPreview("podcasts", Astro.params.slug);
+if (result instanceof Response) return result;
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+---
+<PreviewPage view={result} />

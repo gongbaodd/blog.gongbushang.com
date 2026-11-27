@@ -7,11 +7,11 @@ export const prerender = true;
 export const getStaticPaths = tagPages;
 
 const { filter } = Astro.params;
-const { posts } = Astro.props;
+const { posts, tagName } = Astro.props;
 ---
 
 <BlogListPage
-	subTitle={filter!}
+	subTitle={tagName}
 	totalCount={posts.length}
 	filter={filter!}
 	entryType={FILTER_ENTRY.TAG}

@@ -115,6 +115,10 @@ pnpm --filter admin test
 
 Non-script entry points: `apps/web/scripts/schema/apply.sh` and `apps/web/scripts/import/mig7/catchup.mjs`. Run them with `node` or `bash` as shown in their headers.
 
+## Lead workflow: after each merged story
+
+Call the `cleanup` agent (`.claude/agents/cleanup.md`) after each merged story. It wraps `packages/scripts/prune-worktrees.sh` (dry-run first, then `--apply`) and removes local worktrees and branches whose PR is merged or closed. It keeps anything dirty, unpushed, with an open PR, or holding a `.env`, and reports why. You can also run the script by hand.
+
 ## Runbooks (`docs/plan/emdash/runbooks/`)
 
 - `supabase.md`: pooler hosts, `emdash migrate` fingerprint flow, RLS lockdown (SEC-01), verification queries.

@@ -80,6 +80,11 @@ if (!local.failed) {
 	check("/robots.txt disallows everything (SEC-06)", r.status === 200 && (await r.text()) === "User-agent: *\nDisallow: /\n");
 	const a = await fetch(`${local.base}/_emdash/admin`, { redirect: "manual" });
 	check("/_emdash/admin carries X-Robots-Tag noindex (SEC-06)", a.headers.get("x-robots-tag") === "noindex, nofollow", `HTTP ${a.status} ${a.headers.get("x-robots-tag")}`);
+	// GON-250: draft preview routes refuse requests without a valid _preview token.
+	for (const path of ["/posts/smoke", "/podcast/smoke", "/posts/smoke?_preview=bad.token"]) {
+		const p = await fetch(`${local.base}${path}`, { redirect: "manual" });
+		check(`${path} is 403 without a valid preview token (GON-250)`, p.status === 403, `HTTP ${p.status}`);
+	}
 }
 local.child.kill();
 

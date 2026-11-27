@@ -1,0 +1,4 @@
+# Legacy URLs that now 301 to a new URL (GON-240). Format: `<old> <new>`, one per line. Both go in public/_redirects as `<old> <new> 301`.
+# parity accepts the old URL (still listed in legacy-urls.txt) when the new one is built and dist/client/_redirects has the rule.
+/tag/c%23/ /tag/c-sharp/
+/api/tag/c%23/0.ndjson /api/tag/c-sharp/0.ndjson

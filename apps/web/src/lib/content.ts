@@ -537,7 +537,7 @@ export function postCategory(post: Pick<BlogPost, "data">): TLink {
 /** Legacy `tags(post)` link helper (`packages/utils/extract.ts`), preserving display label casing. */
 export function postTags(post: Pick<BlogPost, "data">): TLink[] {
   const { tag = [] } = post.data;
-  return tag.map((t) => ({ label: t, href: tagHref(t.toLowerCase()) }));
+  return tag.map((t) => ({ label: t, href: tagHref(t) }));
 }
 
 /** Legacy `series(post)` link helper (`packages/utils/extract.ts`). */

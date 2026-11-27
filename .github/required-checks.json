@@ -1,0 +1,5 @@
+{
+  "_comment": "Required status check names on master (ruleset protect-deploy-branches, id 28165746). Keep in sync with the ruleset; scripts/check-required-checks.mjs compares them when a token is available. See docs/plan/emdash/runbooks/ci.md.",
+  "ruleset": 28165746,
+  "checks": ["web"]
+}

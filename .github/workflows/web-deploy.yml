@@ -1,5 +1,6 @@
 # Publish pipeline for the EmDash site (INF-4): rebuild static pages from the CMS and deploy.
-# Triggers: CMS publish (repository_dispatch `emdash-publish`), nightly rebuild, manual.
+# Triggers: CMS publish (repository_dispatch `emdash-publish`), nightly rebuild, manual, and push to master touching web paths (GON-243).
+# A push never applies migrations (`apply_migrations` is workflow_dispatch-only; `inputs.*` is empty on push, so the read-only check runs).
 # Scheduled and dispatch events always use the default branch's workflow. The only target is `production` (INF-10: environments
 # are local and production): manually, by the nightly schedule, or by a dispatch whose client_payload.environment is `production`
 # (sent by the rebuild-on-publish plugin from the Worker's SITE_ENV), always through the `production` GitHub environment.
@@ -7,6 +8,16 @@
 name: web-deploy
 
 on:
+  push:
+    branches: [master]
+    paths:
+      - "apps/web/**"
+      - "supabase/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - "packages/shiki-plantuml/**"
+      - ".github/workflows/web-deploy.yml"
   repository_dispatch:
     types: [emdash-publish]
   schedule:
@@ -55,6 +66,7 @@ jobs:
           case "$EVENT_NAME" in
             workflow_dispatch) want="$INPUT_ENV" ;;
             schedule) want=production ;;
+            push) want=production ;;
             repository_dispatch) want="$PAYLOAD_ENV" ;;
             *) want="" ;;
           esac

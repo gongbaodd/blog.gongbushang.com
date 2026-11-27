@@ -464,7 +464,7 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
     expect(postCategory(post)).toEqual({ label: "fe", href: "/fe" });
     expect(postTags(post)).toEqual([
       { label: "React", href: "/tag/react" },
-      { label: "C#", href: "/tag/c%23" },
+      { label: "C#", href: "/tag/c-sharp" },
     ]);
     expect(postSeries(post)).toEqual({ label: "Games Series", href: "/series/games" });
     expect(postCities(post)).toEqual([
@@ -473,7 +473,7 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
     expect(postLinks(post)).toEqual([
       { label: "fe", href: "/fe" },
       { label: "React", href: "/tag/react" },
-      { label: "C#", href: "/tag/c%23" },
+      { label: "C#", href: "/tag/c-sharp" },
       { label: "Games Series", href: "/series/games" },
       { label: "Tallinn, Estonia", href: "/world/tallinn-estonia" },
     ]);

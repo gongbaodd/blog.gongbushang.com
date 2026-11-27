@@ -13,6 +13,7 @@ const ROOTS = [
 	join(repoRoot, "apps/admin/src"),
 	join(repoRoot, "apps/web/src/lib/cloudinary-media"),
 	join(repoRoot, "apps/web/src/lib/lockdown.ts"),
+	join(repoRoot, "apps/web/src/lib/podcast-channel.ts"),
 	join(repoRoot, "apps/web/src/plugins/rebuild-on-publish"),
 ];
 const EXTS = /\.(?:[cm]?[jt]sx?|astro|mdx?)$/;

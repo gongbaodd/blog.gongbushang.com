@@ -4,26 +4,15 @@
 #     no AI or geocoding credentials used), see apps/web/scripts/derive/index.ts and docs/plan/emdash/runbooks/ci.md.
 #   - DATABASE_POOLER_URL comes from the separate `ci-readonly` environment and is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
 #   - `emdash migrate --check` is read-only; migrations are applied only by web-deploy.yml (manual, apply_migrations).
-# Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
 # Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
 name: web-ci
 
 on:
+  # No `paths:` filter here, on purpose. `web` is a required check on master: a path-filtered workflow never reports on PRs
+  # outside its paths, so those PRs wait on `web` forever. The `changes` job below does the filtering instead; when it finds
+  # no relevant change, `web` is skipped, and a skipped job satisfies a required check.
   pull_request:
     branches: [master]
-    # Legacy-only changes (src/, packages/* except the plantuml submodule, e2e/) do not trigger this.
-    paths:
-      - "apps/web/**"
-      - "supabase/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "packages/shiki-plantuml"
-      - ".github/workflows/web-*.yml"
-      # `web` is a required check on master, so it must report on admin-only PRs too, or they stay blocked forever
-      # (a workflow_dispatch run does not count for the PR). The admin also imports apps/web/src/lib and plugins.
-      - "apps/admin/**"
-      - ".github/workflows/admin-*.yml"
-      - ".dockerignore"
   workflow_dispatch:
 
 concurrency:
@@ -42,15 +31,63 @@ env:
   CLOUDFLARE_ACCOUNT_ID: 2c1ea12e37cd89d9a6f6a62c6798d3a0
   # PR builds never write to the production DB and never spend Workers AI quota (INF-10). Keep this at job level.
   DERIVE_READONLY: "1"
+  # GON-219: PR CI reads the live production DB, so a data import in progress (e.g. podcasts written, gallery not yet) must not turn
+  # unrelated PRs red. Empty podcast/gallery data is only a warning here; empty posts, URL parity and the size guard still fail the check.
+  # web-deploy.yml does NOT set this: the deploy keeps the hard guard.
+  DERIVE_MEDIA_GUARD: warn
   PUBLIC_BUILD_SHA: ${{ github.sha }}
   # Empty-build guard thresholds (repository variables, optional). Raise WEB_MIN_POSTS to ~990 once MIG-1 is imported.
   WEB_MIN_POSTS: ${{ vars.WEB_MIN_POSTS || '0' }}
   WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
 
 jobs:
+  required-check-guard:
+    # GON-246: fails if a required check (.github/required-checks.json) could stop reporting on a PR (workflow-level filter on
+    # `pull_request`, renamed job). No secrets, no DB, no install. Always runs; `web` does NOT depend on it, so a guard failure
+    # never turns `web` into a skipped/unreported job. This job is deliberately not a required check itself.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+      - run: node --test scripts/check-required-checks.test.mjs
+      - name: Required checks report on every PR
+        env:
+          GH_TOKEN: ${{ github.token }} # reading rulesets usually needs more than this token; the script then warns and uses the checked-in list
+        run: node scripts/check-required-checks.mjs
+
+  changes:
+    # Decides whether the PR touches anything the web build depends on. Legacy-only changes (packages/* except the
+    # plantuml submodule), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "web=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! files=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" --jq '.[].filename'); then
+            echo "::warning::could not list PR files; running web anyway"; echo "web=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          printf '%s\n' "$files"
+          pattern='^(apps/web/|supabase/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|package\.json$|packages/shiki-plantuml|\.github/workflows/web-)'
+          if printf '%s\n' "$files" | grep -qE "$pattern"; then web=true; else web=false; fi
+          echo "web=$web" | tee -a "$GITHUB_OUTPUT"
+
   web:
-    # Forks get no secrets; skip them rather than fail.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    # Skipped (which still passes the required check) when nothing relevant changed, and for forks, which get no secrets.
+    if: >-
+      needs.changes.outputs.web == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Dedicated environment holding ONLY DATABASE_POOLER_URL, ideally the SEC-11 SELECT-only role. Not `production`: that environment

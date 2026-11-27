@@ -30,7 +30,15 @@ export function parsePostPath(path: string): { category: string; legacyId: strin
   return m ? { category: m[1], legacyId: m[2] } : undefined;
 }
 
-export const tagHref = (slug: string) => `/tag/${encodeURIComponent(slug)}`;
+/**
+ * URL slug of a tag name (GON-240): lowercase, `#` spelled out as `-sharp` (`C#` -> `c-sharp`, `F#` -> `f-sharp`). `#` cannot be
+ * a path segment (the Worker asset handler decodes `%23` back to `#` and misses the file), so the slug never carries it.
+ * Idempotent: a slug maps to itself. Old `/tag/c%23/` URLs are 301s in public/_redirects.
+ */
+export const tagSlug = (name: string) => name.toLowerCase().replace(/#/g, "-sharp");
+
+/** `/tag/<slug>` for a tag name or slug. */
+export const tagHref = (name: string) => `/tag/${encodeURIComponent(tagSlug(name))}`;
 export const categoryHref = (slug: string) => `/${slug}`;
 export const seriesHref = (slug: string) => `/series/${slug}`;
 export const cityHref = (slug: string) => `/world/${slug}`;
