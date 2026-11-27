@@ -1,6 +1,7 @@
 import { atom, map } from "nanostores";
 import miniSearch, { type SearchResult } from "minisearch";
 import type { TLink } from "../lib/content";
+import { indexOptions } from "./search-options";
 import { $pvMap, requestAllViewCount } from "./pv";
 
 /** One entry of `/api/posts/all.json` (static copy of the legacy search index). */
@@ -26,30 +27,42 @@ export const $index = map<{
 
 export const $posts = atom<(SearchResult | IPost)[]>([]);
 
-export async function loadPostsToIndex() {
-  $index.setKey("isLoading", true);
+/** Built once per page load; later calls reuse the same promise (also after a failure is retried). */
+let loadPromise: Promise<void> | null = null;
+let popularPosts: IPost[] = [];
 
+async function buildIndex() {
   const data = await fetch("/api/posts/all.json");
   const results = (await data.json()) as { posts: IPost[] };
 
-  const index = new miniSearch<IPost>({
-    fields: ["title", "content"],
-    storeFields: ["id", "href", "title", "date", "content", "category", "tags", "series"],
-  });
-
+  const index = new miniSearch<IPost>(indexOptions);
   await index.addAllAsync(results.posts);
-  const filteredPosts = await filterHighestPvPost(results.posts);
-  $posts.set(filteredPosts);
-
+  popularPosts = await filterHighestPvPost(results.posts);
   $index.set({ isLoading: false, index });
+}
+
+export async function loadPostsToIndex() {
+  if (!loadPromise) {
+    $index.setKey("isLoading", true);
+    loadPromise = buildIndex().catch((error) => {
+      loadPromise = null;
+      $index.setKey("isLoading", false);
+      throw error;
+    });
+  }
+  await loadPromise;
+  $posts.set(popularPosts);
 }
 
 export function search(query: string) {
   const { index } = $index.get();
   if (!index) return;
 
-  const posts = index.search(query);
-  $posts.set(posts);
+  if (!query.trim()) {
+    $posts.set(popularPosts);
+    return;
+  }
+  $posts.set(index.search(query));
 }
 
 async function filterHighestPvPost(posts: IPost[]) {
