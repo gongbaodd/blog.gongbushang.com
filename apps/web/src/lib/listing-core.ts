@@ -3,6 +3,7 @@
 // Output shapes (field names, key order, item order, page size) match the legacy JSON/NDJSON APIs.
 import { POST_CARD_CLASSNAMES, POST_CARD_LAYOUT, POST_COUNT_PER_PAGE } from "../consts-list";
 import { optimizeCoverUrl } from "./cloudinary";
+import { tagSlug } from "./legacy-url";
 
 export type TLink = { label: string; href: string };
 export type TCountLink = TLink & { count: number };
@@ -220,8 +221,8 @@ export function categoryLinks(entries: ListEntry[]): TCountLink[] {
   })).toSorted((a, b) => b.count - a.count);
 }
 
-/** Tag href as emitted into JSON: `#`, `?` and `%` in a slug must not break the URL (legacy emitted `/tag/c#`). */
-export const apiTagHref = (slug: string) => `/tag/${slug.replace(/[%#?]/g, encodeURIComponent)}`;
+/** Tag href as emitted into JSON (`c#` -> `/tag/c-sharp`, GON-240; legacy emitted a broken `/tag/c#`). */
+export const apiTagHref = (name: string) => `/tag/${tagSlug(name).replace(/[%#?]/g, encodeURIComponent)}`;
 
 export function tagLinks(entries: ListEntry[]): TCountLink[] {
   const map = createPostMap(entries, (e) => (e.data.tag ?? []).map((t) => t.toLocaleLowerCase()));
