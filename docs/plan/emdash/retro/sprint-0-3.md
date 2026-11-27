@@ -71,5 +71,5 @@ Carried over: CMS-2 (5), CMS-3 (2), CMS-4 (2), INF-3 production half (Hyperdrive
 - Correct `CLOUDINARY_CLOUD_NAME` (testing returns 401; real name is not what `.dev.vars` holds).
 - Backup key: age public key for the nightly production `pg_dump`.
 - CI tokens/vars: GitHub PAT for dispatch, Cloudflare API token, Supabase pooler secrets, environment variables.
-- GoatCounter allowed domains: add `next.growgen.xyz` (and testing host) before cutover.
-- Also pending: production Hyperdrive, first-admin claim and passkey (D11), DNS for `next.growgen.xyz`.
+- GoatCounter allowed domains: add `growgen.xyz` before cutover.
+- Also pending: production Hyperdrive, first-admin claim and passkey (D11), DNS for the production host.

@@ -23,7 +23,7 @@ const COUNT_SELECTORS = Object.freeze({
 
 /** Hosts that must never appear in a production page: preview/dev origins. */
 export const LEAKED_ORIGIN_RE =
-  /^https?:\/\/(?:next\.growgen\.xyz|localhost|127\.0\.0\.1|\[::1\]|[^/?#]*\.(?:workers|pages)\.dev)(?::\d+)?(?:[/?#]|$)/i;
+  /^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\]|[^/?#]*\.(?:workers|pages)\.dev)(?::\d+)?(?:[/?#]|$)/i;
 
 const ASTRO_IMG_RE = /^\/_astro\/(.+?)\.[A-Za-z0-9_-]{6,}(?:_[A-Za-z0-9_-]+)?\.[A-Za-z0-9]+$/;
 const CLOUDINARY_UPLOAD_RE =

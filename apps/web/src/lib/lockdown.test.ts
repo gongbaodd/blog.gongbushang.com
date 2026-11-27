@@ -133,7 +133,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
       const env: StaticWorkerEnv = { ASSETS: { fetch: assetsFetch }, PUBLIC_SITE_LIVE: live };
 
       const lockedRes = await handleStaticOnlyFetch(
-        new Request("https://next.growgen.xyz/_emdash/admin"),
+        new Request("https://growgen.xyz/_emdash/admin"),
         env,
       );
       expect(lockedRes.status).toBe(404);
@@ -141,7 +141,7 @@ describe("createWorkerFetch / handleStaticOnlyFetch (SEC-04 fail-closed static W
       expect(lockedRes.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
 
       const pageRes = await handleStaticOnlyFetch(
-        new Request("https://next.growgen.xyz/does-not-exist"),
+        new Request("https://growgen.xyz/does-not-exist"),
         env,
       );
       expect(pageRes.status).toBe(404);

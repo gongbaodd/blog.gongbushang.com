@@ -86,7 +86,7 @@ function makeLighthouseV11(overrides: Record<string, unknown> = {}) {
 function makeLighthouseV12(overrides: Record<string, unknown> = {}) {
 	return {
 		lighthouseVersion: "12.2.1",
-		finalDisplayedUrl: "https://next.growgen.xyz/",
+		finalDisplayedUrl: "https://growgen.xyz/",
 		categories: {
 			performance: { id: "performance", score: 0.89 },
 		},
@@ -100,9 +100,9 @@ function makeLighthouseV12(overrides: Record<string, unknown> = {}) {
 			"network-requests": {
 				details: {
 					items: [
-						{ url: "https://next.growgen.xyz/", transferSize: 45000 },
-						{ url: "https://next.growgen.xyz/_astro/app.js", transferSize: 220000 },
-						{ url: "https://next.growgen.xyz/_astro/app.css", transferSize: 68000 },
+						{ url: "https://growgen.xyz/", transferSize: 45000 },
+						{ url: "https://growgen.xyz/_astro/app.js", transferSize: 220000 },
+						{ url: "https://growgen.xyz/_astro/app.css", transferSize: 68000 },
 					],
 				},
 			},
@@ -634,7 +634,7 @@ describe("CLI exit codes, --json, --collect, and --help", () => {
 			[
 				"--collect",
 				"--url",
-				"https://next.growgen.xyz",
+				"https://growgen.xyz",
 				"--routes",
 				"/,/about/",
 				"--collector",
