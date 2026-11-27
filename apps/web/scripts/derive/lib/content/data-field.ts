@@ -1,6 +1,5 @@
-import { SHORT_POST_WORDS } from "consts/config.js";
-import { md2txt } from "utils/md2txt";
-import { getWordNumber } from "utils/readingTime";
+import { getWordNumber } from "../../../../src/utils/reading-time.ts";
+import { md2txt } from "./md2txt.ts";
 import type { Link, MetadataEntry } from "./types.ts";
 
 export interface FrontmatterData {
@@ -58,6 +57,9 @@ export function seriesFromFrontmatter(
     href: `/series/${series.slug}`,
   };
 }
+
+/** Posts whose body has fewer words (Latin words + CJK characters) than this are marked `isShort`. */
+export const SHORT_POST_WORDS = 150;
 
 export function isShortPost(body: string, threshold = SHORT_POST_WORDS): boolean {
   return getWordNumber(body) < threshold;

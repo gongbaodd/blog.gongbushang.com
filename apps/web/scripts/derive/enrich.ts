@@ -1,6 +1,6 @@
 // Cover colours (cache key = cover URL) and city geocodes (cache key = city string), both through the legacy extractors.
 import type pg from "pg";
-import { geocodeCities } from "../../../../packages/content-prepare/src/geocode.ts";
+import { geocodeCities } from "./lib/content/geocode.ts";
 import { getPaletteColorSet as getColorSet } from "./lib/palette/get-palette.ts"; // colours only: no potrace/Sobel/depth (PORT-8b part 3)
 import { loadColors, loadGeocodes, pruneColors, upsertColor, upsertGeocode, type ColorSet, type Location } from "./cache.ts";
 import type { DerivedPost } from "./posts.ts";

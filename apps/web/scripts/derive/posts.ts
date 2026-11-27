@@ -2,8 +2,8 @@
 // `extractDataFields`: title, plain-text content, category/tag/series links, isShort), reusing the legacy code.
 import type pg from "pg";
 import { buildPostEmbeddingText } from "../../../../packages/metadata-embedding/src/embedding.ts";
-import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "../../../../packages/content-prepare/src/data-field.ts";
-import type { MetadataEntry } from "../../../../packages/content-prepare/src/types.ts";
+import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "./lib/content/data-field.ts";
+import type { MetadataEntry } from "./lib/content/types.ts";
 import { createHash } from "node:crypto";
 
 export interface PostRow {
