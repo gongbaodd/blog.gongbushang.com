@@ -20,6 +20,7 @@ pnpm --filter admin check:secrets
 pnpm --filter admin smoke         # local Supabase only
 pnpm db:start                     # local Supabase
 pnpm admin:local                  # host-native admin on local DB (production edits use apps/admin, SEC-07)
+pnpm clean                        # remove regenerable build output (dist, dist-e2e, .astro, .wrangler) at root and apps/*; clean:dry to preview
 ```
 
 Environments are `local` and `production` only. The public site stays noindex until `PUBLIC_SITE_LIVE=true`, exact lowercase only (CUT-1).
