@@ -33,7 +33,7 @@ export function fallbackSocialLinks(): SocialLink[] {
     .map(({ label, url, icon }) => ({ label, url, icon }));
 }
 
-export async function getSocialLinks(): Promise<SocialLink[]> {
+async function loadSocialLinks(): Promise<SocialLink[]> {
   try {
     const links = normalizeSocialLinks(await getMenu("social"));
     if (links.length) return links;
@@ -41,4 +41,18 @@ export async function getSocialLinks(): Promise<SocialLink[]> {
     // fall through to the fallback list
   }
   return fallbackSocialLinks();
+}
+
+// Footer and Follow render on every prerendered page. Query the menu once per build,
+// not once per page: a DB round-trip per page pushed the build past the CI timeout (GON-251).
+let cached: Promise<SocialLink[]> | undefined;
+
+export function getSocialLinks(): Promise<SocialLink[]> {
+  cached ??= loadSocialLinks();
+  return cached;
+}
+
+/** Test hook: forget the cached menu. */
+export function resetSocialLinksCache(): void {
+  cached = undefined;
 }
