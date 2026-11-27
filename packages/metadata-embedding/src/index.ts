@@ -1,8 +1,6 @@
 export {
   buildPodcastEmbeddingText,
   buildPostEmbeddingText,
-  embedFromText,
-  embedPostMetadata,
   type PostEmbeddingSource,
 } from "./embedding.ts";
 export {
