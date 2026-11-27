@@ -64,8 +64,20 @@ async function main() {
       }
       if (cookie) headers.cookie = cookie;
     }
-    const res = await fetch(`${BASE}/_emdash/api${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-    const json = await res.json().catch(() => ({}));
+    const res = await fetch(`${BASE}/_emdash/api${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      redirect: "manual",
+    });
+    // Cloudflare Access answers an unauthenticated request with a 302 to its login page (HTML). Never read that as "no fields".
+    if (res.status >= 300 && res.status < 400) {
+      throw new Error(`${method} ${path} -> ${res.status} redirect to ${new URL(res.headers.get("location") ?? "", BASE).host}: not authenticated (set EMDASH_TOKEN and EMDASH_HEADERS)`);
+    }
+    if (!(res.headers.get("content-type") ?? "").includes("json")) {
+      throw new Error(`${method} ${path} -> ${res.status} ${res.headers.get("content-type") ?? "no content-type"}, expected JSON: not authenticated or not an EmDash admin`);
+    }
+    const json = await res.json();
     if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${json?.error?.code ?? ""} ${json?.error?.message ?? ""}`);
     return json?.data ?? json;
   }
