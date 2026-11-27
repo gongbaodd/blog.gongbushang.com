@@ -7,7 +7,7 @@ description: EmDash CMS migration apps: apps/web (public Astro site on Cloudflar
 
 # EmDash apps (`apps/web`, `apps/admin`, `supabase/`)
 
-The EmDash migration replaces the legacy `src/` Astro site (see the legacy notes in `AGENTS.md`).
+EmDash runs the whole site since the 2026-11-27 cutover (CUT-1); the legacy `src/` site was deleted in CUT-2.
 Plan, story IDs and decisions D1-D13 live in Linear (project `P-GON-6`). Runbooks and reports are in `docs/plan/emdash/`.
 Before changing anything, read `docs/plan/emdash/AGENT_RULES.md`.
 
@@ -39,6 +39,8 @@ Derive computes data that EmDash does not store (embeddings, relates, UMAP, colo
 - **`DERIVE_READONLY=1`**: no cache writes and no embeddings. Used by PR CI against production (INF-10). The SQL session is `default_transaction_read_only`.
 - **Frozen gallery traces**: 75 legacy traces live in `derived.gallery_traces` and are never recomputed. A new gallery image gets a placeholder SVG (flat rect in `bgColor`), and placeholders are not stored. Copy them into a new environment with `content:pull ... --include-derived` before its first build (the seed scripts were removed in CUT-2d).
 - **Embeddings via Workers AI**: model `@cf/qwen/qwen3-embedding-0.6b` (1024-d). `DERIVE_EMBED_PROVIDER` is `auto` (default) or `workers-ai`; both use Workers AI, and `local` (LM Studio / Python) was retired in GON-255 and now fails with a clear message. Without credentials derive skips embedding (cache hits only; `DERIVE_EMBED=require` fails instead). Credentials are `CF_ACCOUNT_ID` and `CF_AI_TOKEN`, a token scoped to Workers AI only. Never reuse `CLOUDFLARE_API_TOKEN` (the deploy token). `DERIVE_EMBED` is `require`, `skip` or `fake`.
+- **Outputs** (git-ignored, rebuilt every build): `apps/web/src/generated/legacy-data.json` and `rss-items.json`, `apps/web/public/api/posts/{all,umap}.json`, `apps/web/public/api/gallery/trace/*.svg` (`scripts/derive/outputs.ts`). Pages read them only through `apps/web/src/lib/legacy-data.ts` (the name is historical; the shapes match the legacy APIs). A missing file means empty data, not a failure.
+- Helpers moved in from the deleted legacy packages (CUT-2c) live in `scripts/derive/lib/` (`content/` geocoding, `embedding/` text, model, UMAP hash and binary, `palette/` cover colours). UMAP needs `pnpm umap:build`; without the binary derive keeps the previous layout.
 - Tests: `pnpm --filter web exec vitest run scripts/derive`.
 
 ## apps/admin (Dockerized Node admin)

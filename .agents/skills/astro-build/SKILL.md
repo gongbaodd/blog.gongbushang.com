@@ -1,59 +1,47 @@
 ---
 name: astro-build
-description: Use Astro (astro.build) patterns and official docs when working with Astro projects—pages, routing, .astro components, content collections, and framework integrations (React, etc.). Use when editing Astro files, adding pages or API routes, or when unsure about Astro syntax or conventions.
+description: Use Astro (astro.build) patterns and official docs when working on apps/web or apps/admin—pages, routing, .astro components, React islands and client directives, endpoints, prerendering on Cloudflare. Use when editing Astro files, adding pages or API routes, or when unsure about Astro syntax or conventions.
 ---
 
-# Using Astro (astro.build)
+# Using Astro (astro.build) in this repo
 
-Use this skill when working on Astro-based projects. Prefer the [official Astro docs](https://docs.astro.build) as the authoritative source; this file summarizes key patterns and links to them.
+Both apps are Astro sites: `apps/web` (public, `@astrojs/cloudflare`) and `apps/admin` (EmDash admin, `@astrojs/node`). Prefer the [official Astro docs](https://docs.astro.build) as the authoritative source. For EmDash-specific rules (data, environments, admin) read `.agents/skills/emdash/SKILL.md` first.
 
-## Quick reference
+## This repo's rules (apps/web)
 
-- **Docs**: [docs.astro.build](https://docs.astro.build)
-- **Getting started**: [Getting started](https://docs.astro.build/en/getting-started/)
-- **Install**: `npm create astro@latest`
+- **`output: "server"`, but almost everything is prerendered.** Static assets are served without the Worker, and `scripts/check-static-routes.mjs` (part of `build`) fails on a public route that is not prerendered. A new page or endpoint needs `export const prerender = true` unless the emdash skill says otherwise.
+- **URLs never change.** After a route change run `pnpm --filter web parity` (oracle: `apps/web/tests/legacy-urls.txt`).
+- **No content collections.** Content comes from EmDash (`src/live.config.ts` registers the loader; queries live in `src/lib/content.ts` and `src/lib/listing.ts`). Data EmDash doesn't store comes from derive output via `src/lib/legacy-data.ts`.
+- **Prerender runs in workerd.** It cannot read the disk, and `process.env` is empty there; use `import.meta.env.PUBLIC_*` defined in `astro.config.mjs`.
+- Path alias `@/*` = `apps/web/*`, so imports look like `@/src/lib/seo`.
 
 ## Pages and routing
 
-- Pages live in `src/pages/`. File-based routing: each file becomes an endpoint by path.
-- Supported in `src/pages/`: `.astro`, `.md`, `.mdx` (with MDX integration), `.html`, and `.js`/`.ts` (as [endpoints](https://docs.astro.build/en/guides/endpoints/)).
-- Use standard `<a href="...">` for links. Dynamic routes: [Routing](https://docs.astro.build/en/guides/routing/).
+- Pages live in `apps/web/src/pages/`. File-based routing: each file becomes a route by path (`[category]`, `[filter].astro`, `world/[city]`, `api/**`).
+- Supported: `.astro`, `.md`, `.html`, and `.js`/`.ts` ([endpoints](https://docs.astro.build/en/guides/endpoints/)). Dynamic prerendered routes need `getStaticPaths()`.
+- Use standard `<a href="...">` for links. [Routing](https://docs.astro.build/en/guides/routing/).
 
 ## Astro components (`.astro`)
 
-- Component script (JS/TS) between the first `---` fence; template (HTML + expressions) after the second `---`.
+- Component script between the `---` fences; template after.
 - No client runtime by default; components render to static HTML.
-- **Props**: `const { propName } = Astro.props;` (optional with defaults: `const { greeting = "Hello" } = Astro.props`).
-- **Slots**: `<slot />` for default children; `<slot name="after-header" />` for named. Fallback: `<slot><p>Fallback</p></slot>`.
-- **Fragments**: Use `<Fragment>` (or `<>`) when you need multiple root elements or to pass multiple elements into a named slot.
-- **Template expressions**: `{variable}`, `{items.map(item => <li>{item}</li>)}`, `{condition && <p>Show</p>}`. Use `set:html` only when necessary for raw HTML.
-- **Dynamic tags**: Assign tag or component to a capitalized variable, e.g. `const Element = 'div'; <Element>...</Element>`.
-- In templates, use `class` and `data-*` (kebab-case), not `className`/camelCase.
+- **Props**: `const { propName = "default" } = Astro.props;`
+- **Slots**: `<slot />`, named `<slot name="after-header" />`, fallback content inside `<slot>`.
+- **Template expressions**: `{variable}`, `{items.map(item => <li>{item}</li>)}`, `{condition && <p>Show</p>}`. Use `set:html` only when necessary.
+- In templates use `class` and `data-*`, not `className`/camelCase.
 
-## Content collections
+## React islands
 
-- Configure in `src/content.config.ts` with `defineCollection()` and export `collections`.
-- Use loaders: `glob({ pattern: "**/*.md", base: "./src/data/blog" })` or `file("src/data/dogs.json")`. Schema with Zod for type safety.
-- Query in pages/layouts: `getCollection()`, `getEntry()`, `render()` — see [Content collections](https://docs.astro.build/en/guides/content-collections/).
-- TypeScript: use `astro/tsconfigs/strict` (or ensure `strictNullChecks` and `allowJs`).
+- Import React components into `.astro` files. Without a directive they render on the server only.
+- Client directives: `client:load`, `client:visible`, `client:idle`, `client:only="react"`. [Directives reference](https://docs.astro.build/en/reference/directives-reference/#client-directives).
+- Props to hydrated components must be serializable (no functions).
+- Mantine islands need `CustomMantineProvider` (mantine-ui skill); WebGL islands need an error boundary (webgl-components skill).
+- `pnpm --filter web check:hydration` checks for hydration errors on the routes in `tests/hydration-routes.txt`.
 
-## Framework components (e.g. React)
+## Endpoints
 
-- Install integration (e.g. `@astrojs/react`), then import and use in `.astro`: `<MyReactComponent />`.
-- By default they render on the server only (static HTML). For interactivity use a **client directive**:
-  - `client:load` — hydrate when page loads
-  - `client:visible` — hydrate when in viewport
-  - `client:idle` — hydrate when browser idle
-  - `client:only="react"` — skip server render, client-only
-- Props to hydrated components must be serializable (no functions). Supported: plain objects, primitives, Array, Map, Set, Date, RegExp, URL, etc.
-- [Framework components](https://docs.astro.build/en/guides/framework-components/), [Client directives](https://docs.astro.build/en/reference/directives-reference/#client-directives).
-
-## Endpoints and API routes
-
-- Export a function (e.g. `GET`, `POST`) from a `.ts`/`.js` file in `src/pages/` to create an endpoint. Return a `Response` or object; use `export const prerender = false` if the route must run at request time.
+- Export `GET` (etc.) from a `.ts` file in `src/pages/`. Prerendered endpoints become static files; keep the JSON shapes identical to the existing APIs.
 
 ## When to look up the docs
 
-- **Syntax details**: [Template expressions](https://docs.astro.build/en/reference/astro-syntax/), [Directives](https://docs.astro.build/en/reference/directives-reference/).
-- **Content Layer / collections**: [Content collections](https://docs.astro.build/en/guides/content-collections/), [Content loader reference](https://docs.astro.build/en/reference/content-loader-reference/).
-- **Integrations**: [Integrations guide](https://docs.astro.build/en/guides/integrations-guide/), [View Transitions](https://docs.astro.build/en/guides/view-transitions/), [Testing](https://docs.astro.build/en/guides/testing/).
+- [Template expressions](https://docs.astro.build/en/reference/astro-syntax/), [Directives](https://docs.astro.build/en/reference/directives-reference/), [Cloudflare adapter](https://docs.astro.build/en/guides/integrations-guide/cloudflare/), [Testing](https://docs.astro.build/en/guides/testing/).

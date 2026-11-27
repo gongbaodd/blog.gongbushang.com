@@ -1,6 +1,6 @@
 # PORTING
 
-Duplicated legacy code (CUT-2 deletes the originals).
+History of what was ported from the legacy site. CUT-2 (2026-11-27) deleted the originals, so the legacy paths below no longer exist.
 
 | New | Legacy original |
 |---|---|
@@ -58,7 +58,7 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 
 ## PORT-8 (build-time derived data) - reuses legacy pipeline code by relative import, nothing copied
 
-`scripts/derive/` replaces the post part of the former `scripts/legacy-data.mjs` (deleted). It imports, without copying, `packages/content-prepare` (`extractDataFields`, `geocodeCities`), `packages/metadata-embedding` (`embedFromText`, `computeUmapInputHash`, `runUmapBinary`), `packages/post-embedding` (`isEmbeddingServerRunning`, model) and `packages/image-metadata` (`getColorSet`). **CUT-2 must keep those packages** (they are no longer legacy-site-only). `scripts/derive/relates.ts` is the one ported copy (of `packages/utils/nearest.ts`). Podcast and gallery data are still read from the content submodule (MIG-3). Runbook: `docs/plan/emdash/runbooks/data.md`.
+`scripts/derive/` replaces the post part of the former `scripts/legacy-data.mjs` (deleted). It first imported `packages/content-prepare`, `packages/metadata-embedding`, `packages/post-embedding` and `packages/image-metadata` by relative path; CUT-2b/2c deleted those packages and moved the pieces derive still uses into `scripts/derive/lib/` (geocoding, embedding text and model, UMAP hash and binary runner, palette). Embeddings come from Workers AI; the local LM Studio provider is retired. `scripts/derive/relates.ts` is a ported copy of `packages/utils/nearest.ts`. Podcast and gallery data come from EmDash (MIG-3). Runbook: `docs/plan/emdash/runbooks/data.md`.
 
 ## PORT-4 (home) - copied, originals stay until CUT-2
 
