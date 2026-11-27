@@ -7,15 +7,15 @@
 //   EmDash podcasts (read-only) -> episode embeddings (derived.podcast_embeddings), nearest episodes, UMAP corpus
 //   EmDash gallery  (read-only) -> frozen trace cache + colours (derived.gallery_traces; placeholder SVG when uncached) -> public/api/gallery/trace/*.svg
 // Nothing is read from the legacy content submodule (MIG-3), except with DERIVE_PARITY_LEGACY=1 (parity checks only).
-// Nothing generated is committed. Runs locally or in GitHub Actions: uses Cloudflare Workers AI when configured,
-// falls back to local LM Studio if running, or cache hits only (new posts without embeddings are left out of
-// related posts and /umap, D10). A provider switch re-embeds everything in one run; if that cannot finish, the old-model
+// Nothing generated is committed. Runs locally or in GitHub Actions: embeds with Cloudflare Workers AI when
+// configured, else cache hits only (new posts without embeddings are left out of related posts and /umap, D10).
+// The local LM Studio / Python embedder was retired (GON-255). A provider switch re-embeds everything in one run; if that cannot finish, the old-model
 // vectors stay in use (never a smaller corpus).
 //
 // Env: CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE | DERIVE_DATABASE_URL  database (read-only for content)
 //      LEGACY_GENERATED_DIR   only for DERIVE_PARITY_LEGACY=1 (default ../../src/content/generated)
 //      DERIVE_EMBED           auto (default) | require | skip | fake (tests only)
-//      DERIVE_EMBED_PROVIDER  auto (default: workers-ai if configured, else local) | workers-ai | local
+//      DERIVE_EMBED_PROVIDER  auto (default) | workers-ai (both use Workers AI; "local" was retired)
 //      DERIVE_EMBED_MODEL     override embedding model key (validated charset; default @cf/qwen/qwen3-embedding-0.6b for workers-ai)
 //      CF_ACCOUNT_ID | CLOUDFLARE_ACCOUNT_ID  Cloudflare account ID for Workers AI embeddings
 //      CF_AI_TOKEN | CLOUDFLARE_AI_API_TOKEN  Workers-AI-scoped API token (CLOUDFLARE_API_TOKEN is never used)

@@ -1,6 +1,6 @@
 // Embedding stage: only posts/episodes whose content_hash (or model) changed are embedded; everything else comes from the cache.
-// Supports Cloudflare Workers AI (@cf/qwen/qwen3-embedding-0.6b, preferred in `auto` when configured)
-// and the legacy local embedder (LM Studio via metadata-embedding `embedFromText`).
+// Embeddings come only from Cloudflare Workers AI (@cf/qwen/qwen3-embedding-0.6b). The legacy local embedder (LM Studio via
+// a Python bridge) was retired (GON-255): with no CF_ACCOUNT_ID / CF_AI_TOKEN the stage skips (or fails under DERIVE_EMBED=require).
 // Cache rows are keyed by `model`, so a provider switch makes every row stale. That is handled in one run:
 //   - the whole corpus is re-embedded (about 2.2k of the 10k free neurons/day), no chunking, no DERIVE_EMBED_MAX;
 //   - new vectors for a pure model switch (text unchanged) are held in memory and written only by finalizeEmbeddings(),
@@ -8,14 +8,12 @@
 //     previous model's vectors for the whole corpus. One corpus never mixes models (new/edited items still commit at once);
 //   - a single item that never fits the context is skipped (keeps its old vector) and does not block the rest.
 // Quota/429 after retries is "missing", not a failure (D10), unless DERIVE_EMBED=require.
-// Both providers get the same text as legacy (newlines become spaces, packages/embedding/src/embedding/embed.py);
+// Inputs get the same text as legacy (newlines become spaces);
 // Workers AI inputs are capped at ~6k estimated tokens (model context is 8,192), see embed-workers-ai.ts.
 // Also used for podcast episodes (`table = "podcast_embeddings"`).
 import { createHash } from "node:crypto";
 import type pg from "pg";
-import { embedFromText } from "../../../../packages/metadata-embedding/src/embedding.ts";
-import { DEFAULT_MODEL, EMBEDDING_DIMENSIONS, resolveModel } from "../../../../packages/post-embedding/src/client.ts";
-import { isEmbeddingServerRunning } from "../../../../packages/post-embedding/src/is-embedding-server-running.ts";
+import { EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
 import { embeddingIndex, loadEmbeddings, upsertEmbedding, type EmbeddingTable } from "./cache.ts";
 import {
 	DEFAULT_WORKERS_AI_BATCH_SIZE,
@@ -36,13 +34,13 @@ export interface Embeddable {
 }
 
 export type EmbedMode = "auto" | "require" | "skip" | "fake";
-export type EmbedProvider = "auto" | "workers-ai" | "local";
-export type ResolvedEmbedProvider = "workers-ai" | "local" | "fake";
+export type EmbedProvider = "auto" | "workers-ai";
+export type ResolvedEmbedProvider = "workers-ai" | "fake";
 
 export interface EmbedPostsOptions {
 	concurrency?: number;
 	provider?: EmbedProvider;
-	/** Override model key (env: DERIVE_EMBED_MODEL; for local also EMBEDDING_MODEL). */
+	/** Override model key (env: DERIVE_EMBED_MODEL). */
 	model?: string;
 	/** Batch size per Workers AI request (default 16). */
 	batchSize?: number;
@@ -61,8 +59,6 @@ export interface EmbedPostsOptions {
 	/** Injectable dependencies for tests. */
 	fetchFn?: typeof fetch;
 	sleepFn?: (ms: number) => Promise<void>;
-	checkLocalServer?: () => Promise<boolean>;
-	embedLocal?: (text: string) => Promise<number[]>;
 }
 
 /** Shared across the post and podcast calls of one derive run. */
@@ -101,23 +97,20 @@ export interface EmbedResult {
 export function parseEmbedProvider(raw?: string): EmbedProvider {
 	const v = raw?.trim();
 	if (!v || v === "auto") return "auto";
-	if (v === "workers-ai" || v === "local") return v;
-	throw new Error(`Invalid DERIVE_EMBED_PROVIDER "${v}": expected "auto", "workers-ai", or "local".`);
+	if (v === "workers-ai") return v;
+	if (v === "local") {
+		throw new Error('DERIVE_EMBED_PROVIDER "local" (LM Studio / Python) was retired: embeddings come only from Cloudflare Workers AI. Use "auto" or "workers-ai" and set CF_ACCOUNT_ID and CF_AI_TOKEN.');
+	}
+	throw new Error(`Invalid DERIVE_EMBED_PROVIDER "${v}": expected "auto" or "workers-ai".`);
 }
 
 export function resolveEmbedTarget(
-	providerPref: EmbedProvider,
+	_providerPref: EmbedProvider,
 	env: NodeJS.ProcessEnv = process.env,
 	explicitModel?: string,
-): { provider: "workers-ai" | "local"; model: string } {
-	const useWorkersAi = providerPref === "workers-ai" || (providerPref === "auto" && isWorkersAiConfigured(env));
-	if (useWorkersAi) {
-		const model = explicitModel?.trim() || env.DERIVE_EMBED_MODEL?.trim() || WORKERS_AI_EMBED_MODEL;
-		return { provider: "workers-ai", model: validateEmbedModel(model) };
-	}
-	const localDefault = env === process.env ? resolveModel() : env.EMBEDDING_MODEL?.trim() || DEFAULT_MODEL;
-	const model = explicitModel?.trim() || env.DERIVE_EMBED_MODEL?.trim() || localDefault;
-	return { provider: "local", model: validateEmbedModel(model) };
+): { provider: "workers-ai"; model: string } {
+	const model = explicitModel?.trim() || env.DERIVE_EMBED_MODEL?.trim() || WORKERS_AI_EMBED_MODEL;
+	return { provider: "workers-ai", model: validateEmbedModel(model) };
 }
 
 /** Test-only deterministic pseudo-embedding (DERIVE_EMBED=fake). Never use against a real cache schema. */
@@ -209,7 +202,7 @@ export async function embedPosts(
 		} else if (mode === "skip") {
 			notAttempted = stale;
 			console.warn(`[derive] DERIVE_EMBED=skip: ${stale.length} ${noun}(s) not embedded`);
-		} else if (target.provider === "workers-ai") {
+		} else {
 			if (!isWorkersAiConfigured(env)) {
 				if (mode === "require") {
 					throw new Error(
@@ -265,21 +258,6 @@ export async function embedPosts(
 						}
 					}
 				}
-			}
-		} else {
-			const checkLocal = opts.checkLocalServer ?? isEmbeddingServerRunning;
-			if (await checkLocal()) {
-				const embedLocal = opts.embedLocal ?? ((t: string) => embedFromText(t, { model }));
-				await runSingleEmbedder(embedLocal);
-			} else if (mode === "require") {
-				const hint =
-					providerPref === "auto"
-						? `configure Cloudflare Workers AI (CF_ACCOUNT_ID / CF_AI_TOKEN) or start LM Studio with ${model}`
-						: `start LM Studio with ${model}`;
-				throw new Error(`${stale.length} ${noun}(s) need embeddings but no embedding provider is available (${hint}).`);
-			} else {
-				notAttempted = stale;
-				console.warn(`[derive] WARNING: embedding server not running; ${stale.length} ${noun}(s) not embedded.`);
 			}
 		}
 	}

@@ -38,7 +38,7 @@ Derive computes data that EmDash does not store (embeddings, relates, UMAP, colo
 - Tables: `post_embeddings`, `cover_colors`, `geocodes`, `post_hints`, `umap_state`, `podcast_embeddings`, `gallery_traces`.
 - **`DERIVE_READONLY=1`**: no cache writes and no embeddings. Used by PR CI against production (INF-10). The SQL session is `default_transaction_read_only`.
 - **Frozen gallery traces**: 75 legacy traces live in `derived.gallery_traces` and are never recomputed. A new gallery image gets a placeholder SVG (flat rect in `bgColor`), and placeholders are not stored. Seed with `derive:seed:media -- --write` before the first build of an environment.
-- **Embeddings via Workers AI**: model `@cf/qwen/qwen3-embedding-0.6b` (1024-d). `DERIVE_EMBED_PROVIDER` is `auto` (default), `workers-ai` or `local`. Credentials are `CF_ACCOUNT_ID` and `CF_AI_TOKEN`, a token scoped to Workers AI only. Never reuse `CLOUDFLARE_API_TOKEN` (the deploy token). `DERIVE_EMBED` is `require`, `skip` or `fake`.
+- **Embeddings via Workers AI**: model `@cf/qwen/qwen3-embedding-0.6b` (1024-d). `DERIVE_EMBED_PROVIDER` is `auto` (default) or `workers-ai`; both use Workers AI, and `local` (LM Studio / Python) was retired in GON-255 and now fails with a clear message. Without credentials derive skips embedding (cache hits only; `DERIVE_EMBED=require` fails instead). Credentials are `CF_ACCOUNT_ID` and `CF_AI_TOKEN`, a token scoped to Workers AI only. Never reuse `CLOUDFLARE_API_TOKEN` (the deploy token). `DERIVE_EMBED` is `require`, `skip` or `fake`.
 - Tests: `pnpm --filter web exec vitest run scripts/derive`.
 
 ## apps/admin (Dockerized Node admin)

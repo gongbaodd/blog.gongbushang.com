@@ -135,7 +135,7 @@ describe("Workers AI config & helpers", () => {
 	it("validates the DERIVE_EMBED_PROVIDER parser", () => {
 		expect(parseEmbedProvider(undefined)).toBe("auto");
 		expect(parseEmbedProvider("workers-ai")).toBe("workers-ai");
-		expect(parseEmbedProvider("local")).toBe("local");
+		expect(() => parseEmbedProvider("local")).toThrow(/retired/);
 		expect(() => parseEmbedProvider("openai")).toThrow(/Invalid DERIVE_EMBED_PROVIDER/);
 	});
 });
@@ -333,31 +333,7 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		expect(res.vectors.get("p1")).toEqual(mkVector(10));
 	});
 
-	it("keeps legacy model key isolated when DERIVE_EMBED_PROVIDER=local", async () => {
-		const posts = [mkPost("p1"), mkPost("p2")];
-		const { client } = createMockCacheClient([
-			{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(1) },
-			{ legacy_id: "p2", content_hash: "hash-p2", model: WORKERS_AI_EMBED_MODEL, v: mkVector(2) },
-		]);
-
-		const embedLocal = vi.fn(async () => mkVector(42));
-		const res = await embedAndSwitch(client, posts, "auto", {
-			// Even with CF credentials present, explicit DERIVE_EMBED_PROVIDER=local forces legacy LM Studio.
-			env: { CF_ACCOUNT_ID: "acct", CF_AI_TOKEN: "tok", DERIVE_EMBED_PROVIDER: "local" },
-			checkLocalServer: async () => true,
-			embedLocal,
-		});
-
-		expect(res.provider).toBe("local");
-		expect(res.model).toBe(DEFAULT_MODEL);
-		expect(res.reused).toBe(1); // p1 matched legacy model
-		expect(res.embedded).toEqual(["p2"]); // p2 had workers-ai model, so re-embedded for local
-		expect(embedLocal).toHaveBeenCalledTimes(1);
-		expect(res.vectors.get("p1")).toEqual(mkVector(1));
-		expect(res.vectors.get("p2")).toEqual(mkVector(42));
-	});
-
-	it("gracefully falls back and skips in auto mode when neither CF credentials nor local server are available (D10)", async () => {
+	it("gracefully falls back and skips in auto mode when CF credentials are not configured (D10)", async () => {
 		const posts = [mkPost("p1"), mkPost("p2")];
 		const { client } = createMockCacheClient([
 			{ legacy_id: "p1", content_hash: "hash-p1", model: DEFAULT_MODEL, v: mkVector(5) },
@@ -367,17 +343,17 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		try {
 			const res = await embedPosts(client, posts, "auto", {
 				env: {},
-				checkLocalServer: async () => false,
 			});
 
-			expect(res.provider).toBe("local");
-			expect(res.model).toBe(DEFAULT_MODEL);
-			expect(res.reused).toBe(1);
+			expect(res.provider).toBe("workers-ai");
+			expect(res.model).toBe(WORKERS_AI_EMBED_MODEL);
+			expect(res.reused).toBe(0); // the cached row uses the retired local model key
+			expect(res.staleModel).toEqual(["p1"]);
 			expect(res.embedded).toEqual([]);
 			expect(res.missing).toEqual(["p2"]);
 			expect(res.vectors.size).toBe(1);
 			expect(res.vectors.has("p1")).toBe(true);
-			expect(warnSpy).toHaveBeenCalled();
+			expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Workers AI credentials not configured"));
 		} finally {
 			warnSpy.mockRestore();
 		}
@@ -387,12 +363,9 @@ describe("embedPosts provider selection, provider switch, quota & podcast table"
 		const posts = [mkPost("p1")];
 		const { client } = createMockCacheClient();
 
-		await expect(
-			embedPosts(client, posts, "require", {
-				env: {},
-				checkLocalServer: async () => false,
-			}),
-		).rejects.toThrow(/no embedding provider is available/);
+		await expect(embedPosts(client, posts, "require", { env: {} })).rejects.toThrow(
+			/Cloudflare Workers AI credentials are not configured/,
+		);
 
 		await expect(
 			embedPosts(client, posts, "require", {
