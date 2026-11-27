@@ -120,3 +120,26 @@ pg_restore --no-owner -d "$TARGET_POOLER_URL" restore.dump
 - Actions in `web-*.yml` are pinned to full commit SHAs with a `# vX.Y.Z` comment (SEC-10), resolved with `gh api repos/<owner>/<repo>/git/ref/tags/<tag>` (for an annotated tag, follow `.object.sha` with `gh api repos/<owner>/<repo>/git/tags/<sha>`). Bump them the same way, never back to a mutable tag. The legacy `e2e.yml` and `sync-content.yml` are not pinned.
 - `web-deploy` triggers on `repository_dispatch`, which runs on the default branch's workflow file (`master`), so it is inert until this merges to the default branch. Until then use manual dispatch from the branch.
 - Nothing here has been run on GitHub yet; YAML validated with yaml-lint and actionlint 1.7.7.
+
+## Required checks that never report (GON-246)
+**The failure.** A required check waits forever when its workflow never starts on a PR. On 2026-11-27 `web-ci.yml` had a workflow-level `paths:` filter, so PRs outside those paths (#207, #208, #214, #215) sat on a `web` check that was never created. GitHub shows it as "Expected: waiting for status".
+
+**The rule.** A workflow that produces a required check:
+1. triggers on `pull_request` with no `paths:`, `paths-ignore:` or `branches-ignore:`, and `branches:` only if it still matches `master`;
+2. decides what to skip inside the workflow: a cheap `changes` job computes an output, the real job has `needs: changes` and a job-level `if:`. A job skipped by `if:` still reports (as skipped) and satisfies a required check. See `web-ci.yml` (`changes` -> `web`);
+3. keeps the job name equal to the ruleset's check name (`name:` if set, else the job id).
+`push`, `schedule` and `workflow_dispatch` triggers may filter freely; only `pull_request` matters.
+
+**Enforcement.**
+- `required-check-guard` job in `web-ci.yml` runs `node scripts/check-required-checks.mjs` on every PR (no secrets, no install, never path-filtered; `web` does not depend on it, and it is deliberately not itself a required check). It fails when a name in `.github/required-checks.json` matches no job, the producing workflow has no `pull_request` trigger, or the trigger has a filter that can exclude a PR to `master`. Its tests are `scripts/check-required-checks.test.mjs` (run with `node --test`).
+- When the token can read the ruleset (`gh api repos/<repo>/rulesets/28165746`), the script also compares the checked-in list with the live ruleset; with the default `GITHUB_TOKEN` it logs a warning and uses the checked-in list only. Run it locally with `GITHUB_REPOSITORY=gongbaodd/blog.gongbushang.com node scripts/check-required-checks.mjs` after `gh auth login` for the full comparison.
+- `required-check-alarm.yml` (hourly, `GITHUB_TOKEN` only) lists open non-draft PRs to `master` and, when a required check has no check run or status on the head SHA more than 60 minutes after the head commit, posts one PR comment per head SHA (hidden marker `<!-- required-check-alarm:<sha> -->`) plus a `::warning::` in the run log. Manual run: Actions, `required-check-alarm`, `dry_run` (default on, prints only). Limitation: the age is the head commit's committer date, so a PR with an old commit that was just reopened may be flagged on its next hourly run.
+
+**If a PR is stuck on a required check.** 1) Open the PR's Checks tab; if `web` is missing, check whether `web-ci` ran at all. 2) Look for a workflow-level filter on `master`: `pull_request` triggers use the workflow file from the PR's merge result, so fix the filter in a PR that itself reports (the guard job runs on every PR), merge it, then push an empty commit to the stuck PRs. 3) As owner, an admin merge is the last resort.
+
+**Adding a new required check safely.**
+1. Put the job in a workflow that triggers on `pull_request` to `master` without filters; use the `changes` + `needs` + job-level `if:` pattern for any path logic. Give the job a stable `name:`.
+2. Let it run on a PR at least once so the check name exists.
+3. Add the name to `checks` in `.github/required-checks.json` in the same PR.
+4. After merge, add it to ruleset `protect-deploy-branches` (id 28165746): Settings, Rules, Rulesets, "Require status checks to pass". Confirm with `gh api repos/gongbaodd/blog.gongbushang.com/rulesets/28165746 --jq '.rules[]|select(.type=="required_status_checks")'`.
+5. To rename or remove a required job, do it in an order that never leaves a required name without a producer: add the new name to the ruleset, merge the rename, then remove the old name.

@@ -42,6 +42,23 @@ env:
   WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
 
 jobs:
+  required-check-guard:
+    # GON-246: fails if a required check (.github/required-checks.json) could stop reporting on a PR (workflow-level filter on
+    # `pull_request`, renamed job). No secrets, no DB, no install. Always runs; `web` does NOT depend on it, so a guard failure
+    # never turns `web` into a skipped/unreported job. This job is deliberately not a required check itself.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.15.0
+      - run: node --test scripts/check-required-checks.test.mjs
+      - name: Required checks report on every PR
+        env:
+          GH_TOKEN: ${{ github.token }} # reading rulesets usually needs more than this token; the script then warns and uses the checked-in list
+        run: node scripts/check-required-checks.mjs
+
   changes:
     # Decides whether the PR touches anything the web build depends on. Legacy-only changes (src/, packages/* except the
     # plantuml submodule, e2e/), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
