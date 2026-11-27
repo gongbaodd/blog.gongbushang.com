@@ -10,6 +10,7 @@ export default defineConfig({
 			"scripts/admin/*.test.ts",
 			"scripts/cutover/*.test.ts",
 			"scripts/derive/*.test.ts",
+			"scripts/derive/lib/**/*.test.ts",
 			"scripts/guards/*.test.ts",
 			"scripts/perf/*.test.ts",
 			"scripts/podcast/*.test.ts",

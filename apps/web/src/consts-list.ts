@@ -1,4 +1,4 @@
-// Listing constants, ported from packages/consts/{index,colors}.ts (CUT-2 deletes the originals).
+// Listing constants, ported from the legacy packages/consts/{index,colors}.ts (deleted in CUT-2).
 
 export enum FILTER_ENTRY {
   ALL = "all",

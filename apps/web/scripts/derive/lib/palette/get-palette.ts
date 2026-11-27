@@ -1,5 +1,5 @@
 // Colour set only: the palette half of `getColorSet` without the Sobel + potrace trace.
-// Same input handling and the same Vibrant call as `getColorSet`, so the colours are identical. Used by apps/web derive.
+// Same input handling and the same Vibrant call as `getColorSet`, so the colours are identical. Used by derive (media.ts, enrich.ts).
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";

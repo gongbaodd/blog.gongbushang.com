@@ -1,5 +1,5 @@
 import chroma from "chroma-js";
-import { TITLE_COLOR_MAP } from "../../consts/colors.ts";
+import { TITLE_COLOR_MAP } from "../../../../src/consts-list.ts";
 
 export function isRemote(url: string): boolean {
   return /^https?:\/\//i.test(url);

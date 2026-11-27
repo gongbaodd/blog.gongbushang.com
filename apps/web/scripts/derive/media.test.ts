@@ -3,7 +3,7 @@ import { PLACEHOLDER_MARK, pruneEmbeddings, pruneTraces } from "./cache.ts";
 import { buildEpisodes, isPlaceholderSvg, parseDate, placeholderSvg, resolveTraces, type DerivedGalleryImage, type PodcastRow } from "./media.ts";
 
 const palette = vi.hoisted(() => vi.fn());
-vi.mock("../../../../packages/image-metadata/src/get-palette.ts", () => ({ getPaletteColorSet: palette }));
+vi.mock("./lib/palette/get-palette.ts", () => ({ getPaletteColorSet: palette }));
 
 const ep = (over: Partial<PodcastRow> = {}): PodcastRow => ({
 	legacy_id: "e1",

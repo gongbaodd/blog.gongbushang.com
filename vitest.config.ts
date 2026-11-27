@@ -7,7 +7,6 @@ export default defineConfig({
     include: [
       "packages/utils/**/*.test.ts",
       "packages/utils/**/*.spec.ts",
-      "packages/image-metadata/**/*.test.ts",
       "packages/content-prepare/**/*.test.ts",
       "packages/metadata-embedding/**/*.test.ts",
       "packages/post-embedding/**/*.test.ts",
