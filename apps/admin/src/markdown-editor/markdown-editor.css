@@ -72,6 +72,33 @@
 	color: #cf222e;
 	background: #ffebe9;
 }
+/* Full screen: the widget covers the browser window. The toolbar stays on top and the panes take the rest of the height.
+   No z-index: MarkdownEditor.tsx places the container right after the admin's app root in <body>, so DOM order puts it above
+   the app and below the admin's own dialogs and toasts (fixed, z-index auto, portaled to the end of <body>). */
+.gb-md-full {
+	position: fixed;
+	inset: 0;
+	grid-template-rows: auto minmax(0, 1fr);
+	padding: 12px 16px 16px;
+	background: Canvas;
+}
+.gb-md-full .gb-md-panes {
+	min-height: 0;
+}
+.gb-md-full .gb-md-editor {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+.gb-md-full .gb-md-editor .cm-editor {
+	flex: 1;
+	min-height: 0;
+	max-height: none;
+}
+.gb-md-full .gb-md-preview iframe {
+	min-height: 0;
+	max-height: none;
+}
 /* Mobile is read-first: stack the panes, keep the editor usable. */
 @media (max-width: 900px) {
 	.gb-md-split {

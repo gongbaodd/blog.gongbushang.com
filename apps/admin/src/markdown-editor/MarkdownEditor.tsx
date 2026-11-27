@@ -10,7 +10,8 @@ import type { Extension } from "@codemirror/state";
 import { EditorView, highlightSpecialChars, keymap, placeholder } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 import { MediaPickerModal, type MediaItem } from "@emdash-cms/admin";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
 	BODY_SPECIAL_CHARS,
 	createBodyState,
@@ -92,6 +93,27 @@ export function MarkdownEditorWidget({ value, onChange, label, id, required, opt
 	const [previewBody, setPreviewBody] = useState(text);
 	const [previewDoc, setPreviewDoc] = useState<string | null>(null);
 	const [previewError, setPreviewError] = useState<string | null>(null);
+	const [fullScreen, setFullScreen] = useState(false);
+	const [fullScreenColors, setFullScreenColors] = useState<{ background: string; color: string }>();
+	// The widget renders into `portalRoot`, which sits in `slot` inline and moves to <body> in full screen. The admin nests its
+	// content in `isolation: isolate` wrappers, so a fixed overlay left in place would stay under the header and sidebar. Moving the
+	// container (not re-rendering into a new one) keeps the CodeMirror view, its history and selection.
+	const slot = useRef<HTMLDivElement>(null);
+	const [portalRoot] = useState(() => document.createElement("div"));
+	// In full screen the container goes right after the admin's app root, not at the end of <body>: it then paints above the app
+	// but below the dialogs, popovers and toasts the admin portals to the end of <body> (the media picker among them).
+	useLayoutEffect(() => {
+		const inline = slot.current;
+		if (!inline) return;
+		if (!fullScreen) {
+			if (portalRoot.parentNode !== inline) inline.appendChild(portalRoot);
+			return;
+		}
+		let appRoot: Element = inline;
+		while (appRoot.parentElement && appRoot.parentElement !== document.body) appRoot = appRoot.parentElement;
+		document.body.insertBefore(portalRoot, appRoot.parentElement === document.body ? appRoot.nextSibling : document.body.firstChild);
+	}, [fullScreen, portalRoot]);
+	useEffect(() => () => portalRoot.remove(), [portalRoot]);
 
 	const rows = typeof options?.rows === "number" ? options.rows : 30;
 
@@ -150,6 +172,37 @@ export function MarkdownEditorWidget({ value, onChange, label, id, required, opt
 		view.focus();
 	}, []);
 
+	// Full screen fills the browser window (a fixed overlay, not the Fullscreen API, so the media picker still opens above it).
+	// The admin theme sets its colors on the page, so copy them onto the overlay: it must be opaque in light and dark mode.
+	const toggleFullScreen = () => {
+		if (!fullScreen) {
+			const page = getComputedStyle(document.body);
+			const root = getComputedStyle(document.documentElement);
+			const opaque = (c: string) => c !== "transparent" && c !== "rgba(0, 0, 0, 0)";
+			setFullScreenColors({
+				background: opaque(page.backgroundColor) ? page.backgroundColor : opaque(root.backgroundColor) ? root.backgroundColor : "Canvas",
+				color: page.color,
+			});
+		}
+		setFullScreen(!fullScreen);
+		window.requestAnimationFrame(() => viewRef.current?.focus());
+	};
+
+	// While full screen: Esc leaves it (unless the media picker is open: Esc closes that first), and the page behind does not scroll.
+	useEffect(() => {
+		if (!fullScreen) return;
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === "Escape" && !pickerOpen && !event.defaultPrevented) setFullScreen(false);
+		};
+		const overflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		document.addEventListener("keydown", onKey);
+		return () => {
+			document.body.style.overflow = overflow;
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [fullScreen, pickerOpen]);
+
 	const insertImage = useCallback((item: MediaItem) => {
 		const view = viewRef.current;
 		if (!view) return;
@@ -159,57 +212,71 @@ export function MarkdownEditorWidget({ value, onChange, label, id, required, opt
 	}, []);
 
 	return (
-		<div className="gb-md" id={id}>
-			<div className="gb-md-head">
-				<span className="gb-md-label">
-					{label}
-					{required ? " *" : ""}
-				</span>
-				<div className="gb-md-toolbar" role="toolbar" aria-label="Markdown formatting">
-					<button type="button" onClick={() => wrap("**", "**", "bold")} title="Bold (Ctrl/Cmd+B)">
-						<b>B</b>
-					</button>
-					<button type="button" onClick={() => wrap("*", "*", "italic")} title="Italic (Ctrl/Cmd+I)">
-						<i>I</i>
-					</button>
-					<button type="button" onClick={() => wrap("`", "`", "code")} title="Inline code (Ctrl/Cmd+E)">
-						{"</>"}
-					</button>
-					<button type="button" onClick={() => wrap("[", "](https://)", "link text")} title="Link (Ctrl/Cmd+K)">
-						Link
-					</button>
-					<button type="button" onClick={() => setPickerOpen(true)} title="Insert image from the media library">
-						Image
-					</button>
-					<button type="button" aria-pressed={showPreview} onClick={() => setShowPreview((v) => !v)} className="gb-md-toggle">
-						Preview
-					</button>
-				</div>
-			</div>
-			<div className={showPreview ? "gb-md-panes gb-md-split" : "gb-md-panes"}>
-				<div className="gb-md-editor" ref={host} />
-				{showPreview ? (
-					<div className="gb-md-preview">
-						{previewError ? <p className="gb-md-error">Preview failed: {previewError}</p> : null}
-						<iframe
-							title="Preview"
-							// No allow-scripts: a post body can contain raw HTML, and it must not run in the admin origin.
-							sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-							srcDoc={previewDoc ?? ""}
-						/>
+		<div ref={slot}>
+			{createPortal(
+				<div className={fullScreen ? "gb-md gb-md-full" : "gb-md"} id={id} style={fullScreen ? fullScreenColors : undefined}>
+					<div className="gb-md-head">
+						<span className="gb-md-label">
+							{label}
+							{required ? " *" : ""}
+						</span>
+						<div className="gb-md-toolbar" role="toolbar" aria-label="Markdown formatting">
+							<button type="button" onClick={() => wrap("**", "**", "bold")} title="Bold (Ctrl/Cmd+B)">
+								<b>B</b>
+							</button>
+							<button type="button" onClick={() => wrap("*", "*", "italic")} title="Italic (Ctrl/Cmd+I)">
+								<i>I</i>
+							</button>
+							<button type="button" onClick={() => wrap("`", "`", "code")} title="Inline code (Ctrl/Cmd+E)">
+								{"</>"}
+							</button>
+							<button type="button" onClick={() => wrap("[", "](https://)", "link text")} title="Link (Ctrl/Cmd+K)">
+								Link
+							</button>
+							<button type="button" onClick={() => setPickerOpen(true)} title="Insert image from the media library">
+								Image
+							</button>
+							<button type="button" aria-pressed={showPreview} onClick={() => setShowPreview((v) => !v)} className="gb-md-toggle">
+								Preview
+							</button>
+							<button
+								type="button"
+								aria-pressed={fullScreen}
+								onClick={toggleFullScreen}
+								className="gb-md-toggle"
+								title={fullScreen ? "Exit full screen (Esc)" : "Fill the browser window"}
+							>
+								{fullScreen ? "Exit full screen" : "Full screen"}
+							</button>
+						</div>
 					</div>
-				) : null}
-			</div>
-			<MediaPickerModal
-				open={pickerOpen}
-				onOpenChange={setPickerOpen}
-				onSelect={(item) => {
-					insertImage(item);
-					setPickerOpen(false);
-				}}
-				mediaKind="image"
-				title="Insert image"
-			/>
+					<div className={showPreview ? "gb-md-panes gb-md-split" : "gb-md-panes"}>
+						<div className="gb-md-editor" ref={host} />
+						{showPreview ? (
+							<div className="gb-md-preview">
+								{previewError ? <p className="gb-md-error">Preview failed: {previewError}</p> : null}
+								<iframe
+									title="Preview"
+									// No allow-scripts: a post body can contain raw HTML, and it must not run in the admin origin.
+									sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+									srcDoc={previewDoc ?? ""}
+								/>
+							</div>
+						) : null}
+					</div>
+					<MediaPickerModal
+						open={pickerOpen}
+						onOpenChange={setPickerOpen}
+						onSelect={(item) => {
+							insertImage(item);
+							setPickerOpen(false);
+						}}
+						mediaKind="image"
+						title="Insert image"
+					/>
+				</div>,
+				portalRoot,
+			)}
 		</div>
 	);
 }
