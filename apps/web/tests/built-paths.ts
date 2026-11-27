@@ -110,7 +110,8 @@ export function builtPaths(dir = DIST_CLIENT): Set<string> {
 			const p = join(d, e.name);
 			if (e.isDirectory()) walk(p);
 			else if (e.isFile()) {
-				const rel = "/" + relative(dir, p).split("\\").join("/");
+				// Build names are decoded for the Worker asset handler (GON-240: `c#`); re-encode what a URL path cannot carry.
+				const rel = "/" + relative(dir, p).split("\\").join("/").replace(/[%#?]/g, encodeURIComponent);
 				out.add(rel.endsWith("/index.html") ? rel.slice(0, -"index.html".length) : rel);
 			}
 		}
