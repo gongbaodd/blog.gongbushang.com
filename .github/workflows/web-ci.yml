@@ -60,8 +60,8 @@ jobs:
 
   changes:
     # Decides whether the PR touches anything the web build depends on. Every packages/* member feeds the web
-    # build (derive imports them, shiki-plantuml is a dependency) and so does the Rust workspace (Cargo.toml/Cargo.lock build the
-    # umap binary), so those run it. Docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
+    # build (shiki-plantuml is a dependency; umap and rag-umap build the derive UMAP binary) and so does the Rust workspace
+    # (Cargo.toml/Cargo.lock), so those run it. Docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
