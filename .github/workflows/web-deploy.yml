@@ -16,7 +16,9 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "package.json"
-      - "packages/shiki-plantuml/**"
+      - "packages/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
       - ".github/workflows/web-deploy.yml"
   repository_dispatch:
     types: [emdash-publish]
