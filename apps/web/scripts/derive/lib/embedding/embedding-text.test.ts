@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildPodcastEmbeddingText, buildPostEmbeddingText } from "./embedding.ts";
+import { buildPodcastEmbeddingText, buildPostEmbeddingText } from "./embedding-text.ts";
 
 describe("buildPostEmbeddingText", () => {
   test("includes required fields and omits optional ones", () => {

@@ -1,7 +1,7 @@
 // Read published posts from EmDash and turn them into the legacy `MetadataEntry` shape (content-prepare's
 // `extractDataFields`: title, plain-text content, category/tag/series links, isShort), reusing the legacy code.
 import type pg from "pg";
-import { buildPostEmbeddingText } from "../../../../packages/metadata-embedding/src/embedding.ts";
+import { buildPostEmbeddingText } from "./lib/embedding/embedding-text.ts";
 import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "./lib/content/data-field.ts";
 import type { MetadataEntry } from "./lib/content/types.ts";
 import { createHash } from "node:crypto";

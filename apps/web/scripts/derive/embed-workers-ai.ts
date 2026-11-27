@@ -8,7 +8,7 @@
 // and only their tail. If the API still reports a context-length error, the item is cut to 60 % and retried
 // (up to 5 times). Truncated items are reported through `onTruncate` and logged by derive; the cache key
 // (content_hash) is still the hash of the full text, so a truncated item is not re-embedded on every build.
-import { EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
+import { EMBEDDING_DIMENSIONS } from "./lib/embedding/model.ts";
 
 export const WORKERS_AI_EMBED_MODEL = "@cf/qwen/qwen3-embedding-0.6b";
 export const DEFAULT_WORKERS_AI_BATCH_SIZE = 16;

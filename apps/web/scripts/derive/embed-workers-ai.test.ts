@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_MODEL, EMBEDDING_DIMENSIONS } from "../../../../packages/post-embedding/src/client.ts";
+import { DEFAULT_MODEL, EMBEDDING_DIMENSIONS } from "./lib/embedding/model.ts";
 import { toVector } from "./db.ts";
 import { embedPosts, finalizeEmbeddings, fakeEmbedding, parseEmbedProvider, resolveEmbedTarget } from "./embed.ts";
 import {

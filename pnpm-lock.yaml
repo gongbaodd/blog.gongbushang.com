@@ -480,19 +480,6 @@ importers:
         specifier: ^0.6.2
         version: 0.6.2
 
-  packages/consts: {}
-
-  packages/metadata-embedding:
-    dependencies:
-      consts:
-        specifier: workspace:*
-        version: link:../consts
-      post-embedding:
-        specifier: workspace:*
-        version: link:../post-embedding
-
-  packages/post-embedding: {}
-
   packages/shiki-plantuml:
     dependencies:
       plist:

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, test } from "vitest";
 import { findRepoRoot } from "./find-repo-root.ts";
 
-const realRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const realRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const tmpDirs: string[] = [];
 
 function makeTmp(): string {

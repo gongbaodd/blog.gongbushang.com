@@ -7,7 +7,7 @@
 // Expectation: same underlying model (Qwen3-Embedding-0.6B), so cosine should be about 0.99+ per post. A median below
 // ~0.95 means the two paths embed different text or different pooling; do not switch providers until understood.
 process.env.TZ ||= "Europe/Tallinn";
-import { resolveModel } from "../../../../packages/post-embedding/src/client.ts";
+import { resolveModel } from "./lib/embedding/model.ts";
 import { embeddingIndex, loadEmbeddings, loadHints } from "./cache.ts";
 import { connect, describeTarget, resolveConnectionString } from "./db.ts";
 import { DEFAULT_WORKERS_AI_MAX_TOKENS, embedBatchWorkersAi, estimateTokens, isWorkersAiConfigured } from "./embed-workers-ai.ts";
