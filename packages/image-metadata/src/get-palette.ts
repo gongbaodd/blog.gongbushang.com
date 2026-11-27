@@ -1,4 +1,4 @@
-// Colour set only: the palette half of `getColorSet` without the Sobel + potrace trace (and without the Python depth prep).
+// Colour set only: the palette half of `getColorSet` without the Sobel + potrace trace.
 // Same input handling and the same Vibrant call as `getColorSet`, so the colours are identical. Used by apps/web derive.
 import fs from "node:fs/promises";
 import path from "node:path";
