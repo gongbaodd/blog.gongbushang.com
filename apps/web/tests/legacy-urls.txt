@@ -1,4 +1,4 @@
-# Legacy public paths (MIG-0). Do not edit by hand; regenerate with apps/web/scripts/import/mig0/snapshot.mjs.
+# Legacy public paths (MIG-0). Frozen snapshot; the generator (scripts/import/mig0/snapshot.mjs) was deleted in CUT-2d (GON-259), see git history.
 # Source: /Volumes/MacData/github/blog.gongbushang.com/dist (legacy astro build) + generate-pdfs.mjs output paths (18 not yet in dist).
 # Date: 2026-11-24. Excludes _astro/ and _noop*. Directory indexes are listed with a trailing slash.
 # Count: 4945
