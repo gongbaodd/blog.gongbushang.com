@@ -1,0 +1,26 @@
+---
+import type { PreviewView } from "../preview.ts";
+interface Props { view: PreviewView }
+const { view } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex" />
+		<title>Draft preview: {view.title}</title>
+		<style>
+			body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 0 auto; padding: 0 1rem 4rem; line-height: 1.6; }
+			.banner { background: #b45309; color: #fff; padding: 0.5rem 1rem; margin: 0 -1rem 1.5rem; font-weight: 600; text-align: center; }
+			img, audio { max-width: 100%; }
+			pre { overflow-x: auto; background: #f4f4f5; padding: 0.75rem; }
+		</style>
+	</head>
+	<body>
+		<div class="banner" role="status">Draft preview. Not published, not indexed.</div>
+		<h1>{view.title}</h1>
+		{view.coverUrl && <img src={view.coverUrl} alt="" />}
+		<article set:html={view.bodyHtml} />
+	</body>
+</html>
