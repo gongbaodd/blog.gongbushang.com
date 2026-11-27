@@ -115,7 +115,7 @@ Non-script entry points: `apps/web/scripts/schema/apply.sh`. Run it with `bash` 
 
 ## Lead workflow: after each merged story
 
-Call the `cleanup` agent (`.claude/agents/cleanup.md`) after each merged story. It wraps `packages/scripts/prune-worktrees.sh` (dry-run first, then `--apply`) and removes local worktrees and branches whose PR is merged or closed. It keeps anything dirty, unpushed, with an open PR, or holding a `.env`, and reports why. You can also run the script by hand.
+Call the `cleanup` agent (`.claude/agents/cleanup.md`) after each merged story. It wraps `scripts/prune-worktrees.sh` (dry-run first, then `--apply`) and removes local worktrees and branches whose PR is merged or closed. It keeps anything dirty, unpushed, with an open PR, or holding a `.env`, and reports why. You can also run the script by hand.
 
 ## Runbooks (`docs/plan/emdash/runbooks/`)
 

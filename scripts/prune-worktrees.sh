@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # prune-worktrees.sh - remove local git worktrees and branches whose job is done (GON-248).
 #
-# Usage: packages/scripts/prune-worktrees.sh [--dry-run | --apply] [--base <ref>] [--min-age-minutes N]
+# Usage: scripts/prune-worktrees.sh [--dry-run | --apply] [--base <ref>] [--min-age-minutes N]
 #   --dry-run  (default) report what would be removed, change nothing
 #   --apply    actually remove worktrees/branches, then `git worktree prune` and `git fetch --prune`
 #
