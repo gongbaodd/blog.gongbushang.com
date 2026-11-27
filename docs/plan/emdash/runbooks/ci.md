@@ -1,6 +1,6 @@
 # CI runbook (INF-4, INF-6, INF-8)
 
-Three workflows under `.github/workflows/`. Legacy `e2e.yml` and `sync-content.yml` are untouched. web-ci runs on every PR to master, because `web` is a required check: a workflow-level `paths` filter would leave PRs outside those paths waiting on `web` forever. Its `changes` job filters instead, and legacy-only changes (`src/`, other `packages/*`), docs and unrelated workflows skip the `web` job (a skipped job passes the required check). Never add a workflow-level `paths` filter to a workflow that holds a required check. Build happens in GitHub Actions, never in Workers Builds.
+Three workflows under `.github/workflows/`. The legacy `e2e.yml` and `sync-content.yml` were deleted with the legacy site (CUT-2a). web-ci runs on every PR to master, because `web` is a required check: a workflow-level `paths` filter would leave PRs outside those paths waiting on `web` forever. Its `changes` job filters instead, and changes to legacy-only packages, docs and unrelated workflows skip the `web` job (a skipped job passes the required check). Never add a workflow-level `paths` filter to a workflow that holds a required check. Build happens in GitHub Actions, never in Workers Builds.
 
 | Workflow | Triggers | Environment | What it does |
 |---|---|---|---|
