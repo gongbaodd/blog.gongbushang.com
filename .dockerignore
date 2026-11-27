@@ -13,8 +13,6 @@ dist
 **/.astro
 **/.wrangler
 .pnpm-store
-.venv
-**/__pycache__
 target
 tmp
 e2e-results

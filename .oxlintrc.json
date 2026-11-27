@@ -3,8 +3,7 @@
   "ignorePatterns": [
     ".astro/**",
     "dist/**",
-    "public/**",
-    "src/content/**",
+    "apps/web/public/**",
     "packages/shiki-plantuml/**"
   ]
 }
