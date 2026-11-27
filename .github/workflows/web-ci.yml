@@ -4,7 +4,6 @@
 #     no AI or geocoding credentials used), see apps/web/scripts/derive/index.ts and docs/plan/emdash/runbooks/ci.md.
 #   - DATABASE_POOLER_URL comes from the separate `ci-readonly` environment and is exposed only to the two DB steps below (`migrate --check`, build) and never to fork PRs.
 #   - `emdash migrate --check` is read-only; migrations are applied only by web-deploy.yml (manual, apply_migrations).
-# Legacy site workflows (e2e.yml, sync-content.yml) are unrelated and untouched.
 # Secrets and variables are listed in docs/plan/emdash/runbooks/ci.md.
 name: web-ci
 
@@ -60,8 +59,8 @@ jobs:
         run: node scripts/check-required-checks.mjs
 
   changes:
-    # Decides whether the PR touches anything the web build depends on. Legacy-only changes (src/, packages/* except the
-    # plantuml submodule, e2e/), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
+    # Decides whether the PR touches anything the web build depends on. Legacy-only changes (packages/* except the
+    # plantuml submodule), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
