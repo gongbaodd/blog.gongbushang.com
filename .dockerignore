@@ -47,6 +47,9 @@ e2e-results
 **/*.sql
 **/*.sql.gz
 
+# GON-249: the PlantUML grammar's prebuilt output, needed by the admin editor preview (apps/admin/Dockerfile).
+!packages/shiki-plantuml/dist
+
 # Unrelated directories not needed by apps/admin/Dockerfile
 docs
 supabase

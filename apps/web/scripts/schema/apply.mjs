@@ -43,7 +43,7 @@ const COLLECTIONS = [
     fields: [
       str("legacy_id", "Legacy ID", { unique: true, indexed: true }), // YYYY/MM/DD/<glob slug>
       str("legacy_date", "Legacy date (YYYY-MM-DD)", { indexed: true, validation: { pattern: "^\\d{4}-\\d{2}-\\d{2}$" } }),
-      text("body_md", "Body (Markdown)", { options: { rows: 30 } }),
+      text("body_md", "Body (Markdown)", { options: { rows: 30 }, widget: "markdown-editor:markdownEditor" }), // GON-249; existing DBs: set-body-widget.mjs
       { slug: "adsense", label: "AdSense", type: "boolean" },
       { slug: "series_number", label: "Series number", type: "number" },
       { slug: "legacy_frontmatter_extra", label: "Legacy frontmatter (extra keys, type)", type: "json" },

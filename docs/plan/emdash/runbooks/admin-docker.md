@@ -131,6 +131,21 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 3. GitHub Actions (`web-deploy.yml`) rebuilds the static site from Supabase and deploys the updated assets to Cloudflare Workers.
 4. When `SITE_ENV=local` (or unset), dispatch is skipped so local testing never triggers a cloud deployment.
 
+## 5a. Markdown editor for post bodies (GON-249)
+
+The `markdown-editor` native plugin (`apps/admin/src/markdown-editor/`) replaces the plain textarea on `posts.body_md` with CodeMirror 6, a split preview and an **Image** button that opens the EmDash media library (Cloudinary). The stored value is still the raw Markdown string: opening and saving a post changes no bytes. Pure-CRLF posts (21 of them) keep CRLF, and Enter inserts CRLF there.
+
+- **Turn it on.** The field opts in through `_emdash_fields.widget = "markdown-editor:markdownEditor"`. Fresh databases get it from `apply.mjs`. An existing database needs a one-time step after the admin image with the plugin is deployed:
+  ```
+  node apps/web/scripts/schema/set-body-widget.mjs -u http://localhost:4322 --check   # local: report only
+  node apps/web/scripts/schema/set-body-widget.mjs -u http://localhost:4322           # local: set it (dev admin, dev-bypass auth)
+  # production: EMDASH_TOKEN and EMDASH_HEADERS (Access service-token headers, one per line) in the environment
+  node apps/web/scripts/schema/set-body-widget.mjs -u https://admin.growgen.xyz --yes-remote
+  ```
+- **Turn it off.** `--revert` puts back the default textarea. If the widget throws, EmDash's error boundary shows the default editor too, so content is never blocked.
+- **Preview.** Runs in the browser (`render-browser.ts`, the shared plugin list in `apps/web/src/lib/markdown-shared.ts`), inside an iframe without `allow-scripts`. Embedded `<iframe>`s in a post therefore show without their scripts. Mermaid, KaTeX and Shiki grammars load lazily. `.mdx` bodies use the same rewrite as the public site.
+- **Cost (measured 2026-11-27, `docker run --memory=1g --cpus=0.5`, local DB).** Image `/app` 638 → 645 MB. Container RAM idle 45 MiB both before and after; peak while serving every client asset 53 → 58 MiB. Client JS: CodeMirror chunk 163 KB gzip (shared with EmDash's own code editor, now deduped), preview 255 KB gzip on first preview, all admin JS 5.7 → 7.0 MB gzip (the growth is mostly lazy Shiki grammars and Mermaid). No CDN.
+
 ---
 
 ## 6. Safety rails and access control (INF-9 review fixes)
