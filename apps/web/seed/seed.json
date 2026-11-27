@@ -100,6 +100,110 @@
 					"label": "Example"
 				}
 			]
+		},
+		{
+			"name": "social",
+			"label": "Social links",
+			"items": [
+				{
+					"type": "custom",
+					"label": "Mail",
+					"url": "mailto:gongbaodd@outlook.com",
+					"target": "_blank",
+					"cssClasses": "mail"
+				},
+				{
+					"type": "custom",
+					"label": "GitHub",
+					"url": "https://github.com/gongbaodd",
+					"target": "_blank",
+					"cssClasses": "github"
+				},
+				{
+					"type": "custom",
+					"label": "Twitter",
+					"url": "https://twitter.com/gongbaodd",
+					"target": "_blank",
+					"cssClasses": "x"
+				},
+				{
+					"type": "custom",
+					"label": "Instagram",
+					"url": "https://www.instagram.com/mia_takeshi",
+					"target": "_blank",
+					"cssClasses": "instagram"
+				},
+				{
+					"type": "custom",
+					"label": "Facebook",
+					"url": "https://www.facebook.com/gongbaodd",
+					"target": "_blank",
+					"cssClasses": "facebook"
+				},
+				{
+					"type": "custom",
+					"label": "LinkedIn",
+					"url": "https://www.linkedin.com/in/jian-gong-27762aa8/",
+					"target": "_blank",
+					"cssClasses": "linkedin"
+				},
+				{
+					"type": "custom",
+					"label": "Itch.io",
+					"url": "https://gongbaodd.itch.io",
+					"target": "_blank",
+					"cssClasses": "itchio"
+				},
+				{
+					"type": "custom",
+					"label": "Threads",
+					"url": "https://www.threads.com/@mia_takeshi",
+					"target": "_blank",
+					"cssClasses": "threads"
+				},
+				{
+					"type": "custom",
+					"label": "Spotify",
+					"url": "https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz",
+					"target": "_blank",
+					"cssClasses": "spotify"
+				},
+				{
+					"type": "custom",
+					"label": "Youtube",
+					"url": "https://www.youtube.com/@gongbaodd",
+					"target": "_blank",
+					"cssClasses": "youtube"
+				},
+				{
+					"type": "custom",
+					"label": "Jike",
+					"url": "https://m.okjike.com/users/a03ab857-dd35-44d3-8373-97e7a855db39",
+					"target": "_blank",
+					"cssClasses": "jike"
+				},
+				{
+					"type": "custom",
+					"label": "小红书",
+					"url": "https://www.xiaohongshu.com/user/profile/5b9aeeb2bc5acf0001cd8205",
+					"target": "_blank",
+					"cssClasses": "xiaohongshu"
+				},
+				{
+					"type": "custom",
+					"label": "Bilibili",
+					"url": "https://space.bilibili.com/3368538",
+					"target": "_blank",
+					"cssClasses": "bilibili"
+				},
+				{
+					"type": "custom",
+					"label": "v2ex",
+					"url": "https://www.v2ex.com/member/gongbaodd",
+					"target": "_blank",
+					"cssClasses": "v2ex"
+				}
+			]
 		}
 	],
 	"menus": [

@@ -15,41 +15,19 @@ import type { ReactNode } from "react";
 import { Mail } from "lucide-react";
 import CustomMantineProvider from "../stores/CustomMantineProvider";
 import classes from "./Footer.module.css";
+import { SOCIAL_ICONS } from "./social-icons";
+import type { SocialLink } from "../lib/social-links";
 
 interface IFooterProps {
   children?: ReactNode;
-  iconGithub?: ReactNode;
-  iconTwitter?: ReactNode;
-  iconInstagram?: ReactNode;
-  iconLinkedin?: ReactNode;
-  iconItchio?: ReactNode;
-  iconThreads?: ReactNode;
-  iconSpotify?: ReactNode;
-  iconJike?: ReactNode;
-  iconXiaohongshu?: ReactNode;
-  iconYoutube?: ReactNode;
-  iconFacebook?: ReactNode;
-  iconBilibili?: ReactNode;
-  iconV2ex?: ReactNode;
+  socials?: SocialLink[];
   picture?: ReactNode;
   viewCount?: ReactNode;
   openSource?: ReactNode;
 }
 
 export default function MantineFooter({
-  iconGithub,
-  iconTwitter,
-  iconInstagram,
-  iconLinkedin,
-  iconItchio,
-  iconSpotify,
-  iconYoutube,
-  iconThreads,
-  iconJike,
-  iconXiaohongshu,
-  iconFacebook,
-  iconBilibili,
-  iconV2ex,
+  socials = [],
   viewCount,
   openSource,
 }: IFooterProps) {
@@ -129,160 +107,53 @@ export default function MantineFooter({
                 Follow me in social media
               </Text>
               <Group gap="md">
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="mailto:gongbaodd@outlook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Mail"
-                >
-                  <Mail size={24} />
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://github.com/gongbaodd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub"
-                >
-                  {iconGithub}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://twitter.com/gongbaodd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Twitter"
-                >
-                  {iconTwitter}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.instagram.com/mia_takeshi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                >
-                  {iconInstagram}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.facebook.com/gongbaodd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                >
-                  {iconFacebook}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.linkedin.com/in/jian-gong-27762aa8/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn"
-                >
-                  {iconLinkedin}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://gongbaodd.itch.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Itch.io"
-                >
-                  {iconItchio}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.threads.com/@mia_takeshi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Threads"
-                >
-                  {iconThreads}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://open.spotify.com/show/2FJoLvI0tAnjXO3t71Iswz"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Spotify"
-                >
-                  {iconSpotify}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.youtube.com/@gongbaodd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Youtube"
-                >
-                  {iconYoutube}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://m.okjike.com/users/a03ab857-dd35-44d3-8373-97e7a855db39?ref=PROFILE_CARD&utm_source=user_card"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Jike"
-                >
-                  {iconJike}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.xiaohongshu.com/user/profile/5b9aeeb2bc5acf0001cd8205?xsec_token=YB4pIrXwKkwZGhzRaHexYmAG4DbiA36rNSxHVtHOtJ3zY=&xsec_source=app_share&xhsshare=CopyLink&appuid=5b9aeeb2bc5acf0001cd8205&apptime=1754485791&share_id=c2a983d5fab04381a84f0851f936f880"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="小红书"
-                >
-                  {iconXiaohongshu}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://space.bilibili.com/3368538"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Bilibili"
-                >
-                  {iconBilibili}
-                </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  size="lg"
-                  component="a"
-                  href="https://www.v2ex.com/member/gongbaodd"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="v2ex"
-                >
-                  {iconV2ex}
-                </ActionIcon>
+                {socials.map((link) => {
+                  const svg = SOCIAL_ICONS[link.icon];
+                  const icon =
+                    link.icon === "mail" ? (
+                      <Mail size={24} />
+                    ) : svg ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        width="24"
+                        height="24"
+                        stroke="none"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="currentcolor"
+                        aria-hidden="true"
+                        className="lucide"
+                        dangerouslySetInnerHTML={{ __html: svg }}
+                      />
+                    ) : null;
+                  return icon ? (
+                    <ActionIcon
+                      key={link.url}
+                      variant="subtle"
+                      size="lg"
+                      component="a"
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={link.label}
+                    >
+                      {icon}
+                    </ActionIcon>
+                  ) : (
+                    <Anchor
+                      key={link.url}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      size="sm"
+                      c="dimmed"
+                    >
+                      {link.label}
+                    </Anchor>
+                  );
+                })}
               </Group>
               {/* <Text size="sm" c="dimmed">
                 订阅我的博客，获取最新技术文章和编程技巧
