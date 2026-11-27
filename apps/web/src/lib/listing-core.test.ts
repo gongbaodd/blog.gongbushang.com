@@ -72,7 +72,7 @@ describe("listing-core", () => {
 
   test("helpers", () => {
     expect(citySlug("Tallinn, Estonia")).toBe("tallinn-estonia");
-    expect(apiTagHref("c#")).toBe("/tag/c%23");
+    expect(apiTagHref("c#")).toBe("/tag/c-sharp");
     expect(apiTagHref("宇宙")).toBe("/tag/宇宙");
     expect(reorderLike(["b", "a"], ["a", "b"])).toEqual(["a", "b"]);
     expect(reorderLike(["b", "a"], ["a", "c"])).toEqual(["b", "a"]);

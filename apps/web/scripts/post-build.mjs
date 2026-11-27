@@ -7,11 +7,6 @@ import { fileURLToPath } from "node:url";
 const client = resolve(dirname(fileURLToPath(import.meta.url)), "..", process.env.ASTRO_OUT_DIR || "dist", "client");
 const live = process.env.PUBLIC_SITE_LIVE === "true";
 if (!existsSync(client)) throw new Error(`missing ${client}; run astro build first`);
-// GON-240: percent-encoded asset names (tag/c%23) are renamed to their decoded form (tag/c#) so the Worker asset handler finds them.
-{
-	const { decodeAssetDirs } = await import("./decode-asset-dirs.mjs");
-	for (const [from, to] of decodeAssetDirs(client)) console.log(`[post-build] decoded asset path ${from} -> ${to}`);
-}
 if (live) {
 	console.log("[post-build] PUBLIC_SITE_LIVE=true: indexable, nothing written");
 } else {

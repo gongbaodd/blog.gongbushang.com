@@ -7,6 +7,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const DIST_CLIENT = resolve(here, "../dist/client");
 export const LEGACY_GROUPS_PATH = resolve(here, "legacy-route-groups.json");
 export const LEGACY_URLS_PATH = resolve(here, "legacy-urls.txt");
+export const LEGACY_REDIRECTS_PATH = resolve(here, "legacy-redirects.txt");
 
 export interface RouteGroup {
 	count: number;
@@ -29,6 +30,16 @@ export function loadLegacyUrls(filePath = LEGACY_URLS_PATH): string[] {
 		.split(/\r?\n/)
 		.map((line) => line.trim())
 		.filter((line) => line.length > 0 && !line.startsWith("#"));
+}
+
+/** Legacy URLs that now redirect (301) to a new URL: `<old> <new>` per line, `#` comments (GON-240). The old path is in legacy-urls.txt. */
+export function loadLegacyRedirects(filePath = LEGACY_REDIRECTS_PATH): Array<[string, string]> {
+	if (!existsSync(filePath)) return [];
+	return loadLegacyUrls(filePath).map((line) => {
+		const [from, to] = line.split(/\s+/);
+		if (!from || !to) throw new Error(`${filePath}: expected "<old> <new>", got "${line}"`);
+		return [from, to];
+	});
 }
 
 /**
@@ -110,8 +121,7 @@ export function builtPaths(dir = DIST_CLIENT): Set<string> {
 			const p = join(d, e.name);
 			if (e.isDirectory()) walk(p);
 			else if (e.isFile()) {
-				// Build names are decoded for the Worker asset handler (GON-240: `c#`); re-encode what a URL path cannot carry.
-				const rel = "/" + relative(dir, p).split("\\").join("/").replace(/[%#?]/g, encodeURIComponent);
+				const rel = "/" + relative(dir, p).split("\\").join("/");
 				out.add(rel.endsWith("/index.html") ? rel.slice(0, -"index.html".length) : rel);
 			}
 		}

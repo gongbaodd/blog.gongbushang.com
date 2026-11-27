@@ -1,9 +1,11 @@
 // Reusable URL-parity checker module (QA-1 / Decision D8).
 // Compares built `dist/client` public paths against `legacy-route-groups.json` and `legacy-urls.txt`.
 import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import {
 	DIST_CLIENT,
 	LEGACY_GROUPS_PATH,
+	LEGACY_REDIRECTS_PATH,
 	LEGACY_URLS_PATH,
 	builtPaths,
 	diffGroup,
@@ -11,6 +13,7 @@ import {
 	isInfraPath,
 	latestLegacyPostDate,
 	legacyCategories,
+	loadLegacyRedirects,
 	loadLegacyUrls,
 	normalizePath,
 	postDateKey,
@@ -24,6 +27,8 @@ export interface ParityOptions {
 	allowMissing?: string[];
 	groupsFile?: string;
 	urlsFile?: string;
+	/** `<old> <new>` redirect list (default tests/legacy-redirects.txt). */
+	redirectsFile?: string;
 	failOnExtra?: boolean;
 	/** Paths/globs (or a file of them) that may exist in the build without being a legacy URL. */
 	allowExtra?: string[];
@@ -210,16 +215,31 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 
 	const groupResults: GroupParityResult[] = [];
 
+	// GON-240: a legacy URL that moved is accepted when the new URL is built AND the build's `_redirects` 301s the old one to it.
+	const redirects = loadLegacyRedirects(options.redirectsFile ?? LEGACY_REDIRECTS_PATH);
+	const redirectsText = existsSync(join(dir, "_redirects")) ? readFileSync(join(dir, "_redirects"), "utf8") : "";
+	const redirectedTo = new Map<string, string>();
+	for (const [from, to] of redirects) {
+		const ruled = redirectsText.split(/\r?\n/).some((l) => /^\s*[^#\s]/.test(l) && l.trim().split(/\s+/).slice(0, 3).join(" ") === `${from} ${to} 301`);
+		if (ruled && built.has(normalizePath(to))) redirectedTo.set(normalizePath(from), to);
+	}
+	const isRedirected = (p: string) => redirectedTo.has(normalizePath(p));
+
 	const checkBucket = (name: string, paths: string[]) => {
 		const { missing: rawMissing } = diffGroup(paths, built, allLegacy);
 		const missing: string[] = [];
 		let allowedMissing = 0;
+		let redirected = 0;
 		for (const p of rawMissing) {
+			if (isRedirected(p)) {
+				redirected += 1;
+				continue;
+			}
 			if (isAllowedMissing(p)) allowedMissing += 1;
 			else missing.push(p);
 		}
 		const expected = paths.length;
-		const present = expected - rawMissing.length;
+		const present = expected - rawMissing.length + redirected;
 		groupResults.push({
 			group: name,
 			expected,
@@ -248,7 +268,7 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 	for (const p of rawExtra) {
 		const key = postDateKey(p, categories);
 		if (key && key >= legacyLatestPostDate) newPostPaths.push(p);
-		else if (isAllowedExtra(p) || isInfraPath(p)) allowedExtraPaths.push(p);
+		else if (isAllowedExtra(p) || isInfraPath(p) || [...redirectedTo.values()].some((t) => normalizePath(t) === normalizePath(p))) allowedExtraPaths.push(p);
 		else extraPaths.push(p);
 	}
 

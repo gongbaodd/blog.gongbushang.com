@@ -93,14 +93,14 @@ describe("real legacy snapshots (legacy-route-groups.json & legacy-urls.txt)", (
 });
 
 describe("builtPaths & normalization", () => {
-	test("handles Unicode, hash (decoded post-build `c#`, GON-240) and space filenames", () => {
+	test("handles percent-encoded Unicode, hash and space filenames", () => {
 		const root = makeTempDir();
 		const distDir = join(root, "dist/client");
 		writeFiles(distDir, {
 			"index.html": "home",
 			"tag/宇宙编辑部/index.html": "unicode-tag",
-			"tag/c#/index.html": "csharp-tag",
-			"api/tag/react native/0.ndjson": "ndjson",
+			"tag/c%23/index.html": "csharp-tag",
+			"api/tag/react%20native/0.ndjson": "ndjson",
 		});
 
 		const built = builtPaths(distDir);
