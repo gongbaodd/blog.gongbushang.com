@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "pnpm -r --if-present test && node --test scripts/*.test.mjs",
+    "clean": "node scripts/clean.mjs",
+    "clean:dry": "node scripts/clean.mjs --dry-run",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
