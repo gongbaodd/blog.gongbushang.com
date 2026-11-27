@@ -83,6 +83,29 @@ Granted does not mean secret-free, so two tables are handled specially:
    Then `psql "<that URL>" -v ON_ERROR_STOP=1 -f supabase/roles/check_ci_readonly.sql` must print `ci-readonly ok`.
 4. Re-run the latest `web-ci` and check migrate-check, build, empty-build guard and parity pass.
 
+## Claude Code from GitHub (`claude.yml`, GON-228)
+`claude.yml` runs `anthropics/claude-code-action`, pinned to commit `4d75e5f390ee76b2e09c1980ecc99ff3a2e088c8` (tag `v1.0.275`, 2026-11-12; resolved with `gh api repos/anthropics/claude-code-action/git/ref/tags/v1.0.275`, then the annotated tag object). Bump it the same way.
+
+| Job | Starts when | Permissions | Limits |
+|---|---|---|---|
+| `claude` | an `@claude` comment, review, review comment, or new/assigned issue (body or title) | `contents: write`, `pull-requests: write`, `issues: write`, `id-token: write` | 20 min, `--max-turns 25`, allow-listed tools |
+| `review` | a PR comment starting with `@claude review` (on request, never on push) | `contents: read`, `pull-requests: write`, `issues: write`, `id-token: write` | 15 min, `--max-turns 15`, read-only tools (no Edit/Write) |
+
+Trigger rules:
+- Every job requires `author_association == 'OWNER'` on the comment, review or issue. Other users, bots and outside accounts never start a job. The action also checks the actor has write access and skips fork PRs (`allow_fork_prs`, `allowed_bots` and `allowed_non_write_users` are deliberately unset). Review events additionally require the PR head to be in this repo.
+- The only secret is the repository secret `CLAUDE_CODE_OAUTH_TOKEN` (the owner's Claude subscription, no paid API key). The workflow has no `environment:`, so it cannot see `DATABASE_POOLER_URL`, Cloudflare, Supabase or Cloudinary secrets.
+- There are no `run:` steps. Comment, issue and review text is never interpolated into a script; it only reaches the action through its event payload. The prompt tells Claude to treat that text as untrusted.
+- Claude must not push to `master` (protected). It works on a `claude/<topic>` branch and opens a PR into `master`. `git push --force`, pushes to `master`, `WebFetch` and `WebSearch` are denied. There is no `--dangerously-skip-permissions`.
+- Concurrency: one run per issue/PR number, queued, not cancelled.
+- A PR opened with the workflow token does not start other workflows, so the required `web` check will not run until the owner pushes an empty commit or closes and reopens the PR.
+
+Owner setup (GON-229): install the Claude GitHub App on the repo, then `claude setup-token` locally and `gh secret set CLAUDE_CODE_OAUTH_TOKEN` (repository secret). Test:
+1. Comment `@claude say hello` on a test issue: the job runs and Claude replies.
+2. Comment `@claude` from a non-owner account (or on a fork PR): no `claude` job starts.
+3. Comment `@claude review` on a PR: the `review` job posts a review and changes no files.
+4. Open the run log: only `CLAUDE_CODE_OAUTH_TOKEN` is masked; no environment secrets appear.
+Validated with actionlint only; not run on GitHub yet.
+
 ## Restore
 ```
 age -d -i ~/growgen-backup.agekey growgen-production-<ts>.dump.age > restore.dump
