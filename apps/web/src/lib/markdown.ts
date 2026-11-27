@@ -1,72 +1,21 @@
 import { createMarkdownProcessor, type MarkdownHeading } from "@astrojs/markdown-remark";
 import { bundledLanguages } from "shiki";
 import plantumlGrammar from "shiki-plantuml";
-import remarkAttributes from "remark-attributes";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeExternalLinks from "rehype-external-links";
-import { visit } from "unist-util-visit";
-import { rehypeCloudinary } from "./cloudinary";
+import { SHIKI_LANG_ALIAS, sharedRehypePlugins, sharedRemarkPlugins, stripBodyH1 } from "./markdown-shared";
 
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-/**
- * ```mermaid fences -> <pre class="mermaid">. Rendering happens client-side via the
- * script injected by the `astro-mermaid` integration (astro.config.mjs). Its own
- * remark plugin is not exported, so this is a copy of its ~10 lines.
- */
-function remarkMermaid() {
-  return (tree: any) => {
-    visit(tree, "code", (node: any, index, parent: any) => {
-      if (node.lang === "mermaid" && parent && typeof index === "number") {
-        parent.children[index] = {
-          type: "html",
-          value: `<pre class="mermaid">${escapeHtml(node.value)}</pre>`,
-        };
-      }
-    });
-  };
-}
-
-/**
- * MDX (legacy `.mdx` posts) has no indented code blocks: 4-space-indented lines after a blank line
- * continue prose/lists instead. Disable the `codeIndented` construct to match (fenced code is unaffected).
- */
-function remarkNoIndentedCode(this: any) {
-  const data = this.data();
-  (data.micromarkExtensions ??= []).push({ disable: { null: ["codeIndented"] } });
-}
-
-/**
- * The post page renders the title as its own <h1> (BlogContent), so a body `# Heading` would be a second h1.
- * Astro collects `metadata.headings` after user rehype plugins, so a plugin would also drop the h1 from the
- * headings that `postTitle` needs. Strip the rendered elements instead (code samples contain escaped `&lt;h1`).
- */
-export function stripBodyH1(html: string): string {
-  return html.replace(/<h1(?:\s[^>]*)?>[\s\S]*?<\/h1>\n?/g, "");
-}
+// The plugin list and `stripBodyH1` live in ./markdown-shared so the admin editor preview renders with the same plugins (GON-249).
+export { stripBodyH1 };
 
 const processors: Partial<Record<"md" | "mdx", ReturnType<typeof createMarkdownProcessor>>> = {};
 
 function getProcessor(mdx = false) {
   const key = mdx ? "mdx" : "md";
   processors[key] ??= createMarkdownProcessor({
-    // remarkMermaid must run before Shiki sees the code node
-    remarkPlugins: [
-      remarkMermaid,
-      ...(mdx ? [remarkNoIndentedCode] : []),
-      remarkAttributes,
-      remarkMath,
-    ],
-    rehypePlugins: [
-      rehypeCloudinary,
-      [rehypeKatex, { strict: false }],
-      [rehypeExternalLinks, { target: "_blank", rel: ["noopener", "noreferrer", "nofollow"] }],
-    ],
+    remarkPlugins: sharedRemarkPlugins(mdx),
+    rehypePlugins: sharedRehypePlugins(),
     syntaxHighlight: "shiki",
     shikiConfig: {
-      langAlias: { C: "c", plantuml: "PlantUML" },
+      langAlias: { ...SHIKI_LANG_ALIAS },
       langs: [...Object.values(bundledLanguages), plantumlGrammar as any],
     },
   } as any);

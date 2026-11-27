@@ -13,6 +13,8 @@ WORKDIR /workspace
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/admin/package.json ./apps/admin/package.json
 COPY packages/shiki-plantuml/package.json ./packages/shiki-plantuml/package.json
+# GON-249: the editor preview highlights PlantUML with the grammar in this package's prebuilt dist (the `file:` dependency is copied at install).
+COPY packages/shiki-plantuml/dist ./packages/shiki-plantuml/dist
 
 RUN pnpm install --filter admin --frozen-lockfile
 
@@ -21,6 +23,10 @@ COPY apps/admin ./apps/admin
 COPY apps/web/src/lib/cloudinary-media ./apps/web/src/lib/cloudinary-media
 COPY apps/web/src/lib/lockdown.ts ./apps/web/src/lib/lockdown.ts
 COPY apps/web/src/lib/podcast-channel.ts ./apps/web/src/lib/podcast-channel.ts
+# GON-249: Markdown editor preview shares the public site's plugin list, the .mdx rewrite and the Cloudinary URL helper.
+COPY apps/web/src/lib/markdown-shared.ts ./apps/web/src/lib/markdown-shared.ts
+COPY apps/web/src/lib/mdx-lite.ts ./apps/web/src/lib/mdx-lite.ts
+COPY apps/web/src/lib/cloudinary.ts ./apps/web/src/lib/cloudinary.ts
 COPY apps/web/src/lib/setup-gate.ts ./apps/web/src/lib/setup-gate.ts
 COPY apps/web/src/lib/site-live.ts ./apps/web/src/lib/site-live.ts
 COPY apps/web/src/plugins/rebuild-on-publish ./apps/web/src/plugins/rebuild-on-publish

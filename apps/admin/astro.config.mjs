@@ -9,6 +9,7 @@ import { cloudinaryMedia } from "./src/cloudinary-media.ts";
 import { PLACEHOLDER_DATABASE_URL } from "./src/db-config.ts";
 import { serviceDashboards } from "./src/dashboards/plugin.ts";
 import { podcastSync } from "./src/podcast-sync/plugin.ts";
+import { markdownEditor } from "./src/markdown-editor/plugin.ts";
 import { rebuildOnPublish } from "./src/rebuild-on-publish.ts";
 
 // Public origin for passkey RP ID & outbound links: resolved at runtime via EMDASH_SITE_URL / SITE_URL too.
@@ -19,6 +20,9 @@ const sessionDriver =
 	process.env.SESSION_DRIVER === "memory"
 		? sessionDrivers.memory()
 		: sessionDrivers.fsLite({ base: process.env.SESSION_DIR || ".astro/sessions" });
+
+const adminPackageJson = fileURLToPath(new URL("./package.json", import.meta.url));
+const sharedWebSource = fileURLToPath(new URL("../web/src/", import.meta.url));
 
 const dbConfigModule = fileURLToPath(new URL("./src/db-config.ts", import.meta.url));
 
@@ -43,12 +47,21 @@ export default defineConfig({
 			fonts: false,
 			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
 			middleware: { outer: "./src/outer.ts" },
-			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync()],
+			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync(), markdownEditor()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],
 	vite: {
 		plugins: [
+			{
+				// Modules shared from apps/web/src (markdown-shared.ts, mdx-lite.ts, cloudinary.ts) import packages by bare name. In the
+				// Docker build apps/web has no node_modules, so resolve those imports from this package instead (GON-249).
+				name: "admin-resolve-shared-web-deps",
+				async resolveId(source, importer, options) {
+					if (!importer?.startsWith(sharedWebSource) || source.startsWith(".") || source.startsWith("/") || source.startsWith("\0")) return null;
+					return this.resolve(source, adminPackageJson, { ...options, skipSelf: true });
+				},
+			},
 			{
 				// EmDash serializes `virtual:emdash/config` at `astro build` time. Replace the dialect factory so the pool is always
 				// built from the runtime environment (DATABASE_URL, TLS unless loopback, small pool) and fails closed without it.

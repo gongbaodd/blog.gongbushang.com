@@ -1,0 +1,84 @@
+/* Markdown field widget (GON-249). Colors come from the surrounding admin theme (currentColor); desktop is the target. */
+.gb-md {
+	display: grid;
+	gap: 8px;
+}
+.gb-md-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+.gb-md-label {
+	font-weight: 500;
+}
+.gb-md-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.gb-md-toolbar button {
+	font: inherit;
+	font-size: 0.8125rem;
+	padding: 3px 10px;
+	color: inherit;
+	background: transparent;
+	border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+	border-radius: 6px;
+	cursor: pointer;
+}
+.gb-md-toolbar button:hover,
+.gb-md-toolbar button[aria-pressed="true"] {
+	background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.gb-md-panes {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+	border-radius: 8px;
+	overflow: hidden;
+}
+.gb-md-split {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.gb-md-editor {
+	min-width: 0;
+	padding: 0 12px;
+	overflow: hidden;
+}
+.gb-md-editor .cm-editor {
+	height: 100%;
+}
+.gb-md-preview {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	border-left: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+	background: #fff;
+}
+.gb-md-preview iframe {
+	flex: 1;
+	width: 100%;
+	min-height: 60vh;
+	max-height: 75vh;
+	border: 0;
+	background: #fff;
+}
+.gb-md-error {
+	margin: 0;
+	padding: 6px 12px;
+	font-size: 0.8125rem;
+	color: #cf222e;
+	background: #ffebe9;
+}
+/* Mobile is read-first: stack the panes, keep the editor usable. */
+@media (max-width: 900px) {
+	.gb-md-split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.gb-md-preview {
+		border-left: 0;
+		border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+	}
+}

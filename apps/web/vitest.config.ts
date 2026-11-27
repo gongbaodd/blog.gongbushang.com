@@ -14,6 +14,7 @@ export default defineConfig({
 			"scripts/guards/*.test.ts",
 			"scripts/perf/*.test.ts",
 			"scripts/podcast/*.test.ts",
+			"scripts/schema/*.test.ts",
 			"scripts/sync/*.test.ts",
 			"tests/*.test.ts",
 		],
