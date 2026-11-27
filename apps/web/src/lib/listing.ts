@@ -7,6 +7,7 @@ import { legacy, postRecord, type PodcastEpisode } from "./legacy-data";
 import { optimizeCloudinaryUrl } from "./cloudinary";
 import { buildHeroGalleryImage, isPlaceholderTrace } from "./gallery";
 import { smartypants } from "./smartypants";
+import { tagSlug } from "./legacy-url";
 import { INITIAL_SSR_POSTS, POST_COUNT_PER_PAGE } from "../consts-list";
 import {
   categoryLinks,
@@ -147,13 +148,19 @@ export async function categoryPages(withPodcast = true): Promise<PageResult[]> {
   return [{ params: { filter: "all" }, props: { posts: sortByDate(all) } }, ...cats];
 }
 
-export async function tagPages(): Promise<PageResult[]> {
+export async function tagPages(): Promise<(PageResult & { props: { tagName: string } })[]> {
+  // Keyed by URL slug (`c#` -> `c-sharp`, GON-240); `tagName` is the lowercase display name the page shows.
+  const names = new Map<string, string>();
   const map = createPostMap(await getPostEntries(), (e) =>
-    (e.data.tag ?? []).map((t) => t.toLowerCase()),
+    (e.data.tag ?? []).map((t) => {
+      const slug = tagSlug(t);
+      if (!names.has(slug)) names.set(slug, t.toLowerCase());
+      return slug;
+    }),
   );
   return Array.from(map, ([filter, set]) => ({
     params: { filter },
-    props: { posts: sortByDate([...set]) },
+    props: { posts: sortByDate([...set]), tagName: names.get(filter) ?? filter },
   }));
 }
 

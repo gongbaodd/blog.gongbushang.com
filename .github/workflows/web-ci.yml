@@ -9,21 +9,11 @@
 name: web-ci
 
 on:
+  # No `paths:` filter here, on purpose. `web` is a required check on master: a path-filtered workflow never reports on PRs
+  # outside its paths, so those PRs wait on `web` forever. The `changes` job below does the filtering instead; when it finds
+  # no relevant change, `web` is skipped, and a skipped job satisfies a required check.
   pull_request:
     branches: [master]
-    # Legacy-only changes (src/, packages/* except the plantuml submodule, e2e/) do not trigger this.
-    paths:
-      - "apps/web/**"
-      - "supabase/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "packages/shiki-plantuml"
-      - ".github/workflows/web-*.yml"
-      # `web` is a required check on master, so it must report on admin-only PRs too, or they stay blocked forever
-      # (a workflow_dispatch run does not count for the PR). The admin also imports apps/web/src/lib and plugins.
-      - "apps/admin/**"
-      - ".github/workflows/admin-*.yml"
-      - ".dockerignore"
   workflow_dispatch:
 
 concurrency:
@@ -48,9 +38,36 @@ env:
   WEB_MIN_PAGES: ${{ vars.WEB_MIN_PAGES || '3' }}
 
 jobs:
+  changes:
+    # Decides whether the PR touches anything the web build depends on. Legacy-only changes (src/, packages/* except the
+    # plantuml submodule, e2e/), docs and unrelated workflows skip the build. When in doubt (API error, workflow_dispatch) it runs.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "web=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if ! files=$(gh api --paginate "repos/${{ github.repository }}/pulls/$PR/files" --jq '.[].filename'); then
+            echo "::warning::could not list PR files; running web anyway"; echo "web=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          printf '%s\n' "$files"
+          pattern='^(apps/web/|supabase/|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|package\.json$|packages/shiki-plantuml|\.github/workflows/web-)'
+          if printf '%s\n' "$files" | grep -qE "$pattern"; then web=true; else web=false; fi
+          echo "web=$web" | tee -a "$GITHUB_OUTPUT"
+
   web:
-    # Forks get no secrets; skip them rather than fail.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    # Skipped (which still passes the required check) when nothing relevant changed, and for forks, which get no secrets.
+    if: >-
+      needs.changes.outputs.web == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # Dedicated environment holding ONLY DATABASE_POOLER_URL, ideally the SEC-11 SELECT-only role. Not `production`: that environment

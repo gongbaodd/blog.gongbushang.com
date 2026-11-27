@@ -1,0 +1,5 @@
+# GON-240: the C# tag slug is now `c-sharp`. Cloudflare matches the raw request path, so the encoded `%23` form is what legacy links use.
+# tests/redirects.test.ts keeps this file in step with tagSlug(). The adapter appends its own redirects after these.
+/tag/c%23/ /tag/c-sharp/ 301
+/tag/c%23 /tag/c-sharp/ 301
+/api/tag/c%23/0.ndjson /api/tag/c-sharp/0.ndjson 301
