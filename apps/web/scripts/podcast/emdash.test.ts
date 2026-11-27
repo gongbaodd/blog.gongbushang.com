@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseCliArgs } from "./cli.ts";
 import { channelDrift, episodeToFields, upsertEpisodesIntoEmdash } from "./emdash.ts";
-import { createClient } from "../../../apps/web/scripts/lib/emdash-rest.mjs";
-import { PODCAST_CHANNEL } from "../../../apps/web/src/lib/podcast-channel.ts";
+import { createClient } from "../lib/emdash-rest.mjs";
+import { PODCAST_CHANNEL } from "../../src/lib/podcast-channel.ts";
 import type { Episode } from "./types.ts";
 
 const episode = (over: Partial<Episode> = {}): Episode => ({

@@ -1,13 +1,13 @@
-// `fetch-podcast --emdash <admin url>` (MIG-3): upsert new RSS episodes into the EmDash `podcasts` collection instead of
-// writing generated JSON. Colours, embeddings, related episodes and the UMAP layout are NOT computed here: the web build
+// `pnpm fetch:podcast -- --emdash <admin url>` (MIG-3): upsert new RSS episodes into the EmDash `podcasts` collection.
+// Colours, embeddings, related episodes and the UMAP layout are NOT computed here: the web build
 // derives them (apps/web/scripts/derive). Only episodes missing from EmDash (by legacy_id = episode id) are created;
-// existing entries are never touched, so edits made in the admin survive. The legacy JSON path is unchanged.
+// existing entries are never touched, so edits made in the admin survive.
 //
 // Transport: apps/web/scripts/lib/emdash-rest.mjs (shared with `apps/web/scripts/schema`, not a copy). It refuses to send
 // credentials to a non-https URL unless the host is localhost/127.0.0.1. Auth: EMDASH_TOKEN bearer, EMDASH_HEADERS
 // ("Name: Value" lines, Cloudflare Access service tokens), or the localhost dev bypass (`pnpm admin:local`).
-import { PODCAST_CHANNEL } from "../../../apps/web/src/lib/podcast-channel.ts";
-import { createClient, type EmdashClient } from "../../../apps/web/scripts/lib/emdash-rest.mjs";
+import { PODCAST_CHANNEL } from "../../src/lib/podcast-channel.ts";
+import { createClient, type EmdashClient } from "../lib/emdash-rest.mjs";
 import type { ChannelData, Episode } from "./types.ts";
 
 export interface EmdashOptions {
@@ -55,7 +55,6 @@ export function episodeToFields(ep: Episode): Record<string, unknown> {
     duration: ep.duration ?? "",
     audio_url: ep.audioUrl || null,
     image_url: ep.image || null,
-    ...(ep.colorSet ? { color_set: ep.colorSet } : {}),
   };
 }
 

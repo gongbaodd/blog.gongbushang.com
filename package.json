@@ -16,7 +16,7 @@
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
     "fmt:check": "oxfmt --check",
-    "fetch:podcast": "pnpm --filter fetch-podcast fetch-podcast",
+    "fetch:podcast": "pnpm --filter web fetch:podcast",
     "umap:build": "cargo build --release --manifest-path packages/umap/Cargo.toml",
     "umap:test": "cargo test -p umap",
     "db:start": "supabase start -x gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,studio,edge-runtime,logflare,vector,supavisor,postgres-meta",

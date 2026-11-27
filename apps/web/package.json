@@ -13,6 +13,7 @@
     "derive": "tsx scripts/derive/index.ts",
     "derive:migrate": "tsx scripts/derive/migrate.ts",
     "derive:compare-embeddings": "tsx scripts/derive/compare-embeddings.ts",
+    "fetch:podcast": "tsx scripts/podcast/cli.ts",
     "build": "tsx scripts/derive/index.ts && tsx scripts/seo/write-noindex.ts && node scripts/check-static-routes.mjs && astro build && node scripts/post-build.mjs && node scripts/generate-pdfs.mjs",
     "resume:pdfs": "node scripts/generate-pdfs.mjs",
     "preview": "astro preview",
@@ -99,6 +100,7 @@
     "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vite-plugin-glsl": "^1.6.1",
     "vitest": "^5.0.1",
-    "wrangler": "^4.164.0"
+    "wrangler": "^4.164.0",
+    "xml2js": "^0.6.2"
   }
 }

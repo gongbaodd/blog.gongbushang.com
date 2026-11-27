@@ -1,5 +1,5 @@
 /**
- * Minimal EmDash REST client shared by `packages/fetch-podcast --emdash`.
+ * Minimal EmDash REST client shared by `scripts/podcast` (`pnpm fetch:podcast`).
  * Same transport as `scripts/schema/apply.mjs` (the two copies are
  * deliberate: those files are scripts, not a package). Auth, in order: a bearer token, `EMDASH_HEADERS`
  * (newline-separated "Name: Value", Cloudflare Access service tokens), the localhost dev bypass.

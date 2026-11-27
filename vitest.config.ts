@@ -10,7 +10,6 @@ export default defineConfig({
       "packages/image-metadata/**/*.test.ts",
       "packages/content-prepare/**/*.test.ts",
       "packages/metadata-embedding/**/*.test.ts",
-      "packages/fetch-podcast/**/*.test.ts",
       "packages/post-embedding/**/*.test.ts",
     ],
     environment: "node",
