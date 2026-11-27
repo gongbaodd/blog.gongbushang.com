@@ -1,7 +1,3 @@
-[submodule "src/content"]
-	path = src/content
-	url = https://github.com/gongbaodd/gongbaodd.github.io.git
-	branch = astro
 [submodule "packages/shiki-plantuml"]
 	path = packages/shiki-plantuml
 	url = https://github.com/gongbaodd/shiki-plantuml.git
