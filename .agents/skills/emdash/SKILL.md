@@ -37,8 +37,8 @@ Derive computes data that EmDash does not store (embeddings, relates, UMAP, colo
 - Migrations: `supabase/migrations/20261125000000_derived_schema.sql` and `20261125010000_derived_podcast_gallery.sql`. Apply with `pnpm --filter web derive:migrate` (it applies every `*_derived_*.sql`).
 - Tables: `post_embeddings`, `cover_colors`, `geocodes`, `post_hints`, `umap_state`, `podcast_embeddings`, `gallery_traces`.
 - **`DERIVE_READONLY=1`**: no cache writes and no embeddings. Used by PR CI against production (INF-10). The SQL session is `default_transaction_read_only`.
-- **Frozen gallery traces**: 75 legacy traces live in `derived.gallery_traces` and are never recomputed. A new gallery image gets a placeholder SVG (flat rect in `bgColor`), and placeholders are not stored. Seed with `derive:seed:media -- --write` before the first build of an environment.
-- **Embeddings via Workers AI**: model `@cf/qwen/qwen3-embedding-0.6b` (1024-d). `DERIVE_EMBED_PROVIDER` is `auto` (default), `workers-ai` or `local`. Credentials are `CF_ACCOUNT_ID` and `CF_AI_TOKEN`, a token scoped to Workers AI only. Never reuse `CLOUDFLARE_API_TOKEN` (the deploy token). `DERIVE_EMBED` is `require`, `skip` or `fake`.
+- **Frozen gallery traces**: 75 legacy traces live in `derived.gallery_traces` and are never recomputed. A new gallery image gets a placeholder SVG (flat rect in `bgColor`), and placeholders are not stored. Copy them into a new environment with `content:pull ... --include-derived` before its first build (the seed scripts were removed in CUT-2d).
+- **Embeddings via Workers AI**: model `@cf/qwen/qwen3-embedding-0.6b` (1024-d). `DERIVE_EMBED_PROVIDER` is `auto` (default) or `workers-ai`; both use Workers AI, and `local` (LM Studio / Python) was retired in GON-255 and now fails with a clear message. Without credentials derive skips embedding (cache hits only; `DERIVE_EMBED=require` fails instead). Credentials are `CF_ACCOUNT_ID` and `CF_AI_TOKEN`, a token scoped to Workers AI only. Never reuse `CLOUDFLARE_API_TOKEN` (the deploy token). `DERIVE_EMBED` is `require`, `skip` or `fake`.
 - Tests: `pnpm --filter web exec vitest run scripts/derive`.
 
 ## apps/admin (Dockerized Node admin)
@@ -91,8 +91,6 @@ pnpm --filter web build                  # derive, check-static-routes, astro bu
 pnpm --filter web run deploy             # build, then wrangler deploy (`run` is required: bare `deploy` is pnpm's built-in)
 pnpm --filter web derive                 # what build runs first
 pnpm --filter web derive:migrate
-pnpm --filter web derive:seed            # dry run; add -- --write to apply
-pnpm --filter web derive:seed:media -- --write
 pnpm --filter web derive:compare-embeddings -- 20
 pnpm --filter web parity                 # URL parity against legacy-urls.txt
 pnpm --filter web test
@@ -113,7 +111,7 @@ pnpm --filter admin typecheck
 pnpm --filter admin test
 ```
 
-Non-script entry points: `apps/web/scripts/schema/apply.sh` and `apps/web/scripts/import/mig7/catchup.mjs`. Run them with `node` or `bash` as shown in their headers.
+Non-script entry points: `apps/web/scripts/schema/apply.sh`. Run it with `bash` as shown in its header.
 
 ## Lead workflow: after each merged story
 
@@ -139,4 +137,4 @@ Call the `cleanup` agent (`.claude/agents/cleanup.md`) after each merged story. 
 - **`apps/web/.dev.vars` can override the Hyperdrive variable.** The Astro adapter copies `.dev.vars` into `process.env`. `deploy:production:build` refuses when this happens.
 - **Workers CPU budget.** EmDash admin routes exceed the 10 ms Workers Free limit (`term` lists hit 1102). The public Worker answers `/_emdash/*` with a bare 404, so the admin runs only in `apps/admin` or on the owner's Mac.
 - **Do not confuse the two admins.** The host-native launcher (`apps/web`, `astro dev`) has a dev bypass. The Docker admin (`apps/admin`) does not.
-- **Derive writes need a real environment.** A build with `DERIVE_READONLY=1` against an unseeded `derived` schema serves placeholders for all 75 gallery traces.
+- **Derive writes need a real environment.** A build with `DERIVE_READONLY=1` against an empty `derived` schema serves placeholders for all 75 gallery traces.

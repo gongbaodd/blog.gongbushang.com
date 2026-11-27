@@ -2,7 +2,7 @@
 // Uses Node's built-in fetch (zero extra dependencies) with batching, input normalisation, token-budget truncation,
 // context-length truncate-and-retry per item, and 429/5xx retries.
 //
-// Input text is identical to legacy (packages/embedding/src/embedding/embed.py: text.replace("\n", " ")).
+// Input text matches the vectors seeded from the former Python pipeline: newlines become spaces.
 // The model context is 8,192 tokens. Inputs are capped at ~6,000 *estimated* tokens (conservative: ASCII 0.3
 // token per char, anything else 1 token per code point, astral code points 2), so only very long posts are cut,
 // and only their tail. If the API still reports a context-length error, the item is cut to 60 % and retried
@@ -96,7 +96,7 @@ export function parseRetryAfterMs(header: string | null, nowMs = Date.now()): nu
 	return undefined;
 }
 
-/** Same normalisation as legacy embed.py: newlines become spaces. */
+/** Same normalisation as the former Python embedder: newlines become spaces. */
 export function normalizeEmbeddingInput(text: string): string {
 	return text.replace(/\n/g, " ");
 }

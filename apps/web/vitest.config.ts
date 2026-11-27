@@ -11,7 +11,6 @@ export default defineConfig({
 			"scripts/cutover/*.test.ts",
 			"scripts/derive/*.test.ts",
 			"scripts/guards/*.test.ts",
-			"scripts/import/**/*.test.ts",
 			"scripts/perf/*.test.ts",
 			"scripts/sync/*.test.ts",
 			"tests/*.test.ts",

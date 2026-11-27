@@ -2,16 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseStringPromise } from "xml2js";
 import { getColorSet } from "image-metadata";
-import { applyBlogUmapCorpus } from "metadata-embedding";
-import { isEmbeddingServerRunning } from "post-embedding";
 import { channelDrift, upsertEpisodesIntoEmdash } from "./emdash.ts";
-import { syncEpisodeEmbeddings } from "./sync-embeddings.ts";
 import type { ChannelData, Episode, FetchPodcastOptions, PodcastData } from "./types.ts";
 
 const DEFAULT_RSS_URL = "https://anchor.fm/s/f483db10/podcast/rss";
-
-const EMBEDDING_SERVER_ERROR =
-  "Embedding server is not running. Start LM Studio, run `uv sync --package embedding`, and ensure the embedding model is loaded.";
 
 function getEpisodeSlug(url: string): string {
   try {
@@ -147,25 +141,6 @@ async function loadExistingPodcast(
   }
 }
 
-async function episodeNeedsEmbedding(episodeDir: string): Promise<boolean> {
-  let files: string[];
-  try {
-    files = await fs.readdir(episodeDir);
-  } catch {
-    return false;
-  }
-
-  for (const file of files.filter((name) => name.endsWith(".json"))) {
-    const raw = await fs.readFile(path.join(episodeDir, file), "utf-8");
-    const episode = JSON.parse(raw) as Episode;
-    if (!Array.isArray(episode.embeddings) || episode.embeddings.length === 0) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 export async function fetchAndProcessPodcast(options: FetchPodcastOptions): Promise<void> {
   if (!options.emdash) await fs.mkdir(options.episodeDir, { recursive: true });
 
@@ -230,17 +205,4 @@ export async function fetchAndProcessPodcast(options: FetchPodcastOptions): Prom
   } else {
     console.log("✅ No new episodes; podcast data unchanged.");
   }
-
-  if (await episodeNeedsEmbedding(options.episodeDir)) {
-    const embeddingServerRunning = await isEmbeddingServerRunning();
-    if (!embeddingServerRunning) {
-      throw new Error(EMBEDDING_SERVER_ERROR);
-    }
-    const embeddedCount = await syncEpisodeEmbeddings(options.episodeDir);
-    if (embeddedCount > 0) {
-      console.log(`🧠 Embedded ${embeddedCount} podcast episode(s)`);
-    }
-  }
-
-  await applyBlogUmapCorpus(options.baseDir);
 }
