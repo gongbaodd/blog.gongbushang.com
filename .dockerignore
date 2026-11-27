@@ -50,7 +50,6 @@ e2e-results
 **/*.sql.gz
 
 # Unrelated directories not needed by apps/admin/Dockerfile
-public
 docs
 supabase
 
