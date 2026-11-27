@@ -22,8 +22,6 @@ export default defineConfig({
       "packages/fetch-podcast/**/*.test.ts",
       "packages/sitemap/**/*.test.ts",
       "packages/post-embedding/**/*.test.ts",
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx",
     ],
     environment: "node",
   },

@@ -15,7 +15,6 @@
     "apps",
     ".claude",
     "dist",
-    "e2e",
     "public",
     "**/*.test.ts",
     "**/*.test.tsx",
