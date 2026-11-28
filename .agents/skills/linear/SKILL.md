@@ -21,22 +21,22 @@ Every open issue carries **exactly one** label from the workspace label group `A
 
 | Label | Who | Give it |
 | --- | --- | --- |
-| `claude-opus-5.5` | Claude Code, Opus 5.5 | Design, security (SEC-*), Supabase/RLS, infra, cutover, cross-cutting changes, anything unclear. **Default.** |
-| `claude-sonnet-5.5` | Claude Code, Sonnet 5.5 | Well-specified, mechanical or bulk work: content import, renames, test backfill, doc updates. |
-| `agy-neon-4` | Antigravity (`agy`), `gemini-4-neon-high`/`-xhigh` | Plan reviews, code reviews and second opinions on another agent's work. |
-| `agy-hydrogen-4` | Antigravity (`agy`), `gemini-4-hydrogen-high`/`-xhigh` | Research and analysis: free-tier limits, library comparisons, root-cause digging. |
+| `agy-neon-4` | Antigravity (`agy`), `gemini-4-neon-high`/`-xhigh` | Building: features, bugs, design, security (SEC-*), Supabase/RLS, infra, docs, anything unclear. **Default.** |
+| `agy-hydrogen-4` | Antigravity (`agy`), `gemini-4-hydrogen-high`/`-xhigh` | Research and analysis (free-tier limits, library comparisons, root-cause digging), and reviews of `agy-neon-4`'s work. |
 | `human` | The owner | Dashboard clicks, secrets and tokens, billing, DNS, OAuth logins, merges to protected branches, anything an agent must not do. |
+| `claude-opus-5.5` | Claude Code, Opus 5.5 | **Retired** (December 2026). Closed issues keep it; never put it on a new or open issue. |
+| `claude-sonnet-5.5` | Claude Code, Sonnet 5.5 | **Retired** (December 2026), same as above. |
 
 Rules:
 
-1. **Label on creation.** Pass the agent label in `labels` when calling `save_issue`. If unsure, use `claude-opus-5.5`.
+1. **Label on creation.** Pass the agent label in `labels` when calling `save_issue`. If unsure, use `agy-neon-4`.
 2. **Only work your own label.** When asked to "pick up the next issue", filter `list_issues` by your label. Don't start an issue labelled for another agent unless the user tells you to.
 3. **Hand off by relabelling.** To pass an issue on, switch the label in one `save_issue` call (`removeLabels` the old agent label, `addLabels` the new one) and add a comment saying why and what is left. Never leave an issue without an `Agent` label.
 4. **Split mixed work.** If an issue needs both an agent and the owner (for example code plus a dashboard setting), make a `human` sub-issue for the owner's part and mark it as blocking.
-5. **Reviews are their own issue.** A review of GON-123 is a new sub-issue labelled with the reviewer (usually `agy-neon-4`). The reviewer posts findings as a comment on it, not by editing the parent.
+5. **Reviews are their own issue.** A review of GON-123 is a new sub-issue labelled with the reviewer: the other agy model than the one that did the work (`agy-hydrogen-4` reviews `agy-neon-4`, and the other way round). The reviewer posts findings as a comment on it, not by editing the parent.
 6. **Keep type labels too.** `Agent` labels sit alongside `Bug` / `Feature` / `Improvement`. Use `addLabels`/`removeLabels`, never `labels`, when updating, so you don't drop the other labels.
 7. **Reference the issue.** Branch names, commit subjects and PR titles include the issue ID, for example `fix(web): ... (GON-204)`.
-8. **Sign your comments.** All agents post through the owner's Linear account, so the author field doesn't say who wrote a comment. Start every comment you post (`save_comment`) with your own `Agent` label in bold, followed by a blank line. Example: `**[claude-opus-5.5]**`. Use the label of the agent that writes the comment, not the label on the issue. The owner's comments are not signed.
+8. **Sign your comments.** All agents post through the owner's Linear account, so the author field doesn't say who wrote a comment. Start every comment you post (`save_comment`) with your own `Agent` label in bold, followed by a blank line. Example: `**[agy-neon-4]**`. Use the label of the agent that writes the comment, not the label on the issue. The owner's comments are not signed.
 9. **New agent or model.** Create the child label under `Agent` first (lowercase `<tool>-<model>-<version>`, such as `codex-gpt-6`), then add a row to the table above in the same change.
 
 ## Prerequisites

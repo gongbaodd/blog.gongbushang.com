@@ -26,7 +26,7 @@ When writing or running tests:
 
 When reading or writing Linear issues (team `GON`):
 
-- **Linear**: [.agents/skills/linear/SKILL.md](.agents/skills/linear/SKILL.md) — every issue carries exactly one `Agent` label (`claude-opus-5.5`, `claude-sonnet-5.5`, `agy-neon-4`, `agy-hydrogen-4`, `human`) naming who handles it; work only your own label, hand off by relabelling with a comment; start every comment you post with your own label, e.g. `**[claude-opus-5.5]**`.
+- **Linear**: [.agents/skills/linear/SKILL.md](.agents/skills/linear/SKILL.md) — every issue carries exactly one `Agent` label (`agy-neon-4` by default, `agy-hydrogen-4` for research and reviews, `human`; the `claude-*` labels are retired) naming who handles it; work only your own label, hand off by relabelling with a comment; start every comment you post with your own label, e.g. `**[agy-neon-4]**`.
 
 ## Project Overview
 
