@@ -50,9 +50,11 @@ export interface StoredUser {
 
 export interface GoogleSignInStore {
   getUser(id: string): Promise<StoredUser | null>;
+  /** Users whose row was created at or after `since` (ISO). */
+  listUsersCreatedSince(since: string): Promise<StoredUser[]>;
   /** Delete the user and its OAuth links (and, by cascade, anything hanging off it). */
   deleteUser(id: string): Promise<void>;
-  /** Delete only the Google links created at or after `since` for a pre-existing user. */
+  /** Delete only the Google links created at or after `since` for a user. */
   deleteOAuthLinksSince(userId: string, since: string): Promise<void>;
 }
 
@@ -67,43 +69,96 @@ export type EnforceResult =
   | { ok: true }
   | { ok: false; reason: "not_allowed" | "unverified" | "no_user" | "error" };
 
+/** Slack for the "created by this request" test: tolerates clock rounding, never used to delete an allow-listed user. */
+export const CREATED_MARGIN_MS = 5000;
+
+function isoMinus(iso: string, ms: number): string {
+  return new Date(new Date(iso).getTime() - ms).toISOString();
+}
+
+/** What `outer.ts` should do with a request path. Fail closed: anything under the OAuth tree that is not Google is refused. */
+export type OAuthPathClass = "google-callback" | "google-start" | "blocked" | "other";
+
+const OAUTH_PREFIX = ["_emdash", "api", "auth", "oauth"];
+
 /**
- * Check the session the callback just started. `startedAt` is an ISO timestamp taken before the callback ran: a user row
- * with `createdAt >= startedAt` was created by this request (EmDash writes `new Date().toISOString()` in the same process).
- * Fails closed: any error refuses the sign-in.
+ * Classify a request path the way the router would see it, but wider: decode once (a malformed escape is `blocked`),
+ * drop empty and `.` segments (double and trailing slashes), resolve `..`, compare case-insensitively. Anything that
+ * reaches into `/_emdash/api/auth/oauth/` other than the Google start and callback routes is `blocked`.
+ */
+export function classifyOAuthPath(pathname: string): OAuthPathClass {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return "blocked";
+  }
+  const segs: string[] = [];
+  for (const raw of decoded.split("/")) {
+    const s = raw.trim().toLowerCase();
+    if (s === "" || s === ".") continue;
+    if (s === "..") {
+      segs.pop();
+      continue;
+    }
+    segs.push(s);
+  }
+  if (!OAUTH_PREFIX.every((p, i) => segs[i] === p)) return "other";
+  if (segs.length === 5 && segs[4] === "google") return "google-start";
+  if (segs.length === 6 && segs[4] === "google" && segs[5] === "callback") return "google-callback";
+  return "blocked";
+}
+
+/**
+ * Run after EmDash's Google callback, whatever it answered (`successful` = it redirected away from the login error).
+ *
+ * 1. Sweep: any user created since `startedAt` whose email is not allow-listed is deleted with its links, so an error
+ *    after creation (for example `finalizeSetup` failing) leaves no row behind. An allow-listed user is never deleted.
+ * 2. If the callback started a session, the user must be allow-listed, and one created by this request must be verified.
+ *
+ * `startedAt` is an ISO timestamp taken before the callback ran. Fails closed: any error refuses the sign-in.
  */
 export async function enforceGoogleAllowlist(args: {
   session: SessionLike | undefined;
   store: GoogleSignInStore | undefined;
   allowlist: string | undefined;
   startedAt: string;
+  successful?: boolean;
 }): Promise<EnforceResult> {
-  const { session, store, allowlist, startedAt } = args;
-  try {
-    if (!session) return { ok: false, reason: "no_user" };
-    const userId = (await session.get("user"))?.id;
-    if (!userId) return { ok: false, reason: "no_user" };
-    if (!store) throw new Error("no database");
-    const user = await store.getUser(userId);
-    const createdHere = !!user && user.createdAt >= startedAt;
-    let reason: "not_allowed" | "unverified" | undefined;
-    if (!user || !isEmailAllowed(user.email, allowlist)) reason = "not_allowed";
-    else if (createdHere && !user.emailVerified) reason = "unverified";
-    if (!reason) return { ok: true };
-    // Refused: leave nothing behind. A brand-new user goes away entirely; a pre-existing user (for example an invited
-    // editor) stays, but loses any Google link this request created.
-    if (user) {
-      if (createdHere) await store.deleteUser(user.id);
-      else await store.deleteOAuthLinksSince(user.id, startedAt);
-    }
-    await session.destroy();
-    return { ok: false, reason };
-  } catch {
+  const { session, store, allowlist, startedAt, successful = true } = args;
+  const destroy = async () => {
     try {
       await session?.destroy();
     } catch {
       /* best effort: the redirect still carries no session */
     }
+  };
+  try {
+    if (!store) throw new Error("no database");
+    for (const u of await store.listUsersCreatedSince(startedAt)) {
+      if (!isEmailAllowed(u.email, allowlist)) await store.deleteUser(u.id);
+    }
+    if (!successful) return { ok: true };
+    if (!session) return { ok: false, reason: "no_user" };
+    const userId = (await session.get("user"))?.id;
+    if (!userId) return { ok: false, reason: "no_user" };
+    const user = await store.getUser(userId);
+    const allowed = !!user && isEmailAllowed(user.email, allowlist);
+    const createdHere = !!user && user.createdAt >= isoMinus(startedAt, CREATED_MARGIN_MS);
+    let reason: "not_allowed" | "unverified" | undefined;
+    if (!allowed) reason = "not_allowed";
+    else if (createdHere && !user!.emailVerified) reason = "unverified";
+    if (!reason) return { ok: true };
+    if (user) {
+      // A not-allowed user created by this request goes away entirely (an allow-listed one is never deleted); otherwise only
+      // the Google link this request created is removed (for example an invited editor stays).
+      if (!allowed && createdHere) await store.deleteUser(user.id);
+      else await store.deleteOAuthLinksSince(user.id, startedAt);
+    }
+    await destroy();
+    return { ok: false, reason };
+  } catch {
+    await destroy();
     return { ok: false, reason: "error" };
   }
 }
@@ -140,6 +195,19 @@ export function kyselyStore(db: any): GoogleSignInStore {
         emailVerified: Number(row.email_verified) === 1,
         createdAt: String(row.created_at),
       };
+    },
+    async listUsersCreatedSince(since) {
+      const rows = await db
+        .selectFrom("users")
+        .select(["id", "email", "email_verified", "created_at"])
+        .where("created_at", ">=", since)
+        .execute();
+      return rows.map((row: any) => ({
+        id: row.id,
+        email: row.email,
+        emailVerified: Number(row.email_verified) === 1,
+        createdAt: String(row.created_at),
+      }));
     },
     async deleteUser(id) {
       await db.deleteFrom("oauth_accounts").where("user_id", "=", id).execute();

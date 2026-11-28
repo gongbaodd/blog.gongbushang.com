@@ -13,7 +13,7 @@ import { defineMiddleware } from "astro:middleware";
 import { evaluateStartup } from "../scripts/safety.mjs";
 import { ACCESS_HEADER, accessMode, verifyAccessJwt, type AccessEnv } from "./access.ts";
 import {
-	GOOGLE_CALLBACK_PATH,
+	classifyOAuthPath,
 	deniedRedirect,
 	enforceGoogleAllowlist,
 	isSuccessfulCallback,
@@ -65,17 +65,34 @@ export function createOuterMiddleware(options: OuterOptions = {}) {
 			const ok = await verifyAccess(context.request.headers.get(ACCESS_HEADER), env);
 			if (!ok) return withNoindex(new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } }));
 		}
-		// Google sign-in (GON-252): EmDash's callback runs below us; afterwards only an allow-listed account may keep the session
-		// it started, and a refused request must not leave a new user behind (see google-allowlist.ts).
-		if (context.url.pathname === GOOGLE_CALLBACK_PATH && context.request.method === "GET") {
+		// Google sign-in (GON-252). Classified on the decoded, normalised path and for every method (HEAD runs the GET handler):
+		// trailing/double slashes, percent-encoding and case cannot skip the check. Any other OAuth provider is refused (404).
+		const oauthPath = classifyOAuthPath(context.url.pathname);
+		if (oauthPath === "blocked") return withNoindex(new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } }));
+		if (oauthPath === "google-callback") {
+			// EmDash's callback runs below us; afterwards only an allow-listed account may keep the session it started, and no
+			// user it created for a refused account may remain (see google-allowlist.ts). A throw anywhere denies.
 			const startedAt = new Date().toISOString();
-			const res = await next();
-			if (!isSuccessfulCallback(res)) return withNoindex(res);
+			const allowlist = (env as Record<string, string | undefined>).ADMIN_ALLOWED_EMAILS;
+			const session = context.session as never;
+			let res: Response;
+			try {
+				res = await next();
+			} catch {
+				await enforceGoogleAllowlist({ session, store: getGoogleStore(context.locals), allowlist, startedAt, successful: false });
+				try {
+					await (session as { destroy?: () => unknown } | undefined)?.destroy?.();
+				} catch {
+					/* the redirect below carries no session */
+				}
+				return withNoindex(deniedRedirect());
+			}
 			const verdict = await enforceGoogleAllowlist({
-				session: context.session as never,
+				session,
 				store: getGoogleStore(context.locals),
-				allowlist: (env as Record<string, string | undefined>).ADMIN_ALLOWED_EMAILS,
+				allowlist,
 				startedAt,
+				successful: isSuccessfulCallback(res),
 			});
 			return withNoindex(verdict.ok ? res : deniedRedirect());
 		}

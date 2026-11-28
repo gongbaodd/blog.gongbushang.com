@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   GOOGLE_CALLBACK_PATH,
+  classifyOAuthPath,
   isEmailAllowed,
   kyselyStore,
   parseAllowlist,
@@ -44,6 +45,9 @@ function createFakeEmDash(seedUsers: StoredUser[] = []) {
   let destroyed = 0;
 
   const store: GoogleSignInStore = {
+    async listUsersCreatedSince(since) {
+      return [...users.values()].filter((u) => u.createdAt >= since);
+    },
     async getUser(id) {
       return users.get(id) ?? null;
     },
@@ -73,7 +77,7 @@ function createFakeEmDash(seedUsers: StoredUser[] = []) {
    */
   function googleCallback(
     profile: { email: string; verified: boolean },
-    opts: { selfSignup: boolean },
+    opts: { selfSignup: boolean; failAfterCreate?: boolean },
   ): Response {
     const email = profile.email.toLowerCase();
     let user = [...users.values()].find((u) => u.email === email);
@@ -88,6 +92,7 @@ function createFakeEmDash(seedUsers: StoredUser[] = []) {
     } else {
       return redirect("/_emdash/admin/login?error=signup_not_allowed");
     }
+    if (opts.failAfterCreate) return redirect("/_emdash/admin/login?error=oauth_error&message=x");
     currentSession = { user: { id: user.id } };
     return redirect("/_emdash/admin");
   }
@@ -112,6 +117,7 @@ function run(
   env: Record<string, string | undefined>,
   callback: () => Response,
   url = `http://localhost:4322${GOOGLE_CALLBACK_PATH}?code=c&state=s`,
+  method = "GET",
 ) {
   const outer = createOuterMiddleware({
     getEnv: () => env,
@@ -121,7 +127,7 @@ function run(
   const next = vi.fn(async () => callback());
   const context = {
     url: new URL(url),
-    request: new Request(url),
+    request: new Request(url, { method }),
     session: fake.session,
     locals: {},
   };
@@ -177,7 +183,7 @@ describe("Google callback allow-list (outer middleware)", () => {
     expect(out.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
   });
 
-  it("refuses an unverified email even when the address is on the list, and removes the user it created", async () => {
+  it("refuses an unverified email even when the address is on the list; the allow-listed user is never deleted", async () => {
     const fake = createFakeEmDash();
     const { res } = run(fake, { ADMIN_ALLOWED_EMAILS: "owner@example.com" }, () =>
       fake.googleCallback({ email: "owner@example.com", verified: false }, { selfSignup: true }),
@@ -185,8 +191,44 @@ describe("Google callback allow-list (outer middleware)", () => {
     const out = await res;
     expect(out.headers.get("Location")).toContain("error=oauth_denied");
     expect(fake.hasSession()).toBe(false);
+    expect(fake.users.has("u1")).toBe(true);
+    expect(fake.links).toEqual([]);
+  });
+
+  it("refuses an unverified email on a not-allow-listed address and removes the user", async () => {
+    const fake = createFakeEmDash();
+    const { res } = run(fake, { ADMIN_ALLOWED_EMAILS: "owner@example.com" }, () =>
+      fake.googleCallback({ email: "x@evil.io", verified: false }, { selfSignup: true }),
+    );
+    expect((await res).headers.get("Location")).toContain("error=oauth_denied");
     expect(fake.users.size).toBe(0);
     expect(fake.links).toEqual([]);
+  });
+
+  it("sweeps a user EmDash created before failing with its own error redirect (no session)", async () => {
+    const fake = createFakeEmDash([owner]);
+    const { res } = run(fake, { ADMIN_ALLOWED_EMAILS: "owner@example.com" }, () =>
+      fake.googleCallback(
+        { email: "stranger@evil.io", verified: true },
+        { selfSignup: true, failAfterCreate: true },
+      ),
+    );
+    const out = await res;
+    expect(out.headers.get("Location")).toContain("error=oauth_error");
+    expect([...fake.users.keys()]).toEqual(["owner"]);
+    expect(fake.links).toEqual([]);
+  });
+
+  it("denies and cleans up when the callback throws", async () => {
+    const fake = createFakeEmDash([owner]);
+    const { res } = run(fake, { ADMIN_ALLOWED_EMAILS: "owner@example.com" }, () => {
+      fake.googleCallback({ email: "stranger@evil.io", verified: true }, { selfSignup: true });
+      throw new Error("boom");
+    });
+    const out = await res;
+    expect(out.headers.get("Location")).toContain("error=oauth_denied");
+    expect(fake.hasSession()).toBe(false);
+    expect([...fake.users.keys()]).toEqual(["owner"]);
   });
 
   it("denies every Google sign-in when ADMIN_ALLOWED_EMAILS is empty or unset", async () => {
@@ -245,6 +287,66 @@ describe("Google callback allow-list (outer middleware)", () => {
     const other = run(fake, {}, () => new Response("ok"), "http://localhost:4322/_emdash/admin");
     expect(await (await other.res).text()).toBe("ok");
     expect(fake.destroyed()).toBe(0);
+  });
+});
+
+describe("callback path variants cannot skip the allow-list", () => {
+  const base = "http://localhost:4322";
+  const variants: Array<[string, string, string]> = [
+    ["trailing slash", `${base}/_emdash/api/auth/oauth/google/callback/?code=c&state=s`, "GET"],
+    [
+      "percent-encoded provider",
+      `${base}/_emdash/api/auth/oauth/%67oogle/callback?code=c&state=s`,
+      "GET",
+    ],
+    ["HEAD", `${base}${GOOGLE_CALLBACK_PATH}?code=c&state=s`, "HEAD"],
+    ["double slash", `${base}/_emdash/api/auth//oauth/google//callback?code=c&state=s`, "GET"],
+    ["mixed case", `${base}/_emdash/API/Auth/OAuth/Google/Callback?code=c&state=s`, "GET"],
+    ["dot segments", `${base}/_emdash/api/auth/oauth/./google/callback?code=c&state=s`, "GET"],
+    ["POST", `${base}${GOOGLE_CALLBACK_PATH}?code=c&state=s`, "POST"],
+  ];
+  for (const [name, url, method] of variants) {
+    it(`enforces on ${name}`, async () => {
+      const fake = createFakeEmDash([owner]);
+      const { res, next } = run(
+        fake,
+        { ADMIN_ALLOWED_EMAILS: "owner@example.com" },
+        () =>
+          fake.googleCallback({ email: "stranger@evil.io", verified: true }, { selfSignup: true }),
+        url,
+        method,
+      );
+      const out = await res;
+      expect(next).toHaveBeenCalledTimes(1);
+      expect(out.headers.get("Location")).toContain("error=oauth_denied");
+      expect(fake.hasSession()).toBe(false);
+      expect([...fake.users.keys()]).toEqual(["owner"]);
+    });
+  }
+
+  it("returns 404 for other providers, unknown OAuth sub-paths and malformed escapes, without calling EmDash", async () => {
+    for (const path of [
+      "/_emdash/api/auth/oauth/github/callback",
+      "/_emdash/api/auth/oauth/github",
+      "/_emdash/api/auth/oauth/google/callback/extra",
+      "/_emdash/api/auth/oauth",
+      "/_emdash/api/auth/oauth/%zz/callback",
+      "/_emdash/api/auth/oauth/google%2fcallback/x",
+    ]) {
+      const fake = createFakeEmDash();
+      const { res, next } = run(fake, {}, () => new Response("emdash"), `${base}${path}`);
+      expect((await res).status, path).toBe(404);
+      expect(next).not.toHaveBeenCalled();
+    }
+  });
+
+  it("classifies paths", () => {
+    expect(classifyOAuthPath("/_emdash/api/auth/oauth/google")).toBe("google-start");
+    expect(classifyOAuthPath("/_emdash/api/auth/oauth/google/callback")).toBe("google-callback");
+    expect(classifyOAuthPath("/_emdash/admin")).toBe("other");
+    expect(classifyOAuthPath("/x/../_emdash/api/auth/oauth/google/callback")).toBe(
+      "google-callback",
+    );
   });
 });
 
