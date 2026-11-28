@@ -15,7 +15,7 @@
 			"slug": "posts",
 			"label": "Posts",
 			"labelSingular": "Post",
-			"urlPattern": "/posts/{slug}",
+			"urlPattern": "/{year}/{month}/{day}/{slug}",
 			"supports": ["drafts", "revisions", "preview", "search", "seo"],
 			"fields": [
 				{
