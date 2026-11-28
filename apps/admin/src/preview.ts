@@ -57,8 +57,11 @@ export async function loadPreview(
 	const granted = getRequestContext()?.preview;
 	if (!granted || granted.collection !== collection) return forbidden();
 	const { entry } = await getEmDashEntry(collection, slug);
-	if (!entry || !isPreviewGranted(granted, collection, entry.id)) return forbidden();
+	if (!entry) return forbidden();
 	const data = entry.data as unknown as Record<string, unknown>;
+	// The token names the entry by the id the admin sent: its database id (data.id, a ULID) or, in older links, its slug (entry.id).
+	const dbId = typeof data.id === "string" ? data.id : undefined;
+	if (!isPreviewGranted(granted, collection, entry.id) && !isPreviewGranted(granted, collection, dbId)) return forbidden();
 	const title = String(data.title ?? slug);
 	if (collection === "posts") {
 		const image = data.featured_image as { src?: string; previewUrl?: string } | undefined;
