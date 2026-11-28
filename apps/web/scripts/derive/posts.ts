@@ -5,6 +5,7 @@ import { buildPostEmbeddingText } from "./lib/embedding/embedding-text.ts";
 import { buildSeriesNameMap, extractDataFields, type FrontmatterData } from "./lib/content/data-field.ts";
 import type { MetadataEntry } from "./lib/content/types.ts";
 import { createHash } from "node:crypto";
+import { assertUniquePostUrls, resolvePostId } from "../../src/lib/post-id.ts";
 
 export interface PostRow {
 	id: string;
@@ -35,21 +36,37 @@ export interface DerivedPost {
 	contentHash: string;
 }
 
-/** Published, non-deleted, migrated posts, read in a READ ONLY transaction. */
+type RawPostRow = Omit<PostRow, "legacy_id"> & { legacy_id: string | null; slug: string; published_at: string | null };
+
+/**
+ * Resolve each row's id (GON-269): `legacy_id` for an imported post, else `YYYY/MM/DD/<slug>` from `published_at` (same rule as
+ * apps/web/src/lib/content.ts mapPost). Rows that were never published get no id and are skipped. A duplicate id fails the build.
+ */
+export function resolvePostRows(raw: RawPostRow[]): PostRow[] {
+	const rows: PostRow[] = [];
+	for (const { slug, published_at, legacy_id, ...rest } of raw) {
+		const id = resolvePostId({ legacyId: legacy_id, slug, publishedAt: published_at });
+		if (id) rows.push({ ...rest, legacy_id: id });
+	}
+	assertUniquePostUrls(rows.map((r) => ({ key: r.legacy_id, entry: r.id })), "id");
+	return rows;
+}
+
+/** Published, non-deleted posts (imported, or created in the admin and published), read in a READ ONLY transaction. */
 export async function readPosts(client: pg.Client): Promise<PostRow[]> {
 	await client.query("begin read only");
 	try {
 		const r = await client.query(`
-			select p.id, p.legacy_id, p.body_md, p.featured_image,
+			select p.id, p.legacy_id, p.slug, p.published_at, p.body_md, p.featured_image,
 			       coalesce(json_agg(json_build_object('name', t.name, 'slug', t.slug, 'label', t.label))
 			                filter (where t.id is not null), '[]'::json) as terms
 			from ec_posts p
 			left join content_taxonomies ct on ct.collection = 'posts' and ct.entry_id = p.id and ct.deleted_at is null
 			left join taxonomies t on t.id = ct.taxonomy_id
-			where p.status = 'published' and p.deleted_at is null and p.legacy_id is not null
+			where p.status = 'published' and p.deleted_at is null and (p.legacy_id is not null or p.published_at is not null)
 			group by p.id
-			order by p.legacy_id`);
-		return r.rows;
+			order by p.legacy_id nulls last, p.published_at, p.id`);
+		return resolvePostRows(r.rows);
 	} finally {
 		await client.query("rollback");
 	}

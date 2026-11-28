@@ -34,12 +34,14 @@
 					"slug": "content",
 					"label": "Content",
 					"type": "portableText",
-					"searchable": true
+					"searchable": true,
+					"widget": "post-fields:hidden"
 				},
 				{
 					"slug": "excerpt",
 					"label": "Excerpt",
-					"type": "text"
+					"type": "text",
+					"widget": "post-fields:hidden"
 				}
 			]
 		},

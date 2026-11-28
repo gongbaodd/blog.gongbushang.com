@@ -62,7 +62,7 @@ try {
 	let t = Date.now();
 	const rows = await readPosts(client);
 	if (rows.length === 0 && process.env.ALLOW_EMPTY_DATA !== "1") {
-		console.error(`[derive] ERROR: no published posts with a legacy_id in ${describeTarget(url)} (wrong database, or the import has not run). Set ALLOW_EMPTY_DATA=1 to build without posts.`);
+		console.error(`[derive] ERROR: no published posts in ${describeTarget(url)} (wrong database, or the import has not run). Set ALLOW_EMPTY_DATA=1 to build without posts.`);
 		process.exit(1);
 	}
 	const hints = await loadHints(client);

@@ -8,8 +8,10 @@ import { tagSlug } from "./legacy-url";
 export type TLink = { label: string; href: string };
 export type TCountLink = TLink & { count: number };
 
+import { LEGACY_TZ } from "./post-id";
+
 /** The legacy site was built in Estonia: `date` instants in its output are local midnight there. */
-export const LEGACY_TZ = "Europe/Tallinn";
+export { LEGACY_TZ };
 
 const partsFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: LEGACY_TZ,

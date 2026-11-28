@@ -520,13 +520,13 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
 });
 
 describe("paginated EmDash collection fetchers", () => {
-  it("paginates getAllPosts across cursors and skips non-legacy entries", async () => {
+  it("paginates getAllPosts across cursors and skips never-published entries without legacy_id", async () => {
     mockSeoRows.mockResolvedValue([]);
     mockGetEmDashCollection
       .mockResolvedValueOnce({
         entries: [
           makeFullPostEntry({ legacy_id: "2025/01/01/a" }, "a"),
-          makeFullPostEntry({ legacy_id: undefined }, "starter-welcome"),
+          makeFullPostEntry({ legacy_id: undefined, publishedAt: undefined }, "starter-welcome"),
         ],
         nextCursor: "cursor-2",
       })

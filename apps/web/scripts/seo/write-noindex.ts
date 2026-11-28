@@ -3,6 +3,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { connect } from "../derive/db.ts";
+import { resolvePostId } from "../../src/lib/post-id.ts";
 import { NOINDEX_FILE } from "./noindex-list.mjs";
 
 /** Postgres 42P01: the `_emdash_seo` table does not exist yet, so nothing is noindex. */
@@ -14,12 +15,14 @@ try {
 	await client.query("begin read only");
 	try {
 		const r = await client.query(`
-			select p.legacy_id
+			select p.legacy_id, p.slug, p.published_at
 			from ec_posts p
 			join _emdash_seo s on s.collection = 'posts' and s.content_id = p.id and s.seo_no_index = 1
-			where p.status = 'published' and p.deleted_at is null and p.legacy_id is not null
-			order by p.legacy_id`);
-		legacyIds = r.rows.map((x: { legacy_id: string }) => x.legacy_id.trim()).filter(Boolean);
+			where p.status = 'published' and p.deleted_at is null and (p.legacy_id is not null or p.published_at is not null)
+			order by p.legacy_id nulls last, p.published_at, p.id`);
+		legacyIds = r.rows
+			.map((x: { legacy_id: string | null; slug: string; published_at: string | null }) => resolvePostId({ legacyId: x.legacy_id, slug: x.slug, publishedAt: x.published_at }))
+			.filter((id): id is string => Boolean(id));
 	} catch (err) {
 		if (!isMissingTable(err)) throw err;
 	} finally {
