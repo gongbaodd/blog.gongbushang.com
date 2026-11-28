@@ -1,5 +1,5 @@
 // Nearest-neighbour "related posts": the same algorithm as the legacy packages/utils/nearest.ts
-// (cosine distance on embeddings, then UMAP distance, then the rest; same category; short posts relate to short posts).
+// (cosine distance on embeddings, then UMAP distance, then the rest; same category, or any category for a post without one; short posts relate to short posts).
 export const RELATES_LIMIT = 8; // POST_COUNT_PER_PAGE / 2
 
 export interface Candidate {
@@ -24,7 +24,7 @@ export function cosineDistance(a: number[], b: number[]): number {
 const has = (e: Candidate, len?: number) => Array.isArray(e.embeddings) && e.embeddings.length > 0 && (len === undefined || e.embeddings.length === len);
 
 export function findNearest<T extends Candidate>(target: T, candidates: T[], limit: number): T[] {
-	const pool = candidates.filter((c) => c.id !== target.id && c.category?.label === target.category?.label && (!target.isShort || c.isShort === true));
+	const pool = candidates.filter((c) => c.id !== target.id && (!target.category || c.category?.label === target.category.label) && (!target.isShort || c.isShort === true));
 	const dims = has(target) ? target.embeddings!.length : undefined;
 	const byE: { item: T; d: number }[] = [], byU: { item: T; d: number }[] = [], rest: T[] = [];
 	for (const item of pool) {

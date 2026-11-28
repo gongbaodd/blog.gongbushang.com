@@ -25,6 +25,11 @@ describe("relates (legacy nearest.ts)", () => {
 		const all = [mk("a", [1, 0], "tech", { isShort: true }), mk("b", [1, 0], "tech", { isShort: false }), mk("c", [0, 1], "tech", { isShort: true })];
 		expect(findNearest(all[0]!, all, 8).map((x) => x.id)).toEqual(["c"]);
 	});
+	it("a post without a category relates to posts in any category", () => {
+		const all = [{ id: "a", embeddings: [1, 0] } as Candidate, mk("b", [0.9, 0.1]), mk("c", [0, 1], "life"), { id: "d", embeddings: [1, 0] } as Candidate];
+		expect(findNearest(all[0]!, all, 8).map((x) => x.id)).toEqual(["d", "b", "c"]);
+		expect(findNearest(all[1]!, all, 8).map((x) => x.id)).toEqual([]);
+	});
 });
 
 describe("posts -> legacy metadata entries", () => {

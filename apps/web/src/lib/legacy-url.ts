@@ -37,7 +37,9 @@ export function retiredPostPath(legacyId: string, category: string): string {
 }
 
 /** Inverse of retiredPostPath: `/fe/2025/02/21/puzzle-game/` -> { category, legacyId }. */
-export function parseRetiredPostPath(path: string): { category: string; legacyId: string } | undefined {
+export function parseRetiredPostPath(
+  path: string,
+): { category: string; legacyId: string } | undefined {
   const m = /^\/([^/]+)\/(\d{4}\/\d{2}\/\d{2}\/[^/]+)\/?$/.exec(path);
   return m ? { category: m[1], legacyId: m[2] } : undefined;
 }

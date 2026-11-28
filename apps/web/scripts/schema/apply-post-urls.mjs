@@ -23,6 +23,8 @@
  * After `--apply`, EmDash caches the pattern and entries in memory for up to 10 minutes: restart the admin or wait.
  * Never run it against production from an agent: the owner runs it (docs/plan/emdash/runbooks, GON-270).
  */
+import { realpathSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 import pg from "pg";
 import { pgClientConfig } from "../admin/pg-tls.mjs";
 
@@ -36,7 +38,10 @@ export function validDay(s) {
   const m = typeof s === "string" ? ISO_DAY_RE.exec(s.trim()) : null;
   if (!m) return undefined;
   const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  const same = d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+  const same =
+    d.getUTCFullYear() === Number(m[1]) &&
+    d.getUTCMonth() === Number(m[2]) - 1 &&
+    d.getUTCDate() === Number(m[3]);
   return same ? s.trim() : undefined;
 }
 
@@ -65,17 +70,21 @@ export function utcDay(publishedAt) {
  * - { action: "update", from, to }
  */
 export function planPublishedAt(row) {
-  if (typeof row.legacy_id !== "string" || !row.legacy_id.trim()) return { action: "skip", reason: "not imported (no legacy_id)" };
+  if (typeof row.legacy_id !== "string" || !row.legacy_id.trim())
+    return { action: "skip", reason: "not imported (no legacy_id)" };
   const day = legacyDay(row);
   if (!day) return { action: "skip", reason: "no usable legacy date" };
-  if (row.status !== "published" && !row.published_at) return { action: "skip", reason: "unpublished, no published_at" };
+  if (row.status !== "published" && !row.published_at)
+    return { action: "skip", reason: "unpublished, no published_at" };
   if (utcDay(row.published_at) === day) return { action: "none" };
   return { action: "update", from: row.published_at ?? null, to: noonUtc(day) };
 }
 
 /** `url_pattern` of the posts collection: update unless it already is the target. Pure. */
 export function planUrlPattern(current) {
-  return current === POSTS_URL_PATTERN ? { action: "none" } : { action: "update", from: current ?? null, to: POSTS_URL_PATTERN };
+  return current === POSTS_URL_PATTERN
+    ? { action: "none" }
+    : { action: "update", from: current ?? null, to: POSTS_URL_PATTERN };
 }
 
 /** Plan for all rows plus a printable summary. Pure. */
@@ -85,7 +94,14 @@ export function planAll(rows, currentPattern) {
   let unchanged = 0;
   for (const row of rows) {
     const p = planPublishedAt(row);
-    if (p.action === "update") updates.push({ id: row.id, slug: row.slug, legacy_id: row.legacy_id, from: p.from, to: p.to });
+    if (p.action === "update")
+      updates.push({
+        id: row.id,
+        slug: row.slug,
+        legacy_id: row.legacy_id,
+        from: p.from,
+        to: p.to,
+      });
     else if (p.action === "skip") skipped.push({ id: row.id, slug: row.slug, reason: p.reason });
     else unchanged += 1;
   }
@@ -116,12 +132,16 @@ async function main() {
   const url = opt("--database-url") ?? process.env.DATABASE_URL;
   const apply = flag("--apply");
   if (!url) {
-    console.error("Set DATABASE_URL (or pass --database-url). The script does not read .env files.");
+    console.error(
+      "Set DATABASE_URL (or pass --database-url). The script does not read .env files.",
+    );
     process.exit(2);
   }
   const local = isLoopbackUrl(url);
   if (apply && !local && !flag("--yes-remote")) {
-    console.error(`Refusing to write to a non-local database (${describeUrl(url)}). Pass --yes-remote to confirm.`);
+    console.error(
+      `Refusing to write to a non-local database (${describeUrl(url)}). Pass --yes-remote to confirm.`,
+    );
     process.exit(2);
   }
 
@@ -130,13 +150,23 @@ async function main() {
   console.log(`[post-urls] target ${describeUrl(url)} (${apply ? "APPLY" : "dry run"})`);
   try {
     await client.query(apply ? "begin" : "begin read only");
-    const rows = (await client.query("select id, slug, status, legacy_id, legacy_date, published_at from ec_posts where deleted_at is null")).rows;
-    const current = (await client.query("select url_pattern from _emdash_collections where slug = 'posts'")).rows[0];
+    const rows = (
+      await client.query(
+        "select id, slug, status, legacy_id, legacy_date, published_at from ec_posts where deleted_at is null",
+      )
+    ).rows;
+    const current = (
+      await client.query("select url_pattern from _emdash_collections where slug = 'posts'")
+    ).rows[0];
     if (!current) throw new Error("no `posts` collection in _emdash_collections: wrong database?");
     const plan = planAll(rows, current.url_pattern);
 
-    console.log(`[post-urls] url_pattern: ${plan.pattern.action === "none" ? `already ${POSTS_URL_PATTERN}` : `${plan.pattern.from ?? "(none)"} -> ${plan.pattern.to}`}`);
-    console.log(`[post-urls] published_at: ${plan.updates.length} to backfill, ${plan.unchanged} already on their legacy day, ${plan.skipped.length} skipped (of ${rows.length} posts)`);
+    console.log(
+      `[post-urls] url_pattern: ${plan.pattern.action === "none" ? `already ${POSTS_URL_PATTERN}` : `${plan.pattern.from ?? "(none)"} -> ${plan.pattern.to}`}`,
+    );
+    console.log(
+      `[post-urls] published_at: ${plan.updates.length} to backfill, ${plan.unchanged} already on their legacy day, ${plan.skipped.length} skipped (of ${rows.length} posts)`,
+    );
     for (const u of plan.updates.slice(0, 5)) console.log(`  ${u.legacy_id}: ${u.from} -> ${u.to}`);
     if (plan.updates.length > 5) console.log(`  ... and ${plan.updates.length - 5} more`);
     const reasons = new Map();
@@ -145,22 +175,39 @@ async function main() {
 
     if (!apply) {
       await client.query("rollback");
-      console.log(plan.updates.length || plan.pattern.action === "update" ? "[post-urls] dry run: nothing written. Re-run with --apply." : "[post-urls] nothing to do.");
+      console.log(
+        plan.updates.length || plan.pattern.action === "update"
+          ? "[post-urls] dry run: nothing written. Re-run with --apply."
+          : "[post-urls] nothing to do.",
+      );
       process.exitCode = plan.updates.length || plan.pattern.action === "update" ? 1 : 0;
       return;
     }
 
     if (plan.pattern.action === "update") {
-      await client.query("update _emdash_collections set url_pattern = $1 where slug = 'posts'", [plan.pattern.to]);
+      await client.query("update _emdash_collections set url_pattern = $1 where slug = 'posts'", [
+        plan.pattern.to,
+      ]);
     }
     for (const u of plan.updates) {
       // `published_at is not distinct from $3`: never overwrite a value that changed since it was read.
-      const r = await client.query("update ec_posts set published_at = $1 where id = $2 and published_at is not distinct from $3", [u.to, u.id, u.from]);
-      if (r.rowCount !== 1) throw new Error(`post ${u.legacy_id} changed while the script ran; nothing was written, run it again`);
-      await client.query("update content_taxonomies set published_at = $1 where collection = 'posts' and entry_id = $2", [u.to, u.id]);
+      const r = await client.query(
+        "update ec_posts set published_at = $1 where id = $2 and published_at is not distinct from $3",
+        [u.to, u.id, u.from],
+      );
+      if (r.rowCount !== 1)
+        throw new Error(
+          `post ${u.legacy_id} changed while the script ran; nothing was written, run it again`,
+        );
+      await client.query(
+        "update content_taxonomies set published_at = $1 where collection = 'posts' and entry_id = $2",
+        [u.to, u.id],
+      );
     }
     await client.query("commit");
-    console.log(`[post-urls] done: url_pattern ${plan.pattern.action === "update" ? "set" : "unchanged"}, ${plan.updates.length} published_at backfilled.`);
+    console.log(
+      `[post-urls] done: url_pattern ${plan.pattern.action === "update" ? "set" : "unchanged"}, ${plan.updates.length} published_at backfilled.`,
+    );
   } catch (err) {
     await client.query("rollback").catch(() => {});
     throw err;
@@ -169,7 +216,7 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   main().catch((err) => {
     console.error(`[post-urls] ${err instanceof Error ? err.message : err}`);
     process.exit(2);
