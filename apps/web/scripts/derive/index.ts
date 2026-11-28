@@ -47,7 +47,7 @@ const { embedPosts, finalizeEmbeddings } = await import("./embed.ts");
 const { resolveColors, resolveGeocodes } = await import("./enrich.ts");
 const { resolveUmap } = await import("./umap.ts");
 const { assemble, writeOutputs } = await import("./outputs.ts");
-const { buildEpisodes, buildGallery, readGalleryRows, readGalleryUrls, readPodcastKeys, readPodcastRows, resolveTraces } = await import("./media.ts");
+const { buildEpisodes, buildGallery, episodeCoverUrls, finalizeEpisodes, readGalleryRows, readGalleryUrls, readPodcastKeys, readPodcastRows, resolveTraces } = await import("./media.ts");
 
 const t0 = Date.now();
 const lap = (t: number) => ((Date.now() - t) / 1000).toFixed(1) + "s";
@@ -95,7 +95,7 @@ try {
 
 	t = Date.now();
 	const extras: Extras = {
-		podcast: episodes.map((e) => (pemb.vectors.has(e.legacyId) ? { ...e.episode, embeddings: pemb.vectors.get(e.legacyId)! } : e.episode)),
+		podcast: [], // filled after the colours resolve (finalizeEpisodes)
 		gallery: [],
 		traces: new Map(),
 	};
@@ -116,9 +116,8 @@ try {
 	}
 
 	t = Date.now();
-	const epCoverUrls = episodes.flatMap((e) => (e.episode.colorSet || !e.episode.image || !/^https?:\/\//.test(e.episode.image) ? [] : [e.episode.image]));
-	const colors = await resolveColors(client, posts, process.env.DERIVE_SKIP_COLORS !== "1", epCoverUrls);
-	for (const e of episodes) if (!e.episode.colorSet && e.episode.image && colors.colors.has(e.episode.image)) e.episode.colorSet = colors.colors.get(e.episode.image)!;
+	const colors = await resolveColors(client, posts, process.env.DERIVE_SKIP_COLORS !== "1", episodeCoverUrls(episodes));
+	extras.podcast = finalizeEpisodes(episodes, pemb.vectors, colors.colors); // after colours: the copy with embeddings must carry colorSet (GON-268)
 	const geo = await resolveGeocodes(client, posts);
 	console.log(`[derive] colors: ${colors.reused} cached, ${colors.extracted} extracted, ${colors.failed.length} failed; geocodes: ${geo.reused} cached, ${geo.fetched} fetched, ${geo.missing.length} missing (${lap(t)})`);
 

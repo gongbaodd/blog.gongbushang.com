@@ -133,6 +133,22 @@ export function buildEpisodes(rows: PodcastRow[]): DerivedEpisode[] {
 	return out;
 }
 
+/** Cover URLs of episodes the CMS has no `color_set` for (they get their colours from the cover_colors cache). */
+export const episodeCoverUrls = (episodes: DerivedEpisode[]): string[] =>
+	episodes.flatMap((e) => (e.episode.colorSet || !e.episode.image || !/^https?:\/\//.test(e.episode.image) ? [] : [e.episode.image]));
+
+/**
+ * Final podcast records for the outputs: fills `colorSet` from the colour cache and adds embeddings. Must run AFTER colours are
+ * resolved; the embedding branch copies the episode, so a colour set assigned later never reached the output (GON-268).
+ */
+export function finalizeEpisodes(episodes: DerivedEpisode[], vectors: Map<string, number[]>, colors: Map<string, ColorSet>): DerivedEpisode["episode"][] {
+	return episodes.map((e) => {
+		const cs = e.episode.colorSet ?? (e.episode.image ? colors.get(e.episode.image) : undefined);
+		const ep = cs?.bgColor ? { ...e.episode, colorSet: cs } : e.episode;
+		return vectors.has(e.legacyId) ? { ...ep, embeddings: vectors.get(e.legacyId)! } : ep;
+	});
+}
+
 export interface DerivedGalleryImage {
 	/** Legacy gallery.json entry (key order: id,file,hash,image,doc,colorSet,addedAt). `colorSet` is filled by resolveTraces when the CMS has none. */
 	entry: { id: string; file: string; hash: string; image: string; doc: string; colorSet?: ColorSet; addedAt?: string };
