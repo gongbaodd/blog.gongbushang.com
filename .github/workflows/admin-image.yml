@@ -66,6 +66,9 @@ jobs:
           file: apps/admin/Dockerfile
           platforms: linux/amd64
           push: true
+          build-args: |
+            BUILD_SHA=${{ github.sha }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp || fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
