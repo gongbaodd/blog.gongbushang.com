@@ -426,6 +426,7 @@ export function mapPage(entry: PageEntryInput): PageEntry {
 
 async function fetchAllCollection<K extends EmDashCollectionName>(
   collection: K,
+  status?: "published",
 ): Promise<ContentEntry<EmDashCollections[K]>[]> {
   const out: ContentEntry<EmDashCollections[K]>[] = [];
   let cursor: string | undefined;
@@ -435,6 +436,7 @@ async function fetchAllCollection<K extends EmDashCollectionName>(
       {
         limit: 100,
         cursor,
+        ...(status ? { status } : {}),
       },
     );
     if (error) throw error;
@@ -446,18 +448,23 @@ async function fetchAllCollection<K extends EmDashCollectionName>(
 
 /** All published, migrated posts (paginated fetch). */
 export async function getAllPosts(): Promise<BlogPost[]> {
-  const entries = await fetchAllCollection("posts");
+  // Explicit `status: "published"` (GON-269): never rely on the loader default, a draft with a published_at must not get a URL.
+  const entries = await fetchAllCollection("posts", "published");
   // `getEmDashCollection()` does not fold `_emdash_seo` in: one batched query for the SEO panel (GON-203).
   const seoById = await loadSeoByContentId("posts");
   const out: BlogPost[] = [];
   for (const e of entries) {
+    const status = (e.data as { status?: unknown }).status;
+    if (typeof status === "string" && status !== "published") continue;
     const p = mapPost(e);
     if (!p) continue;
     const seo = seoById.get(p.dbId);
     if (seo) p.seo = seo;
     out.push(p);
   }
-  assertUniquePostUrls(out.map((p) => ({ key: p.href, entry: p.entryId })));
+  // Keyed by id, not href: the post page looks its listing entry up by id and /api/cards and /api/relates are keyed by id alone,
+  // so two posts with the same id clash even in different categories.
+  assertUniquePostUrls(out.map((p) => ({ key: p.id, entry: p.entryId })), "id");
   return out;
 }
 

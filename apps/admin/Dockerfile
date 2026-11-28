@@ -29,6 +29,8 @@ COPY apps/web/src/lib/mdx-lite.ts ./apps/web/src/lib/mdx-lite.ts
 COPY apps/web/src/lib/cloudinary.ts ./apps/web/src/lib/cloudinary.ts
 COPY apps/web/src/lib/setup-gate.ts ./apps/web/src/lib/setup-gate.ts
 COPY apps/web/src/lib/site-live.ts ./apps/web/src/lib/site-live.ts
+# GON-269: the post-fields plugin shares the slug rule (pure module, no imports).
+COPY apps/web/src/lib/post-id.ts ./apps/web/src/lib/post-id.ts
 COPY apps/web/src/plugins/rebuild-on-publish ./apps/web/src/plugins/rebuild-on-publish
 
 RUN pnpm --filter admin build
