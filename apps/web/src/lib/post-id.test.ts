@@ -110,20 +110,20 @@ describe("duplicate URLs fail the build", () => {
     ).toThrow(/duplicate post URL: \/fe\/2026\/07\/15\/a\/ \(posts "one" and "two"\)/);
   });
 
-  it("getAllPosts rejects a new post that collides with an imported post's path", async () => {
+  it("getAllPosts rejects a new post that collides with an imported post's id, even in another category", async () => {
     vi.resetModules();
     vi.doMock("emdash", () => ({
       getEmDashCollection: async () => ({
         entries: [
           { id: "clash", data: { terms: cat, publishedAt: "2026-07-15T08:00:00Z" } },
-          { id: "other", data: { terms: cat, legacy_id: "2026/07/15/clash" } },
+          { id: "other", data: { terms: { category: [{ slug: "life", label: "life" }] }, legacy_id: "2026/07/15/clash" } },
         ],
       }),
       getEmDashEntry: async () => ({}),
     }));
     vi.doMock("./seo", () => ({ loadSeoByContentId: async () => new Map() }));
     const { getAllPosts } = await import("./content");
-    await expect(getAllPosts()).rejects.toThrow(/duplicate post URL: \/fe\/2026\/07\/15\/clash\//);
+    await expect(getAllPosts()).rejects.toThrow(/duplicate post id: 2026\/07\/15\/clash/);
     vi.doUnmock("emdash");
     vi.doUnmock("./seo");
   });

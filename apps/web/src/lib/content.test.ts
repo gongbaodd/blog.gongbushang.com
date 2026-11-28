@@ -541,11 +541,26 @@ describe("paginated EmDash collection fetchers", () => {
     expect(mockGetEmDashCollection).toHaveBeenNthCalledWith(1, "posts", {
       limit: 100,
       cursor: undefined,
+      status: "published",
     });
     expect(mockGetEmDashCollection).toHaveBeenNthCalledWith(2, "posts", {
       limit: 100,
       cursor: "cursor-2",
+      status: "published",
     });
+  });
+
+  it("drops a non-published entry even if the loader returns it (GON-269)", async () => {
+    mockSeoRows.mockResolvedValue([]);
+    mockGetEmDashCollection.mockResolvedValueOnce({
+      entries: [
+        makeFullPostEntry({ legacy_id: "2025/01/01/a" }, "a"),
+        makeFullPostEntry({ legacy_id: "2025/01/02/b", status: "draft" } as never, "b"),
+        makeFullPostEntry({ legacy_id: undefined, publishedAt: new Date("2026-07-14T10:00:00Z"), status: "draft" } as never, "new-draft"),
+      ],
+      nextCursor: undefined,
+    });
+    expect((await getAllPosts()).map((p) => p.id)).toEqual(["2025/01/01/a"]);
   });
 
   it("attaches SEO-panel rows (one batched query) keyed by the database ULID, not the slug (GON-203)", async () => {

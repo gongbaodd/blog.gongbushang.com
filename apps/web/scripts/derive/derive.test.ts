@@ -160,6 +160,10 @@ describe("post rows for posts created in the admin (GON-269)", () => {
 		expect(rows.map((r) => [r.id, r.legacy_id])).toEqual([["a", "2015/03/15/threejs"], ["b", "2026/07/15/fresh"]]);
 		expect(rows[1]).not.toHaveProperty("slug");
 	});
+	it("keeps legacy_id exactly as stored (no trim), so derive cache keys do not change", () => {
+		const rows = resolvePostRows([raw({ id: "a", legacy_id: " 2015/03/15/odd ", slug: "x", published_at: "2026-01-01T00:00:00Z" })]);
+		expect(rows[0]!.legacy_id).toBe(" 2015/03/15/odd ");
+	});
 	it("fails on a duplicate id", () => {
 		expect(() => resolvePostRows([raw({ id: "a", slug: "x", published_at: "2026-07-15T08:00:00Z" }), raw({ id: "b", slug: "x", published_at: "2026-07-15T09:00:00Z" })])).toThrow(/duplicate post id: 2026\/07\/15\/x/);
 	});
