@@ -2,6 +2,7 @@ import node from "@astrojs/node";
 import react from "@astrojs/react";
 import { defineConfig, sessionDrivers } from "astro/config";
 import emdash, { memoryCache } from "emdash/astro";
+import { google } from "emdash/auth/providers/google";
 import { postgres } from "emdash/db";
 import { localMedia } from "emdash/media";
 import { fileURLToPath } from "node:url";
@@ -49,6 +50,11 @@ export default defineConfig({
 			fonts: false,
 			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
 			middleware: { outer: "./src/outer.ts" },
+			// Passkeys stay. Google (GON-252) reads EMDASH_OAUTH_GOOGLE_CLIENT_ID/_SECRET from process.env at RUNTIME inside EmDash's
+			// routes, so nothing is baked. The provider is registered unconditionally: this config is serialized at image build time,
+			// when the runtime env does not exist. Without the env the button ends on a "provider not configured" login error.
+			// Who may sign in is decided by ADMIN_ALLOWED_EMAILS (src/outer.ts).
+			authProviders: [google()],
 			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync(), markdownEditor(), postFields(), buildInfo()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),

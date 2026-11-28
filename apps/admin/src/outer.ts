@@ -6,12 +6,20 @@
  * build output only: no content, no secrets).
  *
  * Order: `/healthz` (container healthcheck, no JWT, no DB) -> `/robots.txt` (disallow all, no JWT, no DB) -> Cloudflare
- * Access gate (see access.ts) -> next(). Every response that passes through here, EmDash's included, gets
+ * Access gate (see access.ts) -> next(). The Google callback additionally passes the ADMIN_ALLOWED_EMAILS check. Every response that passes through here, EmDash's included, gets
  * `X-Robots-Tag: noindex, nofollow` whatever SITE_ENV says (SEC-06: the admin is never indexable).
  */
 import { defineMiddleware } from "astro:middleware";
 import { evaluateStartup } from "../scripts/safety.mjs";
 import { ACCESS_HEADER, accessMode, verifyAccessJwt, type AccessEnv } from "./access.ts";
+import {
+	GOOGLE_CALLBACK_PATH,
+	deniedRedirect,
+	enforceGoogleAllowlist,
+	isSuccessfulCallback,
+	kyselyStore,
+	type GoogleSignInStore,
+} from "./google-allowlist.ts";
 import { buildHealthzResponse } from "./pages/healthz.ts";
 import { buildRobotsTxtResponse, withNoindex } from "./robots.ts";
 
@@ -21,11 +29,19 @@ export interface OuterOptions {
 	checkStartup?: boolean;
 	/** Test seam for the Cloudflare Access JWKS. */
 	verifyAccess?: typeof verifyAccessJwt;
+	/** Test seam: how to reach the users store after the EmDash callback ran (default: `locals.emdash.db`). */
+	getGoogleStore?: (locals: unknown) => GoogleSignInStore | undefined;
+}
+
+function defaultGoogleStore(locals: unknown): GoogleSignInStore | undefined {
+	const db = (locals as { emdash?: { db?: unknown } } | undefined)?.emdash?.db;
+	return db ? kyselyStore(db) : undefined;
 }
 
 export function createOuterMiddleware(options: OuterOptions = {}) {
 	const getEnv = options.getEnv ?? (() => process.env as AccessEnv);
 	const verifyAccess = options.verifyAccess ?? verifyAccessJwt;
+	const getGoogleStore = options.getGoogleStore ?? defaultGoogleStore;
 
 	return defineMiddleware(async (context, next) => {
 		// Exemption matches the RAW path only: no decoding, so `/%68ealthz` or `/healthz/x` never skip the gate.
@@ -48,6 +64,20 @@ export function createOuterMiddleware(options: OuterOptions = {}) {
 		if (mode === "enforce") {
 			const ok = await verifyAccess(context.request.headers.get(ACCESS_HEADER), env);
 			if (!ok) return withNoindex(new Response("Forbidden", { status: 403, headers: { "Cache-Control": "no-store" } }));
+		}
+		// Google sign-in (GON-252): EmDash's callback runs below us; afterwards only an allow-listed account may keep the session
+		// it started, and a refused request must not leave a new user behind (see google-allowlist.ts).
+		if (context.url.pathname === GOOGLE_CALLBACK_PATH && context.request.method === "GET") {
+			const startedAt = new Date().toISOString();
+			const res = await next();
+			if (!isSuccessfulCallback(res)) return withNoindex(res);
+			const verdict = await enforceGoogleAllowlist({
+				session: context.session as never,
+				store: getGoogleStore(context.locals),
+				allowlist: (env as Record<string, string | undefined>).ADMIN_ALLOWED_EMAILS,
+				startedAt,
+			});
+			return withNoindex(verdict.ok ? res : deniedRedirect());
 		}
 		return withNoindex(await next());
 	});
