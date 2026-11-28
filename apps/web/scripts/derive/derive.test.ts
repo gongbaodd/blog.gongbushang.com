@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fakeEmbedding } from "./embed.ts";
 import { assemble, type Extras } from "./outputs.ts";
-import { buildPosts, orderLike, type PostRow } from "./posts.ts";
+import { buildPosts, orderLike, resolvePostRows, type PostRow } from "./posts.ts";
 import { corpusHashes } from "./cache.ts";
 import { findNearest, type Candidate } from "./relates.ts";
 import { resolveUmap } from "./umap.ts";
@@ -146,5 +146,21 @@ describe("UMAP state", () => {
 	});
 	it("skips with fewer than two points", async () => {
 		expect((await resolveUmap(client(), [corpus[0]!])).status).toBe("skipped");
+	});
+});
+
+describe("post rows for posts created in the admin (GON-269)", () => {
+	const raw = (o: Record<string, unknown>) => ({ id: "ulid", legacy_id: null, slug: "s", published_at: null, body_md: "", featured_image: null, terms: [], ...o }) as Parameters<typeof resolvePostRows>[0][number];
+	it("keys imported posts by legacy_id and new ones by YYYY/MM/DD/<slug> (Tallinn date); skips unpublished", () => {
+		const rows = resolvePostRows([
+			raw({ id: "a", legacy_id: "2015/03/15/threejs", slug: "2015-03-15-threejs", published_at: "2026-11-27T10:00:00Z" }),
+			raw({ id: "b", slug: "fresh", published_at: "2026-07-14T21:30:00.000Z" }),
+			raw({ id: "c", slug: "never-published" }),
+		]);
+		expect(rows.map((r) => [r.id, r.legacy_id])).toEqual([["a", "2015/03/15/threejs"], ["b", "2026/07/15/fresh"]]);
+		expect(rows[1]).not.toHaveProperty("slug");
+	});
+	it("fails on a duplicate id", () => {
+		expect(() => resolvePostRows([raw({ id: "a", slug: "x", published_at: "2026-07-15T08:00:00Z" }), raw({ id: "b", slug: "x", published_at: "2026-07-15T09:00:00Z" })])).toThrow(/duplicate post id: 2026\/07\/15\/x/);
 	});
 });

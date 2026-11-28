@@ -41,8 +41,10 @@ const COLLECTIONS = [
     supports: ["drafts", "revisions", "preview", "search", "seo"],
     urlPattern: "/posts/{slug}",
     fields: [
-      str("legacy_id", "Legacy ID", { unique: true, indexed: true }), // YYYY/MM/DD/<glob slug>
-      str("legacy_date", "Legacy date (YYYY-MM-DD)", { indexed: true, validation: { pattern: "^\\d{4}-\\d{2}-\\d{2}$" } }),
+      // GON-269: hidden in the posts editor (kept for the 995 imports). `content`/`excerpt` come from seed/seed.json with the same widget;
+      // existing DBs: scripts/schema/set-hidden-widgets.mjs.
+      str("legacy_id", "Legacy ID", { unique: true, indexed: true, widget: "post-fields:hidden" }), // YYYY/MM/DD/<glob slug>
+      str("legacy_date", "Legacy date (YYYY-MM-DD)", { indexed: true, widget: "post-fields:hidden", validation: { pattern: "^\\d{4}-\\d{2}-\\d{2}$" } }),
       text("body_md", "Body (Markdown)", { options: { rows: 30 }, widget: "markdown-editor:markdownEditor" }), // GON-249; existing DBs: set-body-widget.mjs
       { slug: "adsense", label: "AdSense", type: "boolean" },
       { slug: "series_number", label: "Series number", type: "number" },

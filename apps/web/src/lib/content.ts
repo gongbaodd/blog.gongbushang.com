@@ -11,6 +11,7 @@ import { remark } from "remark";
 import strip from "strip-markdown";
 import { loadSeoByContentId, type ContentSeo } from "./seo";
 import { optimizeCloudinaryUrl, optimizeCoverUrl } from "./cloudinary";
+import { assertUniquePostUrls, newPostId } from "./post-id";
 import {
   categoryHref,
   cityHref,
@@ -307,10 +308,14 @@ function isoOrUndefined(v: Date | string | null | undefined): string | undefined
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-/** Map one EmDash `posts` entry; returns undefined for entries that are not migrated legacy posts. */
+/**
+ * Map one EmDash `posts` entry. An imported post (has `legacy_id`) keeps its id and URL. A post created in the admin gets the id
+ * `YYYY/MM/DD/<entry slug>` from its first publish date (post-id.ts, GON-269); undefined for an entry that was never published.
+ */
 export function mapPost(entry: PostEntryInput): BlogPost | undefined {
   const d = entry.data;
-  const legacyId = typeof d.legacy_id === "string" ? d.legacy_id.trim() : "";
+  const imported = typeof d.legacy_id === "string" ? d.legacy_id.trim() : "";
+  const legacyId = imported || newPostId(entry.id, d.publishedAt) || "";
   if (!legacyId) return undefined;
 
   const terms = d.terms ?? undefined;
@@ -337,7 +342,7 @@ export function mapPost(entry: PostEntryInput): BlogPost | undefined {
     updatedAt,
     ...(d.byline?.displayName ? { author: d.byline.displayName } : {}),
     href: postPath(legacyId, category),
-    date: parsePostDate(d.legacy_date, legacyId),
+    date: parsePostDate(imported ? d.legacy_date : undefined, legacyId),
     body: typeof d.body_md === "string" ? d.body_md : "",
     cmsTitle: typeof d.title === "string" ? d.title : "",
     params,
@@ -452,6 +457,7 @@ export async function getAllPosts(): Promise<BlogPost[]> {
     if (seo) p.seo = seo;
     out.push(p);
   }
+  assertUniquePostUrls(out.map((p) => ({ key: p.href, entry: p.entryId })));
   return out;
 }
 
