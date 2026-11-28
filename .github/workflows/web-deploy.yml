@@ -187,8 +187,8 @@ jobs:
           fi
           cd apps/web/dist/client
           pages=$(find . -name index.html | wc -l)
-          # Posts live at /<category>/YYYY/MM/DD/<slug>/ (find's -path `*` also matches `/`).
-          posts=$(find . -path './*/[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*' -name index.html -not -path './api/*' | wc -l)
+          # Posts live at /YYYY/MM/DD/<slug>/ (GON-270); old /<category>/... URLs are 301s.
+          posts=$(find . -path './[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]/*/index.html' | wc -l)
           echo "prerendered pages=$pages posts=$posts (min pages=$WEB_MIN_PAGES, min posts=$WEB_MIN_POSTS)"
           if [ "$pages" -lt "$WEB_MIN_PAGES" ]; then echo "::error::only $pages pages prerendered"; exit 1; fi
           if [ "$posts" -lt "$WEB_MIN_POSTS" ]; then echo "::error::only $posts posts prerendered, expected >= $WEB_MIN_POSTS"; exit 1; fi
