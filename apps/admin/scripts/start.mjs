@@ -9,7 +9,7 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { connectionConfig, evaluateStartup } from "./safety.mjs";
+import { connectionConfig, evaluateStartup, withDbRetry } from "./safety.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const entry = resolve(here, "../dist/server/entry.mjs");
@@ -28,21 +28,32 @@ if (!existsSync(entry)) die(`${entry} not found: run \`pnpm --filter admin build
 if (plan.requireAccess) process.env.ADMIN_REQUIRE_ACCESS = "1";
 
 const url = process.env.DATABASE_URL.trim();
+const safeMessage = (e) => String(e?.message ?? e).split(url)[0].slice(0, 200);
 // sslmode is stripped from the URL and our computed ssl object always applies (pg would otherwise let sslmode override it).
-const db = new pg.Client({ ...connectionConfig(process.env), connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
+// A pg.Client cannot reconnect, so every attempt gets a fresh one. Transient network errors (e.g. EAI_AGAIN while the
+// container's DNS comes up) are retried with backoff; permanent ones (auth, missing DB, TLS) exit at once (GON-274).
+const probe = async () => {
+	const db = new pg.Client({ ...connectionConfig(process.env), connectionTimeoutMillis: 15_000, statement_timeout: 15_000 });
+	try {
+		await db.connect();
+		const r = await db.query(
+			"select current_database() as db, current_user as usr, (select count(*)::int from information_schema.tables where table_name = '_emdash_404_log') as emdash",
+		);
+		return r.rows[0];
+	} finally {
+		await db.end().catch(() => {});
+	}
+};
 try {
-	await db.connect();
-	const r = await db.query(
-		"select current_database() as db, current_user as usr, (select count(*)::int from information_schema.tables where table_name = '_emdash_404_log') as emdash",
-	);
-	const row = r.rows[0];
+	const row = await withDbRetry(probe, {
+		onRetry: (e, attempt, delay) =>
+			console.warn(`[admin] DB check attempt ${attempt} failed (${e.code ?? "no code"}: ${safeMessage(e)}); retrying in ${delay / 1000}s`),
+	});
 	console.log(
 		`[admin] DB IDENTITY: SITE_ENV=${plan.siteEnv.toUpperCase()}${plan.effectiveProduction ? " (PRODUCTION TARGET)" : ""} -> ${plan.target} (database=${row.db}, role=${row.usr}, emdash schema ${row.emdash ? "present" : "absent: first request migrates"})`,
 	);
 } catch (e) {
-	die(`could not connect to ${plan.target}: ${String(e.message).split(url)[0].slice(0, 200)}`);
-} finally {
-	await db.end().catch(() => {});
+	die(`could not connect to ${plan.target}: ${safeMessage(e)}`);
 }
 if (plan.effectiveProduction) {
 	console.log(

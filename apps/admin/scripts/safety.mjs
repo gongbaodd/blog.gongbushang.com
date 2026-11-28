@@ -190,3 +190,49 @@ export function evaluateStartup(env) {
 	}
 	return result;
 }
+
+// GON-274: the startup DB probe retries network errors that usually clear on their own (a container whose DNS is not ready yet,
+// a pooler restarting). Anything else (bad password, missing database, TLS failure) is permanent and fails at once.
+// Node/libuv error codes, plus Postgres SQLSTATE 57P03 (cannot_connect_now) and 53300 (too_many_connections).
+export const TRANSIENT_DB_ERROR_CODES = new Set([
+	"EAI_AGAIN",
+	"ENOTFOUND",
+	"ETIMEDOUT",
+	"ECONNREFUSED",
+	"ECONNRESET",
+	"EHOSTUNREACH",
+	"ENETUNREACH",
+	"EPIPE",
+	"57P03",
+	"53300",
+]);
+// pg raises these without a code.
+const TRANSIENT_DB_MESSAGE_RE = /connection terminated (unexpectedly|due to connection timeout)|timeout expired/i;
+
+export function isTransientDbError(error) {
+	if (!error || typeof error !== "object") return false;
+	if (typeof error.code === "string" && TRANSIENT_DB_ERROR_CODES.has(error.code)) return true;
+	return TRANSIENT_DB_MESSAGE_RE.test(String(error.message ?? ""));
+}
+
+/** Delay before retry n (1-based): 1s, 2s, 4s, 8s, then capped at maxMs. */
+export function retryDelayMs(n, baseMs = 1_000, maxMs = 10_000) {
+	return Math.min(maxMs, baseMs * 2 ** (n - 1));
+}
+
+/**
+ * Run `fn` until it resolves, retrying only transient DB errors, at most `attempts` times in total. Rethrows the last error.
+ * `onRetry(error, attempt, delayMs)` is called before each wait; `sleep` is injectable for tests.
+ */
+export async function withDbRetry(fn, { attempts = 6, baseMs = 1_000, maxMs = 10_000, onRetry = () => {}, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+	for (let attempt = 1; ; attempt++) {
+		try {
+			return await fn(attempt);
+		} catch (error) {
+			if (attempt >= attempts || !isTransientDbError(error)) throw error;
+			const delay = retryDelayMs(attempt, baseMs, maxMs);
+			onRetry(error, attempt, delay);
+			await sleep(delay);
+		}
+	}
+}
