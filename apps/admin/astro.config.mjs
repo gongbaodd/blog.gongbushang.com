@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cloudinaryMedia } from "./src/cloudinary-media.ts";
 import { PLACEHOLDER_DATABASE_URL } from "./src/db-config.ts";
 import { serviceDashboards } from "./src/dashboards/plugin.ts";
+import { buildInfo } from "./src/build-info/plugin.ts";
 import { podcastSync } from "./src/podcast-sync/plugin.ts";
 import { markdownEditor } from "./src/markdown-editor/plugin.ts";
 import { postFields } from "./src/post-fields/plugin.ts";
@@ -48,7 +49,7 @@ export default defineConfig({
 			fonts: false,
 			// Runs before EmDash's own middleware: /healthz, then the Cloudflare Access gate.
 			middleware: { outer: "./src/outer.ts" },
-			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync(), markdownEditor(), postFields()],
+			plugins: [rebuildOnPublish(), serviceDashboards(), podcastSync(), markdownEditor(), postFields(), buildInfo()],
 			mediaProviders: [localMedia({ enabled: false }), cloudinaryMedia({ folder: "growgen" })],
 		}),
 	],

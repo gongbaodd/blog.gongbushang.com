@@ -49,7 +49,14 @@ WORKDIR /app
 
 COPY --from=cloudflared /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 
+# GON-273: which commit this image was built from, shown in the admin ("Admin build" dashboard widget). Declared late, in the runner
+# stage only, so changing it never invalidates the builder layers. Not secrets; not part of dist/.
+ARG BUILD_SHA=""
+ARG BUILD_TIME=""
+
 ENV NODE_ENV=production \
+    BUILD_SHA=${BUILD_SHA} \
+    BUILD_TIME=${BUILD_TIME} \
     HOST=0.0.0.0 \
     PORT=4322 \
     SESSION_DIR=/app/.astro/sessions
