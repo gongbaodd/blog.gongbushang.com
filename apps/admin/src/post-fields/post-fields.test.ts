@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { createPlugin, checkPostForPublish, checkPostSlugForPublish, HIDDEN_WIDGET_ID, postFields } from "./plugin.ts";
+import { createPlugin, checkPostSlugForPublish, HIDDEN_WIDGET_ID, postFields } from "./plugin.ts";
 import { fields, HiddenField } from "./admin.tsx";
 
 const publish = (slug: unknown, collection = "posts") => checkPostSlugForPublish({ collection, content: { slug } });
@@ -20,25 +20,15 @@ describe("post slug policy (content:beforePublish)", () => {
 		}
 	});
 
-	it("blocks a post with no category term, allows one with a category or an unknown one", () => {
-		const event = { collection: "posts", content: { slug: "ok-slug" } };
-		const r = checkPostForPublish(event, []);
-		expect(r && r.cancel).toBe(true);
-		expect(r && r.reason).toContain("no category");
-		expect(checkPostForPublish(event, [{ slug: "fe" }])).toBeUndefined();
-		expect(checkPostForPublish(event, undefined)).toBeUndefined();
-		expect(checkPostForPublish({ collection: "podcasts", content: {} }, [])).toBeUndefined();
-	});
-
-	it("the registered hook reads the entry's category terms", async () => {
+	it("does not require a category (GON-270): the URL has no category segment", async () => {
 		const plugin = createPlugin() as unknown as { hooks: Record<string, { handler?: Function } | Function>; capabilities: string[] };
-		expect(plugin.capabilities).toContain("taxonomies:read");
+		expect(plugin.capabilities).not.toContain("taxonomies:read");
 		const hook = plugin.hooks["content:beforePublish"];
-		const handler = (typeof hook === "function" ? hook : hook.handler) as (e: unknown, c: unknown) => Promise<{ cancel?: boolean } | void>;
-		const ctx = (terms: unknown[]) => ({ taxonomies: { getEntryTerms: async () => terms } });
+		const handler = (typeof hook === "function" ? hook : hook.handler) as (e: unknown, c: unknown) => Promise<{ cancel?: boolean } | void> | { cancel?: boolean } | void;
 		const ev = { collection: "posts", content: { id: "01ABC", slug: "ok" } };
-		expect((await handler(ev, ctx([])))?.cancel).toBe(true);
-		expect(await handler(ev, ctx([{ slug: "fe" }]))).toBeUndefined();
+		// The hook never looks up terms: a ctx without `taxonomies` must not matter.
+		expect(await handler(ev, {})).toBeUndefined();
+		expect(((await handler({ ...ev, content: { id: "01ABC", slug: "Bad/Slug" } }, {})) as { cancel?: boolean }).cancel).toBe(true);
 	});
 
 	it("ignores other collections", () => {
@@ -49,6 +39,24 @@ describe("post slug policy (content:beforePublish)", () => {
 		const plugin = createPlugin() as unknown as { capabilities: string[]; hooks: Record<string, unknown> };
 		expect(plugin.capabilities).toContain("hooks.content-policy:register");
 		expect(Object.keys(plugin.hooks)).toContain("content:beforePublish");
+	});
+});
+
+describe("draft preview path (GON-270)", () => {
+	// EmDash builds a preview URL from the collection urlPattern (/{year}/{month}/{day}/{slug}) without the publish date, so it
+	// would leave the tokens in the URL. EMDASH_PREVIEW_PATH_PATTERN (read by emdash's preview-url route, inlined at build time) wins
+	// over the pattern; getPreviewUrl substitutes {collection} and {id} only, never {slug}.
+	const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
+	it("astro.config.mjs defines the pattern for every build, with tokens getPreviewUrl can fill", () => {
+		const config = read("../../astro.config.mjs");
+		expect(config).toContain('"import.meta.env.EMDASH_PREVIEW_PATH_PATTERN": JSON.stringify(PREVIEW_PATH_PATTERN)');
+		const pattern = /const PREVIEW_PATH_PATTERN = "([^"]+)"/.exec(config)![1];
+		expect(pattern).toBe("/{collection}/{id}");
+		expect(pattern.replace(/\{(collection|id)\}/g, "")).not.toMatch(/[{}]/);
+	});
+	it("/posts/<id> and /podcasts/<id> are served by pages of this app", () => {
+		expect(read("../pages/posts/[slug].astro")).toContain('loadPreview("posts"');
+		expect(read("../pages/podcasts/[slug].astro")).toContain('loadPreview("podcasts"');
 	});
 });
 

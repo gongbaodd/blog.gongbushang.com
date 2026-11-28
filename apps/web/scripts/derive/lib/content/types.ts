@@ -26,7 +26,8 @@ export interface MetadataEntry {
   title: string;
   date: string;
   content: string;
-  category: Link;
+  /** Optional since GON-270 (the post URL has no category). */
+  category?: Link;
   tags: Link[];
   series?: Link;
   city?: string[];

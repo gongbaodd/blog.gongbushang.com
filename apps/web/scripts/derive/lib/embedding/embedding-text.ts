@@ -1,6 +1,6 @@
 export interface PostEmbeddingSource {
   title: string;
-  category: { label: string };
+  category?: { label: string };
   tags: { label: string }[];
   series?: { label: string };
   city?: string[];
@@ -8,7 +8,8 @@ export interface PostEmbeddingSource {
 }
 
 export function buildPostEmbeddingText(entry: PostEmbeddingSource): string {
-  const lines: string[] = [`title: ${entry.title}`, `category: ${entry.category.label}`];
+  const lines: string[] = [`title: ${entry.title}`];
+  if (entry.category) lines.push(`category: ${entry.category.label}`);
 
   if (entry.series) {
     lines.push(`series: ${entry.series.label}`);

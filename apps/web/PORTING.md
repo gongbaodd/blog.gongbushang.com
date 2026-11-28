@@ -34,7 +34,7 @@ Import style: `apps/web` maps `@/*` to the `apps/web` root (tsconfig `paths` + V
 
 | New (`apps/web/`) | Legacy original | Notes |
 |---|---|---|
-| `src/pages/[category]/[year]/[month]/[day]/[slug].astro` | `src/pages/[category]/[year]/[month]/[day]/[slug].astro` | `getStaticPaths` from EmDash (`legacy_id` + category term); body rendered with `src/lib/markdown.ts` |
+| `src/pages/[category]/[year]/[month]/[day]/[slug].astro` | `src/pages/[year]/[month]/[day]/[slug].astro` (GON-270: no category segment; old paths 301 in `public/_redirects`) | `getStaticPaths` from EmDash (`legacy_id` or `published_at`); body rendered with `src/lib/markdown.ts` |
 | `src/layouts/BlogPost.astro` | `packages/layouts/BlogPost.astro` | takes plain props (page does the data work); `post_read` script ported (PORT-7); related-posts island is TODO (PORT-6) |
 | `src/components/BlogContent.tsx` (+ `.module.css`) | `packages/content/BlogContent.tsx` | Tabler icons -> lucide; dayjs date -> `legacy_date` string; `BlogMenu` uses a simplified cover card (no `PostCard`, PORT-3) and adds series prev/next; `RelatePosts` not ported (PORT-6) |
 | `src/components/MantineMain.tsx`, `GridWithMenu.tsx` (+ css) | `packages/scaffold/*` | unchanged |

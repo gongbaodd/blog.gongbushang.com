@@ -232,12 +232,11 @@ describe("mapPost", () => {
     expect(post).toBeDefined();
     expect(post.id).toBe("2025/02/21/puzzle-game");
     expect(post.entryId).toBe("post-1");
-    expect(post.href).toBe("/fe/2025/02/21/puzzle-game/");
+    expect(post.href).toBe("/2025/02/21/puzzle-game/");
     expect(post.date).toBe("2025-02-21");
     expect(post.cmsTitle).toBe("Puzzle Game");
     expect(post.body).toBe("# Puzzle Game\n\nA **fun** game.");
     expect(post.params).toEqual({
-      category: "fe",
       year: "2025",
       month: "02",
       day: "21",
@@ -284,12 +283,14 @@ describe("mapPost", () => {
     });
   });
 
-  it("returns undefined for entries without legacy_id and throws on missing category or bad legacy_id", () => {
+  it("returns undefined for entries without legacy_id, accepts a missing category and throws on a bad legacy_id", () => {
     expect(mapPost({ id: "x", data: { title: "Starter" } })).toBeUndefined();
     expect(mapPost({ id: "x", data: { legacy_id: "   " } })).toBeUndefined();
-    expect(() => mapPost({ id: "x", data: { legacy_id: "2024/01/01/ok", terms: null } })).toThrow(
-      /no category term/,
-    );
+    const noCategory = mapPost({ id: "x", data: { legacy_id: "2024/01/01/ok", terms: null } })!;
+    expect(noCategory.href).toBe("/2024/01/01/ok/");
+    expect(noCategory.data.category).toBeUndefined();
+    expect(postCategory(noCategory)).toBeUndefined();
+    expect(postLinks(noCategory)).toEqual([]);
     expect(() =>
       mapPost({
         id: "x",
@@ -509,13 +510,13 @@ describe("title, excerpt, taxonomy links, and seriesNav", () => {
       href: "/series/s",
       number: 2,
       total: 3,
-      prev: { title: "2024/01/01/one", href: "/fe/2024/01/01/one/" },
-      next: { title: "2024/03/01/three", href: "/fe/2024/03/01/three/" },
+      prev: { title: "2024/01/01/one", href: "/2024/01/01/one/" },
+      next: { title: "2024/03/01/three", href: "/2024/03/01/three/" },
     });
 
     const nav1 = seriesNav(p1, [p1, p2], (p) => p.cmsTitle);
     expect(nav1?.prev).toBeUndefined();
-    expect(nav1?.next?.href).toBe("/fe/2024/02/01/two/");
+    expect(nav1?.next?.href).toBe("/2024/02/01/two/");
   });
 });
 

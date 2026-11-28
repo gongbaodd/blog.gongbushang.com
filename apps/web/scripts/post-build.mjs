@@ -78,7 +78,7 @@ if (live) {
 	const inSitemap = (p) => locs.has(p) || locs.has(p.replace(/\/$/, ""));
 	// Always: SEO-panel noindex posts and the utility pages.
 	const ids = readNoindexIds();
-	const always = [...locs].filter((l) => /^\/[^/]+\/\d{4}\/\d{2}\/\d{2}\/[^/]+\/?$/.test(l) && ids.has(l.replace(/^\/[^/]+\//, "").replace(/\/$/, "")));
+	const always = [...locs].filter((l) => /^\/\d{4}\/\d{2}\/\d{2}\/[^/]+\/?$/.test(l) && ids.has(l.replace(/^\//, "").replace(/\/$/, "")));
 	for (const u of ["/404/", "/cv/", "/gemini/", "/hero-gallery/", "/umap/"]) if (inSitemap(u)) always.push(u);
 	if (always.length) throw new Error(`[post-build] noindex page(s) listed in sitemap-0.xml:\n  ${always.slice(0, 20).join("\n  ")}`);
 	// Not under site-wide staging: any page whose own HTML says noindex.

@@ -2,9 +2,9 @@
 # (see legacy-route-groups.json). Every public page group must hydrate without React errors.
 /
 # post pages (markdown, code, math/mermaid, series, podcast-free)
-/fe/2025/09/08/mermaid/
-/fe/2025/09/09/tetris-ai/
-/book/2025/08/19/starving-the-elephants/
+/2025/09/08/mermaid/
+/2025/09/09/tetris-ai/
+/2025/08/19/starving-the-elephants/
 # listings
 /all/
 /fe/

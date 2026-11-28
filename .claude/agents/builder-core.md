@@ -15,6 +15,6 @@ Project conventions still apply inside `apps/web`; follow `AGENTS.md` and the sk
 - Use nanostores for cross-island state. Analytics events go through `track()` with events defined in `events.ts`.
 - When porting legacy code, **move** it (`git mv`) when nothing else in the legacy site uses it; otherwise copy it and note the duplicate in `apps/web/PORTING.md` so CUT-2 can delete the original.
 - Every public page sets `export const prerender = true` unless the story says otherwise.
-- Public URL paths must match `apps/web/tests/legacy-urls.txt` exactly.
+- Public URL paths must match `apps/web/tests/legacy-urls.txt`, or the old path must 301 to the new one (`apps/web/tests/legacy-redirects.txt`, `apps/web/public/_redirects`). Posts are `/<YYYY>/<MM>/<DD>/<slug>/` (GON-270).
 
 Before handing back, run `pnpm --filter web build`, run the relevant tests, and report the exact commands and results. If a check fails and you can't fix it, say so plainly.

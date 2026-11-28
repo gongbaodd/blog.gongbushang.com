@@ -53,6 +53,7 @@ async function toPostEntry(p: BlogPost): Promise<ListEntry> {
       p.cmsTitle || p.id.slice(p.id.lastIndexOf("/") + 1).replace(/-/g, " "),
     ),
     date: localMidnight(p.date),
+    viewPath: p.viewPath,
     // Key order = legacy collection schema order (type, category, adsense, tag, series, cover, city).
     data: {
       type: p.data.type,
@@ -140,7 +141,7 @@ type PageResult = { params: { filter: string }; props: { posts: ListEntry[] } };
 /** `/all/` + one entry per category (podcast included unless `withPodcast` is false). */
 export async function categoryPages(withPodcast = true): Promise<PageResult[]> {
   const all = await getAllEntries();
-  const map = createPostMap(all, (e) => [e.data.category]);
+  const map = createPostMap(all, (e) => (e.data.category ? [e.data.category] : []));
   const cats = Array.from(map, ([filter, set]) => ({
     params: { filter },
     props: { posts: sortByDate([...set]) },

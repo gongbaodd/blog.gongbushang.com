@@ -1,5 +1,5 @@
 ---
-// Post layout, ported from packages/layouts/BlogPost.astro. The page (src/pages/[category]/.../[slug].astro)
+// Post layout, ported from packages/layouts/BlogPost.astro. The page (src/pages/[year]/[month]/[day]/[slug].astro)
 // does the data work (EmDash entry -> markdown -> headings) and passes plain props here.
 // KaTeX styles are only needed on post pages (math rendering).
 import "katex/dist/katex.min.css";
@@ -29,7 +29,9 @@ interface Props {
 	articleMeta: { publishedTime?: string | null; modifiedTime?: string | null; author?: string | null };
 	/** `YYYY-MM-DD`. */
 	date: string;
-	category: string;
+	category?: string;
+	/** Page-view service key (ViewCount): the pre-GON-270 path for imported posts. */
+	viewPath: string;
 	tags: string[];
 	links: ILink[];
 	headings: IHeading[];
@@ -40,7 +42,7 @@ interface Props {
 	adsense: boolean;
 }
 
-const { id, entryId, dbId, title, seo, articleMeta, date, category, tags, links, headings, series, clientPost, readingMinutes, adsense } =
+const { id, entryId, dbId, title, seo, articleMeta, date, category, viewPath, tags, links, headings, series, clientPost, readingMinutes, adsense } =
 	Astro.props;
 
 const adsenseConsentReady = import.meta.env.PUBLIC_ADSENSE_CONSENT_READY === "true";
@@ -84,7 +86,7 @@ const adsenseSlotId =
 				<div
 					data-post-read
 					data-slug={id}
-					data-category={category}
+					data-category={category ?? ""}
 					data-year={id.split("/")[0]}
 					data-reading-time-min={readingMinutes}
 					data-tags={JSON.stringify(tags)}
@@ -99,7 +101,7 @@ const adsenseSlotId =
 				<RelatePosts id={id} client:idle />
 			</aside>
 		</GridWithMenu>
-		<Footer slug={id} />
+		<Footer slug={id} viewPath={viewPath} />
 	</MantineMain>
 </Global>
 
@@ -121,7 +123,7 @@ const adsenseSlotId =
     el.dataset.readInit = "1";
 
     const { slug, category, year, readingTimeMin, tags } = el.dataset;
-    if (!slug || !category) return;
+    if (!slug) return;
     let tagList: string[] = [];
     try {
       tagList = JSON.parse(tags ?? "[]");
@@ -155,7 +157,7 @@ const adsenseSlotId =
         fired.add(depth);
         track("post_read", {
           slug,
-          category,
+          ...(category ? { category } : {}),
           year: year ?? "",
           depth,
           ...(Number.isFinite(minutes) ? { reading_time_min: minutes } : {}),

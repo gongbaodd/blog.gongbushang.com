@@ -12,7 +12,8 @@ import { getPostEntries, yearOf } from "../lib/listing";
 export const prerender = true;
 
 const posts = await getPostEntries();
-const tree = buildSitemapTree(posts.map((post) => ({ category: post.data.category, year: yearOf(post) })));
+// A post without a category (optional since GON-270) is grouped under /all/, the one listing page that holds it.
+const tree = buildSitemapTree(posts.map((post) => ({ category: post.data.category ?? "all", year: yearOf(post) })));
 
 if (tree.value !== posts.length) {
 	throw new Error(`Sitemap tree counts ${tree.value} posts but the collection has ${posts.length}.`);

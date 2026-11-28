@@ -17,6 +17,7 @@ import {
   cityHref,
   postParams,
   postPath,
+  viewCountPath,
   seriesHref,
   tagHref,
   type PostParams,
@@ -83,7 +84,8 @@ export interface PostCity {
 /** Mirrors the legacy collection entry `data` (the removed legacy content config) where practical. */
 export interface BlogPostData {
   type: "post" | "draft";
-  category: string;
+  /** Optional since GON-270: the URL no longer needs it. A post without one is only missing from category listings. */
+  category?: string;
   adsense: boolean;
   tag?: string[];
   series?: PostSeries;
@@ -110,6 +112,8 @@ export interface BlogPost {
   /** Editor SEO-panel overrides (`_emdash_seo`), attached by `getAllPosts()`. */
   seo?: ContentSeo;
   href: string;
+  /** Key in the page-view service (ViewCount): the pre-GON-270 path for an imported post, else `href` without the slash. */
+  viewPath: string;
   /** `YYYY-MM-DD`, timezone-free (`legacy_date`, falling back to the id). */
   date: string;
   /** Raw markdown (legacy: `post.body`). */
@@ -319,10 +323,9 @@ export function mapPost(entry: PostEntryInput): BlogPost | undefined {
   if (!legacyId) return undefined;
 
   const terms = d.terms ?? undefined;
-  const category = terms?.category?.[0]?.slug;
-  if (!category) throw new Error(`post ${legacyId} has no category term`);
+  const category = terms?.category?.[0]?.slug || undefined;
 
-  const params = postParams(legacyId, category);
+  const params = postParams(legacyId);
   if (!params) throw new Error(`post ${legacyId} has a malformed legacy_id`);
 
   const extra = parseFrontmatterExtra(d.legacy_frontmatter_extra);
@@ -341,14 +344,16 @@ export function mapPost(entry: PostEntryInput): BlogPost | undefined {
     publishedAt,
     updatedAt,
     ...(d.byline?.displayName ? { author: d.byline.displayName } : {}),
-    href: postPath(legacyId, category),
+    href: postPath(legacyId),
+    // Only an imported post has counts under its old /<category>/... path (see viewCountPath).
+    viewPath: viewCountPath(legacyId, imported ? category : undefined),
     date: parsePostDate(imported ? d.legacy_date : undefined, legacyId),
     body: typeof d.body_md === "string" ? d.body_md : "",
     cmsTitle: typeof d.title === "string" ? d.title : "",
     params,
     data: {
       type: extra.type === "draft" ? "draft" : "post",
-      category,
+      ...(category ? { category } : {}),
       adsense: Boolean(d.adsense),
       ...(tag.length ? { tag } : {}),
       ...(series ? { series } : {}),
@@ -542,9 +547,9 @@ export async function postExcerpt(body: string, words = 120): Promise<string> {
 }
 
 /** Legacy `category(post)` link helper (`packages/utils/extract.ts`). */
-export function postCategory(post: Pick<BlogPost, "data">): TLink {
+export function postCategory(post: Pick<BlogPost, "data">): TLink | undefined {
   const { category } = post.data;
-  return { label: category, href: categoryHref(category) };
+  return category ? { label: category, href: categoryHref(category) } : undefined;
 }
 
 /** Legacy `tags(post)` link helper (`packages/utils/extract.ts`), preserving display label casing. */
@@ -569,7 +574,8 @@ export function postCities(post: Pick<BlogPost, "data">): TLink[] {
 /** Badge links in legacy order: category, tags, series (+ cities, new in EmDash). */
 export function postLinks(post: BlogPost): TLink[] {
   const series = postSeries(post);
-  return [postCategory(post), ...postTags(post), ...(series ? [series] : []), ...postCities(post)];
+  const category = postCategory(post);
+  return [...(category ? [category] : []), ...postTags(post), ...(series ? [series] : []), ...postCities(post)];
 }
 
 export interface SeriesNav {

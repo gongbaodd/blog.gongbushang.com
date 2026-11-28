@@ -116,7 +116,7 @@ export interface ResolveSeoInput {
   seo?: ContentSeo;
   /** Absolute site origin, used for relative `canonical`/`image` panel values. */
   siteUrl?: string;
-  /** Public path of the page, e.g. `/fe/2025/02/21/slug/` (canonical fallback). */
+  /** Public path of the page, e.g. `/2025/02/21/slug/` (canonical fallback). */
   path: string;
 }
 

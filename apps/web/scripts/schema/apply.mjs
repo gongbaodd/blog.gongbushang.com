@@ -39,7 +39,10 @@ const COLLECTIONS = [
     label: "Posts",
     labelSingular: "Post",
     supports: ["drafts", "revisions", "preview", "search", "seo"],
-    urlPattern: "/posts/{slug}",
+    // GON-270: posts live at /<YYYY>/<MM>/<DD>/<slug>/ (no category). EmDash fills the date tokens from published_at (UTC) for the admin
+    // "View" link; the site itself builds the URL from legacy_id / published_at (src/lib/post-id.ts). Existing DBs: this script (PUT
+    // below) and scripts/schema/apply-post-urls.mjs (also backfills published_at of the imported posts).
+    urlPattern: "/{year}/{month}/{day}/{slug}",
     fields: [
       // GON-269: hidden in the posts editor (kept for the 995 imports). `content`/`excerpt` come from seed/seed.json with the same widget;
       // existing DBs: scripts/schema/set-hidden-widgets.mjs.
@@ -154,7 +157,15 @@ async function ensureCollection(def) {
     const { fields, ...rest } = def;
     await api("POST", "/schema/collections", rest);
   } else {
-    log("ok", `collection ${def.slug}`);
+    const have_ = existing.item?.urlPattern ?? existing.urlPattern ?? null;
+    if (def.urlPattern && have_ !== def.urlPattern) {
+      // The pattern is the one collection property this script keeps in step (GON-270); fields are never altered.
+      changes++;
+      log(CHECK ? "WOULD" : "UPDATE", `collection ${def.slug} urlPattern ${have_ ?? "(none)"} -> ${def.urlPattern}`);
+      if (!CHECK) await api("PUT", `/schema/collections/${def.slug}`, { urlPattern: def.urlPattern });
+    } else {
+      log("ok", `collection ${def.slug}`);
+    }
   }
   for (const f of def.fields) {
     if (have.has(f.slug)) {

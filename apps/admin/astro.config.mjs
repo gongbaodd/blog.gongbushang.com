@@ -24,6 +24,8 @@ const sessionDriver =
 		? sessionDrivers.memory()
 		: sessionDrivers.fsLite({ base: process.env.SESSION_DIR || ".astro/sessions" });
 
+const PREVIEW_PATH_PATTERN = "/{collection}/{id}";
+
 const adminPackageJson = fileURLToPath(new URL("./package.json", import.meta.url));
 const sharedWebSource = fileURLToPath(new URL("../web/src/", import.meta.url));
 
@@ -60,6 +62,14 @@ export default defineConfig({
 		}),
 	],
 	vite: {
+		// GON-270: the posts urlPattern is /{year}/{month}/{day}/{slug}, and EmDash does not pass the publish date when it builds a
+		// preview URL (preview-url.ts calls interpolateUrlPattern without `date`), so a draft preview would keep the literal tokens.
+		// That route reads `import.meta.env.EMDASH_PREVIEW_PATH_PATTERN` first, and Vite inlines it at BUILD time (the canary build of
+		// `check:secrets` proved a runtime variable in compose or Altare is ignored), so the value is defined here for every build.
+		// The explicit-pattern path (getPreviewUrl) substitutes only {collection}, {id} and {locale} (no {slug}), and the override is
+		// project-wide, so it serves podcasts too: /posts/<id> (src/pages/posts/[slug].astro) and /podcasts/<id>
+		// (src/pages/podcasts/[slug].astro). Both pages resolve the entry by slug or id (loadPreview).
+		define: { "import.meta.env.EMDASH_PREVIEW_PATH_PATTERN": JSON.stringify(PREVIEW_PATH_PATTERN) },
 		plugins: [
 			{
 				// Modules shared from apps/web/src (markdown-shared.ts, mdx-lite.ts, cloudinary.ts) import packages by bare name. In the

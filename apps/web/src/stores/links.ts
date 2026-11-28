@@ -8,12 +8,10 @@ export const $series = atom<TLink[]>([]);
 
 export const $clientCategory = computed([$posts, $category, $key], (posts, category, key) => {
   const postList = posts[key] ?? [];
-  const postCategories = postList.map((post) => {
-    const categoryPath = post.href.split("/")[1]; // Get the category part
-    return {
-      label: categoryPath,
-      href: `/${categoryPath}`,
-    };
+  // GON-270: the post href no longer carries the category; read it from the post data.
+  const postCategories = postList.flatMap((post) => {
+    const label = post.data?.category;
+    return label ? [{ label, href: `/${label}` }] : [];
   });
 
   const allCategories = [...postCategories, ...category];

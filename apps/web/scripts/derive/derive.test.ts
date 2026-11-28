@@ -25,6 +25,11 @@ describe("relates (legacy nearest.ts)", () => {
 		const all = [mk("a", [1, 0], "tech", { isShort: true }), mk("b", [1, 0], "tech", { isShort: false }), mk("c", [0, 1], "tech", { isShort: true })];
 		expect(findNearest(all[0]!, all, 8).map((x) => x.id)).toEqual(["c"]);
 	});
+	it("a post without a category relates to posts in any category", () => {
+		const all = [{ id: "a", embeddings: [1, 0] } as Candidate, mk("b", [0.9, 0.1]), mk("c", [0, 1], "life"), { id: "d", embeddings: [1, 0] } as Candidate];
+		expect(findNearest(all[0]!, all, 8).map((x) => x.id)).toEqual(["d", "b", "c"]);
+		expect(findNearest(all[1]!, all, 8).map((x) => x.id)).toEqual([]);
+	});
 });
 
 describe("posts -> legacy metadata entries", () => {
@@ -36,7 +41,7 @@ describe("posts -> legacy metadata entries", () => {
 		const [a, b] = await buildPosts(rows, new Map());
 		expect(a!.entry).toMatchObject({
 			id: "2020/01/02/a-post",
-			href: "/tech/2020/01/02/a-post",
+			href: "/2020/01/02/a-post",
 			title: "Hello World",
 			category: { label: "tech", href: "/tech" },
 			series: { label: "S One", href: "/series/s1" },
@@ -97,7 +102,7 @@ describe("assemble (legacy-data.json, search index, rss, umap)", () => {
 			relates: ["2020/01/03/two"],
 		});
 		expect(r.search.map((p) => p.id)).toEqual(["2020/01/03/two", "2020/01/02/one"]); // newest first
-		expect(r.rssItems[0]).toMatchObject({ title: "Two", href: "/tech/2020/01/03/two", description: "Two\n\nbeta..." });
+		expect(r.rssItems[0]).toMatchObject({ title: "Two", href: "/2020/01/03/two", description: "Two\n\nbeta..." });
 		expect(r.umap.posts.map((p: any) => p.id)).toEqual(["ep1", "2020/01/03/two", "2020/01/02/one"]); // newest first, podcast included
 		expect(r.out.podcast[0].umap2D).toEqual([5, 6]);
 		expect(r.out.umapPosts).toBe(2);

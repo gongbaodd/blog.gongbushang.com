@@ -78,7 +78,7 @@ export interface ListEntry {
   date: Date;
   /** Legacy frontmatter-shaped data, keys in legacy schema order. */
   data: {
-    category: string;
+    category?: string;
     tag?: string[];
     series?: { slug: string; name?: string; number?: number };
     cover?: { url: string; alt?: string };
@@ -87,10 +87,12 @@ export interface ListEntry {
   };
   /** Color set read from legacy metadata; only applied to entries with a cover. */
   colorSet?: ColorSet;
+  /** Page-view service key (see BlogPost.viewPath); undefined for podcast entries. */
+  viewPath?: string;
 }
 
 export interface ClientPostData {
-  category: string;
+  category?: string;
   tag?: string[];
   series?: { slug: string; name?: string; number?: number };
   cover?: { url: string | { src: string }; alt?: string };
@@ -105,6 +107,8 @@ export interface ClientPostData {
 export interface TClientPost {
   id: string;
   href: string;
+  /** Page-view service key for the card's ViewCount (pre-GON-270 path of an imported post); `href` when absent. */
+  viewPath?: string;
   title: string;
   date: Date | string;
   dateText: string;
@@ -154,7 +158,9 @@ export function toClientPost(entry: ListEntry, excerpt: string): TClientPost {
 
   return {
     id: entry.id,
-    href: `/${entry.data.category}/${entry.id}`,
+    // GON-270: /<YYYY>/<MM>/<DD>/<slug> (no category); podcast episodes stay under /podcast/.
+    href: entry.data.category === "podcast" ? `/podcast/${entry.id}` : `/${entry.id}`,
+    ...(entry.viewPath ? { viewPath: entry.viewPath } : {}),
     title: entry.title,
     date: entry.date,
     dateText: dateText(entry.date),
@@ -215,7 +221,7 @@ export function reorderLike(
 // ---- badges (legacy packages/utils/badges.ts) ----
 
 export function categoryLinks(entries: ListEntry[]): TCountLink[] {
-  const map = createPostMap(entries, (e) => [e.data.category]);
+  const map = createPostMap(entries, (e) => (e.data.category ? [e.data.category] : []));
   return Array.from(map, ([label, set]) => ({
     label,
     href: `/${label}`,

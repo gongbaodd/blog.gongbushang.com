@@ -102,7 +102,7 @@ describe("extractDataFields", () => {
     );
 
     expect(result.id).toBe("2026/02/25/ai-agents");
-    expect(result.href).toBe("/tech/2026/02/25/ai-agents");
+    expect(result.href).toBe("/2026/02/25/ai-agents");
     expect(result.title).toBe("AI Agents");
     expect(new Date(result.date).getFullYear()).toBe(2026);
     expect(result.content).toContain("Local LLM notes");

@@ -79,7 +79,7 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
         </Group>
       </Badge>
       <Avatar color="gray" variant="default" size="sm" className={classes.category} p={0}>
-        <ViewCount path={post.href} />
+        <ViewCount path={post.viewPath ?? post.href} />
       </Avatar>
     </Flex>
   );
@@ -87,9 +87,11 @@ export function PostCard({ post, hideExcerpt, fill }: ICardProp) {
   const metaRow = (
     <Flex gap="xs" justify={"space-between"} align={"end"}>
       <Group flex={1}>
-        <Badge color="gray" variant="default" size="sm" className={classes.category}>
-          {post.data.category}
-        </Badge>
+        {post.data.category && (
+          <Badge color="gray" variant="default" size="sm" className={classes.category}>
+            {post.data.category}
+          </Badge>
+        )}
       </Group>
 
       <Group gap="xs" flex={0} miw="5em">

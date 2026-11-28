@@ -7,7 +7,8 @@ export interface IUmapPost {
   href: string;
   title: string;
   date: string;
-  category: TLink;
+  /** Missing for a post without a category (GON-270); the chart groups those under "uncategorized". */
+  category?: TLink;
   umap2D: [number, number];
 }
 
@@ -26,6 +27,8 @@ export interface IUmapChartSeries {
   color: string;
   data: IUmapChartPoint[];
 }
+
+const UNCATEGORIZED: TLink = { label: "uncategorized", href: "/all" };
 
 export const $umapPosts = atom<IUmapPost[]>([]);
 export const $umapLoading = atom(false);
@@ -46,14 +49,15 @@ export function buildUmapChartData(posts: IUmapPost[]): IUmapChartSeries[] {
 
   const categoriesByHref = new Map<string, TLink>();
   for (const post of posts) {
-    categoriesByHref.set(post.category.href, post.category);
+    const category = post.category ?? UNCATEGORIZED;
+    categoriesByHref.set(category.href, category);
   }
 
   const sortedCategoryHrefs = [...categoriesByHref.keys()].sort();
   const postsByCategory = new Map<string, IUmapPost[]>();
 
   for (const post of posts) {
-    const href = post.category.href;
+    const href = (post.category ?? UNCATEGORIZED).href;
     const group = postsByCategory.get(href);
     if (group) {
       group.push(post);

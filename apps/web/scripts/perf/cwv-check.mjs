@@ -24,7 +24,7 @@ const execFileAsync = promisify(execFile);
 /** Representative route set covering all primary page archetypes on growgen.xyz. */
 export const DEFAULT_ROUTES = [
 	"/", // home
-	"/fe/2025/09/08/mermaid/", // blog post (code blocks + diagrams)
+	"/2025/09/08/mermaid/", // blog post (code blocks + diagrams)
 	"/fe/", // category listing
 	"/tags/", // tag directory
 	"/podcast/", // podcast index

@@ -10,7 +10,7 @@ Both apps are Astro sites: `apps/web` (public, `@astrojs/cloudflare`) and `apps/
 ## This repo's rules (apps/web)
 
 - **`output: "server"`, but almost everything is prerendered.** Static assets are served without the Worker, and `scripts/check-static-routes.mjs` (part of `build`) fails on a public route that is not prerendered. A new page or endpoint needs `export const prerender = true` unless the emdash skill says otherwise.
-- **URLs never change.** After a route change run `pnpm --filter web parity` (oracle: `apps/web/tests/legacy-urls.txt`).
+- **URLs never change, or they 301.** After a route change run `pnpm --filter web parity` (oracle: `apps/web/tests/legacy-urls.txt`; moved URLs are listed in `apps/web/tests/legacy-redirects.txt` and `apps/web/public/_redirects`). Posts live at `/<YYYY>/<MM>/<DD>/<slug>/` (GON-270).
 - **No content collections.** Content comes from EmDash (`src/live.config.ts` registers the loader; queries live in `src/lib/content.ts` and `src/lib/listing.ts`). Data EmDash doesn't store comes from derive output via `src/lib/legacy-data.ts`.
 - **Prerender runs in workerd.** It cannot read the disk, and `process.env` is empty there; use `import.meta.env.PUBLIC_*` defined in `astro.config.mjs`.
 - Path alias `@/*` = `apps/web/*`, so imports look like `@/src/lib/seo`.

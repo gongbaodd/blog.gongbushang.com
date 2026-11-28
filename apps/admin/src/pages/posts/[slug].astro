@@ -1,5 +1,5 @@
 ---
-// Draft preview target of the collection urlPattern `/posts/{slug}` (GON-250). 403 unless a valid `_preview` token grants this entry.
+// Draft preview target (GON-250). EMDASH_PREVIEW_PATH_PATTERN is `/{collection}/{id}` (astro.config.mjs, GON-270), so the param is the entry id or slug. 403 unless a valid `_preview` token grants this entry.
 import PreviewPage from "../../components/PreviewPage.astro";
 import { loadPreview } from "../../preview.ts";
 

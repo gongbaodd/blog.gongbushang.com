@@ -22,7 +22,7 @@ export function readNoindexIds(file = NOINDEX_FILE) {
 	}
 }
 
-/** True when `page` (absolute sitemap URL) is `/<category>/<legacyId>/` of a noindex post. */
+/** True when `page` (absolute sitemap URL) is `/<legacyId>/` of a noindex post (GON-270; the old `/<category>/<legacyId>/` form is a 301). */
 export function isNoindexedPage(page, legacyIds) {
 	let path;
 	try {
@@ -30,7 +30,7 @@ export function isNoindexedPage(page, legacyIds) {
 	} catch {
 		path = page;
 	}
-	const m = /^\/[^/]+\/(\d{4}\/\d{2}\/\d{2}\/[^/]+)\/?$/.exec(path);
+	const m = /^\/(\d{4}\/\d{2}\/\d{2}\/[^/]+)\/?$/.exec(path);
 	if (!m) return false;
 	let id = m[1];
 	try {

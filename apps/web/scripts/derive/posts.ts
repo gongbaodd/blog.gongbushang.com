@@ -87,8 +87,7 @@ export async function buildPosts(rows: PostRow[], hints: Map<string, Hint>): Pro
 	// Series display name rule (legacy buildSeriesNameMap): only a label that differs from the slug counts as a name.
 	const parsed = rows.map((row) => {
 		const terms = (name: string) => row.terms.filter((t) => t.name === name);
-		const category = terms("category")[0]?.slug;
-		if (!category) throw new Error(`post ${row.legacy_id} has no category term`);
+		const category = terms("category")[0]?.slug || undefined; // optional since GON-270
 		const s = terms("series")[0];
 		const hint = hints.get(row.legacy_id);
 		const tagLabels = orderLike(terms("tag").map((t) => t.label || t.slug), hint?.tag_order);

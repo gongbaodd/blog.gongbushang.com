@@ -3,7 +3,7 @@ import { md2txt } from "./md2txt.ts";
 import type { Link, MetadataEntry } from "./types.ts";
 
 export interface FrontmatterData {
-  category: string;
+  category?: string;
   tag?: string[];
   series?: { slug: string; name?: string };
   city?: string | string[];
@@ -108,11 +108,12 @@ export async function extractDataFields(
 
   return {
     id: slug,
-    href: `/${frontmatter.category}/${slug}`,
+    // GON-270: /<YYYY>/<MM>/<DD>/<slug> (no trailing slash, as the legacy search index had it).
+    href: `/${slug}`,
     title: titleFromBody(body, slug),
     date: dateFromSlug(slug).toISOString(),
     content: await md2txt(body),
-    category: categoryFromFrontmatter(frontmatter.category),
+    category: frontmatter.category ? categoryFromFrontmatter(frontmatter.category) : undefined,
     tags: tagsFromFrontmatter(frontmatter.tag),
     series: seriesFromFrontmatter(frontmatter.series, seriesNameMap),
     city,

@@ -3,7 +3,14 @@
 //
 // An imported post keeps its `legacy_id` (`YYYY/MM/DD/<slug>`). A post without one gets the synthetic id
 // `YYYY/MM/DD/<entry slug>`, where the date is the calendar date of `published_at` in POST_URL_TZ, so everything keyed on the id
-// (legacy-url.ts, routes, derive caches, listings, /api) works unchanged.
+// (legacy-url.ts, routes, derive caches, listings, /api) works unchanged. Since GON-270 the public URL is exactly `/<id>/`.
+//
+// Timezone caveat (GON-270): EmDash builds its own admin "View" link from the collection urlPattern `/{year}/{month}/{day}/{slug}`
+// with the UTC date of `published_at` (interpolateUrlPattern, i18n/resolve.ts) and the entry slug. This module dates a new post in
+// Europe/Tallinn (UTC+2/+3), so a post published between 22:00 (21:00 in summer) UTC and midnight UTC has a site URL one day ahead
+// of the View link. The site URL is the one that counts (legacy URLs must not change), so it keeps the Tallinn rule. Imported posts
+// are unaffected: their id is `legacy_id`, and apps/web/scripts/schema/apply-post-urls.mjs backfills their `published_at` to noon
+// UTC of the legacy day, where both zones agree.
 
 /** The legacy site was built in Estonia; the same zone dates imported posts (listing-core re-exports it). */
 export const LEGACY_TZ = "Europe/Tallinn";

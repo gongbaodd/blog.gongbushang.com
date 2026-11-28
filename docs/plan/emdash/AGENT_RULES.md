@@ -5,7 +5,7 @@ Every agent on the migration reads this file first. The plan and story backlog l
 ## Hard rules
 1. **Wheel first.** Before writing code for a story, read the Scout note `docs/plan/emdash/scout/<story-id>.md`. If it says an existing package, CLI command or plugin covers the need, use it. Custom code is glue only.
 2. **Free plans only.** R2 and Cloudflare Images are not used. Supabase is reached from outside Cloudflare only through the IPv4 session pooler. Nothing may require a paid tier of Cloudflare, Supabase, Cloudinary or GitHub. Watch the **10 ms CPU per Worker invocation** (the main risk), the 64 MiB uncompressed script size, 20,000 static-asset files, the 100k Worker requests/day, Supabase's 500 MB DB and 7-day pause, and Cloudinary's 25 credits.
-3. **URLs never change.** Public paths must match `apps/web/tests/legacy-urls.txt` once MIG-0 creates it.
+3. **URLs never change, or they redirect.** Every legacy URL in `apps/web/tests/legacy-urls.txt` must still answer: as the same path, or as a 301 listed in `apps/web/tests/legacy-redirects.txt` and `apps/web/public/_redirects`. Post URLs are `/<YYYY>/<MM>/<DD>/<slug>/` (GON-270); the old `/<category>/<YYYY>/<MM>/<DD>/<slug>/` paths redirect with 301. Check with `pnpm --filter web parity`.
 4. **Secrets.** Never print, commit or paste secrets. Read them from the repo-root `.env`, `apps/web/.dev.vars`, wrangler secrets or GitHub environment secrets, and refer to them only by variable name.
 5. **No outward-facing actions without Lead.** Creating cloud projects, DNS, custom domains, production deploys and deleting remote resources all go through Lead, who asks the owner.
 6. **Stay in your lane.** Edit only the paths your agent definition owns. Hand anything else to Lead.
