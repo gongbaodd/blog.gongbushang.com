@@ -34,6 +34,10 @@ services:
       EMDASH_ENCRYPTION_KEY: "${EMDASH_ENCRYPTION_KEY:-}"
       EMDASH_SITE_URL: "${EMDASH_SITE_URL:-http://localhost:4322}"
       EMDASH_ALLOWED_ORIGINS: "${EMDASH_ALLOWED_ORIGINS:-}"
+      # Sign in with Google (GON-252): runtime only, never build args. ADMIN_ALLOWED_EMAILS is comma-separated; empty denies all.
+      EMDASH_OAUTH_GOOGLE_CLIENT_ID: "${EMDASH_OAUTH_GOOGLE_CLIENT_ID:-}"
+      EMDASH_OAUTH_GOOGLE_CLIENT_SECRET: "${EMDASH_OAUTH_GOOGLE_CLIENT_SECRET:-}"
+      ADMIN_ALLOWED_EMAILS: "${ADMIN_ALLOWED_EMAILS:-}"
       SETUP_TOKEN: "${SETUP_TOKEN:-}"
       SESSION_DRIVER: "${SESSION_DRIVER:-fs-lite}"
       SESSION_DIR: "/app/.astro/sessions"

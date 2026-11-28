@@ -131,6 +131,31 @@ WebAuthn passkeys are cryptographically bound to the **Relying Party ID (RP ID)*
 
 ---
 
+## 4a. Sign in with Google (GON-252)
+
+Google sign-in sits next to passkeys. It uses EmDash 1.6.0's built-in Google provider (`emdash/auth/providers/google`), not custom OAuth and not Cloudflare Access as identity provider. Cloudflare Access stays in front of the admin, and Google sign-in still needs the Access JWT on the callback request (the browser sends `CF_Authorization` on the redirect from Google).
+
+**Owner steps (GON-253)**
+
+1. Google Cloud Console, project of your choice: APIs & Services, OAuth consent screen. User type External, publish the app to **Production** (Testing caps users and token lifetime). Scopes `openid`, `email`, `profile` only (non-sensitive, no verification review). Skip the logo.
+2. Credentials, Create OAuth client ID, type Web application. Authorized redirect URIs (exact origin of `EMDASH_SITE_URL`):
+   - local: `http://localhost:4322/_emdash/api/auth/oauth/google/callback`
+   - production: `https://admin.growgen.xyz/_emdash/api/auth/oauth/google/callback`
+3. Set these as runtime env (local `apps/admin/.env`, production the Altare console), never in the image or the repo:
+   - `EMDASH_OAUTH_GOOGLE_CLIENT_ID`, `EMDASH_OAUTH_GOOGLE_CLIENT_SECRET` (EmDash's own names; the ticket's `GOOGLE_OAUTH_*` are not read)
+   - `ADMIN_ALLOWED_EMAILS`: comma-separated Google emails, case-insensitive. Empty or unset refuses every Google sign-in.
+4. Restart the container. The login page shows "Sign in with Google" (the button is always registered; without the env it ends on a "provider not configured" error).
+
+**How it is enforced** (`src/outer.ts`, `src/google-allowlist.ts`): EmDash's callback runs first, because the email is only known after the token exchange. Afterwards, an account not in `ADMIN_ALLOWED_EMAILS` gets its session destroyed and a redirect to `/_emdash/admin/login?error=oauth_denied`. Any user row or Google link that request created is deleted, so a refused account leaves nothing behind. A pre-existing user (for example an invited editor) is kept, only the new Google link is removed. `email_verified` must be true: EmDash refuses to link an existing user otherwise, and a user created by the refused request is rejected when the flag is 0. Any error in the check fails closed.
+
+**Hardening details**: the callback is recognised on the decoded, normalised path (trailing and double slashes, percent-encoding, dot segments, case) and for every HTTP method (HEAD runs the GET handler). Any other path under `/_emdash/api/auth/oauth/` (other providers, unknown sub-paths, malformed escapes) answers 404. After every callback, success or EmDash error, users created since the request started whose email is not on the list are deleted, so an error after user creation leaves no row. A user counts as created by the request if its `created_at` is at most 5 s before the request start (clock slack); a user on the allow-list is never deleted, and a throw anywhere in the callback denies (session destroyed, `oauth_denied`).
+
+**Before go-live (read-only SQL on the target database)**: `select value from options where name = 'emdash:setup_complete'` must be true, and `select * from allowed_domains where enabled = 1` must return no rows. Otherwise EmDash's callback would self-sign-up strangers (the cleanup above removes them again, but do not rely on it). Finish the passkey setup (section 1/2) before enabling Google on a fresh database: a refused first sign-in on an incomplete setup would still mark setup complete.
+
+**Smoke test**: sign in with an allow-listed account (lands on `/_emdash/admin`), then with a non-listed one (login page error, no session). Check `users` has no new row afterwards.
+
+---
+
 ## 5. Publish → Static site rebuild flow
 
 1. Clicking **Publish** in `apps/admin` triggers the `rebuild-on-publish` native plugin (`content:afterPublish` hook).
