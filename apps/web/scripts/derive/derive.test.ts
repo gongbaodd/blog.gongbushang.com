@@ -36,7 +36,7 @@ describe("posts -> legacy metadata entries", () => {
 		const [a, b] = await buildPosts(rows, new Map());
 		expect(a!.entry).toMatchObject({
 			id: "2020/01/02/a-post",
-			href: "/tech/2020/01/02/a-post",
+			href: "/2020/01/02/a-post",
 			title: "Hello World",
 			category: { label: "tech", href: "/tech" },
 			series: { label: "S One", href: "/series/s1" },
@@ -97,7 +97,7 @@ describe("assemble (legacy-data.json, search index, rss, umap)", () => {
 			relates: ["2020/01/03/two"],
 		});
 		expect(r.search.map((p) => p.id)).toEqual(["2020/01/03/two", "2020/01/02/one"]); // newest first
-		expect(r.rssItems[0]).toMatchObject({ title: "Two", href: "/tech/2020/01/03/two", description: "Two\n\nbeta..." });
+		expect(r.rssItems[0]).toMatchObject({ title: "Two", href: "/2020/01/03/two", description: "Two\n\nbeta..." });
 		expect(r.umap.posts.map((p: any) => p.id)).toEqual(["ep1", "2020/01/03/two", "2020/01/02/one"]); // newest first, podcast included
 		expect(r.out.podcast[0].umap2D).toEqual([5, 6]);
 		expect(r.out.umapPosts).toBe(2);

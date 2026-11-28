@@ -30,7 +30,7 @@ async function items(): Promise<FeedItem[]> {
     .toSorted((a, b) => b.date.getTime() - a.date.getTime())
     .map((e) => ({
       title: e.title,
-      href: postPath(e.id, e.data.category),
+      href: postPath(e.id),
       date: e.date.toISOString(),
       description: (e.body ?? "").substring(0, 200) + "...",
     }));

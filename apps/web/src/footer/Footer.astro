@@ -5,11 +5,17 @@ import { getSocialLinks } from "../lib/social-links";
 
 // Social links come from the EmDash "social" menu (fallback: seed/social-links.json);
 // icons are resolved by key in ./social-icons.
+interface Props {
+  slug?: string;
+  /** Page-view service key of the current post (pre-GON-270 path for imported posts); other pages use their own pathname. */
+  viewPath?: string;
+}
+const { viewPath } = Astro.props;
 const socials = await getSocialLinks();
 ---
 
 <MantineFooter socials={socials}>
-  <ViewCount path={Astro.url.pathname} slot="viewCount" client:visible />
+  <ViewCount path={viewPath ?? Astro.url.pathname} slot="viewCount" client:visible />
 <span slot="openSource">
     This website uses <a href="https://astro.build/">Astro.build</a>, <a href="https://mantine.dev/">Mantine</a>, EmDash and <a href="https://www.reactbits.dev/">React Bits</a> | deployed on <a href="https://www.cloudflare.com/">Cloudflare</a>
   </span>

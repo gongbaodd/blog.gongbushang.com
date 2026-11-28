@@ -75,42 +75,58 @@ export function isInfraPath(p: string): boolean {
 	return norm.split("/").some((seg) => seg.startsWith("_noop"));
 }
 
-const POST_RE = /^\/[^/]+\/(\d{4})\/(\d{2})\/(\d{2})\/[^/]+\/$/;
+/** A built post page (GON-270): `/<YYYY>/<MM>/<DD>/<slug>/`. A slug has no dot, so `/2025/08/18/record.gif` is not a post. */
+const POST_RE = /^\/(\d{4})\/(\d{2})\/(\d{2})\/[^/.]+\/$/;
+/** A retired post page in legacy-urls.txt: `/<category>/<YYYY>/<MM>/<DD>/<slug>/` (a 301 to the POST_RE path since GON-270). */
+export const RETIRED_POST_RE = /^\/[^/]+\/(\d{4})\/(\d{2})\/(\d{2})\/[^/]+\/$/;
 const POST_API_RE = /^\/api\/(?:cards|relates)\/(\d{4})\/(\d{2})\/(\d{2})\/[^/]+\.json$/;
 
-/**
- * `YYYYMMDD` of a post-shaped path (post page or its `/api/cards|relates` file), else null. With `categories`
- * (the first path segments legacy posts live under) a post page only counts when its category is known, so
- * `/admin/2099/12/31/leak/` is not mistaken for a post.
- */
-export function postDateKey(p: string, categories?: ReadonlySet<string>): string | null {
+/** `YYYYMMDD` of a post-shaped path (post page `/YYYY/MM/DD/slug/` or its `/api/cards|relates` file), else null. */
+export function postDateKey(p: string): string | null {
 	const n = normalizePath(p);
-	const page = POST_RE.exec(n);
-	if (page) return !categories || categories.has(n.split("/")[1]) ? page[1] + page[2] + page[3] : null;
-	const api = POST_API_RE.exec(n);
-	return api ? api[1] + api[2] + api[3] : null;
+	const m = POST_RE.exec(n) ?? POST_API_RE.exec(n);
+	return m ? m[1] + m[2] + m[3] : null;
 }
 
-/** First path segments (categories) of the post pages in a legacy URL list. */
-export function legacyCategories(legacy: Iterable<string>): Set<string> {
-	const out = new Set<string>();
-	for (const p of legacy) {
-		const n = normalizePath(p);
-		if (POST_RE.test(n)) out.add(n.split("/")[1]);
-	}
-	return out;
-}
-
-/** Latest post-page date (`YYYYMMDD`) among the legacy URLs: the legacy snapshot's "now". */
+/** Latest post-page date (`YYYYMMDD`) among the legacy URLs (retired `/<category>/...` form): the legacy snapshot's "now". */
 export function latestLegacyPostDate(legacy: Iterable<string>): string {
 	let max = "";
 	for (const p of legacy) {
-		if (!POST_RE.test(normalizePath(p))) continue;
-		const k = postDateKey(p);
-		if (k && k > max) max = k;
+		const m = RETIRED_POST_RE.exec(normalizePath(p));
+		if (!m) continue;
+		const k = m[1] + m[2] + m[3];
+		if (k > max) max = k;
 	}
 	return max;
 }
+
+/** True when a `legacy-redirects.txt` source is a pattern with `:placeholder` segments (Cloudflare `_redirects` syntax). */
+export const isRedirectPattern = (from: string): boolean => /(?:^|\/):[A-Za-z_]/.test(from);
+
+/**
+ * Match `path` against a `_redirects` pattern. A `:name` placeholder matches one non-empty path segment (Cloudflare placeholders
+ * never cross a `/`); every other character matches literally. Returns the captured values or null.
+ */
+export function matchRedirectPattern(pattern: string, path: string): Record<string, string> | null {
+	const names: string[] = [];
+	const re = pattern
+		.split(/(:[A-Za-z_][A-Za-z0-9_]*)/)
+		.map((part, i) => {
+			if (i % 2 === 1) {
+				names.push(part.slice(1));
+				return "([^/]+)";
+			}
+			return part.replace(/[.+^${}()|[\]\\?*]/g, "\\$&");
+		})
+		.join("");
+	const m = new RegExp(`^${re}$`).exec(path);
+	if (!m) return null;
+	return Object.fromEntries(names.map((n, i) => [n, m[i + 1]]));
+}
+
+/** Replace `:name` placeholders of a `_redirects` target with captured values. */
+export const expandRedirectTarget = (to: string, params: Record<string, string>): string =>
+	to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (whole, name: string) => params[name] ?? whole);
 
 /** Public URL path of every file under `dir` (`a/b/index.html` -> `/a/b/`; other files keep their name). */
 export function builtPaths(dir = DIST_CLIENT): Set<string> {

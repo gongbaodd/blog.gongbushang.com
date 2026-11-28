@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { assertUniquePostUrls, isValidPostSlug, POST_URL_TZ, postUrlDate, resolvePostId } from "./post-id";
-import { parsePostPath, postParams } from "./legacy-url";
+import { parsePostPath, parseRetiredPostPath, postParams } from "./legacy-url";
 import { mapPost } from "./content";
 import { LEGACY_TZ } from "./listing-core";
 
@@ -30,20 +30,22 @@ describe("new post URL date (published_at in one named timezone)", () => {
 });
 
 describe("mapPost for posts created in the admin", () => {
-  it("builds /<category>/YYYY/MM/DD/<slug>/ from published_at and the entry slug", () => {
+  it("builds /YYYY/MM/DD/<slug>/ from published_at and the entry slug", () => {
     const p = mapPost(entry("my-new-post", { publishedAt: "2026-07-14T21:30:00.000Z", legacy_date: "1999-01-01" }))!;
     expect(p.id).toBe("2026/07/15/my-new-post");
-    expect(p.href).toBe("/fe/2026/07/15/my-new-post/");
-    expect(p.params).toEqual({ category: "fe", year: "2026", month: "07", day: "15", slug: "my-new-post" });
+    expect(p.href).toBe("/2026/07/15/my-new-post/");
+    expect(p.viewPath).toBe("/2026/07/15/my-new-post");
+    expect(p.params).toEqual({ year: "2026", month: "07", day: "15", slug: "my-new-post" });
     expect(p.date).toBe("2026-07-15");
-    expect(parsePostPath(p.href)).toEqual({ category: "fe", legacyId: p.id });
-    expect(postParams(p.id, "fe")).toEqual(p.params);
+    expect(parsePostPath(p.href)).toEqual({ legacyId: p.id });
+    expect(postParams(p.id)).toEqual(p.params);
   });
 
   it("keeps the exact URL of an imported post, whatever published_at says", () => {
     const p = mapPost(entry("2015-03-15-threejs", { legacy_id: "2015/03/15/threejs", legacy_date: "2015-03-15", publishedAt: "2026-11-27T10:00:00Z" }))!;
     expect(p.id).toBe("2015/03/15/threejs");
-    expect(p.href).toBe("/fe/2015/03/15/threejs/");
+    expect(p.href).toBe("/2015/03/15/threejs/");
+    expect(p.viewPath).toBe("/fe/2015/03/15/threejs");
     expect(p.date).toBe("2015-03-15");
   });
 
@@ -52,9 +54,14 @@ describe("mapPost for posts created in the admin", () => {
     expect(mapPost(entry("draft-post", { publishedAt: null }))).toBeUndefined();
   });
 
-  it("still throws without a category", () => {
-    expect(() => mapPost({ id: "x", data: { publishedAt: new Date("2026-07-14T10:00:00Z"), terms: null } })).toThrow(/no category term/);
-    expect(() => mapPost({ id: "x", data: { legacy_id: "2024/01/01/ok", terms: null } })).toThrow(/no category term/);
+  it("accepts a post without a category (GON-270): same URL, no category, no throw", () => {
+    const fresh = mapPost({ id: "x", data: { publishedAt: new Date("2026-07-14T10:00:00Z"), terms: null } })!;
+    expect(fresh.href).toBe("/2026/07/14/x/");
+    expect(fresh.data.category).toBeUndefined();
+    expect("category" in fresh.data).toBe(false);
+    const imported = mapPost({ id: "x", data: { legacy_id: "2024/01/01/ok", terms: null } })!;
+    expect(imported.href).toBe("/2024/01/01/ok/");
+    expect(imported.viewPath).toBe("/2024/01/01/ok");
   });
 
   it("throws on a slug that is not one path segment", () => {
@@ -70,7 +77,7 @@ describe("slug rule", () => {
       .filter((l) => l && !l.startsWith("#"));
     let n = 0;
     for (const u of urls) {
-      const p = parsePostPath(u);
+      const p = parseRetiredPostPath(u);
       if (!p) continue;
       n++;
       expect(isValidPostSlug(p.legacyId.replaceAll("/", "-")), u).toBe(true);

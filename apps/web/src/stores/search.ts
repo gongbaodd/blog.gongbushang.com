@@ -11,7 +11,7 @@ export interface IPost {
   title: string;
   date: string;
   content: string;
-  category: TLink;
+  category?: TLink;
   tags: TLink[];
   series?: TLink;
   city?: string[];
@@ -71,7 +71,9 @@ async function filterHighestPvPost(posts: IPost[]) {
   await requestAllViewCount();
   const filteredPaths = Object.entries($pvMap.get());
   const filteredPosts = posts.filter((post) => {
-    return filteredPaths.some(([path]) => path === post.href);
+    // pv.growgen.xyz counts imported posts under their pre-GON-270 `/<category>/<id>` path, newer posts under `href`.
+    const retired = post.category ? `/${post.category.label}/${post.id}` : undefined;
+    return filteredPaths.some(([path]) => path === post.href || path === retired);
   });
   return filteredPosts;
 }

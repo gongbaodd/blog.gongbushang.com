@@ -97,7 +97,7 @@ export const $derived = computed($state, (v) => transform(v));
 ```
 apps/                 # pnpm workspace apps (pnpm-workspace.yaml: packages/*, apps/*)
 ├── web/              # public site (Astro on Cloudflare Workers, Hyperdrive)
-│   ├── src/pages/    # routes and API endpoints (URLs must match tests/legacy-urls.txt)
+│   ├── src/pages/    # routes and API endpoints (legacy URLs answer as-is or 301, see tests/legacy-redirects.txt)
 │   ├── src/stores/   # nanostores, CustomMantineProvider
 │   ├── src/analytics/# Mixpanel
 │   ├── src/lib/      # EmDash queries, listing, markdown, SEO, lockdown

@@ -14,7 +14,7 @@ Before changing anything, read `docs/plan/emdash/AGENT_RULES.md`.
 ## Hard rules
 
 - **Free plans only.** Cloudflare Workers Free (10 ms CPU per invocation, 64 MiB script, 20,000 static files, 100k requests/day), Supabase Free (500 MB, IPv4 session pooler only, 7-day pause), Cloudinary (25 credits). No R2, no Cloudflare Images.
-- **URLs never change.** Public paths must match `apps/web/tests/legacy-urls.txt`. Check with `pnpm --filter web parity`.
+- **URLs never change, or they redirect.** Every legacy URL in `apps/web/tests/legacy-urls.txt` must still answer: as the same path, or as a 301 listed in `apps/web/tests/legacy-redirects.txt` and `apps/web/public/_redirects`. Post URLs are `/<YYYY>/<MM>/<DD>/<slug>/` (GON-270); the old `/<category>/<YYYY>/<MM>/<DD>/<slug>/` paths redirect with 301. Check with `pnpm --filter web parity`.
 - **Secrets stay out of the bundle.** Read them from the repo-root `.env`, `apps/web/.dev.vars`, wrangler secrets or GitHub environment secrets. Refer to them by name only.
 - **Environments are `local` and `production` only** (INF-10 retired `testing`). `SITE_ENV=testing` is refused at startup.
 - **Production is not public** until the owner sets `PUBLIC_SITE_LIVE=true` (CUT-1); only the exact lowercase string `true` counts (`apps/web/src/lib/site-live.ts`). Until then the site is `noindex`, disallows all robots, and runs no analytics or ads.
@@ -94,7 +94,7 @@ pnpm --filter web run deploy             # build, then wrangler deploy (`run` is
 pnpm --filter web derive                 # what build runs first
 pnpm --filter web derive:migrate
 pnpm --filter web derive:compare-embeddings -- 20
-pnpm --filter web parity                 # URL parity against legacy-urls.txt
+pnpm --filter web parity                 # URL parity against legacy-urls.txt (old post URLs must 301 to the new ones)
 pnpm --filter web test
 pnpm --filter web typecheck
 pnpm --filter web types:emdash
@@ -132,6 +132,9 @@ Call the `cleanup` agent (`.claude/agents/cleanup.md`) after each merged story. 
 
 ## Pitfalls (each one is an observed or documented failure)
 
+- **Post URL is `/<YYYY>/<MM>/<DD>/<slug>/` (GON-270).** The category is optional post data and not part of the URL. The date comes from `legacy_id` (imported) or from `published_at` in Europe/Tallinn (`POST_URL_TZ`, `src/lib/post-id.ts`). EmDash's own "View" link (collection `urlPattern` `/{year}/{month}/{day}/{slug}`) uses the UTC date and the entry slug, so for a post published between 22:00/21:00 UTC and midnight UTC the two dates differ by one day; the site URL is the one that counts and is never changed. Existing DB: `node apps/web/scripts/schema/apply-post-urls.mjs` (dry run; `--apply` writes) sets the pattern and backfills `published_at` of imported posts.
+- **Draft Preview path is baked at build time.** EmDash does not pass the date when it builds a preview URL, so `apps/admin/astro.config.mjs` defines `import.meta.env.EMDASH_PREVIEW_PATH_PATTERN` as `/{collection}/{id}` (previews open `/posts/<id>` and `/podcasts/<id>` of `apps/admin/src/pages`). A runtime variable in compose or Altare has no effect: the canary build proves Vite inlines it. `getPreviewUrl` fills `{collection}`, `{id}` and `{locale}` only, never `{slug}`.
+- **View-count keys keep the old path.** `pv.growgen.xyz` keys counts by pathname. An imported post keeps counting under `/<category>/<YYYY>/<MM>/<DD>/<slug>` (`viewCountPath` in `legacy-url.ts`, `BlogPost.viewPath`); a new post uses its own path.
 - **`import.meta.env?.X` leaks secrets (SEC-02).** Astro inlines every private variable named in a file that uses the optional-chained form. Write `import.meta.env.X` and run `check:secrets`. `PUBLIC_*` and `EMDASH_SITE_URL` are baked on purpose, so never put a secret under those names.
 - **Changing a public URL breaks parity.** Run `pnpm --filter web parity` after any route, slug or template change.
 - **Supabase direct host is IPv6-only on Free.** Use the session pooler on port 5432, never the transaction pooler on 6543. Get the host from `supabase link`, never by guessing.

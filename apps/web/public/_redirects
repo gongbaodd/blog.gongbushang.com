@@ -3,3 +3,23 @@
 /tag/c%23/ /tag/c-sharp/ 301
 /tag/c%23 /tag/c-sharp/ 301
 /api/tag/c%23/0.ndjson /api/tag/c-sharp/0.ndjson 301
+# GON-270: posts moved from /<category>/<YYYY>/<MM>/<DD>/<slug>/ to /<YYYY>/<MM>/<DD>/<slug>/. One dynamic rule per category (a placeholder
+# matches one path segment), with and without the trailing slash. Cloudflare allows 100 dynamic + 2000 static rules; this file has 21.
+/book/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/book/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/fe/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/fe/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/life/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/life/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/movie/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/movie/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/music/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/music/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/plan/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/plan/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/sport/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/sport/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/tech/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/tech/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301
+/tv/:year/:month/:day/:slug/ /:year/:month/:day/:slug/ 301
+/tv/:year/:month/:day/:slug /:year/:month/:day/:slug/ 301

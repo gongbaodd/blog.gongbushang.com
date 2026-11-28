@@ -169,7 +169,7 @@ describe("cwv-check helpers and normalization", () => {
 		expect(DEFAULT_ROUTES).toContain("/tags/");
 		expect(DEFAULT_ROUTES).toContain("/podcast/");
 		expect(DEFAULT_ROUTES).toContain("/about/");
-		expect(DEFAULT_ROUTES.some((r: string) => /^\/[a-z]+\/\d{4}\/\d{2}\/\d{2}\/.+\/$/.test(r))).toBe(true);
+		expect(DEFAULT_ROUTES.some((r: string) => /^\/\d{4}\/\d{2}\/\d{2}\/.+\/$/.test(r))).toBe(true);
 		expect(DEFAULT_ROUTES).toHaveLength(6);
 	});
 });

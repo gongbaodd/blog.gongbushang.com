@@ -7,7 +7,7 @@
 export interface AnalyticsEventMap {
   post_read: {
     slug: string;
-    category: string;
+    category?: string;
     year: number | string;
     depth: 25 | 50 | 75 | 100;
     reading_time_min?: number;

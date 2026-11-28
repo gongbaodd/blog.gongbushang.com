@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +19,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const CLI_PATH = resolve(here, "check-parity.mjs");
 
 const tempDirs: string[] = [];
+/** The real public/_redirects (GON-270 post rules included): a fixture build ships it as dist/client/_redirects. */
+const PUBLIC_REDIRECTS = readFileSync(resolve(here, "../public/_redirects"), "utf8");
 
 function makeTempDir(prefix = "qa1-parity-"): string {
 	const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -233,15 +235,16 @@ describe("runParityCheck", () => {
 		const distDir = join(root, "dist/client");
 		writeFiles(distDir, {
 			"index.html": "home",
-			"fe/2026/11/19/old/index.html": "old",
+			"2026/11/19/old/index.html": "old",
+			_redirects: PUBLIC_REDIRECTS,
 			".assetsignore": "x",
 			_headers: "x",
 			"sitemap.xml": "x",
-			"fe/2026/11/25/new-post/index.html": "new",
+			"2026/11/25/new-post/index.html": "new",
 			"api/cards/2026/11/25/new-post.json": "{}",
 			"api/relates/2026/11/25/new-post.json": "{}",
 			// not new: dated before the newest legacy post and not in the legacy list
-			"fe/2026/11/01/renamed/index.html": "renamed",
+			"2026/11/01/renamed/index.html": "renamed",
 			"surprise/index.html": "surprise",
 			"extra.json": "x",
 		});
@@ -251,9 +254,9 @@ describe("runParityCheck", () => {
 		expect(report.newPostPaths).toEqual([
 			"/api/cards/2026/11/25/new-post.json",
 			"/api/relates/2026/11/25/new-post.json",
-			"/fe/2026/11/25/new-post/",
-		]);
-		expect(report.extraPaths).toEqual(["/extra.json", "/fe/2026/11/01/renamed/", "/surprise/"]);
+			"/2026/11/25/new-post/",
+		].sort());
+		expect(report.extraPaths).toEqual(["/2026/11/01/renamed/", "/extra.json", "/surprise/"]);
 		expect(report.ok).toBe(false);
 
 		const allowed = runParityCheck({
@@ -262,26 +265,51 @@ describe("runParityCheck", () => {
 			groupsFile,
 			urlsFile,
 			failOnExtra: true,
-			allowExtra: ["/extra.json", "/surprise/", "/fe/2026/11/01/*/"],
+			allowExtra: ["/extra.json", "/surprise/", "/2026/11/01/*/"],
 		});
 		expect(allowed.extraPaths).toEqual([]);
-		expect(allowed.allowedExtraPaths).toEqual(["/extra.json", "/fe/2026/11/01/renamed/", "/surprise/"]);
+		expect(allowed.allowedExtraPaths).toEqual(["/2026/11/01/renamed/", "/2026/11/19/old/", "/extra.json", "/surprise/"]);
 		expect(allowed.ok).toBe(true);
 	});
 
-	test("new-post exemption needs a real legacy category: /admin/2099/12/31/leak/ is an extra; same-day new posts are new", () => {
+	test("new-post exemption: /admin/2099/12/31/leak/ is an extra; same-day new posts are new", () => {
 		const root = makeTempDir();
 		const { groupsFile, urlsFile } = writeSnapshotFixture(root, { post: ["/fe/2026/11/19/old/"], static: ["/"] });
 		const distDir = join(root, "dist/client");
 		writeFiles(distDir, {
 			"index.html": "home",
-			"fe/2026/11/19/old/index.html": "old",
-			"fe/2026/11/19/same-day-new/index.html": "new",
+			_redirects: PUBLIC_REDIRECTS,
+			"2026/11/19/old/index.html": "old",
+			"2026/11/19/same-day-new/index.html": "new",
 			"admin/2099/12/31/leak/index.html": "leak",
 		});
 		const report = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile });
-		expect(report.newPostPaths).toEqual(["/fe/2026/11/19/same-day-new/"]);
+		expect(report.newPostPaths).toEqual(["/2026/11/19/same-day-new/"]);
 		expect(report.extraPaths).toEqual(["/admin/2099/12/31/leak/"]);
+	});
+
+	test("GON-270: an old /<category>/ post URL passes only with a 301 rule in _redirects and the new URL built", () => {
+		const root = makeTempDir();
+		const { groupsFile, urlsFile } = writeSnapshotFixture(root, {
+			post: ["/fe/2026/11/19/old/", "/tech/2026/11/18/other/"],
+			static: ["/"],
+		});
+		const distDir = join(root, "dist/client");
+		writeFiles(distDir, { "index.html": "home", _redirects: PUBLIC_REDIRECTS, "2026/11/19/old/index.html": "old", "2026/11/18/other/index.html": "other" });
+		const ok = runParityCheck({ dir: distDir, all: true, groupsFile, urlsFile, failOnExtra: true });
+		expect(ok.groups.find((g) => g.group === "post")).toMatchObject({ expected: 2, present: 2, missingCount: 0 });
+		expect(ok.ok).toBe(true);
+
+		// new URL not built -> the old one is missing
+		const noTarget = join(root, "dist-no-target/client");
+		writeFiles(noTarget, { "index.html": "home", _redirects: PUBLIC_REDIRECTS, "2026/11/19/old/index.html": "old" });
+		expect(runParityCheck({ dir: noTarget, all: true, groupsFile, urlsFile }).groups.find((g) => g.group === "post")?.missing).toEqual(["/tech/2026/11/18/other/"]);
+
+		// no rule for the category -> missing, even though the new URL exists
+		const noRule = join(root, "dist-no-rule/client");
+		const withoutTech = PUBLIC_REDIRECTS.split("\n").filter((l) => !l.startsWith("/tech/")).join("\n");
+		writeFiles(noRule, { "index.html": "home", _redirects: withoutTech, "2026/11/19/old/index.html": "old", "2026/11/18/other/index.html": "other" });
+		expect(runParityCheck({ dir: noRule, all: true, groupsFile, urlsFile }).groups.find((g) => g.group === "post")?.missing).toEqual(["/tech/2026/11/18/other/"]);
 	});
 
 	test("an HTML page in an unexpected form is both missing and extra (/about.html does not satisfy /about/)", () => {

@@ -1,4 +1,24 @@
 # Legacy URLs that now 301 to a new URL (GON-240). Format: `<old> <new>`, one per line. Both go in public/_redirects as `<old> <new> 301`.
 # parity accepts the old URL (still listed in legacy-urls.txt) when the new one is built and dist/client/_redirects has the rule.
+# A `:name` placeholder matches one path segment (Cloudflare syntax); parity evaluates such a rule against every legacy URL it matches.
 /tag/c%23/ /tag/c-sharp/
 /api/tag/c%23/0.ndjson /api/tag/c-sharp/0.ndjson
+# GON-270: every post moved from /<category>/<YYYY>/<MM>/<DD>/<slug>/ to /<YYYY>/<MM>/<DD>/<slug>/ (995 legacy URLs, 9 categories).
+/book/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/book/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/fe/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/fe/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/life/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/life/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/movie/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/movie/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/music/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/music/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/plan/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/plan/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/sport/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/sport/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/tech/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/tech/:year/:month/:day/:slug /:year/:month/:day/:slug/
+/tv/:year/:month/:day/:slug/ /:year/:month/:day/:slug/
+/tv/:year/:month/:day/:slug /:year/:month/:day/:slug/

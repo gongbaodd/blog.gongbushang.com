@@ -25,7 +25,7 @@ describe("BlogMenu sidebar card", () => {
       colorSet: { bgColor: "#123456", titleColor: "--mantine-color-blue-6" },
     });
     expect(html).toContain("Hello world");
-    expect(html).toContain('href="/tech/2024/03/05/hello-world"');
+    expect(html).toContain('href="/2024/03/05/hello-world"');
     expect(html).toContain("cover_area");
     expect(html).toContain("cover_footer");
   });

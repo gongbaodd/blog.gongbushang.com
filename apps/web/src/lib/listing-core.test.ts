@@ -30,7 +30,7 @@ describe("listing-core", () => {
   test("client post key order and fields", () => {
     const p = toClientPost(entry(), "ex...");
     expect(Object.keys(p)).toEqual(["id", "href", "title", "date", "dateText", "data", "excerpt"]);
-    expect(p.href).toBe("/fe/2026/11/19/x");
+    expect(p.href).toBe("/2026/11/19/x");
     expect(p.dateText).toBe("2026-11-19");
     expect(Object.keys(p.data)).toEqual(["category", "tag", "bgClass", "layout"]);
   });

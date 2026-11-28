@@ -11,9 +11,11 @@ import {
 	diffGroup,
 	loadGroups,
 	isInfraPath,
+	expandRedirectTarget,
+	isRedirectPattern,
 	latestLegacyPostDate,
-	legacyCategories,
 	loadLegacyRedirects,
+	matchRedirectPattern,
 	loadLegacyUrls,
 	normalizePath,
 	postDateKey,
@@ -215,15 +217,42 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 
 	const groupResults: GroupParityResult[] = [];
 
-	// GON-240: a legacy URL that moved is accepted when the new URL is built AND the build's `_redirects` 301s the old one to it.
+	// GON-240 / GON-270: a legacy URL that moved is accepted when the build's `_redirects` 301s it to a URL that is built. A source with
+	// `:placeholder` segments (the retired `/<category>/<YYYY>/<MM>/<DD>/<slug>/` post rules) is evaluated per legacy path.
 	const redirects = loadLegacyRedirects(options.redirectsFile ?? LEGACY_REDIRECTS_PATH);
 	const redirectsText = existsSync(join(dir, "_redirects")) ? readFileSync(join(dir, "_redirects"), "utf8") : "";
-	const redirectedTo = new Map<string, string>();
+	const ruleKeys = new Set(
+		redirectsText
+			.split(/\r?\n/)
+			.filter((l) => /^\s*[^#\s]/.test(l))
+			.map((l) => l.trim().split(/\s+/).slice(0, 3).join(" ")),
+	);
+	const literalRedirects = new Map<string, string>();
+	const patternRedirects: Array<[string, string]> = [];
 	for (const [from, to] of redirects) {
-		const ruled = redirectsText.split(/\r?\n/).some((l) => /^\s*[^#\s]/.test(l) && l.trim().split(/\s+/).slice(0, 3).join(" ") === `${from} ${to} 301`);
-		if (ruled && built.has(normalizePath(to))) redirectedTo.set(normalizePath(from), to);
+		if (!ruleKeys.has(`${from} ${to} 301`)) continue;
+		if (isRedirectPattern(from)) patternRedirects.push([from, to]);
+		else literalRedirects.set(normalizePath(from), to);
 	}
-	const isRedirected = (p: string) => redirectedTo.has(normalizePath(p));
+	/** Where `_redirects` sends a legacy path (301), or undefined. */
+	const redirectTarget = (p: string): string | undefined => {
+		const n = normalizePath(p);
+		const literal = literalRedirects.get(n);
+		if (literal !== undefined) return literal;
+		for (const [from, to] of patternRedirects) {
+			const params = matchRedirectPattern(from, n);
+			if (params) return expandRedirectTarget(to, params);
+		}
+		return undefined;
+	};
+	/** Built targets of the legacy paths that were accepted as redirected (they are not "extra" paths). */
+	const redirectTargets = new Set<string>();
+	const isRedirected = (p: string) => {
+		const to = redirectTarget(p);
+		if (to === undefined || !built.has(normalizePath(to))) return false;
+		redirectTargets.add(normalizePath(to));
+		return true;
+	};
 
 	const checkBucket = (name: string, paths: string[]) => {
 		const { missing: rawMissing } = diffGroup(paths, built, allLegacy);
@@ -260,15 +289,16 @@ export function runParityCheck(options: ParityOptions = {}): ParityReport {
 	// Extras: built paths that are not legacy URLs. Infra files are always ignored; paths of posts newer
 	// than the legacy snapshot are "new posts" (reported, never failing); `--allow-extra` covers the rest.
 	const legacyLatestPostDate = latestLegacyPostDate(allLegacy);
-	const categories = legacyCategories(allLegacy);
 	const { extra: rawExtra } = diffGroup([], built, allLegacy);
 	const extraPaths: string[] = [];
 	const allowedExtraPaths: string[] = [];
 	const newPostPaths: string[] = [];
 	for (const p of rawExtra) {
-		const key = postDateKey(p, categories);
-		if (key && key >= legacyLatestPostDate) newPostPaths.push(p);
-		else if (isAllowedExtra(p) || isInfraPath(p) || [...redirectedTo.values()].some((t) => normalizePath(t) === normalizePath(p))) allowedExtraPaths.push(p);
+		const key = postDateKey(p);
+		// The new URL of a legacy post (its old URL 301s here) is expected, never a "new post", even on the newest legacy day.
+		if (redirectTargets.has(normalizePath(p))) allowedExtraPaths.push(p);
+		else if (key && key >= legacyLatestPostDate) newPostPaths.push(p);
+		else if (isAllowedExtra(p) || isInfraPath(p)) allowedExtraPaths.push(p);
 		else extraPaths.push(p);
 	}
 

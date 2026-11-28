@@ -1,13 +1,13 @@
 ---
-// Post page at the exact legacy URL: /<category>/<YYYY>/<MM>/<DD>/<slug>/ (D8: legacy_id + category term).
-import BlogPost from "../../../../../layouts/BlogPost.astro";
-import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, type BlogPost as Post } from "../../../../../lib/content";
-import { getPostEntries, toClient } from "../../../../../lib/listing";
-import { renderMarkdown } from "../../../../../lib/markdown";
-import { prepareBody } from "../../../../../lib/mdx-lite";
-import { articleModifiedTime, resolvePostSeo } from "../../../../../lib/seo";
-import { SITE_AUTHOR } from "../../../../../consts";
-import { getReadingTime } from "../../../../../utils/reading-time";
+// Post page: /<YYYY>/<MM>/<DD>/<slug>/ (GON-270; the old /<category>/<YYYY>/<MM>/<DD>/<slug>/ paths are 301s in public/_redirects).
+import BlogPost from "../../../../layouts/BlogPost.astro";
+import { getAllPosts, postExcerpt, postLinks, postTitle, quickTitle, seriesNav, type BlogPost as Post } from "../../../../lib/content";
+import { getPostEntries, toClient } from "../../../../lib/listing";
+import { renderMarkdown } from "../../../../lib/markdown";
+import { prepareBody } from "../../../../lib/mdx-lite";
+import { articleModifiedTime, resolvePostSeo } from "../../../../lib/seo";
+import { SITE_AUTHOR } from "../../../../consts";
+import { getReadingTime } from "../../../../utils/reading-time";
 
 export const prerender = true;
 
@@ -64,6 +64,7 @@ const articleMeta = {
 	articleMeta={articleMeta}
 	date={post.date}
 	category={post.data.category}
+	viewPath={post.viewPath}
 	tags={post.data.tag ?? []}
 	links={postLinks(post)}
 	headings={menuHeadings}

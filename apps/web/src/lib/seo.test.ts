@@ -24,7 +24,7 @@ const base = {
   description: "Excerpt",
   image: "https://res.cloudinary.com/x/cover.jpg",
   siteUrl: "https://growgen.xyz",
-  path: "/fe/2025/02/21/hello/",
+  path: "/2025/02/21/hello/",
 };
 const none: ContentSeo = { title: null, description: null, image: null, canonical: null, noIndex: false };
 
@@ -35,7 +35,7 @@ describe("resolvePostSeo", () => {
     expect(r.pageTitle).toBe(r.title);
     expect(r.description).toBe("Excerpt");
     expect(r.image).toBe("https://res.cloudinary.com/x/cover.jpg");
-    expect(r.canonical).toBe("https://growgen.xyz/fe/2025/02/21/hello/");
+    expect(r.canonical).toBe("https://growgen.xyz/2025/02/21/hello/");
     expect(r.noindex).toBe(false);
     expect(r.robots).toBeNull();
   });
@@ -89,14 +89,16 @@ describe("rowToSeo", () => {
 
 describe("sitemap noindex filter", () => {
   const ids = new Set(["2025/02/21/hello"]);
-  test("matches the post under any category, with or without trailing slash", () => {
-    expect(isNoindexedPage("https://growgen.xyz/fe/2025/02/21/hello/", ids)).toBe(true);
-    expect(isNoindexedPage("https://growgen.xyz/life/2025/02/21/hello", ids)).toBe(true);
+  test("matches the post by its /YYYY/MM/DD/slug path, with or without trailing slash", () => {
+    expect(isNoindexedPage("https://growgen.xyz/2025/02/21/hello/", ids)).toBe(true);
+    expect(isNoindexedPage("https://growgen.xyz/2025/02/21/hello", ids)).toBe(true);
+    // the retired /<category>/ form is a 301 and never in the sitemap
+    expect(isNoindexedPage("https://growgen.xyz/fe/2025/02/21/hello/", ids)).toBe(false);
   });
   test("does not match other posts or listing pages", () => {
-    expect(isNoindexedPage("https://growgen.xyz/fe/2025/02/21/hello-2/", ids)).toBe(false);
+    expect(isNoindexedPage("https://growgen.xyz/2025/02/21/hello-2/", ids)).toBe(false);
     expect(isNoindexedPage("https://growgen.xyz/fe/", ids)).toBe(false);
-    expect(isNoindexedPage("https://growgen.xyz/fe/2025/02/21/hello/", new Set())).toBe(false);
+    expect(isNoindexedPage("https://growgen.xyz/2025/02/21/hello/", new Set())).toBe(false);
   });
 });
 

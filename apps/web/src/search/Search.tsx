@@ -85,7 +85,7 @@ function SpotlightModal({ onSpotlightClose }: { onSpotlightClose: () => void }) 
       px={0}
       onClick={() => {
         trackSearchResultClicked(i + 1, post.id, query);
-        location.href = `/${post.category.label}/${post.id}`;
+        location.href = post.href;
       }}
       closeSpotlightOnTrigger
     >
