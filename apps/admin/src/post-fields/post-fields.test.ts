@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { createPlugin, checkPostSlugForPublish, HIDDEN_WIDGET_ID, postFields } from "./plugin.ts";
+import { createPlugin, checkPostForPublish, checkPostSlugForPublish, HIDDEN_WIDGET_ID, postFields } from "./plugin.ts";
 import { fields, HiddenField } from "./admin.tsx";
 
 const publish = (slug: unknown, collection = "posts") => checkPostSlugForPublish({ collection, content: { slug } });
@@ -18,6 +18,27 @@ describe("post slug policy (content:beforePublish)", () => {
 			expect(r && r.cancel, String(slug)).toBe(true);
 			expect(r && r.reason).toContain("slug");
 		}
+	});
+
+	it("blocks a post with no category term, allows one with a category or an unknown one", () => {
+		const event = { collection: "posts", content: { slug: "ok-slug" } };
+		const r = checkPostForPublish(event, []);
+		expect(r && r.cancel).toBe(true);
+		expect(r && r.reason).toContain("no category");
+		expect(checkPostForPublish(event, [{ slug: "fe" }])).toBeUndefined();
+		expect(checkPostForPublish(event, undefined)).toBeUndefined();
+		expect(checkPostForPublish({ collection: "podcasts", content: {} }, [])).toBeUndefined();
+	});
+
+	it("the registered hook reads the entry's category terms", async () => {
+		const plugin = createPlugin() as unknown as { hooks: Record<string, { handler?: Function } | Function>; capabilities: string[] };
+		expect(plugin.capabilities).toContain("taxonomies:read");
+		const hook = plugin.hooks["content:beforePublish"];
+		const handler = (typeof hook === "function" ? hook : hook.handler) as (e: unknown, c: unknown) => Promise<{ cancel?: boolean } | void>;
+		const ctx = (terms: unknown[]) => ({ taxonomies: { getEntryTerms: async () => terms } });
+		const ev = { collection: "posts", content: { id: "01ABC", slug: "ok" } };
+		expect((await handler(ev, ctx([])))?.cancel).toBe(true);
+		expect(await handler(ev, ctx([{ slug: "fe" }]))).toBeUndefined();
 	});
 
 	it("ignores other collections", () => {

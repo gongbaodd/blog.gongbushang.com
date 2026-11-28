@@ -50,7 +50,7 @@ export function resolvePostId(row: { legacyId?: string | null; slug: string; pub
   return legacy || newPostId(row.slug, row.publishedAt);
 }
 
-/** Fails (clear message) when two posts share a URL: the same `key` (public path, or id) appears twice. */
+/** Fails (clear message) when two posts share the same `key` (their id, which is also their public path minus the category). */
 export function assertUniquePostUrls(posts: { key: string; entry: string }[], what = "URL"): void {
   const seen = new Map<string, string>();
   const dupes: string[] = [];
@@ -61,7 +61,7 @@ export function assertUniquePostUrls(posts: { key: string; entry: string }[], wh
   }
   if (dupes.length) {
     throw new Error(
-      `duplicate post ${what}: ${dupes.join("; ")}. Two posts in the same category published on the same day need different slugs: change one slug in the admin.`,
+      `duplicate post ${what}: ${dupes.join("; ")}. Two posts published on the same day (Europe/Tallinn) with the same slug clash: change one slug in the admin.`,
     );
   }
 }

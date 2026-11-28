@@ -45,9 +45,12 @@ type RawPostRow = Omit<PostRow, "legacy_id"> & { legacy_id: string | null; slug:
 export function resolvePostRows(raw: RawPostRow[]): PostRow[] {
 	const rows: PostRow[] = [];
 	for (const { slug, published_at, legacy_id, ...rest } of raw) {
-		const id = resolvePostId({ legacyId: legacy_id, slug, publishedAt: published_at });
+		// An imported post keeps `legacy_id` byte for byte (derive cache keys); only a post without one gets a synthetic id.
+		const id = legacy_id !== null ? legacy_id : resolvePostId({ slug, publishedAt: published_at });
 		if (id) rows.push({ ...rest, legacy_id: id });
 	}
+	// Same rule as the web build (content.ts getAllPosts): the caches, /api/cards and /api/relates are keyed by the id alone, without
+	// the category, so two posts with the same id clash even when their categories differ.
 	assertUniquePostUrls(rows.map((r) => ({ key: r.legacy_id, entry: r.id })), "id");
 	return rows;
 }
