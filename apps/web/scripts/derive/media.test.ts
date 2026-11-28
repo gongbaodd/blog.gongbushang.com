@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PLACEHOLDER_MARK, pruneEmbeddings, pruneTraces } from "./cache.ts";
-import { buildEpisodes, isPlaceholderSvg, parseDate, placeholderSvg, resolveTraces, type DerivedGalleryImage, type PodcastRow } from "./media.ts";
+import { buildEpisodes, episodeCoverUrls, finalizeEpisodes, isPlaceholderSvg, parseDate, placeholderSvg, resolveTraces, type DerivedGalleryImage, type PodcastRow } from "./media.ts";
 
 const palette = vi.hoisted(() => vi.fn());
 vi.mock("./lib/palette/get-palette.ts", () => ({ getPaletteColorSet: palette }));
@@ -164,5 +164,25 @@ describe("gallery traces (frozen cache, PORT-8b part 3)", () => {
 		const full = client([]);
 		await resolveTraces(full.c, [], true, 4, ["https://img/a.jpg"]);
 		expect(full.query.mock.calls.some(([sql]) => /delete/i.test(String(sql)))).toBe(true);
+	});
+});
+
+describe("episode colours (GON-268)", () => {
+	const url = "https://cdn.example/a.jpg";
+	const cs = { bgColor: "#112233", titleColor: "--mantine-color-red-2" };
+	it("lists only episodes without a CMS colour set and with an http(s) cover", () => {
+		const eps = buildEpisodes([ep({ legacy_id: "a", image_url: url }), ep({ legacy_id: "b", image_url: url, color_set: cs }), ep({ legacy_id: "c", image_url: "./x.jpg" })]);
+		expect(episodeCoverUrls(eps)).toEqual([url]);
+	});
+	it("keeps a cache-filled colour set on episodes that also have embeddings", () => {
+		const eps = buildEpisodes([ep({ legacy_id: "a", image_url: url }), ep({ legacy_id: "b", image_url: url, color_set: { bgColor: "#abcdef", titleColor: "--t" } })]);
+		const out = finalizeEpisodes(eps, new Map([["a", [1, 2]], ["b", [3]]]), new Map([[url, cs]]));
+		expect(out[0]).toMatchObject({ id: "a", colorSet: cs, embeddings: [1, 2] });
+		expect(out[1]).toMatchObject({ id: "b", colorSet: { bgColor: "#abcdef" }, embeddings: [3] });
+	});
+	it("leaves colorSet out when the cache has nothing or only blanks", () => {
+		const eps = buildEpisodes([ep({ legacy_id: "a", image_url: url })]);
+		expect(finalizeEpisodes(eps, new Map(), new Map())[0]).not.toHaveProperty("colorSet");
+		expect(finalizeEpisodes(eps, new Map(), new Map([[url, { bgColor: "", titleColor: "" }]]))[0]).not.toHaveProperty("colorSet");
 	});
 });
